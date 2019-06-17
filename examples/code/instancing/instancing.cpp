@@ -107,7 +107,7 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
     quat q;
     q.euler_angles(0.01f, 0.01f, 0.01f);
 
-    static u32 timer = pen::timer_create("perf");
+    static pen::timer* timer = pen::timer_create();
 
     pen::timer_start(timer);
     for (s32 i = 2; i < scene->num_entities; ++i)

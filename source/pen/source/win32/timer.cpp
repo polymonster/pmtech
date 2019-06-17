@@ -7,28 +7,25 @@
 #include "data_struct.h"
 #include "pen_string.h"
 
+namespace
+{
+    LARGE_INTEGER performance_frequency;
+    f32           ticks_to_ms;
+    f32           ticks_to_us;
+    f32           ticks_to_ns;
+}
+
 namespace pen
 {
     struct timer
     {
         LARGE_INTEGER last_start;
-
         f32 accumulated;
         f32 longest;
         f32 shortest;
-
         u32 hit_count;
-
         const c8* name;
     };
-
-    LARGE_INTEGER performance_frequency;
-    f32           ticks_to_ms;
-    f32           ticks_to_us;
-    f32           ticks_to_ns;
-    timer*        timers;
-
-    u32 next_free = 0;
 
     void timer_system_intialise()
     {
@@ -37,56 +34,46 @@ namespace pen
         ticks_to_ms = (f32)(1.0 / (performance_frequency.QuadPart / 1000.0));
         ticks_to_us = ticks_to_ms * 1000.0f;
         ticks_to_ns = ticks_to_us * 1000.0f;
-
-        next_free = 0;
     }
 
-    u32 timer_create(const c8* name)
+    timer* timer_create()
     {
-        u32 index = sb_count(timers);
-
-        timer t;
-        t.name = name;
-
-        sb_push(timers, t);
-
-        timer_start(index);
-        return index;
+        return (timer*)memory_alloc(sizeof(timer));
     }
 
-    void timer_start(u32 index)
+    void timer_destroy(timer* t)
     {
-        QueryPerformanceCounter(&timers[index].last_start);
+        memory_free(t);
     }
 
-    void timer_reset(u32 index)
+    void timer_start(timer* t)
     {
-        QueryPerformanceCounter(&timers[index].last_start);
+        QueryPerformanceCounter(&t->last_start);
     }
 
-    f32 timer_elapsed_ms(u32 timer_index)
+    f32 timer_elapsed_ms(timer* t)
     {
         LARGE_INTEGER end_time;
         QueryPerformanceCounter(&end_time);
-        f32 last_duration = (f32)(end_time.QuadPart - timers[timer_index].last_start.QuadPart);
+        f32 last_duration = (f32)(end_time.QuadPart - t->last_start.QuadPart);
 
         return last_duration * ticks_to_ms;
     }
 
-    f32 timer_elapsed_us(u32 timer_index)
+    f32 timer_elapsed_us(timer* t)
     {
         LARGE_INTEGER end_time;
         QueryPerformanceCounter(&end_time);
-        f32 last_duration = (f32)(end_time.QuadPart - timers[timer_index].last_start.QuadPart);
+        f32 last_duration = (f32)(end_time.QuadPart - t->last_start.QuadPart);
 
         return last_duration * ticks_to_us;
     }
 
-    f32 timer_elapsed_ns(u32 timer_index)
+    f32 timer_elapsed_ns(timer* t)
     {
         LARGE_INTEGER end_time;
         QueryPerformanceCounter(&end_time);
-        f32 last_duration = (f32)(end_time.QuadPart - timers[timer_index].last_start.QuadPart);
+        f32 last_duration = (f32)(end_time.QuadPart - t->last_start.QuadPart);
 
         return last_duration * ticks_to_ns;
     }

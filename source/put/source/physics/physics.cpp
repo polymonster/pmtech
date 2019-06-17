@@ -194,7 +194,7 @@ namespace physics
 
         physics_initialise();
 
-        static u32 physics_timer = pen::timer_create("physics_timer");
+        static pen::timer* physics_timer = pen::timer_create();
         pen::timer_start(physics_timer);
 
         // space for 8192 commands

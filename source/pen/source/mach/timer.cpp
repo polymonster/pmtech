@@ -11,6 +11,13 @@
 #include <mach/mach_time.h>
 #include <unistd.h>
 
+namespace
+{
+    f32 ticks_to_ms;
+    f32 ticks_to_us;
+    f32 ticks_to_ns;
+}
+
 namespace pen
 {
     struct timer
@@ -26,16 +33,6 @@ namespace pen
         const c8* name;
     };
 
-    f32 ticks_to_ms;
-    f32 ticks_to_us;
-    f32 ticks_to_ns;
-
-    //timer* timers;
-
-    mpmc_stretchy_buffer<timer> timers;
-
-    u32 next_free = 0;
-
     void timer_system_intialise()
     {
         static mach_timebase_info_data_t s_timebase_info;
@@ -46,40 +43,39 @@ namespace pen
         ticks_to_ns = (f32)s_timebase_info.numer / (f32)s_timebase_info.denom;
         ticks_to_us = ticks_to_ns / 1000.0f;
         ticks_to_ms = ticks_to_us / 1000.0f;
-
-        next_free = 0;
     }
 
-    u32 timer_create(const c8* name)
+    timer* timer_create()
     {
-        u32   index = timers.size();
-        timer nt;
-        nt.name = name;
-        timers.push_back(nt);
-        return index;
+        return (timer*)memory_alloc(sizeof(timer));
     }
 
-    void timer_start(u32 index)
+    void timer_destroy(timer* t)
+    {
+        memory_free(t);
+    }
+
+    void timer_start(timer* t)
     {
         timers[index].last_start = mach_absolute_time();
     }
 
-    f32 timer_elapsed_ms(u32 timer_index)
+    f32 timer_elapsed_ms(timer* t)
     {
-        uint64_t t = mach_absolute_time() - timers[timer_index].last_start;
-        return t * ticks_to_ms;
+        uint64_t mt = mach_absolute_time() - t->last_start;
+        return mt * ticks_to_ms;
     }
 
-    f32 timer_elapsed_us(u32 timer_index)
+    f32 timer_elapsed_us(timer* t)
     {
-        uint64_t t = mach_absolute_time() - timers[timer_index].last_start;
-        return t * ticks_to_us;
+        uint64_t mt = mach_absolute_time() - t->last_start;
+        return mt * ticks_to_us;
     }
 
-    f32 timer_elapsed_ns(u32 timer_index)
+    f32 timer_elapsed_ns(timer* t)
     {
-        uint64_t t = mach_absolute_time() - timers[timer_index].last_start;
-        return t * ticks_to_ns;
+        uint64_t mt = mach_absolute_time() - t->last_start;
+        return mt * ticks_to_ns;
     }
 
     f32 get_time_ms()

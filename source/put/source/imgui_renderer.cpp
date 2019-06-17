@@ -460,7 +460,7 @@ namespace put
             static f32 input_key_timer[512] = {0.0f};
             static f32 repeat_ms = 150.0f;
 
-            static u32 timer_index = pen::timer_create("imgui_input_timer");
+            static pen::timer* timer_index = pen::timer_create();
 
             f32 dt_ms = pen::timer_elapsed_ms(timer_index);
             pen::timer_start(timer_index);

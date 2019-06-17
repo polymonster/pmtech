@@ -231,7 +231,7 @@ namespace
         renderer_cmd(){};
     };
 
-    u32                       _present_timer;
+    pen::timer*               _present_timer;
     f32                       _present_time;
     pen::resolve_resources    _resolve_resources;
     ring_buffer<renderer_cmd> _cmd_buffer;
@@ -629,7 +629,7 @@ namespace pen
         init_resolve_resources();
 
         // create present timer for cpu perf result
-        _present_timer = timer_create("renderer_present_timer");
+        _present_timer = timer_create();
         timer_start(_present_timer);
 
         _present_time = 0.0f;

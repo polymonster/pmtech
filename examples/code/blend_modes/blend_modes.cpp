@@ -126,7 +126,7 @@ PEN_TRV pen::user_entry(void* params)
 
     while (1)
     {
-        static u32 frame_timer = pen::timer_create("frame_timer");
+        static pen::timer* frame_timer = pen::timer_create();
         pen::timer_start(frame_timer);
 
         put::dev_ui::new_frame();

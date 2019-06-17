@@ -134,10 +134,10 @@ def parse_and_split_block(code_block):
     start = code_block.find("{") + 1
     end = code_block.find("};")
     block_conditioned = code_block[start:end].replace(";", "")
-    block_conditioned = block_conditioned.replace(":", "")
-    block_conditioned = block_conditioned.replace("(", "")
-    block_conditioned = block_conditioned.replace(")", "")
-    block_conditioned = block_conditioned.replace(",", "")
+    block_conditioned = block_conditioned.replace(":", " ")
+    block_conditioned = block_conditioned.replace("(", " ")
+    block_conditioned = block_conditioned.replace(")", " ")
+    block_conditioned = block_conditioned.replace(",", " ")
     block_conditioned = re.sub(' +', ' ', block_conditioned)
     return block_conditioned.split()
 

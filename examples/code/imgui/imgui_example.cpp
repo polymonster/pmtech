@@ -125,7 +125,7 @@ PEN_TRV pen::user_entry(void* params)
             ImGui::ShowTestWindow(&show_test_window);
         }
 
-        static u32 timer = pen::timer_create("imgui_impl_timer");
+        static pen::timer* timer = pen::timer_create();
         pen::timer_start(timer);
 
         put::dev_ui::render();

@@ -33,7 +33,7 @@ PEN_TRV pen::user_entry(void* params)
     pen::job*               p_thread_info = job_params->job_info;
     pen::semaphore_post(p_thread_info->p_sem_continue, 1);
 
-    u32 timer_test = pen::timer_create("test");
+    pen::timer* timer_test = pen::timer_create();
 
     // initialise the debug render system
     put::dbg::init();
@@ -68,7 +68,7 @@ PEN_TRV pen::user_entry(void* params)
 
     while (1)
     {
-        static u32 frame_timer = pen::timer_create("frame_timer");
+        static pen::timer* frame_timer = pen::timer_create();
         pen::timer_start(frame_timer);
 
         // viewport

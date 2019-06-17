@@ -612,7 +612,7 @@ namespace pen
         Gamepad_processEvents();
 
         // detect devices
-        static u32       htimer = timer_create("gamepad_detect");
+        static pen::timer* htimer = timer_create();
         static const f32 detect_time = 10000.0f;
         static f32       detect_timer = detect_time;
         if (detect_timer <= 0)

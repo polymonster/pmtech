@@ -206,7 +206,7 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
     }
 
 #if 0 // debug / test array cost vs operator [] in component entity system
-    static u32 timer = pen::timer_create("perf");
+    static pen::timer* timer = pen::timer_create("perf");
     pen::timer_start(timer);
     for (s32 i = 0; i < scene->num_nodes; ++i)
     {

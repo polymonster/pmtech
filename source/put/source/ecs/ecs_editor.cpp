@@ -1531,23 +1531,6 @@ namespace put
             if (view_menu)
                 view_ui(scene, &view_menu);
 
-            // todo move this to main?
-            //if (sc->deprecated)
-            if (0)
-            {
-                static u32 timer_index = -1;
-                if (timer_index == -1)
-                {
-                    timer_index = pen::timer_create("scene_update_timer");
-                    pen::timer_start(timer_index);
-                }
-                f32 dt_ms = pen::timer_elapsed_ms(timer_index);
-
-                pen::timer_start(timer_index);
-
-                put::ecs::update_scene(scene, dt_ms);
-            }
-
             update_undo_stack(scene, dt * 1000.0);
         }
 

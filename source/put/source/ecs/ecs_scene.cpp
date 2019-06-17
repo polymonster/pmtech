@@ -758,8 +758,7 @@ namespace put
         void update_animations(ecs_scene* scene, f32 dt)
         {
             //dt = 16.66;
-
-            //u32 timer = pen::timer_create("anim_v2");
+            //pen::timer* timer = pen::timer_create("anim_v2");
             //pen::timer_start(timer);
 
             for (u32 n = 0; n < scene->num_entities; ++n)
@@ -1057,8 +1056,8 @@ namespace put
 
         void update()
         {
-            static u32 dt_timer = pen::timer_create("sc_dt");
-            f32        dt = pen::timer_elapsed_ms(dt_timer) * 0.001f;
+            static pen::timer*  dt_timer = pen::timer_create();
+            f32                 dt = pen::timer_elapsed_ms(dt_timer) * 0.001f;
             pen::timer_start(dt_timer);
 
             static f32 fft = 1.0f / 60.0f;
@@ -1109,7 +1108,7 @@ namespace put
                 if (scene->extensions[e].update_func)
                     scene->extensions[e].update_func(scene->extensions[e], scene, dt);
 
-            static u32 timer = pen::timer_create("update_scene");
+            static pen::timer* timer = pen::timer_create();
             pen::timer_start(timer);
 
             // scene node transform

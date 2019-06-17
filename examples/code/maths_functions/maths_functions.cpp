@@ -928,7 +928,7 @@ void maths_test_ui(ecs_scene* scene)
     if (animate)
     {
         static f32 swap_timer = 0.0f;
-        static u32 at = pen::timer_create("math_anim_timer");
+        static pen::timer* at = pen::timer_create();
         swap_timer += pen::timer_elapsed_ms(at);
         pen::timer_start(at);
 
