@@ -28,20 +28,20 @@ A lightweight code base with powerful features that can be used for games and re
 - Documentation is not thorough but the [source](https://github.com/polymonster/pmtech/wiki/Source-Code) is simple and easy to follow.
 
 **Media**  
-<sup>Area Lights.</sup>
 [<img src="https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/area-lights.gif" width="1280" />](https://github.com/polymonster/pmtech/blob/master/examples/code/area_lights/area_lights.cpp)
-<sup>Subsurface Scattering.</sup>
+<sup>Area Lights.</sup>
 [<img src="https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/sss.gif" width="1280" />](https://github.com/polymonster/pmtech/blob/master/examples/code/sss/sss.cpp)
-<sup>Signed Distance Field Shadows.</sup>
+<sup>Subsurface Scattering.</sup>
 [<img src="https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/sdf-shadow.gif" width="1280" />](https://www.youtube.com/watch?v=369cPinAhdo)
-<sup>Data Driven, JSON Scriptable Renderer.</sup>
+<sup>Signed Distance Field Shadows.</sup>
 [![Renderer](https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/pmfx-renderer.gif)](https://github.com/polymonster/pmtech/blob/master/examples/code/pmfx_renderer/pmfx_renderer_demo.cpp)
-<sup>Data Driven, JSON Scriptable Post-Processing.</sup>
+<sup>Data Driven, JSON Scriptable Renderer.</sup>
 [![Post Processing](https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/post-pro.gif)](https://github.com/polymonster/pmtech/blob/master/examples/code/post_processing/post_processing.cpp)
-<sup>Stencil Shadow Volumes.</sup>
+<sup>Data Driven, JSON Scriptable Post-Processing.</sup>
 <img src="https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/stencil-shadows.gif" width="1280" />
-<sup>64k Data-Oriented Entities, Multiple Shadow Maps, Texture Arrays.</sup>
+<sup>Stencil Shadow Volumes.</sup>
 <img src="https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/tourus.gif" width="1280" />
-<sup>Vertex Stream Out, Instanced Skinning, PBR, Oren Nayar, Cook Torrence.</sup>
+<sup>64k Data-Oriented Entities, Multiple Shadow Maps, Texture Arrays.</sup>
 [![Vertex Stream Out](https://github.com/polymonster/polymonster.github.io/raw/master/assets/demos/vertex-stream-pbr.gif)](https://github.com/polymonster/pmtech/blob/master/examples/code/vertex_stream_out/vertex_stream_out.cpp)
+<sup>Vertex Stream Out, Instanced Skinning, PBR, Oren Nayar, Cook Torrence.</sup>
 
