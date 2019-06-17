@@ -57,7 +57,7 @@ namespace pen
 
     void timer_start(timer* t)
     {
-        timers[index].last_start = mach_absolute_time();
+        t->last_start = mach_absolute_time();
     }
 
     f32 timer_elapsed_ms(timer* t)
