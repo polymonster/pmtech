@@ -4,6 +4,11 @@ declare_texture_samplers
     texture2d_w( output_l, 1 );
 };
 
+cbuffer per_pass : register(b0)
+{   
+    float4 output_buffer_dimension; //zw are unused
+};
+
 void cs_main_greyscale(uint3 gid : SV_DispatchThreadID) 
 {
     float4 col = read_texture(input_rgb, gid.xy);

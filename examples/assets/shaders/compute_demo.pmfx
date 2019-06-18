@@ -1,0 +1,77 @@
+#include "../../../assets/shaders/libs/globals.pmfx"
+
+struct boid
+{
+    float4 pos;
+    float4 vel;
+    float4 dir;
+};
+
+RWStructuredBuffer<boid> boids_buffer : register(u0);
+
+void cs_main_boids(uint3 gid : SV_DispatchThreadID)
+{
+    float4 test = float4(0.0, 0.0, 0.0, 0.0);
+}
+
+struct vs_input
+{
+    float4 position : POSITION;
+    float4 normal : TEXCOORD0;
+    float4 texcoord : TEXCOORD1;
+    float4 tangent : TEXCOORD2;
+    float4 bitangent : TEXCOORD3;
+};
+
+struct vs_output
+{
+    float4 position : SV_POSITION;
+    float4 world_pos : TEXCOORD0;
+    float3 normal : TEXCOORD1;
+    float3 tangent : TEXCOORD2;
+    float3 bitangent : TEXCOORD3;
+    float4 texcoord : TEXCOORD4;
+    float4 colour : TEXCOORD5;
+};
+
+struct ps_output
+{
+    float4 colour : SV_Target;
+};
+
+vs_output vs_main( vs_input input, uint ii : SV_InstanceID )
+{
+    vs_output output;
+    output.position = output.position = mul( input.position + float4(ii * 4.0, 0.0, 0.0, 0.0), vp_matrix );
+    return output;
+}
+
+ps_output ps_constant_colour( vs_output input ) 
+{
+    ps_output output;
+    output.colour = float4(1.0, 0.0, 1.0, 1.0);
+    return output;
+}
+
+pmfx:
+{    
+    "boids_update":
+    {
+        "supported_platforms":
+        {
+            "hlsl": ["5_0"]
+        },
+        
+        "cs" : "cs_main_boids",
+        "threads": [16, 16, 1]
+    },
+    
+    "boids_render":
+    {
+        "vs": "vs_main",
+        "ps": "ps_constant_colour"
+    }
+}
+
+
+

@@ -1,0 +1,45 @@
+{
+    include: [
+        common.jsn,
+        editor_renderer.jsn,
+        post_process.jsn
+    ],
+    
+    views:
+    {
+        view_clear:
+        {
+            target : [main_colour, main_depth],
+            clear_colour : [0.0, 0.0, 1.0, 1.0],
+            clear_depth : 1.0,
+            clear_stencil : 0x0
+        },
+        
+        view_boids:
+        {
+            target : [main_colour, main_depth],
+            clear_colour : [0.0, 1.0, 1.0, 1.0],
+            clear_depth : 1.0,
+            colour_write_mask : 0xf,
+            blend_state : disabled,
+            viewport : [0.0, 0.0, 1.0, 1.0],
+            raster_state : default,
+            depth_stencil_state : default,
+            scene : main_scene,
+            camera : model_viewer_camera,
+            pmfx_shader : "compute_demo",
+            technique : "boids_render",
+            scene_views : ["boids"]
+        }
+    },
+              
+    view_sets: 
+    {
+		boids: [
+            view_boids,
+            editor_view
+        ]
+    },
+    
+    view_set: boids
+}
