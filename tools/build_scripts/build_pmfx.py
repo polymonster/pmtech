@@ -7,6 +7,7 @@ import util
 import math
 import subprocess
 
+
 # paths and info for current build environment
 class build_info:
     shader_platform = ""                                                # hlsl, glsl, metal
@@ -60,6 +61,7 @@ class single_shader_info:
     struct_decls = ""                                                   # decls of all generic structs
     texture_decl = []                                                   # decl of only used textures by shader
     cbuffers = []                                                       # array of cbuffer decls used by shader
+    sv_semantics = []                                                   # array of tuple [(semantic, variable name), ..]
 
 
 # parse command line args passed in
@@ -563,6 +565,7 @@ def generate_technique_constant_buffers(pmfx_json, _tp):
     return technique_json, c_struct, cb_str
 
 
+# removes un-used input structures which may be empty if they have been defined out by permutation.
 def strip_empty_inputs(input, main):
     conditioned = input.replace("\n", "").replace(";", "").replace(";", "").replace("}", "").replace("{", "")
     tokens = conditioned.split(" ")
@@ -578,6 +581,22 @@ def strip_empty_inputs(input, main):
         next_delim = pos + min(us(main[pos:].find(",")), us(main[pos:].find(")")))
         main = main.replace(main[prev_delim:next_delim], " ")
     return input, main
+
+
+# gets system value semantics (SV_InstanceID) and stores them in a tuple, for platform specific code gen later.
+def get_sv_sematics(main):
+    supported_sv = ["SV_InstanceID", "SV_VertexID"]
+    sig = main[main.find("(")+1:main.find(")")]
+    args = sig.split(',')
+    sv_semantics = []
+    for sv in supported_sv:
+        for arg in args:
+            if arg.find(sv) != -1:
+                arg_split = arg.replace(":", " ").strip().split(" ")
+                var_type = arg_split[0].strip()
+                var_name = arg_split[1].strip()
+                sv_semantics.append((sv, var_type, var_name))
+    return sv_semantics
 
 
 # evaluate permutation / technique defines in if: blocks and remove unused branches
@@ -892,6 +911,9 @@ def generate_single_shader(main_func, _tp):
     # remove empty inputs which have no members due to permutation conditionals
     _si.input_decl, main = strip_empty_inputs(_si.input_decl, main)
 
+    # get sv sematics to insert gl / metal specific equivalent
+    _si.sv_semantics = get_sv_sematics(main)
+
     # condition main function with stripped inputs
     if _si.instance_input_struct_name:
         _si.instance_input_decl, main = strip_empty_inputs(_si.instance_input_decl, main)
@@ -1182,6 +1204,13 @@ def compile_glsl(_info, pmfx_name, _tp, _shader):
     shader_source = replace_io_tokens(shader_source)
     shader_source = format_source(shader_source, 4)
 
+    # replace sv_semantic tokens
+    for sv in _shader.sv_semantics:
+        if sv[0] == "SV_InstanceID":
+            shader_source = replace_token(sv[2], "gl_InstanceID", shader_source)
+        elif sv[0] == "SV_VertexID":
+            shader_source = replace_token(sv[2], "gl_VertexID", shader_source)
+
     extension = {
         "vs": ".vsc",
         "ps": ".psc"
@@ -1259,8 +1288,12 @@ def get_metal_packed_decl(stage_in, input, semantic):
     return packed_decl
 
 
+# finds token in source code
 def find_token(token, string):
-    delimiters = [",", " ", "\n", "\t", ")", "(", "=", "!", ">", "<", ";", "[", "]", "."]
+    delimiters = [
+        "(", ")", "{", "}", ".", ",", "+", "-", "=", "*", "/",
+        "&", "|", "~", "\n", "\t", "<", ">", "[", "]", ";", " "
+    ]
     fp = string.find(token)
     if fp != -1:
         left = False
@@ -1289,6 +1322,19 @@ def find_token(token, string):
     return -1
 
 
+# replace all occurences of token in source code
+def replace_token(token, replace, string):
+    while True:
+        pos = find_token(token, string)
+        if pos == -1:
+            break
+        else:
+            string = string[:pos] + replace + string[pos+len(token):]
+            pass
+    return string
+
+
+# metal main functions require textures and buffers to be passed in as args, and do not support global decls
 def metal_functions(functions, cbuffers, textures):
     cbuf_members_list = []
     for c in cbuffers:
@@ -1385,6 +1431,7 @@ def metal_functions(functions, cbuffers, textures):
     return final_funcs, func_sig_additions
 
 
+# cascade through and pass textures and buffers to function calls in metal source code
 def insert_function_sig_additions(function_body, function_sig_additions):
     for k in function_sig_additions.keys():
         op = 0
@@ -1524,19 +1571,30 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
     if stream_out:
         _shader.output_struct_name = "void"
 
+    # sv sematics
+    vertex_id_var = "vid"
+    instance_id_var = "iid"
+
+    for sv in _shader.sv_semantics:
+        if sv[0] == "SV_InstanceID":
+            instance_id_var = sv[2]
+        elif sv[0] == "SV_VertexID":
+            vertex_id_var = sv[2]
+
     shader_source += main_type[_shader.shader_type] + " "
     shader_source += _shader.output_struct_name + " " + _shader.shader_type + "_main" + "("
 
+    if _shader.shader_type == "vs":
+        shader_source += "\n  uint " + vertex_id_var + " [[vertex_id]]"
+        shader_source += "\n, uint " + instance_id_var + " [[instance_id]]"
+
     if _shader.shader_type == "vs" and not vs_stage_in:
-        shader_source += "\n  const device packed_" + _shader.input_struct_name + "* vertices" + "[[buffer(0)]]"
-        shader_source += "\n, uint vid [[vertex_id]]"
+        shader_source += "\n, const device packed_" + _shader.input_struct_name + "* vertices" + "[[buffer(0)]]"
         if _shader.instance_input_struct_name:
             if len(instance_inputs) > 0:
                 shader_source += "\n, const device packed_" + _shader.instance_input_struct_name + "* instances" + "[[buffer(1)]]"
-                shader_source += "\n, uint iid [[instance_id]]"
     elif _shader.shader_type == "vs":
-        shader_source += "\n  packed_" + _shader.input_struct_name + " in_vertex [[stage_in]]"
-        shader_source += "\n, uint vid [[vertex_id]]"
+        shader_source += "\n, packed_" + _shader.input_struct_name + " in_vertex [[stage_in]]"
     elif _shader.shader_type == "ps":
         shader_source += _shader.input_struct_name + " input [[stage_in]]"
     elif _shader.shader_type == "cs":
@@ -1560,12 +1618,11 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
 
     shader_source += ")\n{\n"
 
-    vertex_array_index = "(vertices[vid]."
-    instance_array_index = "(instances[iid]."
+    vertex_array_index = "(vertices[" + vertex_id_var + "]."
+    instance_array_index = "(instances[" + instance_id_var + "]."
     if vs_stage_in:
         vertex_array_index = "(in_vertex."
         instance_array_index = "(in_vertex."
-
 
     # create function prologue for main and insert assignment to unpack vertex
     from_ubyte = "0.00392156862"
