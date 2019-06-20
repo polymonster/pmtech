@@ -1808,27 +1808,36 @@ def generate_technique_permutation_info(_tp):
     shader_resources_split = parse_and_split_block(_tp.resource_decl)
     i = 0
     _tp.technique["texture_sampler_bindings"] = []
+    _tp.technique["structured_buffers"] = []
     while i < len(shader_resources_split):
         offset = i
         tex_type = shader_resources_split[i+0]
-        # stride over buffers.. todo enumerate
-        if tex_type == "structured_buffer_rw":
+        # structured buffers
+        if tex_type.find("structured_buffer") != -1:
             offset = i+1
-        if tex_type == "texture_2dms":
-            data_type = shader_resources_split[i+1]
-            fragments = shader_resources_split[i+2]
-            offset = i+2
+            buffer_desc = {
+                "type": shader_resources_split[i+1],
+                "name": shader_resources_split[i+2],
+                "location": shader_resources_split[i+3]
+            }
+            _tp.technique["structured_buffers"].append(buffer_desc)
         else:
-            data_type = "float4"
-            fragments = 1
-        sampler_desc = {
-            "name": shader_resources_split[offset+1],
-            "data_type": data_type,
-            "fragments": fragments,
-            "type": tex_type,
-            "unit": int(shader_resources_split[offset+2])
-        }
-        _tp.technique["texture_sampler_bindings"].append(sampler_desc)
+            # textures
+            if tex_type == "texture_2dms":
+                data_type = shader_resources_split[i+1]
+                fragments = shader_resources_split[i+2]
+                offset = i+2
+            else:
+                data_type = "float4"
+                fragments = 1
+            sampler_desc = {
+                "name": shader_resources_split[offset+1],
+                "data_type": data_type,
+                "fragments": fragments,
+                "type": tex_type,
+                "unit": int(shader_resources_split[offset+2])
+            }
+            _tp.technique["texture_sampler_bindings"].append(sampler_desc)
         i = offset+3
     # cbuffers
     _tp.technique["cbuffers"] = []

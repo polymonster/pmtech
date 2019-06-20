@@ -7,7 +7,9 @@ struct boid
     float4 dir;
 };
 
+// wip
 RWStructuredBuffer<boid> boids_buffer : register(u0);
+// structured_buffer_rw( boids, bb, 68);
 
 void cs_main_boids(uint3 gid : SV_DispatchThreadID)
 {
