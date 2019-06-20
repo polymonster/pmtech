@@ -44,6 +44,7 @@ class technique_permutation_info:
     functions = []                                                      # list of functions source code
     textures = []                                                       # technique / permutation textures
     shader = []                                                         # list of shaders, vs, ps or cs
+    resource_decl = []                                                  # list of shader resources (textures / buffers)
 
 
 # info about a single vs, ps, or cs
@@ -59,7 +60,7 @@ class single_shader_info:
     instance_input_decl = ""                                            # struct decl of instance input struct
     output_decl = ""                                                    # struct decl of shader output
     struct_decls = ""                                                   # decls of all generic structs
-    texture_decl = []                                                   # decl of only used textures by shader
+    resource_decl = []                                                  # decl of only used resources by shader
     cbuffers = []                                                       # array of cbuffer decls used by shader
     sv_semantics = []                                                   # array of tuple [(semantic, variable name), ..]
 
@@ -161,6 +162,7 @@ def enclose_brackets(text):
 
 
 # replace all "input" and "output" tokens to "_input" and "_ouput" to avoid glsl keywords
+# todo: this should be replaced with "replace_token"
 def replace_io_tokens(text):
     token_io = ["input", "output"]
     token_io_replace = ["_input", "_output"]
@@ -273,11 +275,13 @@ def find_struct_declarations(shader_text):
     return struct_list
 
 
-# find global texture samplers
-def find_texture_samplers(shader_text):
+# find shader resources
+def find_shader_resources(shader_text):
     start = shader_text.find("declare_texture_samplers")
     if start == -1:
-        return "\n"
+        start = shader_text.find("shader_resources")
+        if start == -1:
+            return "\n"
     start = shader_text.find("{", start) + 1
     end = shader_text.find("};", start)
     texture_sampler_text = shader_text[start:end] + "\n"
@@ -774,13 +778,13 @@ def find_pmfx_json(shader_file_text):
     return None
 
 
-# find only used textures
-def find_used_textures(shader_source, texture_decl):
-    if not texture_decl:
+# find only used shader resources
+def find_used_resources(shader_source, resource_decl):
+    if not resource_decl:
         return
-    # find texture uses
+    # find resource uses
     uses = ["sample_texture", "read_texture", "write_texture"]
-    texture_uses = []
+    resource_uses = []
     pos = 0
     while True:
         sampler = -1
@@ -796,23 +800,23 @@ def find_used_textures(shader_source, texture_decl):
             args = shader_source[start+1:end-1].split(",")
             if len(args) > 0:
                 name = args[0].strip(" ")
-                if name not in texture_uses:
-                    texture_uses.append(name)
+                if name not in resource_uses:
+                    resource_uses.append(name)
         pos = end
-    used_texture_decl = ""
-    texture_list = texture_decl.split(";")
-    for texture in texture_list:
-        start = texture.find("(") + 1
-        end = texture.find(")") - 1
-        args = texture[start:end].split(",")
-        name_positions = [0, 2]  # 0 = single sample texture, 2 = msaa texture
+    used_resource_decl = ""
+    resource_list = resource_decl.split(";")
+    for resource in resource_list:
+        start = resource.find("(") + 1
+        end = resource.find(")") - 1
+        args = resource[start:end].split(",")
+        name_positions = [0, 1, 2]  # 0 = single sample texture, 1 = structured buffer, 2 = msaa texture
         for p in name_positions:
             if len(args) > p:
                 name = args[p].strip(" ")
-                if name in texture_uses:
-                    used_texture_decl = used_texture_decl.strip(" ")
-                    used_texture_decl += texture + ";\n"
-    return used_texture_decl
+                if name in resource_uses:
+                    used_resource_decl = used_resource_decl.strip(" ")
+                    used_resource_decl += resource + ";\n"
+    return used_resource_decl
 
 
 # find only used cbuffers
@@ -923,7 +927,7 @@ def generate_single_shader(main_func, _tp):
 
     # find only used textures by this shader
     full_source = _si.functions_source + main
-    _si.texture_decl = find_used_textures(full_source, _tp.texture_decl)
+    _si.resource_decl = find_used_resources(full_source, _tp.resource_decl)
     _si.cbuffers = find_used_cbuffers(full_source, _tp.cbuffers)
 
     return _si
@@ -962,7 +966,7 @@ def compile_hlsl(_info, pmfx_name, _tp, _shader):
     shader_source += _shader.input_decl
     shader_source += _shader.instance_input_decl
     shader_source += _shader.output_decl
-    shader_source += _shader.texture_decl
+    shader_source += _shader.resource_decl
     shader_source += _shader.functions_source
     if _shader.shader_type == "cs":
         shader_source += "[numthreads(16, 16, 1)]"
@@ -1169,7 +1173,7 @@ def compile_glsl(_info, pmfx_name, _tp, _shader):
 
     shader_source += _tp.struct_decls
     shader_source += uniform_buffers
-    shader_source += _shader.texture_decl
+    shader_source += _shader.resource_decl
     shader_source += _shader.functions_source
 
     glsl_main = _shader.main_func_source
@@ -1563,7 +1567,8 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
     }
 
     # functions
-    function_source, function_sig_additions = metal_functions(_shader.functions_source, _shader.cbuffers, _shader.texture_decl)
+    function_source, function_sig_additions = metal_functions(_shader.functions_source,
+                                                              _shader.cbuffers, _shader.resource_decl)
     shader_source += function_source
 
     # main decl
@@ -1604,9 +1609,9 @@ def compile_metal(_info, pmfx_name, _tp, _shader):
     if stream_out:
         shader_source += "\n,  device " + stream_out_name + "* stream_out_vertices" + "[[buffer(7)]]"
 
-    # pass in textures
+    # pass in textures and buffers
     invalid = ["", "\n"]
-    texture_list = _shader.texture_decl.split(";")
+    texture_list = _shader.resource_decl.split(";")
     for texture in texture_list:
         if texture not in invalid:
             shader_source += "\n, " + texture.strip("\n")
@@ -1800,28 +1805,31 @@ def generate_input_info(inputs):
 def generate_technique_permutation_info(_tp):
     _tp.technique["name"] = _tp.technique_name
     # textures
-    texture_samplers_split = parse_and_split_block(_tp.texture_decl)
+    shader_resources_split = parse_and_split_block(_tp.resource_decl)
     i = 0
     _tp.technique["texture_sampler_bindings"] = []
-    while i < len(texture_samplers_split):
+    while i < len(shader_resources_split):
         offset = i
-        tex_type = texture_samplers_split[i+0]
+        tex_type = shader_resources_split[i+0]
+        # stride over buffers.. todo enumerate
+        if tex_type == "structured_buffer_rw":
+            offset = i+1
         if tex_type == "texture_2dms":
-            data_type = texture_samplers_split[i+1]
-            fragments = texture_samplers_split[i+2]
+            data_type = shader_resources_split[i+1]
+            fragments = shader_resources_split[i+2]
             offset = i+2
         else:
             data_type = "float4"
             fragments = 1
         sampler_desc = {
-            "name": texture_samplers_split[offset+1],
+            "name": shader_resources_split[offset+1],
             "data_type": data_type,
             "fragments": fragments,
             "type": tex_type,
-            "unit": int(texture_samplers_split[offset+2])
+            "unit": int(shader_resources_split[offset+2])
         }
-        i = offset+3
         _tp.technique["texture_sampler_bindings"].append(sampler_desc)
+        i = offset+3
     # cbuffers
     _tp.technique["cbuffers"] = []
     for buffer in _tp.cbuffers:
@@ -1960,11 +1968,11 @@ def parse_pmfx(file, root):
 
             # technique, permutation specific textures..
             _tp.textures = generate_technique_texture_variables(_tp)
-            _tp.texture_decl = find_texture_samplers(_tp.source)
+            _tp.resource_decl = find_shader_resources(_tp.source)
 
             # add technique textures
             if _tp.textures:
-                _tp.texture_decl += generate_texture_decl(_tp.textures)
+                _tp.resource_decl += generate_texture_decl(_tp.textures)
 
             # find functions
             _tp.functions = find_functions(_tp.source)
