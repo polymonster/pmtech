@@ -56,8 +56,8 @@ vs_output vs_main( vs_input input, uint ii : SV_InstanceID, uint vi : SV_VertexI
 
 ps_output ps_constant_colour( vs_output input ) 
 {
-    ps_output output;
-    output.colour = float4(0.0, 1.0, 0.0, 1.0);
+    ps_output output;    
+    output.colour = float4(1.0, 0.0, 1.0, 0.0);
     return output;
 }
 

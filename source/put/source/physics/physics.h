@@ -190,31 +190,31 @@ namespace physics
 
     struct add_p2p_constraint_params
     {
-        lw_vec3f position;
-        u32      entity_index;
-        s32      link_index;
-        u32      p2p_index;
+        vec3f position;
+        u32 entity_index;
+        s32 link_index;
+        u32 p2p_index;
     };
 
     struct add_box_params
     {
-        lw_vec3f dimensions;
-        lw_vec3f position;
-        quat     rotation;
-        f32      mass;
+        vec3f dimensions;
+        vec3f position;
+        quat rotation;
+        f32 mass;
     };
 
     struct set_v3_params
     {
         u32      object_index;
-        lw_vec3f data;
+        vec3f data;
     };
 
     struct set_multi_v3_params
     {
-        u32      multi_index;
-        u32      link_index;
-        lw_vec3f data;
+        u32 multi_index;
+        u32 link_index;
+        vec3f data;
     };
 
     struct set_float_params
@@ -225,9 +225,9 @@ namespace physics
 
     struct set_transform_params
     {
-        u32      object_index;
-        lw_vec3f position;
-        quat     rotation;
+        u32 object_index;
+        vec3f position;
+        quat rotation;
     };
 
     struct sync_compound_multi_params
@@ -238,9 +238,9 @@ namespace physics
 
     struct set_damping_params
     {
-        u32      object_index;
-        lw_vec3f linear;
-        lw_vec3f angular;
+        u32 object_index;
+        vec3f linear;
+        vec3f angular;
     };
 
     struct set_group_params

@@ -1540,6 +1540,9 @@ namespace pen
         resource_allocation& colour_res = _res_pool[target];
 
         hash_id hash[2] = {0, 0};
+        
+        if(!colour_res.render_target.tcp)
+            return;
 
         f32 w = colour_res.render_target.tcp->width;
         f32 h = colour_res.render_target.tcp->height;

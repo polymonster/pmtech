@@ -50,7 +50,9 @@ project "put"
         "../../third_party/sdf_gen/*.h",
         "../../third_party/sdf_gen/*.cpp",
         "../../third_party/bussik/*.h",
-        "../../third_party/bussik/*.cpp"
+        "../../third_party/bussik/*.cpp",
+        
+        "../../third_party/maths/*.h"
     }
     includedirs { "include" }
     
