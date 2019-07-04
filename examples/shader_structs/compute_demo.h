@@ -17,6 +17,12 @@ namespace compute_demo
         float4 corners[4];
         float4 colour;
     };
+    struct boid
+    {
+        float4 pos;
+        float4 vel;
+        float4 dir;
+    };
     struct per_pass_view
     {
         float4x4 vp_matrix;

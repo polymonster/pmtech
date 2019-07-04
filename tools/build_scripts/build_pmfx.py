@@ -282,8 +282,7 @@ def check_dependencies(filename, included_files):
 
 
 # find generic structs
-def find_struct_declarations(shader_text):
-    special_structs = ["vs_input", "vs_output", "ps_input", "ps_output", "vs_instance_input"]
+def find_structs(shader_text, special_structs):
     struct_list = []
     start = 0
     while start != -1:
@@ -304,6 +303,16 @@ def find_struct_declarations(shader_text):
                 struct_list.append(shader_text[start:end] + "\n")
         start = end
     return struct_list
+
+
+def find_c_structs(shader_text):
+    special_structs = ["vs_output", "ps_input", "ps_output"]
+    return find_structs(shader_text, special_structs)
+
+
+def find_struct_declarations(shader_text):
+    special_structs = ["vs_input", "vs_output", "ps_input", "ps_output", "vs_instance_input"]
+    return find_structs(shader_text, special_structs)
 
 
 # find shader resources
@@ -1943,20 +1952,10 @@ def parse_pmfx(file, root):
 
     # add cbuffers and structs as c structs
     c_code += "namespace " + pmfx_name + "\n{\n"
-    structs_in_cbuf = []
-    c_struct_names = []
     global_cbuffers = find_constant_buffers(_pmfx.source)
-    for buf in global_cbuffers:
-        members = parse_and_split_block(buf)
-        for m in members:
-            if m in c_struct_names:
-                continue
-            ms = find_struct(_pmfx.source, "struct " + m)
-            if ms != "":
-                structs_in_cbuf.append(ms)
-                c_struct_names.append(m)
     # structs
-    for s in structs_in_cbuf:
+    global_structs = find_struct_declarations(_pmfx.source)
+    for s in global_structs:
         c_code += s
     # cbuffers
     for buf in global_cbuffers:
@@ -2063,9 +2062,6 @@ def parse_pmfx(file, root):
                     single_shader.shader_type = s
                     if single_shader:
                         _tp.shader.append(single_shader)
-                        # if s == "vs":
-                        #    c_code += single_shader.input_decl
-                        #    c_code += single_shader.instance_input_decl
 
             # convert single shader to platform specific variation
             for s in _tp.shader:
