@@ -79,6 +79,12 @@ pmfx:
     
     "boids_render":
     {
+        "supported_platforms":
+        {
+            "hlsl": ["5_0"],
+            "metal": ["all"]
+        },
+        
         "vs": "vs_main",
         "ps": "ps_constant_colour"
     }
