@@ -2063,6 +2063,9 @@ def parse_pmfx(file, root):
                     single_shader.shader_type = s
                     if single_shader:
                         _tp.shader.append(single_shader)
+                        # if s == "vs":
+                        #    c_code += single_shader.input_decl
+                        #    c_code += single_shader.instance_input_decl
 
             # convert single shader to platform specific variation
             for s in _tp.shader:
