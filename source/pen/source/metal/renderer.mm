@@ -186,7 +186,6 @@ namespace // internal structs and static vars
         {
             _buffer_size = buffer_size;
             _options = options;
-            _frame = 0;
             num_dynamic = 1;
 
             if (num_buffers == 1)
@@ -219,10 +218,10 @@ namespace // internal structs and static vars
 
         void update(const void* data, u32 data_size, u32 offset)
         {
-            if (frame != _frame)
+            if (frame != g_frame_index)
             {
                 _dynamic_pos = 0;
-                frame = _frame;
+                frame = g_frame_index;
             }
             else
             {
@@ -237,9 +236,9 @@ namespace // internal structs and static vars
             u32 c = db._swaps == 0 ? NBB : 1;
 
             // swap once a frame
-            if (_frame != db._frame)
+            if (g_frame_index != db._frame)
             {
-                db._frame = _frame;
+                db._frame = g_frame_index;
                 db.swap_buffers();
             }
 

@@ -1,3 +1,4 @@
+#define MATHS_PRINT_TESTS 1
 #include "../example_common.h"
 
 using namespace put;
@@ -305,6 +306,8 @@ void test_ray_plane_intersect(ecs_scene* scene, bool initialise)
 
         add_debug_ray(e, scene, ray);
         add_debug_plane(e, scene, plane);
+        
+        ecs::update_scene(scene, 1.0f/60.0f);
     }
 
     vec3f ip = maths::ray_plane_intersect(ray.origin, ray.direction, plane.point, plane.normal);
@@ -332,9 +335,11 @@ void test_ray_vs_aabb(ecs_scene* scene, bool initialise)
 
         add_debug_ray(e, scene, ray);
         add_debug_solid_aabb(e, scene, aabb);
+        
+        ecs::update_scene(scene, 1.0f/60.0f);
     }
 
-    vec3f ip;
+    vec3f ip = vec3f::zero();
     bool  intersect = maths::ray_vs_aabb(aabb.min, aabb.max, ray.origin, ray.direction, ip);
 
     vec4f col = vec4f::green();
@@ -366,9 +371,11 @@ void test_ray_vs_obb(ecs_scene* scene, bool initialise)
 
         add_debug_ray(e, scene, ray);
         add_debug_solid_obb(e, scene, obb);
+        
+        ecs::update_scene(scene, 1.0f/60.0f);
     }
 
-    vec3f ip;
+    vec3f ip = vec3f::zero();
     bool  intersect = maths::ray_vs_obb(scene->world_matrices[obb.node], ray.origin, ray.direction, ip);
 
     vec4f col = vec4f::green();
@@ -419,6 +426,8 @@ void test_point_plane_distance(ecs_scene* scene, bool initialise)
 
         add_debug_point(e, scene, point);
         add_debug_plane(e, scene, plane);
+        
+        ecs::update_scene(scene, 1.0f/60.0f);
     }
 
     f32 distance = maths::point_plane_distance(point.point, plane.point, plane.normal);
@@ -454,6 +463,8 @@ void test_aabb_vs_plane(ecs_scene* scene, bool initialise)
 
         add_debug_plane(e, scene, plane);
         add_debug_aabb(e, scene, aabb);
+        
+        ecs::update_scene(scene, 1.0f/60.0f);
     }
 
     u32 c = maths::aabb_vs_plane(aabb.min, aabb.max, plane.point, plane.normal);
@@ -481,6 +492,8 @@ void test_sphere_vs_plane(ecs_scene* scene, bool initialise)
 
         add_debug_plane(e, scene, plane);
         add_debug_sphere(e, scene, sphere);
+        
+        ecs::update_scene(scene, 1.0f/60.0f);
     }
 
     u32 c = maths::sphere_vs_plane(sphere.pos, sphere.radius, plane.point, plane.normal);
@@ -506,6 +519,8 @@ void test_project(ecs_scene* scene, bool initialise)
         ecs::clear_scene(scene);
 
         add_debug_point(e, scene, point);
+        
+        ecs::update_scene(scene, 1.0f/60.0f);
     }
 
     vec2i vp = vec2i(pen_window.width, pen_window.height);
@@ -535,6 +550,8 @@ void test_point_aabb(ecs_scene* scene, bool initialise)
 
         add_debug_aabb(e, scene, aabb);
         add_debug_point(e, scene, point);
+        
+        ecs::update_scene(scene, 1.0f/60.0f);
     }
 
     bool inside = maths::point_inside_aabb(aabb.min, aabb.max, point.point);
@@ -565,6 +582,8 @@ void test_point_obb(ecs_scene* scene, bool initialise)
 
         add_debug_obb(e, scene, obb);
         add_debug_point(e, scene, point);
+        
+        ecs::update_scene(scene, 1.0f/60.0f);
     }
 
     bool inside = maths::point_inside_obb(scene->world_matrices[obb.node], point.point);
@@ -596,6 +615,8 @@ void test_point_line(ecs_scene* scene, bool initialise)
 
         add_debug_line(e, scene, line);
         add_debug_point(e, scene, point);
+        
+        ecs::update_scene(scene, 1.0f/60.0f);
     }
 
     vec3f cp = maths::closest_point_on_line(line.l1, line.l2, point.point);
@@ -627,6 +648,8 @@ void test_point_ray(ecs_scene* scene, bool initialise)
 
         add_debug_point(e, scene, point);
         add_debug_ray(e, scene, ray);
+        
+        ecs::update_scene(scene, 1.0f/60.0f);
     }
 
     vec3f cp = maths::closest_point_on_ray(ray.origin, ray.direction, point.point);
@@ -655,6 +678,8 @@ void test_point_triangle(ecs_scene* scene, bool initialise)
 
         add_debug_triangle(e, scene, tri);
         add_debug_point(e, scene, point);
+        
+        ecs::update_scene(scene, 1.0f/60.0f);
     }
 
     bool inside = maths::point_inside_triangle(point.point, tri.t0, tri.t1, tri.t2);
@@ -698,6 +723,8 @@ void test_sphere_vs_sphere(ecs_scene* scene, bool initialise)
 
         add_debug_sphere(e, scene, sphere0);
         add_debug_sphere(e, scene, sphere1);
+        
+        ecs::update_scene(scene, 1.0f/60.0f);
     }
 
     bool i = maths::sphere_vs_sphere(sphere0.pos, sphere0.radius, sphere1.pos, sphere1.radius);
@@ -726,6 +753,8 @@ void test_sphere_vs_aabb(ecs_scene* scene, bool initialise)
 
         add_debug_solid_aabb(e, scene, aabb);
         add_debug_sphere(e, scene, sphere);
+        
+        ecs::update_scene(scene, 1.0f/60.0f);
     }
 
     bool i = maths::sphere_vs_aabb(sphere.pos, sphere.radius, aabb.min, aabb.max);
@@ -754,6 +783,8 @@ void test_aabb_vs_aabb(ecs_scene* scene, bool initialise)
 
         add_debug_solid_aabb(e, scene, aabb0);
         add_debug_solid_aabb(e, scene, aabb1);
+        
+        ecs::update_scene(scene, 1.0f/60.0f);
     }
 
     bool i = maths::aabb_vs_aabb(aabb0.min, aabb0.max, aabb1.min, aabb1.max);
@@ -782,6 +813,8 @@ void test_point_sphere(ecs_scene* scene, bool initialise)
 
         add_debug_point(e, scene, point);
         add_debug_sphere(e, scene, sphere);
+        
+        ecs::update_scene(scene, 1.0f/60.0f);
     }
 
     bool  i = maths::point_inside_sphere(sphere.pos, sphere.radius, point.point);
@@ -816,6 +849,8 @@ void test_point_cone(ecs_scene* scene, bool initialise)
 
         add_debug_point(e, scene, point);
         add_debug_solid_cone(e, scene, cone);
+        
+        ecs::update_scene(scene, 1.0f/60.0f);
     }
 
     f32 r = scene->transforms[cone.node].scale.x;
@@ -851,9 +886,11 @@ void test_line_vs_line(ecs_scene* scene, bool initialise)
 
         add_debug_line(e, scene, line0);
         add_debug_line(e, scene, line1);
+        
+        ecs::update_scene(scene, 1.0f/60.0f);
     }
 
-    vec3f ip;
+    vec3f ip = vec3f::zero();
     bool  intersect = maths::line_vs_line(line0.l1, line0.l2, line1.l1, line1.l2, ip);
 
     if (intersect)
@@ -913,12 +950,16 @@ maths_test_function test_functions[] = {
 
 static_assert(PEN_ARRAY_SIZE(test_functions) == PEN_ARRAY_SIZE(test_names), "array size mismatch");
 
+int _test_stack_depth = 0;
+
 void maths_test_ui(ecs_scene* scene)
 {
     static s32 test_index = 0;
-
+    static s32 test_variant_index = 0;
+    
     static bool animate = false;
     static bool initialise = true;
+    static bool gen_tests = true;
 
     if (ImGui::Combo("Test", &test_index, test_names, PEN_ARRAY_SIZE(test_names)))
         initialise = true;
@@ -942,8 +983,30 @@ void maths_test_ui(ecs_scene* scene)
         if (test_index >= PEN_ARRAY_SIZE(test_names))
             test_index = 0;
     }
+    
+    if(gen_tests)
+    {
+        scene->view_flags |= SV_HIDE;
+        initialise = true;
+        
+        if(test_variant_index >= 10)
+        {
+            std::cout << "}\n";
+            test_index++;
+            test_variant_index = 0;
+        }
+        
+        if(test_variant_index == 0)
+            std::cout << "TEST_CASE( \"" << test_names[test_index] << "\", \"[maths]\") \n{\n";
+        
+        test_variant_index++;
+        _test_stack_depth = 0;
+    }
 
     test_functions[test_index](scene, initialise);
+    
+    if(gen_tests)
+        _test_stack_depth = -1;
 
     initialise = false;
 }

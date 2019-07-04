@@ -1,4 +1,4 @@
-namespace post_process
+namespace imgui_ex
 {
     struct light_data
     {
@@ -58,31 +58,14 @@ namespace post_process
     {
         light_data single_light;
     };
-    struct src_info
+    struct per_pass_vs
     {
-        float2 inv_texel_size[8];
+        float4x4 projection_matrix;
     };
-    struct filter_kernel
+    struct image_ex
     {
-        float4 filter_info;
-        float4 filter_offset_weight[16];
-    };
-    struct high_pass
-    {
-        float m_threshold;
-        float m_smoothness;
-        float2 m_padding;
-    };
-    struct bloom_upsample
-    {
-        float m_intensity;
-        float3 m_padding;
-    };
-    struct depth_of_field
-    {
-        float m_focus_centre;
-        float m_centre_range;
-        float m_focus_width;
-        float m_width_range;
+        float4 colour_mask;
+        float4 params;
+        float4x4 inverse_wvp;
     };
 }

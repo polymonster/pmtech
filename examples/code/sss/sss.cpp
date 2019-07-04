@@ -5,6 +5,7 @@
 
 using namespace put;
 using namespace put::ecs;
+using namespace forward_render;
 
 pen::window_creation_params pen_window{
     1280, // width

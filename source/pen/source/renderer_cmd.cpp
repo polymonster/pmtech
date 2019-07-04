@@ -1165,6 +1165,9 @@ namespace pen
     void renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset)
     {
         renderer_cmd cmd;
+        
+        if(buffer_index == 80)
+            u32 a = 0;
 
         if (buffer_index == 0)
             return;

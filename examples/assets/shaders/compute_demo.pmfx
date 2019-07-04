@@ -7,15 +7,6 @@ struct boid
     float4 dir;
 };
 
-// wip
-RWStructuredBuffer<boid> boids_buffer : register(u0);
-// structured_buffer_rw( boids, bb, 68);
-
-void cs_main_boids(uint3 gid : SV_DispatchThreadID)
-{
-    float4 test = float4(0.0, 0.0, 0.0, 0.0);
-}
-
 struct vs_input
 {
     float4 position : POSITION;
@@ -44,12 +35,23 @@ struct ps_output
 shader_resources
 {
     texture_2d( diffuse_texture, 0 );
+    structured_buffer_rw( boids, rw_boids, 12);
+    structured_buffer( boids, read_boids, 13);
 };
+
+void cs_main_boids(uint3 gid : SV_DispatchThreadID)
+{
+    float4 test = sample_texture(bb, input.texcoord);
+}
 
 vs_output vs_main( vs_input input, uint ii : SV_InstanceID, uint vi : SV_VertexID )
 {
     vs_output output;
-    output.position = output.position = mul( input.position + float4(ii * 4.0, 0.0, 0.0, 0.0), vp_matrix );
+    
+    float4 boid_pos = input.position + read_boids[ii].pos;
+    
+    output.position = output.position = mul( boid_pos, vp_matrix );
+    
     return output;
 }
 
@@ -57,7 +59,7 @@ vs_output vs_main( vs_input input, uint ii : SV_InstanceID, uint vi : SV_VertexI
 ps_output ps_constant_colour( vs_output input ) 
 {
     ps_output output;    
-    output.colour = float4(1.0, 0.0, 1.0, 0.0);
+    output.colour = float4(0.0, 1.0, 0.0, 1.0);
     return output;
 }
 
@@ -67,7 +69,8 @@ pmfx:
     {
         "supported_platforms":
         {
-            "hlsl": ["5_0"]
+            "hlsl": ["5_0"],
+            "metal": ["all"]
         },
         
         "cs" : "cs_main_boids",

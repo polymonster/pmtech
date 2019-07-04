@@ -2,10 +2,9 @@ import os
 import sys
 import json
 import re
-import dependencies
-import util
 import math
 import subprocess
+import platform
 
 
 # paths and info for current build environment
@@ -79,7 +78,37 @@ def parse_args():
             _info.shader_version = sys.argv[i + 1]
 
 
-# convert signed to unsigned integer in a c like manner, to do c like things
+# duplicated from pmtech/tools/scripts/util
+def get_platform_name():
+    plat = "win32"
+    if os.name == "posix":
+        plat = "osx"
+        if platform.system() == "Linux":
+            plat = "linux"
+    return plat
+
+
+def sanitize_file_path(path):
+    path = path.replace("/", os.sep)
+    path = path.replace("\\", os.sep)
+    return path
+
+
+# duplicated from pmtech/tools/scripts/dependencies
+def unstrict_json_safe_filename(file):
+    file = file.replace("\\", '/')
+    file = file.replace(":", "@")
+    return file
+
+
+def create_dependency(file):
+    file = sanitize_file_path(file)
+    modified_time = os.path.getmtime(file)
+    file = unstrict_json_safe_filename(file)
+    return {"name": file, "timestamp": float(modified_time)}
+
+
+# convert signed to unsigned integer in a c like manner for comparisons
 def us(v):
     if v == -1:
         return sys.maxsize
@@ -224,17 +253,17 @@ def check_dependencies(filename, included_files):
     global _info
     # look for .json file
     file_list = list()
-    file_list.append(dependencies.sanitize_filename(os.path.join(_info.root_dir, filename)))
-    file_list.append(dependencies.sanitize_filename(_info.this_file))
-    file_list.append(dependencies.sanitize_filename(_info.macros_file))
+    file_list.append(sanitize_file_path(os.path.join(_info.root_dir, filename)))
+    file_list.append(sanitize_file_path(_info.this_file))
+    file_list.append(sanitize_file_path(_info.macros_file))
     info_filename, base_filename, dir_path = get_resource_info_filename(filename, _info.output_dir)
     for f in included_files:
-        file_list.append(dependencies.sanitize_filename(os.path.join(_info.root_dir, f)))
+        file_list.append(sanitize_file_path(os.path.join(_info.root_dir, f)))
     if os.path.exists(info_filename) and os.path.getsize(info_filename) > 0:
         info_file = open(info_filename, "r")
         info = json.loads(info_file.read())
         for prev_built_with_file in info["files"]:
-            sanitized_name = dependencies.sanitize_filename(prev_built_with_file["name"])
+            sanitized_name = sanitize_file_path(prev_built_with_file["name"])
             if sanitized_name in file_list:
                 if not os.path.exists(sanitized_name):
                     return False
@@ -258,9 +287,11 @@ def find_struct_declarations(shader_text):
     struct_list = []
     start = 0
     while start != -1:
-        start = shader_text.find("struct", start)
+        op = start
+        start = find_token("struct", shader_text[start:])
         if start == -1:
             break
+        start = op + start
         end = shader_text.find("};", start)
         if end != -1:
             end += 2
@@ -400,7 +431,7 @@ def find_includes(file_text, root):
             break
         include_name = file_text[start:end]
         include_path = os.path.join(root, include_name)
-        include_path = util.sanitize_file_path(include_path)
+        include_path = sanitize_file_path(include_path)
         if include_path not in added_includes:
             include_list.append(include_path)
             added_includes.append(include_path)
@@ -809,11 +840,19 @@ def find_used_resources(shader_source, resource_decl):
         start = resource.find("(") + 1
         end = resource.find(")") - 1
         args = resource[start:end].split(",")
-        name_positions = [0, 1, 2]  # 0 = single sample texture, 1 = structured buffer, 2 = msaa texture
+        name_positions = [0, 2]  # 0 = single sample texture, 2 = msaa texture
+        # texture or msaa texture sampled with sample_texture...
         for p in name_positions:
             if len(args) > p:
                 name = args[p].strip(" ")
                 if name in resource_uses:
+                    used_resource_decl = used_resource_decl.strip(" ")
+                    used_resource_decl += resource + ";\n"
+        # structured buffer with [] operator access
+        if resource_decl.find("structured_buffer") != -1:
+            if len(args) > 1:
+                name = args[1].strip(" ")
+                if shader_source.find(name + "[") != -1:
                     used_resource_decl = used_resource_decl.strip(" ")
                     used_resource_decl += resource + ";\n"
     return used_resource_decl
@@ -1241,7 +1280,7 @@ def compile_glsl(_info, pmfx_name, _tp, _shader):
 
     output_file_and_path = os.path.join(output_path, _tp.name + extension[_shader.shader_type])
 
-    exe = os.path.join(_info.tools_dir, "bin", "glsl", util.get_platform_name(), "validator")
+    exe = os.path.join(_info.tools_dir, "bin", "glsl", get_platform_name(), "validator")
 
     p = subprocess.Popen(exe + " " + temp_file_and_path, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     error_code = p.wait()
@@ -1739,13 +1778,13 @@ def generate_shader_info(filename, included_files, techniques):
     shader_info["techniques"] = techniques["techniques"]
 
     # special files which affect the validity of compiled shaders
-    shader_info["files"].append(dependencies.create_info(_info.this_file))
-    shader_info["files"].append(dependencies.create_info(_info.macros_file))
+    shader_info["files"].append(create_dependency(_info.this_file))
+    shader_info["files"].append(create_dependency(_info.macros_file))
 
     included_files.insert(0, os.path.join(dir_path, base_filename))
     for ifile in included_files:
         full_name = os.path.join(_info.root_dir, ifile)
-        shader_info["files"].append(dependencies.create_info(full_name))
+        shader_info["files"].append(create_dependency(full_name))
 
     output_info = open(info_filename, 'wb+')
     output_info.write(bytes(json.dumps(shader_info, indent=4), 'UTF-8'))
@@ -1902,6 +1941,30 @@ def parse_pmfx(file, root):
     pmfx_output_info = dict()
     pmfx_output_info["techniques"] = []
 
+    # add cbuffers and structs as c structs
+    c_code += "namespace " + pmfx_name + "\n{\n"
+    structs_in_cbuf = []
+    c_struct_names = []
+    global_cbuffers = find_constant_buffers(_pmfx.source)
+    for buf in global_cbuffers:
+        members = parse_and_split_block(buf)
+        for m in members:
+            if m in c_struct_names:
+                continue
+            ms = find_struct(_pmfx.source, "struct " + m)
+            if ms != "":
+                structs_in_cbuf.append(ms)
+                c_struct_names.append(m)
+    # structs
+    for s in structs_in_cbuf:
+        c_code += s
+    # cbuffers
+    for buf in global_cbuffers:
+        decl = buf[:buf.find(":")].split(" ")
+        c_code += "\nstruct " + decl[1] + "\n"
+        body = buf.find("{")
+        c_code += buf[body:]
+
     # for techniques in pmfx
     success = True
     default_shader_version = _info.shader_version
@@ -2026,12 +2089,26 @@ def parse_pmfx(file, root):
 
     # write out a c header for accessing materials in code
     if c_code != "":
+        c_code += "}\n"
+        fmt = ""
+        lines = c_code.split("\n")
+        indents = 0
+        for l in lines:
+            if l == "":
+                continue
+            if l.find("}") != -1:
+                indents -= 1
+            for i in range(0, indents):
+                fmt += "    "
+            fmt += l.strip() + "\n"
+            if l.find("{") != -1:
+                indents += 1
         h_filename = file.replace(".pmfx", ".h")
         if not os.path.exists("shader_structs"):
             os.mkdir("shader_structs")
         h_filename = os.path.join("shader_structs", h_filename)
         h_file = open(h_filename, "w+")
-        h_file.write(c_code)
+        h_file.write(fmt)
         h_file.close()
 
 
@@ -2043,7 +2120,7 @@ if __name__ == "__main__":
 
     global _info
     _info = build_info()
-    _info.os_platform = util.get_platform_name()
+    _info.os_platform = get_platform_name()
     _info.error_code = 0
 
     parse_args()
@@ -2057,7 +2134,7 @@ if __name__ == "__main__":
     # get dirs for build output
     _info.root_dir = os.getcwd()
     _info.build_config = json.loads(config.read())
-    _info.pmtech_dir = util.correct_path(_info.build_config["pmtech_dir"])
+    _info.pmtech_dir = sanitize_file_path(_info.build_config["pmtech_dir"])
     _info.tools_dir = os.path.join(_info.pmtech_dir, "tools")
     _info.output_dir = os.path.join(_info.root_dir, "bin", _info.os_platform, "data", "pmfx", _info.shader_platform)
     _info.this_file = os.path.join(_info.root_dir, _info.tools_dir, "build_scripts", "build_pmfx.py")

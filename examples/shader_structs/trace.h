@@ -1,4 +1,4 @@
-namespace post_process
+namespace trace
 {
     struct light_data
     {
@@ -57,32 +57,5 @@ namespace post_process
     struct cbuffer_single_light
     {
         light_data single_light;
-    };
-    struct src_info
-    {
-        float2 inv_texel_size[8];
-    };
-    struct filter_kernel
-    {
-        float4 filter_info;
-        float4 filter_offset_weight[16];
-    };
-    struct high_pass
-    {
-        float m_threshold;
-        float m_smoothness;
-        float2 m_padding;
-    };
-    struct bloom_upsample
-    {
-        float m_intensity;
-        float3 m_padding;
-    };
-    struct depth_of_field
-    {
-        float m_focus_centre;
-        float m_centre_range;
-        float m_focus_width;
-        float m_width_range;
     };
 }
