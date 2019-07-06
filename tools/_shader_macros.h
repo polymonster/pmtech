@@ -1,15 +1,20 @@
 #ifdef GLSL
     // texture
-    #define texture_2d( sampler_name, sampler_index ) uniform sampler2D sampler_name
-    #define texture_3d( sampler_name, sampler_index ) uniform sampler3D sampler_name
-    #define texture_cube( sampler_name, sampler_index )    uniform samplerCube sampler_name
-    #define texture_2d_array( sampler_name, sampler_index ) uniform sampler2DArray sampler_name
+    #ifdef BINDING_POINTS
+    #define _tex_binding(sampler_index) layout(binding = sampler_index)
+    #else
+    #define _tex_binding(sampler_index)  
+    #endif
+    #define texture_2d( sampler_name, sampler_index ) _tex_binding(sampler_index) uniform sampler2D sampler_name
+    #define texture_3d( sampler_name, sampler_index ) _tex_binding(sampler_index) uniform sampler3D sampler_name
+    #define texture_cube( sampler_name, sampler_index ) _tex_binding(sampler_index) uniform samplerCube sampler_name
+    #define texture_2d_array( sampler_name, sampler_index ) _tex_binding(sampler_index) uniform sampler2DArray sampler_name
     #ifdef GLES
     #define sample_texture_2dms( sampler_name, x, y, fragment ) texture( sampler_name, vec2(0.0, 0.0) )
     #define texture_2dms( type, samples, sampler_name, sampler_index ) uniform sampler2D sampler_name
     #else
     #define sample_texture_2dms( sampler_name, x, y, fragment ) texelFetch( sampler_name, ivec2( x, y ), fragment )
-    #define texture_2dms( type, samples, sampler_name, sampler_index ) uniform sampler2DMS sampler_name
+    #define texture_2dms( type, samples, sampler_name, sampler_index ) _tex_binding(sampler_index) uniform sampler2DMS sampler_name
     #endif
     // sampler
     #define sample_texture( sampler_name, V ) texture( sampler_name, V )

@@ -11,7 +11,7 @@ import platform
 class build_info:
     shader_platform = ""                                                # hlsl, glsl, metal
     shader_sub_platform = ""                                            # gles
-    shader_version = ""                                                 # 4_0, 5_0 (hlsl), 330, 450 (glsl)
+    shader_version = ""                                                 # 4_0, 5_0 (hlsl), 330, 420 (glsl)
     os_platform = ""                                                    # win32, osx, linux, ios, android
     root_dir = ""                                                       # cwd dir to run from
     build_config = ""                                                   # json contents of build_config.json
@@ -1157,13 +1157,28 @@ def compile_glsl(_info, pmfx_name, _tp, _shader):
     outputs, output_semantics = parse_io_struct(_shader.output_decl)
     instance_inputs, instance_input_semantics = parse_io_struct(_shader.instance_input_decl)
 
+    # default 330
+    if _info.shader_version == "":
+        _info.shader_version = "330"
+
+    # binding points for samples and uniform buffers are only supported 420 onwards..
+    # you may have luck trying the extension.
+    binding_points = int(_info.shader_version) >= 420
+
     uniform_buffers = ""
     for cbuf in _shader.cbuffers:
         name_start = cbuf.find(" ")
         name_end = cbuf.find(":")
         if name_end == -1:
             continue
-        uniform_buf = "layout (std140) uniform"
+        if binding_points:
+            reg_start = cbuf.find("register(") + len("register(")
+            reg_end = reg_start + cbuf[reg_start:].find(")")
+            reg = cbuf[reg_start:reg_end]
+            reg = reg.replace("b", " ")
+            uniform_buf = "layout (binding=" + reg + ",std140) uniform"
+        else:
+            uniform_buf = "layout (std140) uniform"
         uniform_buf += cbuf[name_start:name_end]
         body_start = cbuf.find("{")
         body_end = cbuf.find("};") + 2
@@ -1179,8 +1194,10 @@ def compile_glsl(_info, pmfx_name, _tp, _shader):
         shader_source += "#define GLES\n"
         shader_source += "precision highp float;\n"
     else:
-        shader_source += "#version 330 core\n"
+        shader_source += "#version " + _info.shader_version + " core\n"
         shader_source += "#define GLSL\n"
+        if binding_points:
+            shader_source += "#define BINDING_POINTS\n"
     shader_source += "//" + pmfx_name + " " + _tp.name + " " + _shader.shader_type + " " + str(_tp.id) + "\n"
     shader_source += get_macros_for_platform("glsl", _info.macros_source)
 
