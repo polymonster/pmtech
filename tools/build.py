@@ -170,22 +170,37 @@ def get_platform_info():
 
     project_options = ide + " --renderer=" + renderer + " " + extra_target_info
 
+    data_dir = os.path.join("bin", platform_name, "data")
+    pmfx_dir = os.path.join(data_dir, "pmfx")
+
     if renderer == "dx11":
-        shader_options = "-shader_platform hlsl -platform win32 "
+        shader_options = "-shader_platform hlsl "
         shader_options += "-shader_version " + str(with_default(_info.shader_version, "4_0"))
+        pmfx_dir = os.path.join(pmfx_dir, "hlsl")
     elif renderer == "metal":
-        shader_options = "-shader_platform metal -platform osx"
+        shader_options = "-shader_platform metal "
+        pmfx_dir = os.path.join(pmfx_dir, "metal")
+    elif renderer == "vulkan":
+        shader_options = "-shader_platform spirv -shader_version 420"
+        pmfx_dir = os.path.join(pmfx_dir, "spirv")
     else:
-        # opengl / glsl
-        if platform_name == "ios":
-            shader_options = "-shader_platform glsl -platform ios -shader_version 330"
+        if platform_name == "ios" or platform_name == "android":
+            shader_options = "-shader_platform gles -shader_version 330"
         elif platform_name == "linux":
-            shader_options = "-shader_platform glsl -platform linux -shader_version 330"
+            shader_options = "-shader_platform glsl -platform linux "
+            shader_options += "-shader_version " + str(with_default(_info.shader_version, "330"))
         else:
             shader_options = "-shader_platform glsl -platform osx "
-        shader_options += "-shader_version " + str(with_default(_info.shader_version, "330"))
+            shader_options += "-shader_version " + str(with_default(_info.shader_version, "330"))
+        pmfx_dir = os.path.join(pmfx_dir, "glsl")
 
-    data_dir = os.path.join("bin", platform_name, "data")
+    inputs = ""
+    for dir in build_config["shader_dirs"]:
+        inputs += dir + " "
+
+    ss_dir = os.path.join(os.getcwd(), "shader_structs")
+    temp_dir = os.path.join(os.getcwd(), "temp")
+    shader_options += " -i " + inputs + " -o " + pmfx_dir + " -h " + ss_dir + " -t  " + temp_dir
 
 
 def copy_dir_and_generate_dependencies(dependency_info, dest_sub_dir, src_dir, files):
@@ -329,7 +344,7 @@ if __name__ == "__main__":
     premake_exec += " --scripts="
     premake_exec += android_studio
 
-    shader_script = os.path.join(tools_dir, "build_scripts", "build_pmfx.py")
+    shader_script = os.path.join(build_config["pmtech_dir"], "third_party", "pmfx-shader", "build_pmfx.py")
     textures_script = os.path.join(tools_dir, "build_scripts", "build_textures.py")
     audio_script = os.path.join(tools_dir, "build_scripts", "build_audio.py")
     models_script = os.path.join(tools_dir, "build_scripts", "build_models.py")

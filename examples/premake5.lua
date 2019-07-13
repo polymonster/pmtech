@@ -7,7 +7,7 @@ dofile "../tools/premake/globals.lua"
 dofile "../tools/premake/app_template.lua"
 
 -- Solution
-solution "examples"
+solution ("examples_" .. platform)
 	location ("build/" .. platform_dir ) 
 	configurations { "Debug", "Release" }
 	startproject "empty_project"
