@@ -22,6 +22,12 @@ local function setup_linux()
 end
 
 local function setup_win32()
+    if renderer_dir == "vulkan" then
+        includedirs
+        {
+            "$(VK_SDK_PATH)/Include"
+        }
+    end
     systemversion(windows_sdk_version())
     disablewarnings { "4800", "4305", "4018", "4244", "4267", "4996" }
 end

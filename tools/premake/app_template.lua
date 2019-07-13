@@ -66,15 +66,32 @@ local function setup_linux()
 end
 
 local function setup_win32()
-	links 
-	{ 
-		"d3d11.lib", 
-		"dxguid.lib", 
-		"winmm.lib", 
-		"comctl32.lib", 
-		"fmod64_vc.lib",
-		"Shlwapi.lib"	
-	}
+
+    if renderer_dir == "vulkan" then
+        libdirs
+        {
+            "$(VK_SDK_PATH)/Lib"
+        }
+        links
+        {
+            "vulkan-1.lib"
+        }
+    else
+    	links 
+        { 
+            "d3d11.lib"
+        }
+    end
+    
+    links
+    {
+        "dxguid.lib",
+        "winmm.lib", 
+        "comctl32.lib", 
+        "fmod64_vc.lib",
+        "Shlwapi.lib"	
+    }
+
 	add_pmtech_links()
 	
 	systemversion(windows_sdk_version())

@@ -8,7 +8,8 @@ newoption
    {
       { "opengl", "OpenGL (macOS, linux, iOS, Android)" },
       { "dx11",  "DirectX 11 (Windows only)" },
-      { "metal", "Metal (macOS, iOS only)" }
+      { "metal", "Metal (macOS, iOS only)" },
+      { "vulkan", "Vulkan (Windows)" }
    }
 }
 
