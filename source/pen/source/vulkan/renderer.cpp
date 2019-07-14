@@ -1,6 +1,12 @@
 #include "renderer.h"
 #include "console.h"
+#include "data_struct.h"
+
 #include "vulkan/vulkan.h"
+
+#ifdef _WIN32
+#include "vulkan/vulkan_win32.h"
+#endif
 
 extern pen::window_creation_params pen_window;
 a_u8                               g_window_resize(0);
@@ -9,9 +15,242 @@ namespace
 {
     struct vulkan_context
     {
-        VkInstance instance;
+        VkInstance                  instance;
+        u32                         num_layer_props;
+        VkLayerProperties*          layer_props;
+        const char**                layer_names = nullptr;
+        u32                         num_ext_props;
+        VkExtensionProperties*      ext_props;
+        const char**                ext_names = nullptr;
+        VkDebugUtilsMessengerEXT    debug_messanger;
+        bool                        enable_validation = false;
+        VkPhysicalDevice            physical_device = VK_NULL_HANDLE;
+        u32                         num_queue_families;
+        VkQueue                     graphics_queue;
+        VkQueue                     present_queue;
+        VkDevice                    device;
+        VkSurfaceKHR                surface;
+        VkSwapchainKHR              swap_chain;
     };
     vulkan_context _context;
+
+    void enumerate_layers()
+    {
+        vkEnumerateInstanceLayerProperties(&_context.num_layer_props, nullptr);
+
+        _context.layer_props = new VkLayerProperties[_context.num_layer_props];
+        vkEnumerateInstanceLayerProperties(&_context.num_layer_props, _context.layer_props);
+
+        for (u32 i = 0; i < _context.num_layer_props; ++i)
+            sb_push(_context.layer_names, _context.layer_props[i].layerName);
+    }
+
+    void enumerate_extensions()
+    {
+        vkEnumerateInstanceExtensionProperties(nullptr, &_context.num_ext_props, nullptr);
+
+        _context.ext_props = new VkExtensionProperties[_context.num_ext_props];
+        vkEnumerateInstanceExtensionProperties(nullptr, &_context.num_ext_props, _context.ext_props);
+
+        for (u32 i = 0; i < _context.num_ext_props; ++i)
+            sb_push(_context.ext_names, _context.ext_props[i].extensionName);
+    }
+
+    static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
+        VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+        VkDebugUtilsMessageTypeFlagsEXT messageType,
+        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+        void* pUserData) {
+
+        PEN_LOG("[vulkan validation] %s\n", pCallbackData->pMessage);
+        return VK_FALSE;
+    }
+
+    VkResult CreateDebugUtilsMessengerEXT(
+        VkInstance instance, 
+        const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, 
+        const VkAllocationCallbacks* pAllocator,
+        VkDebugUtilsMessengerEXT* pDebugMessenger) 
+    {
+        auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+        if (func != nullptr) 
+            return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+
+        return VK_ERROR_EXTENSION_NOT_PRESENT;
+    }
+
+    void DestroyDebugUtilsMessengerEXT(
+        VkInstance instance, 
+        VkDebugUtilsMessengerEXT debugMessenger, 
+        const VkAllocationCallbacks* pAllocator)
+    {
+        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+        if (func != nullptr) 
+            func(instance, debugMessenger, pAllocator);
+    }
+
+    void create_debug_messenger()
+    {
+        VkDebugUtilsMessengerCreateInfoEXT info = {};
+        info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        info.pfnUserCallback = debug_callback;
+        info.pUserData = nullptr;
+
+        VkResult res = CreateDebugUtilsMessengerEXT(_context.instance, &info, nullptr, &_context.debug_messanger);
+        PEN_ASSERT(res == VK_SUCCESS);
+    }
+
+    void destroy_debug_messenger()
+    {
+        DestroyDebugUtilsMessengerEXT(_context.instance, _context.debug_messanger, nullptr);
+    }
+
+    void create_surface(void* params)
+    {
+        // in win32 params is HWND
+        HWND hwnd = *((HWND*)params);
+
+        VkWin32SurfaceCreateInfoKHR info = {};
+        info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+        info.hwnd = hwnd;
+        info.hinstance = GetModuleHandle(nullptr);
+
+        VkResult res = vkCreateWin32SurfaceKHR(_context.instance, &info, nullptr, &_context.surface);
+        PEN_ASSERT(res == VK_SUCCESS);
+    }
+
+    void create_device_surface_swapchain(void* params)
+    {
+        u32 dev_count;
+        vkEnumeratePhysicalDevices(_context.instance, &dev_count, nullptr);
+        PEN_ASSERT(dev_count); // no supported devices
+
+        VkPhysicalDevice* devices = new VkPhysicalDevice[dev_count];
+        vkEnumeratePhysicalDevices(_context.instance, &dev_count, devices);
+
+        _context.physical_device = devices[0];
+
+        // find gfx queue
+        _context.num_queue_families = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(_context.physical_device, &_context.num_queue_families, nullptr);
+
+        VkQueueFamilyProperties* queue_families = new VkQueueFamilyProperties[_context.num_queue_families];
+        vkGetPhysicalDeviceQueueFamilyProperties(_context.physical_device, &_context.num_queue_families, queue_families);
+
+        // surface
+        create_surface(params);
+        
+        u32 graphics_family_index = -1;
+        u32 present_family_index = -1;
+        for (u32 i = 0; i < _context.num_queue_families; ++i)
+        {
+            if (queue_families[i].queueCount > 0 && queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+            {
+                graphics_family_index = i;
+            }
+
+            VkBool32 present = false;
+            vkGetPhysicalDeviceSurfaceSupportKHR(_context.physical_device, i, _context.surface, &present);
+            if (queue_families[i].queueCount > 0 && present)
+            {
+                present_family_index = i;
+            }
+        }
+        PEN_ASSERT(graphics_family_index != -1);
+        PEN_ASSERT(present_family_index != -1);
+
+        // gfx queue
+        f32 pri = 1.0f;
+        VkDeviceQueueCreateInfo gfx_queue_info = {};
+        gfx_queue_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        gfx_queue_info.queueFamilyIndex = graphics_family_index;
+        gfx_queue_info.queueCount = 1;
+        gfx_queue_info.pQueuePriorities = &pri;
+
+        VkDeviceQueueCreateInfo present_queue_info = {};
+        present_queue_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        present_queue_info.queueFamilyIndex = present_family_index;
+        present_queue_info.queueCount = 1;
+        present_queue_info.pQueuePriorities = &pri;
+
+        VkDeviceQueueCreateInfo* queues = nullptr;
+        sb_push(queues, gfx_queue_info);
+        sb_push(queues, present_queue_info);
+
+        // device
+        VkPhysicalDeviceFeatures features = {};
+        VkDeviceCreateInfo info = {};
+        info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        info.pQueueCreateInfos = queues;
+        info.queueCreateInfoCount = sb_count(queues);
+        info.pEnabledFeatures = &features;
+
+        // validation
+        if (_context.enable_validation)
+        {
+            static const char** debug_layer;
+            sb_push(debug_layer, "VK_LAYER_KHRONOS_validation");
+            info.enabledLayerCount = 1;
+            info.ppEnabledLayerNames = debug_layer;
+        }
+
+        // enable extensions
+        {
+            static const char** exts;
+            sb_push(exts, "VK_KHR_swapchain");
+
+            info.enabledExtensionCount = sb_count(exts);
+            info.ppEnabledExtensionNames = exts;
+        }
+
+        VkResult res = vkCreateDevice(_context.physical_device, &info, nullptr, &_context.device);
+        PEN_ASSERT(res == VK_SUCCESS);
+
+        vkGetDeviceQueue(_context.device, graphics_family_index, 0, &_context.graphics_queue);
+        vkGetDeviceQueue(_context.device, present_family_index, 0, &_context.present_queue);
+
+        // swap chain
+        u32 num_formats;
+        vkGetPhysicalDeviceSurfaceFormatsKHR(_context.physical_device, _context.surface, &num_formats, nullptr);
+        PEN_ASSERT(num_formats);
+
+        VkSurfaceFormatKHR* formats = new VkSurfaceFormatKHR[num_formats];
+        vkGetPhysicalDeviceSurfaceFormatsKHR(_context.physical_device, _context.surface, &num_formats, formats);
+
+        u32 num_present_modes;
+        vkGetPhysicalDeviceSurfacePresentModesKHR(_context.physical_device, _context.surface, &num_present_modes, nullptr);
+        PEN_ASSERT(num_present_modes);
+
+        VkPresentModeKHR* present_modes = new VkPresentModeKHR[num_present_modes];
+        vkGetPhysicalDeviceSurfacePresentModesKHR(_context.physical_device, _context.surface, &num_formats, present_modes);
+
+        VkSurfaceCapabilitiesKHR caps;
+        res = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(_context.physical_device, _context.surface, &caps);
+        PEN_ASSERT(res == VK_SUCCESS);
+
+        VkSwapchainCreateInfoKHR swap_chain_info = {};
+        swap_chain_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+        swap_chain_info.surface = _context.surface;
+        swap_chain_info.minImageCount = 3;
+        swap_chain_info.imageFormat = VK_FORMAT_B8G8R8A8_UNORM;
+        swap_chain_info.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+        swap_chain_info.imageExtent = { pen_window.width, pen_window.height };
+        swap_chain_info.imageArrayLayers = 1;
+        swap_chain_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        swap_chain_info.presentMode = VK_PRESENT_MODE_FIFO_KHR;
+        swap_chain_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+        swap_chain_info.oldSwapchain = VK_NULL_HANDLE;
+        swap_chain_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+        swap_chain_info.clipped = VK_TRUE;
+        swap_chain_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        res = vkCreateSwapchainKHR(_context.device, &swap_chain_info, nullptr, &_context.swap_chain);
+        PEN_ASSERT(res == VK_SUCCESS);
+
+        delete devices;
+    }
 }
 
 namespace pen
@@ -38,6 +277,12 @@ namespace pen
     {
         u32 renderer_initialise(void* params, u32 bb_res, u32 bb_depth_res)
         {
+#if _DEBUG
+            _context.enable_validation = true;
+#endif
+            enumerate_layers();
+            enumerate_extensions();
+
             VkApplicationInfo app_info = {};
             app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
             app_info.pApplicationName = pen_window.window_title;
@@ -49,15 +294,35 @@ namespace pen
             VkInstanceCreateInfo create_info = {};
             create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
             create_info.pApplicationInfo = &app_info;
+            create_info.enabledExtensionCount = _context.num_ext_props;
+            create_info.ppEnabledExtensionNames = _context.ext_names;
+
+            if (_context.enable_validation)
+            {
+                static const char** debug_layer;
+                sb_push(debug_layer, "VK_LAYER_KHRONOS_validation");
+                create_info.enabledLayerCount = 1;
+                create_info.ppEnabledLayerNames = debug_layer;
+            }
 
             VkResult result = vkCreateInstance(&create_info, nullptr, &_context.instance);
             PEN_ASSERT(result == VK_SUCCESS);
+
+            if(_context.enable_validation)
+                create_debug_messenger();
+
+            create_device_surface_swapchain(params);
 
             return 0;
         }
 
         void renderer_shutdown()
         {
+            if (_context.enable_validation)
+                destroy_debug_messenger();
+
+            vkDestroySurfaceKHR(_context.instance, _context.surface, nullptr);
+            vkDestroySwapchainKHR(_context.device, _context.swap_chain, nullptr);
             vkDestroyInstance(_context.instance, nullptr);
         }
 
