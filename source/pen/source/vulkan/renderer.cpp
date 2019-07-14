@@ -8,19 +8,19 @@
 #include "vulkan/vulkan_win32.h"
 #endif
 
+#define CHECK_CALL(C) { VkResult r = (C); PEN_ASSERT(r == VK_SUCCESS); }
+
 extern pen::window_creation_params pen_window;
 a_u8                               g_window_resize(0);
+
+using namespace pen;
 
 namespace
 {
     struct vulkan_context
     {
         VkInstance                  instance;
-        u32                         num_layer_props;
-        VkLayerProperties*          layer_props;
         const char**                layer_names = nullptr;
-        u32                         num_ext_props;
-        VkExtensionProperties*      ext_props;
         const char**                ext_names = nullptr;
         VkDebugUtilsMessengerEXT    debug_messanger;
         bool                        enable_validation = false;
@@ -31,29 +31,84 @@ namespace
         VkDevice                    device;
         VkSurfaceKHR                surface;
         VkSwapchainKHR              swap_chain;
+        VkImage*                    swap_chain_images = nullptr;
     };
     vulkan_context _context;
 
+    struct vulkan_state
+    {
+        u32  shader[3]; // vs, fs, cs
+        u32* colour_attachments = nullptr;
+        u32  depth_attachment = 0;
+        u32  colour_slice;
+        u32  depth_slice;
+        u32  clear_state;
+    };
+    vulkan_state _state;
+
+    struct vulkan_texture
+    {
+        VkImageView image_view;
+        VkImage     image;
+        VkFormat    format;
+    };
+
+    enum class e_shd
+    {
+        vertex,
+        fragment,
+        compute
+    };
+
+    struct vulkan_shader
+    {
+        VkShaderModule module;
+        e_shd          type;
+    };
+
+    enum class e_res
+    {
+        none,
+        clear,
+        texture,
+        render_target,
+        shader,
+    };
+
+    struct resource_allocation
+    {
+        e_res type = e_res::none;
+
+        union {
+            vulkan_texture texture;
+            vulkan_shader  shader;
+            clear_state    clear;
+        };
+    };
+    res_pool<resource_allocation> _res_pool;
+
     void enumerate_layers()
     {
-        vkEnumerateInstanceLayerProperties(&_context.num_layer_props, nullptr);
+        u32 num_layer_props;
+        vkEnumerateInstanceLayerProperties(&num_layer_props, nullptr);
 
-        _context.layer_props = new VkLayerProperties[_context.num_layer_props];
-        vkEnumerateInstanceLayerProperties(&_context.num_layer_props, _context.layer_props);
+        VkLayerProperties* layer_props = new VkLayerProperties[num_layer_props];
+        vkEnumerateInstanceLayerProperties(&num_layer_props, layer_props);
 
-        for (u32 i = 0; i < _context.num_layer_props; ++i)
-            sb_push(_context.layer_names, _context.layer_props[i].layerName);
+        for (u32 i = 0; i < num_layer_props; ++i)
+            sb_push(_context.layer_names, layer_props[i].layerName);
     }
 
     void enumerate_extensions()
     {
-        vkEnumerateInstanceExtensionProperties(nullptr, &_context.num_ext_props, nullptr);
+        u32 num_ext_props;
+        vkEnumerateInstanceExtensionProperties(nullptr, &num_ext_props, nullptr);
 
-        _context.ext_props = new VkExtensionProperties[_context.num_ext_props];
-        vkEnumerateInstanceExtensionProperties(nullptr, &_context.num_ext_props, _context.ext_props);
+        VkExtensionProperties* ext_props = new VkExtensionProperties[num_ext_props];
+        vkEnumerateInstanceExtensionProperties(nullptr, &num_ext_props, ext_props);
 
-        for (u32 i = 0; i < _context.num_ext_props; ++i)
-            sb_push(_context.ext_names, _context.ext_props[i].extensionName);
+        for (u32 i = 0; i < num_ext_props; ++i)
+            sb_push(_context.ext_names, ext_props[i].extensionName);
     }
 
     static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
@@ -117,18 +172,50 @@ namespace
         info.hwnd = hwnd;
         info.hinstance = GetModuleHandle(nullptr);
 
-        VkResult res = vkCreateWin32SurfaceKHR(_context.instance, &info, nullptr, &_context.surface);
-        PEN_ASSERT(res == VK_SUCCESS);
+        CHECK_CALL(vkCreateWin32SurfaceKHR(_context.instance, &info, nullptr, &_context.surface));
+    }
+
+    void create_backbuffer_targets()
+    {
+        // todo move fmt
+
+        for (u32 i = 0; i < sb_count(_context.swap_chain_images); ++i)
+        {
+            _res_pool.insert({}, i);
+            vulkan_texture vt = _res_pool.get(i).texture;
+
+            VkImageViewCreateInfo info = {};
+            info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            info.image = _context.swap_chain_images[i];
+            info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            info.format = VK_FORMAT_B8G8R8A8_UNORM;
+            info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+            info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+            info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+            info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+            info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            info.subresourceRange.baseMipLevel = 0;
+            info.subresourceRange.levelCount = 1;
+            info.subresourceRange.baseArrayLayer = 0;
+            info.subresourceRange.layerCount = 1;
+
+            VkImageView iv;
+            CHECK_CALL(vkCreateImageView(_context.device, &info, nullptr, &iv));
+
+            vt.image_view = iv;
+            vt.image = _context.swap_chain_images[i];
+            vt.format = VK_FORMAT_B8G8R8A8_UNORM;
+        }
     }
 
     void create_device_surface_swapchain(void* params)
     {
         u32 dev_count;
-        vkEnumeratePhysicalDevices(_context.instance, &dev_count, nullptr);
+        CHECK_CALL(vkEnumeratePhysicalDevices(_context.instance, &dev_count, nullptr));
         PEN_ASSERT(dev_count); // no supported devices
 
         VkPhysicalDevice* devices = new VkPhysicalDevice[dev_count];
-        vkEnumeratePhysicalDevices(_context.instance, &dev_count, devices);
+        CHECK_CALL(vkEnumeratePhysicalDevices(_context.instance, &dev_count, devices));
 
         _context.physical_device = devices[0];
 
@@ -205,30 +292,31 @@ namespace
             info.ppEnabledExtensionNames = exts;
         }
 
-        VkResult res = vkCreateDevice(_context.physical_device, &info, nullptr, &_context.device);
-        PEN_ASSERT(res == VK_SUCCESS);
+        CHECK_CALL(vkCreateDevice(_context.physical_device, &info, nullptr, &_context.device));
 
         vkGetDeviceQueue(_context.device, graphics_family_index, 0, &_context.graphics_queue);
         vkGetDeviceQueue(_context.device, present_family_index, 0, &_context.present_queue);
 
         // swap chain
-        u32 num_formats;
-        vkGetPhysicalDeviceSurfaceFormatsKHR(_context.physical_device, _context.surface, &num_formats, nullptr);
-        PEN_ASSERT(num_formats);
 
-        VkSurfaceFormatKHR* formats = new VkSurfaceFormatKHR[num_formats];
-        vkGetPhysicalDeviceSurfaceFormatsKHR(_context.physical_device, _context.surface, &num_formats, formats);
+        // store these?
+        {
+            u32 num_formats;
+            vkGetPhysicalDeviceSurfaceFormatsKHR(_context.physical_device, _context.surface, &num_formats, nullptr);
+            VkSurfaceFormatKHR* formats = new VkSurfaceFormatKHR[num_formats];
+            vkGetPhysicalDeviceSurfaceFormatsKHR(_context.physical_device, _context.surface, &num_formats, formats);
+            delete formats;
 
-        u32 num_present_modes;
-        vkGetPhysicalDeviceSurfacePresentModesKHR(_context.physical_device, _context.surface, &num_present_modes, nullptr);
-        PEN_ASSERT(num_present_modes);
+            u32 num_present_modes;
+            vkGetPhysicalDeviceSurfacePresentModesKHR(_context.physical_device, _context.surface, &num_present_modes, nullptr);
+            VkPresentModeKHR* present_modes = new VkPresentModeKHR[num_present_modes];
+            vkGetPhysicalDeviceSurfacePresentModesKHR(_context.physical_device, _context.surface, &num_formats, present_modes);
+            delete present_modes;
+        }
 
-        VkPresentModeKHR* present_modes = new VkPresentModeKHR[num_present_modes];
-        vkGetPhysicalDeviceSurfacePresentModesKHR(_context.physical_device, _context.surface, &num_formats, present_modes);
 
         VkSurfaceCapabilitiesKHR caps;
-        res = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(_context.physical_device, _context.surface, &caps);
-        PEN_ASSERT(res == VK_SUCCESS);
+        CHECK_CALL(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(_context.physical_device, _context.surface, &caps));
 
         VkSwapchainCreateInfoKHR swap_chain_info = {};
         swap_chain_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -246,10 +334,115 @@ namespace
         swap_chain_info.clipped = VK_TRUE;
         swap_chain_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        res = vkCreateSwapchainKHR(_context.device, &swap_chain_info, nullptr, &_context.swap_chain);
-        PEN_ASSERT(res == VK_SUCCESS);
+        CHECK_CALL(vkCreateSwapchainKHR(_context.device, &swap_chain_info, nullptr, &_context.swap_chain));
 
+        // get swapchain images
+        u32 num_images = 0;
+        vkGetSwapchainImagesKHR(_context.device, _context.swap_chain, &num_images, nullptr);
+        VkImage* images = new VkImage[num_images];
+        vkGetSwapchainImagesKHR(_context.device, _context.swap_chain, &num_images, images);
+        for (u32 i = 0; i < num_images; ++i)
+            sb_push(_context.swap_chain_images, images[i]);
+
+        create_backbuffer_targets();
+
+        delete images;
+        delete queue_families;
         delete devices;
+    }
+
+    void bind()
+    {
+        const clear_state& clear = _res_pool.get(_state.clear_state).clear;
+
+        // attachments
+        VkAttachmentDescription* colour_attachments = nullptr;
+        VkAttachmentReference*   colour_refs = nullptr;
+        VkImageView*             colour_img_view = nullptr;
+
+        for (u32 i = 0; i < sb_count(_state.colour_attachments); ++i)
+        {
+            u32 ica = _state.colour_attachments[i];
+            const vulkan_texture& vt = _res_pool.get(ica).texture;
+
+            VkAttachmentDescription col;
+            col.format = vt.format;
+            col.samples = VK_SAMPLE_COUNT_1_BIT;
+
+            if (clear.flags & PEN_CLEAR_COLOUR_BUFFER)
+                col.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+            else
+                col.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+
+            col.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+            VkAttachmentReference ref = {};
+            ref.attachment = i;
+            ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+            sb_push(colour_attachments, col);
+            sb_push(colour_refs, ref);
+            sb_push(colour_img_view, vt.image_view);
+        }
+
+        // sub pass
+        VkSubpassDescription subpass = {};
+        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpass.colorAttachmentCount = sb_count(colour_refs);
+        subpass.pColorAttachments = colour_refs;
+
+        // pass
+        VkRenderPassCreateInfo pass_info = {};
+        pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+        pass_info.attachmentCount = sb_count(colour_attachments);
+        pass_info.pAttachments = colour_attachments;
+        pass_info.subpassCount = 1;
+        pass_info.pSubpasses = &subpass;
+
+        VkRenderPass pass;
+        CHECK_CALL(vkCreateRenderPass(_context.device, &pass_info, nullptr, &pass));
+
+        // framebuffer
+        VkFramebufferCreateInfo fb_info = {};
+        fb_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        fb_info.renderPass = pass;
+        fb_info.attachmentCount = sb_count(colour_img_view);
+        fb_info.pAttachments = colour_img_view;
+        fb_info.width = pen_window.width;
+        fb_info.height = pen_window.height;
+        fb_info.layers = 1;
+
+        VkFramebuffer fb;
+        CHECK_CALL(vkCreateFramebuffer(_context.device, &fb_info, nullptr, &fb));
+
+        delete colour_attachments;
+
+#if 0
+        VkAttachmentDescription colorAttachment = {};
+        colorAttachment.format = swapChainImageFormat;
+        colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+
+        VkFramebufferCreateInfo fb_info = {};
+        fb_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        fb_info.renderPass = renderPass;
+        fb_info.attachmentCount = 1;
+        fb_info.pAttachments = attachments;
+        fb_info.width = pen_window.width;
+        fb_info.height = pen_window.height;
+        fb_info.layers = 1;
+
+        if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS) {
+
+            vulkan_texture bb;
+            bb.image_view = iv;
+            _res_pool.insert({ e_res::texture, bb }, i);
+
+
+
+        if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create render pass!");
+        }
+#endif
     }
 }
 
@@ -277,6 +470,8 @@ namespace pen
     {
         u32 renderer_initialise(void* params, u32 bb_res, u32 bb_depth_res)
         {
+            _res_pool.init(4096);
+
 #if _DEBUG
             _context.enable_validation = true;
 #endif
@@ -294,7 +489,7 @@ namespace pen
             VkInstanceCreateInfo create_info = {};
             create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
             create_info.pApplicationInfo = &app_info;
-            create_info.enabledExtensionCount = _context.num_ext_props;
+            create_info.enabledExtensionCount = sb_count(_context.ext_names);
             create_info.ppEnabledExtensionNames = _context.ext_names;
 
             if (_context.enable_validation)
@@ -305,8 +500,7 @@ namespace pen
                 create_info.ppEnabledLayerNames = debug_layer;
             }
 
-            VkResult result = vkCreateInstance(&create_info, nullptr, &_context.instance);
-            PEN_ASSERT(result == VK_SUCCESS);
+            CHECK_CALL(vkCreateInstance(&create_info, nullptr, &_context.instance));
 
             if(_context.enable_validation)
                 create_debug_messenger();
@@ -320,6 +514,9 @@ namespace pen
         {
             if (_context.enable_validation)
                 destroy_debug_messenger();
+
+            for (u32 i = 0; i < sb_count(_context.swap_chain_images); ++i)
+                vkDestroyImage(_context.device, _context.swap_chain_images[i], nullptr);
 
             vkDestroySurfaceKHR(_context.instance, _context.surface, nullptr);
             vkDestroySwapchainKHR(_context.device, _context.swap_chain, nullptr);
@@ -343,17 +540,26 @@ namespace pen
 
         void renderer_clear(u32 clear_state_index, u32 colour_face, u32 depth_face)
         {
-
+            _state.clear_state = clear_state_index;
         }
 
         void renderer_load_shader(const pen::shader_load_params& params, u32 resource_slot)
         {
+            _res_pool.insert({}, resource_slot);
 
+            VkShaderModuleCreateInfo info = {};
+            info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+            info.codeSize = params.byte_code_size;
+            info.pCode = (const u32*)params.byte_code;
+
+            vulkan_shader& vs = _res_pool.get(resource_slot).shader;
+            vs.type = (e_shd)params.type;
+            CHECK_CALL(vkCreateShaderModule(_context.device, &info, nullptr, &vs.module));
         }
 
         void renderer_set_shader(u32 shader_index, u32 shader_type)
         {
-
+            _state.shader[shader_type] = shader_index;
         }
 
         void renderer_create_input_layout(const input_layout_creation_params& params, u32 resource_slot)
@@ -458,7 +664,9 @@ namespace pen
 
         void renderer_draw(u32 vertex_count, u32 start_vertex, u32 primitive_topology)
         {
+            bind();
 
+            // now we make draws
         }
 
         void renderer_draw_indexed(u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology)
@@ -488,7 +696,15 @@ namespace pen
 
         void renderer_set_targets(const u32* const colour_targets, u32 num_colour_targets, u32 depth_target, u32 colour_face, u32 depth_face)
         {
+            sb_clear(_state.colour_attachments);
+            _state.colour_attachments = nullptr;
 
+            for (u32 i = 0; i < num_colour_targets; ++i)
+                sb_push(_state.colour_attachments, colour_targets[i]);
+
+            _state.depth_attachment = depth_target;
+            _state.depth_slice = depth_face;
+            _state.colour_slice = colour_face;
         }
 
         void renderer_set_resolve_targets(u32 colour_target, u32 depth_target)
@@ -533,7 +749,8 @@ namespace pen
 
         void renderer_release_shader(u32 shader_index, u32 shader_type)
         {
-
+            vulkan_shader& vs = _res_pool.get(shader_index).shader;
+            vkDestroyShaderModule(_context.device, vs.module, nullptr);
         }
 
         void renderer_release_clear_state(u32 clear_state)
