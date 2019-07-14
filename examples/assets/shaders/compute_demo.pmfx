@@ -35,20 +35,20 @@ struct ps_output
 shader_resources
 {
     texture_2d( diffuse_texture, 0 );
-    structured_buffer_rw( boids, rw_boids, 12);
-    structured_buffer( boids, read_boids, 13);
+    structured_buffer_rw( boid, rw_boids, 12);
+    structured_buffer( boid, read_boids, 13);
 };
 
 void cs_main_boids(uint3 gid : SV_DispatchThreadID)
 {
-    float4 test = sample_texture(bb, input.texcoord);
+    // float4 test = sample_texture(bb, input.texcoord);
 }
 
 vs_output vs_main( vs_input input, uint ii : SV_InstanceID, uint vi : SV_VertexID )
 {
     vs_output output;
     
-    float4 boid_pos = input.position + read_boids[ii].pos;
+    float4 boid_pos = input.position; // + read_boids[ii].pos;
     
     output.position = output.position = mul( boid_pos, vp_matrix );
     

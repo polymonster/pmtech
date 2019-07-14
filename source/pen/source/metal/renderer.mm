@@ -19,7 +19,8 @@ a_u8                          g_window_resize;
 extern a_u64                  g_frame_index;
 extern window_creation_params pen_window;
 
-#define NBB 6 // buffers to prevent locking gpu / cpu on dynamic buffers. 6 is excessive but works well.
+#define NBB 3           // buffers to prevent locking gpu / cpu on dynamic buffers.
+#define CBUF_OFFSET 4
 
 namespace // internal structs and static vars
 {
@@ -940,18 +941,40 @@ namespace pen
 
         void renderer_load_shader(const pen::shader_load_params& params, u32 resource_slot)
         {
-            const c8* csrc = (const c8*)params.byte_code;
-            NSString* str = [[NSString alloc] initWithBytes:csrc length:params.byte_code_size encoding:NSASCIIStringEncoding];
-
-            NSError*           err = nil;
-            MTLCompileOptions* opts = [MTLCompileOptions alloc];
-            opts.fastMathEnabled = YES;
-
-            id<MTLLibrary> lib = [_metal_device newLibraryWithSource:str options:opts error:&err];
-
-            if (err)
+            id<MTLLibrary> lib;
+            
+            static const bool compile = false;
+            if(compile)
             {
-                if (err.code == 3)
+                const c8* csrc = (const c8*)params.byte_code;
+                NSString* str = [[NSString alloc] initWithBytes:csrc length:params.byte_code_size encoding:NSASCIIStringEncoding];
+                
+                NSError*           err = nil;
+                MTLCompileOptions* opts = [MTLCompileOptions alloc];
+                opts.fastMathEnabled = YES;
+                
+                lib = [_metal_device newLibraryWithSource:str options:opts error:&err];
+                
+                if (err)
+                {
+                    if (err.code == 3)
+                    {
+                        NSLog(@" error => %@ ", err);
+                    }
+                }
+            }
+            else
+            {
+                u8* new_data = new u8[params.byte_code_size+1];
+                memcpy(new_data, params.byte_code, params.byte_code_size);
+                new_data[params.byte_code_size] = '\0';
+                
+                
+                NSError* err = nil;
+                dispatch_data_t dd = dispatch_data_create(new_data, params.byte_code_size, dispatch_get_main_queue(), ^{});
+                lib = [_metal_device newLibraryWithData:dd error:&err];
+                
+                if (err)
                 {
                     NSLog(@" error => %@ ", err);
                 }
@@ -1105,11 +1128,11 @@ namespace pen
 
             if (flags & pen::CBUFFER_BIND_VS)
             {
-                [_state.render_encoder setVertexBuffer:_res_pool.get(bi).buffer.read() offset:0 atIndex:resource_slot + 8];
+                [_state.render_encoder setVertexBuffer:_res_pool.get(bi).buffer.read() offset:0 atIndex:resource_slot + CBUF_OFFSET];
             }
 
             if (flags & pen::CBUFFER_BIND_PS)
-                [_state.render_encoder setFragmentBuffer:_res_pool.get(bi).buffer.read() offset:0 atIndex:resource_slot + 8];
+                [_state.render_encoder setFragmentBuffer:_res_pool.get(bi).buffer.read() offset:0 atIndex:resource_slot + CBUF_OFFSET];
 
             // flags & cs
             // compute command encoder
@@ -1893,19 +1916,17 @@ namespace pen
             _state.drawable = nil;
             _state.target_hash = 0;
             
-            static a_u32 wait;
-            static bool  start = true;
-            if (start)
-            {
-                start = false;
-                wait = 0;
-            }
-
-            [_state.cmd_buffer addCompletedHandler:^(id<MTLCommandBuffer> commandBuffer) {
-              wait++;
+            static std::atomic<u32> waits = { 0 };
+            waits++;
+            
+            [_state.cmd_buffer addCompletedHandler:^(id<MTLCommandBuffer> cb) {
+                waits--;
             }];
 
             [_state.cmd_buffer commit];
+            
+            while(waits == NBB)
+                thread_sleep_us(100);
 
             // null state for next frame
             _state.cmd_buffer = nil;
