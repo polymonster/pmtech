@@ -177,12 +177,18 @@ namespace
 
     void create_backbuffer_targets()
     {
-        // todo move fmt
+        // get swapchain images
+        u32 num_images = 0;
+        vkGetSwapchainImagesKHR(_context.device, _context.swap_chain, &num_images, nullptr);
+        VkImage* images = new VkImage[num_images];
+        vkGetSwapchainImagesKHR(_context.device, _context.swap_chain, &num_images, images);
+        for (u32 i = 0; i < num_images; ++i)
+            sb_push(_context.swap_chain_images, images[i]);
 
         for (u32 i = 0; i < sb_count(_context.swap_chain_images); ++i)
         {
             _res_pool.insert({}, i);
-            vulkan_texture vt = _res_pool.get(i).texture;
+            vulkan_texture& vt = _res_pool.get(i).texture;
 
             VkImageViewCreateInfo info = {};
             info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -206,6 +212,8 @@ namespace
             vt.image = _context.swap_chain_images[i];
             vt.format = VK_FORMAT_B8G8R8A8_UNORM;
         }
+
+        delete images;
     }
 
     void create_device_surface_swapchain(void* params)
@@ -336,17 +344,8 @@ namespace
 
         CHECK_CALL(vkCreateSwapchainKHR(_context.device, &swap_chain_info, nullptr, &_context.swap_chain));
 
-        // get swapchain images
-        u32 num_images = 0;
-        vkGetSwapchainImagesKHR(_context.device, _context.swap_chain, &num_images, nullptr);
-        VkImage* images = new VkImage[num_images];
-        vkGetSwapchainImagesKHR(_context.device, _context.swap_chain, &num_images, images);
-        for (u32 i = 0; i < num_images; ++i)
-            sb_push(_context.swap_chain_images, images[i]);
-
         create_backbuffer_targets();
 
-        delete images;
         delete queue_families;
         delete devices;
     }
@@ -365,7 +364,7 @@ namespace
             u32 ica = _state.colour_attachments[i];
             const vulkan_texture& vt = _res_pool.get(ica).texture;
 
-            VkAttachmentDescription col;
+            VkAttachmentDescription col = {};
             col.format = vt.format;
             col.samples = VK_SAMPLE_COUNT_1_BIT;
 
@@ -415,34 +414,9 @@ namespace
         VkFramebuffer fb;
         CHECK_CALL(vkCreateFramebuffer(_context.device, &fb_info, nullptr, &fb));
 
-        delete colour_attachments;
-
-#if 0
-        VkAttachmentDescription colorAttachment = {};
-        colorAttachment.format = swapChainImageFormat;
-        colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-
-        VkFramebufferCreateInfo fb_info = {};
-        fb_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        fb_info.renderPass = renderPass;
-        fb_info.attachmentCount = 1;
-        fb_info.pAttachments = attachments;
-        fb_info.width = pen_window.width;
-        fb_info.height = pen_window.height;
-        fb_info.layers = 1;
-
-        if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS) {
-
-            vulkan_texture bb;
-            bb.image_view = iv;
-            _res_pool.insert({ e_res::texture, bb }, i);
-
-
-
-        if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create render pass!");
-        }
-#endif
+        sb_free(colour_attachments);
+        sb_free(colour_refs);
+        sb_free(colour_img_view);
     }
 }
 
