@@ -185,8 +185,10 @@ namespace
         // get swapchain images
         u32 num_images = 0;
         vkGetSwapchainImagesKHR(_ctx.device, _ctx.swap_chain, &num_images, nullptr);
+        
         VkImage* images = new VkImage[num_images];
         vkGetSwapchainImagesKHR(_ctx.device, _ctx.swap_chain, &num_images, images);
+        
         for (u32 i = 0; i < num_images; ++i)
             sb_push(_ctx.swap_chain_images, images[i]);
 
@@ -390,7 +392,7 @@ namespace
         for (u32 i = 0; i < sb_count(_state.colour_attachments); ++i)
         {
             u32 ica = _state.colour_attachments[i];
-            const vulkan_texture& vt = _res_pool.get(ica).texture;
+            const vulkan_texture& vt = _res_pool.get(ica + _ctx.img_index).texture;
 
             VkAttachmentDescription col = {};
             col.format = vt.format;
@@ -401,9 +403,10 @@ namespace
             else
                 col.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
 
+            col.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
             col.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-            col.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            col.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            col.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            col.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
             VkAttachmentReference ref = {};
             ref.attachment = i;
@@ -462,10 +465,16 @@ namespace
         img_range.levelCount = 1;
         img_range.layerCount = 1;
 
+        VkRenderPassBeginInfo rp_begin_info = {};
+        rp_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        rp_begin_info.renderPass = pass;
+        rp_begin_info.renderArea.offset = { 0, 0 };
+        rp_begin_info.renderArea.extent = { 1280, 720 };
+        rp_begin_info.clearValueCount = 1;
+        rp_begin_info.pClearValues = &clear_value;
+
         CHECK_CALL(vkBeginCommandBuffer(_ctx.cmd_bufs[_ctx.img_index], &begin_info));
 
-        vkCmdClearColorImage(_ctx.cmd_bufs[_ctx.img_index], _ctx.swap_chain_images[_ctx.img_index], 
-            VK_IMAGE_LAYOUT_GENERAL, &clear_colour, 1, &img_range);
     }
 }
 
@@ -529,6 +538,8 @@ namespace pen
                 create_debug_messenger();
 
             create_device_surface_swapchain(params);
+
+            CHECK_CALL(vkAcquireNextImageKHR(_ctx.device, _ctx.swap_chain, UINT64_MAX, nullptr, nullptr, &_ctx.img_index));
 
             return 0;
         }
@@ -754,7 +765,8 @@ namespace pen
         {
             vkEndCommandBuffer(_ctx.cmd_bufs[_ctx.img_index]);
 
-            CHECK_CALL(vkAcquireNextImageKHR(_ctx.device, _ctx.swap_chain, UINT64_MAX, nullptr, nullptr, &_ctx.img_index));
+            u32 next_frame = 0;
+            CHECK_CALL(vkAcquireNextImageKHR(_ctx.device, _ctx.swap_chain, UINT64_MAX, nullptr, nullptr, &next_frame));
 
             VkSubmitInfo info = {};
             info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -770,6 +782,8 @@ namespace pen
             present.pImageIndices = &_ctx.img_index;
 
             CHECK_CALL(vkQueuePresentKHR(_ctx.graphics_queue, &present));
+
+            _ctx.img_index = next_frame;
         }
 
         void renderer_push_perf_marker(const c8* name)
