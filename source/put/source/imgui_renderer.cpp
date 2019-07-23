@@ -306,19 +306,15 @@ namespace put
 
             pen::renderer_update_buffer(g_imgui_rs.vertex_buffer, g_imgui_rs.vb_copy_buffer, vb_offset);
             pen::renderer_update_buffer(g_imgui_rs.index_buffer, g_imgui_rs.ib_copy_buffer, ib_offset);
-
+            
             float L = 0.0f;
             float R = ImGui::GetIO().DisplaySize.x;
             float B = ImGui::GetIO().DisplaySize.y;
             float T = 0.0f;
-            float mvp[4][4] = {
-                {2.0f / (R - L), 0.0f, 0.0f, 0.0f},
-                {0.0f, 2.0f / (T - B), 0.0f, 0.0f},
-                {0.0f, 0.0f, 0.5f, 0.0f},
-                {(R + L) / (L - R), (T + B) / (B - T), 0.5f, 1.0f},
-            };
-
-            pen::renderer_update_buffer(g_imgui_rs.constant_buffer, mvp, sizeof(mvp), 0);
+            
+            mat4 ortho = mat::create_orthographic_projection(L, R, B, T, 0.0f, 1.0f);
+            
+            pen::renderer_update_buffer(g_imgui_rs.constant_buffer, ortho.m, sizeof(mat4), 0);
         }
 
         void render(ImDrawData* draw_data)

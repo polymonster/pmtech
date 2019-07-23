@@ -35,7 +35,7 @@ vs_output vs_main( vs_input input )
 {
     vs_output output;
     
-    output.position = mul( projection_matrix, float4( input.position.x, input.position.y, 0.0f, 1.0f ) );
+    output.position = mul( float4( input.position.x, input.position.y, 0.0f, 1.0f ), projection_matrix );
     output.colour = input.colour;
     output.tex_coord = input.tex_coord;
     
