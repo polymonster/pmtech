@@ -2758,8 +2758,9 @@ namespace put
                 }
                 else
                 {
+                    // this code path is untested.
                     static put::camera c;
-                    put::camera_create_orthographic(&c, vp.x, vp.y, vp.width, vp.height, 0.0f, 1.0f);
+                    put::camera_create_orthographic(&c, vp.x, vp.width, vp.y, vp.height, 0.0f, 1.0f);
                     put::camera_update_shader_constants(&c, v.viewport_correction);
                     sv.cb_view = c.cbuffer;
                 }

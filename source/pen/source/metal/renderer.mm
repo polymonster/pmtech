@@ -729,6 +729,7 @@ namespace pen
             [_state.render_encoder setCullMode:rs.cull_mode];
             [_state.render_encoder setTriangleFillMode:rs.fill_mode];
             [_state.render_encoder setFrontFacingWinding:rs.winding];
+            
             // scissor
             if (!g_window_resize && rs.scissor_enabled)
                 [_state.render_encoder setScissorRect:_state.scissor];
