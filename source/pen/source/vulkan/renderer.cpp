@@ -15,6 +15,8 @@ a_u8                               g_window_resize(0);
 
 using namespace pen;
 
+#define NBB 3
+
 namespace
 {
     struct vulkan_context
@@ -37,6 +39,9 @@ namespace
         VkCommandPool               cmd_pool;
         VkCommandBuffer*            cmd_bufs = nullptr;
         u32                         img_index = 0;
+        VkSemaphore                 sem_img_avail[NBB];
+        VkSemaphore                 sem_render_finished[NBB];
+        VkFence                     fences[NBB];
     };
     vulkan_context _ctx;
 
@@ -192,7 +197,7 @@ namespace
         for (u32 i = 0; i < num_images; ++i)
             sb_push(_ctx.swap_chain_images, images[i]);
 
-        for (u32 i = 0; i < sb_count(_ctx.swap_chain_images); ++i)
+        for (u32 i = 0; i < num_images; ++i)
         {
             _res_pool.insert({}, i);
             vulkan_texture& vt = _res_pool.get(i).texture;
@@ -242,6 +247,23 @@ namespace
             sb_push(_ctx.cmd_bufs, VkCommandBuffer());
 
         CHECK_CALL(vkAllocateCommandBuffers(_ctx.device, &buf_info, _ctx.cmd_bufs));
+    }
+
+    void create_sync_primitives()
+    {
+        VkSemaphoreCreateInfo sem_info = {};
+        sem_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+        VkFenceCreateInfo fence_info = {};
+        fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+        fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+        for (u32 i = 0; i < NBB; ++i)
+        {
+            CHECK_CALL(vkCreateSemaphore(_ctx.device, &sem_info, nullptr, &_ctx.sem_img_avail[i]));
+            CHECK_CALL(vkCreateSemaphore(_ctx.device, &sem_info, nullptr, &_ctx.sem_render_finished[i]));
+            CHECK_CALL(vkCreateFence(_ctx.device, &fence_info, nullptr, &_ctx.fences[i]));
+        }
     }
 
     void create_device_surface_swapchain(void* params)
@@ -376,6 +398,8 @@ namespace
 
         create_command_buffers();
 
+        create_sync_primitives();
+
         delete queue_families;
         delete devices;
     }
@@ -423,6 +447,14 @@ namespace
         subpass.colorAttachmentCount = sb_count(colour_refs);
         subpass.pColorAttachments = colour_refs;
 
+        VkSubpassDependency dep = {};
+        dep.srcSubpass = VK_SUBPASS_EXTERNAL;
+        dep.dstSubpass = 0;
+        dep.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dep.srcAccessMask = 0;
+        dep.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dep.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
         // pass
         VkRenderPassCreateInfo pass_info = {};
         pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -430,6 +462,8 @@ namespace
         pass_info.pAttachments = colour_attachments;
         pass_info.subpassCount = 1;
         pass_info.pSubpasses = &subpass;
+        pass_info.dependencyCount = 1;
+        pass_info.pDependencies = &dep;
 
         VkRenderPass pass;
         CHECK_CALL(vkCreateRenderPass(_ctx.device, &pass_info, nullptr, &pass));
@@ -456,7 +490,7 @@ namespace
         begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
-        VkClearColorValue clear_colour = { clear.r, clear.g, clear.b };
+        VkClearColorValue clear_colour = { 1.0f, 0.0f, 1.0f };
         VkClearValue clear_value = {};
         clear_value.color = clear_colour;
 
@@ -468,12 +502,15 @@ namespace
         VkRenderPassBeginInfo rp_begin_info = {};
         rp_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         rp_begin_info.renderPass = pass;
+        rp_begin_info.framebuffer = fb;
         rp_begin_info.renderArea.offset = { 0, 0 };
         rp_begin_info.renderArea.extent = { 1280, 720 };
         rp_begin_info.clearValueCount = 1;
         rp_begin_info.pClearValues = &clear_value;
 
         CHECK_CALL(vkBeginCommandBuffer(_ctx.cmd_bufs[_ctx.img_index], &begin_info));
+
+        vkCmdBeginRenderPass(_ctx.cmd_bufs[_ctx.img_index], &rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
 
     }
 }
@@ -539,7 +576,8 @@ namespace pen
 
             create_device_surface_swapchain(params);
 
-            CHECK_CALL(vkAcquireNextImageKHR(_ctx.device, _ctx.swap_chain, UINT64_MAX, nullptr, nullptr, &_ctx.img_index));
+            CHECK_CALL(vkAcquireNextImageKHR(_ctx.device,
+                _ctx.swap_chain, UINT64_MAX, _ctx.sem_img_avail[_ctx.img_index], nullptr, &_ctx.img_index));
 
             return 0;
         }
@@ -763,10 +801,8 @@ namespace pen
 
         void renderer_present()
         {
+            vkCmdEndRenderPass(_ctx.cmd_bufs[_ctx.img_index]);
             vkEndCommandBuffer(_ctx.cmd_bufs[_ctx.img_index]);
-
-            u32 next_frame = 0;
-            CHECK_CALL(vkAcquireNextImageKHR(_ctx.device, _ctx.swap_chain, UINT64_MAX, nullptr, nullptr, &next_frame));
 
             VkSubmitInfo info = {};
             info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -775,15 +811,19 @@ namespace pen
 
             CHECK_CALL(vkQueueSubmit(_ctx.graphics_queue, 1, &info, nullptr));
 
+            VkSwapchainKHR swapChains[] = { _ctx.swap_chain };
             VkPresentInfoKHR present = {};
             present.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
             present.swapchainCount = 1;
-            present.pSwapchains = &_ctx.swap_chain;
+            present.pSwapchains = swapChains;
             present.pImageIndices = &_ctx.img_index;
 
-            CHECK_CALL(vkQueuePresentKHR(_ctx.graphics_queue, &present));
+            CHECK_CALL(vkQueuePresentKHR(_ctx.present_queue, &present));
 
-            _ctx.img_index = next_frame;
+            CHECK_CALL(vkAcquireNextImageKHR(_ctx.device,
+                _ctx.swap_chain, UINT64_MAX, _ctx.sem_img_avail[_ctx.img_index], nullptr, &_ctx.img_index));
+
+            pen::thread_sleep_ms(40);
         }
 
         void renderer_push_perf_marker(const c8* name)
