@@ -19,6 +19,23 @@ using namespace pen;
 
 namespace
 {
+    // conversion functions
+    VkBufferUsageFlags to_vk_buffer_usage(u32 pen_bind_flags)
+    {
+        switch (pen_bind_flags)
+        {
+            case PEN_BIND_VERTEX_BUFFER:
+                return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+            case PEN_BIND_INDEX_BUFFER:
+                return VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+            case PEN_BIND_CONSTANT_BUFFER:
+                return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        }
+
+        return 0;
+    }
+
+    // vulkan internals
     struct vulkan_context
     {
         VkInstance                  instance;
@@ -63,6 +80,12 @@ namespace
         VkFormat    format;
     };
 
+    struct vulkan_buffer
+    {
+        VkBuffer        buf;
+        VkDeviceMemory  mem;
+    };
+
     enum class e_shd
     {
         vertex,
@@ -93,6 +116,7 @@ namespace
             vulkan_texture texture;
             vulkan_shader  shader;
             clear_state    clear;
+            vulkan_buffer  buffer;
         };
     };
     res_pool<resource_allocation> _res_pool;
@@ -233,6 +257,7 @@ namespace
         VkCommandPoolCreateInfo info = {};
         info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         info.queueFamilyIndex = 0;
+        info.flags |= VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
         CHECK_CALL(vkCreateCommandPool(_ctx.device, &info, NULL, &_ctx.cmd_pool));
 
@@ -508,10 +533,12 @@ namespace
         rp_begin_info.clearValueCount = 1;
         rp_begin_info.pClearValues = &clear_value;
 
+        vkWaitForFences(_ctx.device, 1, &_ctx.fences[_ctx.img_index], VK_TRUE, (s32)-1);
+        vkResetFences(_ctx.device, 1, &_ctx.fences[_ctx.img_index]);
+
         CHECK_CALL(vkBeginCommandBuffer(_ctx.cmd_bufs[_ctx.img_index], &begin_info));
 
         vkCmdBeginRenderPass(_ctx.cmd_bufs[_ctx.img_index], &rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
-
     }
 }
 
@@ -651,7 +678,36 @@ namespace pen
 
         void renderer_create_buffer(const buffer_creation_params& params, u32 resource_slot)
         {
+            _res_pool.insert({}, resource_slot);
+            vulkan_buffer& res = _res_pool.get(resource_slot).buffer;
 
+            VkBufferCreateInfo info = {};
+            info.size = params.buffer_size;
+            info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+            info.usage = to_vk_buffer_usage(params.bind_flags);
+            info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+            CHECK_CALL(vkCreateBuffer(_ctx.device, &info, nullptr, &res.buf));
+
+            VkMemoryRequirements req;
+            vkGetBufferMemoryRequirements(_ctx.device, res.buf, &req);
+
+            VkMemoryAllocateInfo alloc_info = {};
+            alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+            alloc_info.allocationSize = req.size;
+
+            // alloc_info.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+            CHECK_CALL(vkAllocateMemory(_ctx.device, &alloc_info, nullptr, &res.mem));
+            CHECK_CALL(vkBindBufferMemory(_ctx.device, res.buf, res.mem, 0));
+
+            if (params.data)
+            {
+                void* data = nullptr;
+                vkMapMemory(_ctx.device, res.mem, 0, params.buffer_size, 0, &data);
+                memcpy(data, params.data, (size_t)params.buffer_size);
+                vkUnmapMemory(_ctx.device, res.mem);
+            }
         }
 
         void renderer_set_vertex_buffers(u32* buffer_indices, u32 num_buffers, u32 start_slot, const u32* strides, const u32* offsets)
@@ -808,8 +864,21 @@ namespace pen
             info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
             info.commandBufferCount = 1;
             info.pCommandBuffers = &_ctx.cmd_bufs[_ctx.img_index];
+            
+            // wait
+            VkSemaphore sem_wait[] = { _ctx.sem_img_avail[_ctx.img_index] };
+            VkPipelineStageFlags wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+            info.waitSemaphoreCount = 1;
+            info.pWaitSemaphores = sem_wait;
+            info.pWaitDstStageMask = wait_stages;
 
-            CHECK_CALL(vkQueueSubmit(_ctx.graphics_queue, 1, &info, nullptr));
+            // signal
+            VkSemaphore sem_signal[] = { _ctx.sem_render_finished[_ctx.img_index] };
+            info.signalSemaphoreCount = 1;
+            info.pSignalSemaphores = sem_signal;
+            info.signalSemaphoreCount = 1;
+
+            CHECK_CALL(vkQueueSubmit(_ctx.graphics_queue, 1, &info, _ctx.fences[_ctx.img_index]));
 
             VkSwapchainKHR swapChains[] = { _ctx.swap_chain };
             VkPresentInfoKHR present = {};
@@ -817,13 +886,14 @@ namespace pen
             present.swapchainCount = 1;
             present.pSwapchains = swapChains;
             present.pImageIndices = &_ctx.img_index;
+            present.waitSemaphoreCount = 1;
+            present.pWaitSemaphores = sem_signal;
 
             CHECK_CALL(vkQueuePresentKHR(_ctx.present_queue, &present));
 
+            u32 next_frame = (_ctx.img_index + 1) % NBB;
             CHECK_CALL(vkAcquireNextImageKHR(_ctx.device,
-                _ctx.swap_chain, UINT64_MAX, _ctx.sem_img_avail[_ctx.img_index], nullptr, &_ctx.img_index));
-
-            pen::thread_sleep_ms(40);
+                _ctx.swap_chain, UINT64_MAX, _ctx.sem_img_avail[next_frame], nullptr, &_ctx.img_index));
         }
 
         void renderer_push_perf_marker(const c8* name)
