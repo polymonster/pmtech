@@ -38,38 +38,43 @@ namespace
     // vulkan internals
     struct vulkan_context
     {
-        VkInstance                  instance;
-        const char**                layer_names = nullptr;
-        const char**                ext_names = nullptr;
-        VkDebugUtilsMessengerEXT    debug_messanger;
-        bool                        enable_validation = false;
-        VkPhysicalDevice            physical_device = VK_NULL_HANDLE;
-        u32                         num_queue_families;
-        u32                         graphics_family_index;
-        VkQueue                     graphics_queue;
-        u32                         present_family_index;
-        VkQueue                     present_queue;
-        VkDevice                    device;
-        VkSurfaceKHR                surface;
-        VkSwapchainKHR              swap_chain;
-        VkImage*                    swap_chain_images = nullptr;
-        VkCommandPool               cmd_pool;
-        VkCommandBuffer*            cmd_bufs = nullptr;
-        u32                         img_index = 0;
-        VkSemaphore                 sem_img_avail[NBB];
-        VkSemaphore                 sem_render_finished[NBB];
-        VkFence                     fences[NBB];
+        VkInstance                          instance;
+        const char**                        layer_names = nullptr;
+        const char**                        ext_names = nullptr;
+        VkDebugUtilsMessengerEXT            debug_messanger;
+        bool                                enable_validation = false;
+        VkPhysicalDevice                    physical_device = VK_NULL_HANDLE;
+        u32                                 num_queue_families;
+        u32                                 graphics_family_index;
+        VkQueue                             graphics_queue;
+        u32                                 present_family_index;
+        VkQueue                             present_queue;
+        VkDevice                            device;
+        VkSurfaceKHR                        surface;
+        VkSwapchainKHR                      swap_chain;
+        VkImage*                            swap_chain_images = nullptr;
+        VkCommandPool                       cmd_pool;
+        VkCommandBuffer*                    cmd_bufs = nullptr;
+        u32                                 img_index = 0;
+        VkSemaphore                         sem_img_avail[NBB];
+        VkSemaphore                         sem_render_finished[NBB];
+        VkFence                             fences[NBB];
+        VkPhysicalDeviceMemoryProperties    mem_properties;
     };
     vulkan_context _ctx;
 
     struct pen_state
     {
-        u32  shader[3]; // vs, fs, cs
-        u32* colour_attachments = nullptr;
-        u32  depth_attachment = 0;
-        u32  colour_slice;
-        u32  depth_slice;
-        u32  clear_state;
+        u32         shader[3]; // vs, fs, cs
+        u32*        colour_attachments = nullptr;
+        u32         depth_attachment = 0;
+        u32         colour_slice;
+        u32         depth_slice;
+        u32         clear_state;
+        viewport    vp;
+        rect        sr;
+        u32         vertex_buffer;
+        u32         index_buffer;
     };
     pen_state _state;
 
@@ -429,7 +434,22 @@ namespace
         delete devices;
     }
 
-    void bind()
+    u32 get_mem_type(u32 filter, VkMemoryPropertyFlags properties) 
+    {
+        for (u32 i = 0; i < _ctx.mem_properties.memoryTypeCount; i++) 
+        {
+            if ((filter & (1 << i)) && (_ctx.mem_properties.memoryTypes[i].propertyFlags & properties) == properties) 
+            {
+                return i;
+            }
+        }
+
+        // cannot find suitable memory type
+        PEN_ASSERT(0);
+        return 0;
+    }
+
+    void begin_pass()
     {
         const clear_state& clear = _res_pool.get(_state.clear_state).clear;
 
@@ -510,12 +530,9 @@ namespace
         sb_free(colour_refs);
         sb_free(colour_img_view);
 
-        // command buffers
-        VkCommandBufferBeginInfo begin_info = {};
-        begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-
-        VkClearColorValue clear_colour = { 1.0f, 0.0f, 1.0f };
+        // clear
+        clear_state& cs = _res_pool.get(_state.clear_state).clear;
+        VkClearColorValue clear_colour = { cs.r, cs.g, cs.b, cs.a };
         VkClearValue clear_value = {};
         clear_value.color = clear_colour;
 
@@ -533,12 +550,32 @@ namespace
         rp_begin_info.clearValueCount = 1;
         rp_begin_info.pClearValues = &clear_value;
 
-        vkWaitForFences(_ctx.device, 1, &_ctx.fences[_ctx.img_index], VK_TRUE, (s32)-1);
-        vkResetFences(_ctx.device, 1, &_ctx.fences[_ctx.img_index]);
-
-        CHECK_CALL(vkBeginCommandBuffer(_ctx.cmd_bufs[_ctx.img_index], &begin_info));
-
         vkCmdBeginRenderPass(_ctx.cmd_bufs[_ctx.img_index], &rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    }
+
+    void bind_pipeline()
+    {
+        // check for invalidation
+
+        // create pipeline
+
+        VkGraphicsPipelineCreateInfo info = {};
+        info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+        info.stageCount = 2;
+        info.pStages = nullptr;
+        info.pVertexInputState = nullptr;
+        info.pInputAssemblyState = nullptr;
+        info.pViewportState = nullptr;
+        info.pRasterizationState = nullptr;
+        info.pMultisampleState = nullptr;
+        info.pColorBlendState = nullptr;
+        info.layout = {};
+        info.renderPass = {};
+        info.subpass = 0;
+        info.basePipelineHandle = VK_NULL_HANDLE;
+
+        VkPipeline pipeline;
+        CHECK_CALL(vkCreateGraphicsPipelines(_ctx.device, VK_NULL_HANDLE, 1, &info, nullptr, &pipeline));
     }
 }
 
@@ -564,6 +601,22 @@ namespace pen
 
     namespace direct
     {
+        void new_frame(u32 next_frame)
+        {
+            // command buffers
+            VkCommandBufferBeginInfo begin_info = {};
+            begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+            begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+
+            CHECK_CALL(vkAcquireNextImageKHR(_ctx.device,
+                _ctx.swap_chain, UINT64_MAX, _ctx.sem_img_avail[next_frame], nullptr, &_ctx.img_index));
+
+            vkWaitForFences(_ctx.device, 1, &_ctx.fences[_ctx.img_index], VK_TRUE, (s32)-1);
+            vkResetFences(_ctx.device, 1, &_ctx.fences[_ctx.img_index]);
+
+            CHECK_CALL(vkBeginCommandBuffer(_ctx.cmd_bufs[_ctx.img_index], &begin_info));
+        }
+
         u32 renderer_initialise(void* params, u32 bb_res, u32 bb_depth_res)
         {
             _res_pool.init(4096);
@@ -603,8 +656,10 @@ namespace pen
 
             create_device_surface_swapchain(params);
 
-            CHECK_CALL(vkAcquireNextImageKHR(_ctx.device,
-                _ctx.swap_chain, UINT64_MAX, _ctx.sem_img_avail[_ctx.img_index], nullptr, &_ctx.img_index));
+            // to query memory type
+            vkGetPhysicalDeviceMemoryProperties(_ctx.physical_device, &_ctx.mem_properties);
+
+            new_frame(0);
 
             return 0;
         }
@@ -634,7 +689,9 @@ namespace pen
 
         void renderer_create_clear_state(const clear_state& cs, u32 resource_slot)
         {
-
+            _res_pool.insert({}, resource_slot);
+            clear_state& res = _res_pool.get(resource_slot).clear;
+            res = cs;
         }
 
         void renderer_clear(u32 clear_state_index, u32 colour_face, u32 depth_face)
@@ -695,8 +752,8 @@ namespace pen
             VkMemoryAllocateInfo alloc_info = {};
             alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
             alloc_info.allocationSize = req.size;
-
-            // alloc_info.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+            alloc_info.memoryTypeIndex = get_mem_type(req.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
+                                                      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
             CHECK_CALL(vkAllocateMemory(_ctx.device, &alloc_info, nullptr, &res.mem));
             CHECK_CALL(vkBindBufferMemory(_ctx.device, res.buf, res.mem, 0));
@@ -712,7 +769,15 @@ namespace pen
 
         void renderer_set_vertex_buffers(u32* buffer_indices, u32 num_buffers, u32 start_slot, const u32* strides, const u32* offsets)
         {
+            static VkBuffer _bufs[8];
+            static VkDeviceSize _offsets[8];
+            for (u32 i = 0; i < num_buffers; ++i)
+            {
+                _bufs[i] = _res_pool.get(buffer_indices[i]).buffer.buf;
+                _offsets[i] = offsets[i];
+            }
 
+            vkCmdBindVertexBuffers(_ctx.cmd_bufs[_ctx.img_index], start_slot, num_buffers, _bufs, _offsets);
         }
 
         void renderer_set_index_buffer(u32 buffer_index, u32 format, u32 offset)
@@ -757,12 +822,12 @@ namespace pen
 
         void renderer_set_viewport(const viewport& vp)
         {
-
+            _state.vp = vp;
         }
 
         void renderer_set_scissor_rect(const rect& r)
         {
-
+            _state.sr = r;
         }
 
         void renderer_create_blend_state(const blend_creation_params& bcp, u32 resource_slot)
@@ -792,9 +857,9 @@ namespace pen
 
         void renderer_draw(u32 vertex_count, u32 start_vertex, u32 primitive_topology)
         {
-            bind();
+            //bind_pipeline();
 
-            // now we make draws
+            //vkCmdDraw(_ctx.cmd_bufs[_ctx.img_index], vertex_count, 1, 0, 0);
         }
 
         void renderer_draw_indexed(u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology)
@@ -833,6 +898,8 @@ namespace pen
             _state.depth_attachment = depth_target;
             _state.depth_slice = depth_face;
             _state.colour_slice = colour_face;
+
+            begin_pass();
         }
 
         void renderer_set_resolve_targets(u32 colour_target, u32 depth_target)
@@ -892,8 +959,7 @@ namespace pen
             CHECK_CALL(vkQueuePresentKHR(_ctx.present_queue, &present));
 
             u32 next_frame = (_ctx.img_index + 1) % NBB;
-            CHECK_CALL(vkAcquireNextImageKHR(_ctx.device,
-                _ctx.swap_chain, UINT64_MAX, _ctx.sem_img_avail[next_frame], nullptr, &_ctx.img_index));
+            new_frame(next_frame);
         }
 
         void renderer_push_perf_marker(const c8* name)
@@ -919,7 +985,7 @@ namespace pen
 
         void renderer_release_clear_state(u32 clear_state)
         {
-
+            // no mem to free
         }
 
         void renderer_release_buffer(u32 buffer_index)
