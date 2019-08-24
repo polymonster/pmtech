@@ -31,8 +31,36 @@ namespace
             case PEN_BIND_CONSTANT_BUFFER:
                 return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         }
+        PEN_ASSERT(0);
+        return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    }
 
-        return 0;
+    VkPolygonMode to_vk_polygon_mode(u32 pen_polygon_mode)
+    {
+        switch (pen_polygon_mode)
+        {
+            case PEN_FILL_SOLID:
+                return VK_POLYGON_MODE_FILL;
+            case PEN_FILL_WIREFRAME:
+                return VK_POLYGON_MODE_LINE;
+        }
+        PEN_ASSERT(0);
+        return VK_POLYGON_MODE_FILL;
+    }
+
+    VkCullModeFlags to_vk_cull_mode(u32 pen_cull_mode)
+    {
+        switch (pen_cull_mode)
+        {
+            case PEN_CULL_NONE:
+                return VK_CULL_MODE_NONE;
+            case PEN_CULL_FRONT:
+                return VK_CULL_MODE_FRONT_BIT;
+            case PEN_CULL_BACK:
+                return VK_CULL_MODE_BACK_BIT;
+        }
+        PEN_ASSERT(0);
+        return VK_CULL_MODE_NONE;
     }
 
     // vulkan internals
@@ -75,6 +103,7 @@ namespace
         rect        sr;
         u32         vertex_buffer;
         u32         index_buffer;
+        u32         raster;
     };
     pen_state _state;
 
@@ -118,10 +147,11 @@ namespace
         e_res type = e_res::none;
 
         union {
-            vulkan_texture texture;
-            vulkan_shader  shader;
-            clear_state    clear;
-            vulkan_buffer  buffer;
+            vulkan_texture                          texture;
+            vulkan_shader                           shader;
+            clear_state                             clear;
+            vulkan_buffer                           buffer;
+            VkPipelineRasterizationStateCreateInfo  raster;
         };
     };
     res_pool<resource_allocation> _res_pool;
@@ -561,12 +591,16 @@ namespace
 
         VkGraphicsPipelineCreateInfo info = {};
         info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+        info.pRasterizationState = &_res_pool.get(_state.raster).raster;
+        
+        // next
+        info.pViewportState = nullptr;
+
+        // todo.
         info.stageCount = 2;
         info.pStages = nullptr;
         info.pVertexInputState = nullptr;
         info.pInputAssemblyState = nullptr;
-        info.pViewportState = nullptr;
-        info.pRasterizationState = nullptr;
         info.pMultisampleState = nullptr;
         info.pColorBlendState = nullptr;
         info.layout = {};
@@ -812,12 +846,23 @@ namespace pen
 
         void renderer_create_rasterizer_state(const rasteriser_state_creation_params& rscp, u32 resource_slot)
         {
+            _res_pool.insert({}, resource_slot);
+            VkPipelineRasterizationStateCreateInfo& res = _res_pool.get(resource_slot).raster;
 
+            res = {};
+            res.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+            res.depthClampEnable = VK_FALSE;
+            res.depthBiasEnable = VK_FALSE;
+            res.lineWidth = 1.0f;
+            res.rasterizerDiscardEnable = rscp.depth_clip_enable;
+            res.polygonMode = to_vk_polygon_mode(rscp.fill_mode);
+            res.cullMode = to_vk_cull_mode(rscp.cull_mode);
+            res.frontFace = rscp.front_ccw ? VK_FRONT_FACE_COUNTER_CLOCKWISE : VK_FRONT_FACE_CLOCKWISE;
         }
 
         void renderer_set_rasterizer_state(u32 rasterizer_state_index)
         {
-
+            _state.raster = rasterizer_state_index;
         }
 
         void renderer_set_viewport(const viewport& vp)
@@ -857,7 +902,7 @@ namespace pen
 
         void renderer_draw(u32 vertex_count, u32 start_vertex, u32 primitive_topology)
         {
-            //bind_pipeline();
+            bind_pipeline();
 
             //vkCmdDraw(_ctx.cmd_bufs[_ctx.img_index], vertex_count, 1, 0, 0);
         }
