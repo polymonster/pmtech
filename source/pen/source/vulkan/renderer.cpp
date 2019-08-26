@@ -63,6 +63,30 @@ namespace
         return VK_CULL_MODE_NONE;
     }
 
+    VkPrimitiveTopology to_vk_primitive_topology(u32 pen_primitive_topology)
+    {
+        switch (pen_primitive_topology)
+        {
+            case PEN_PT_POINTLIST:
+                return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+            case PEN_PT_LINELIST:
+                return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+            case PEN_PT_LINESTRIP:
+                return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+            case PEN_PT_TRIANGLELIST:
+                return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+            case PEN_PT_TRIANGLESTRIP:
+                return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+        }
+        PEN_ASSERT(0);
+        return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    }
+
+    VkFormat to_vk_vertex_format(u32 pen_vertex_format)
+    {
+        return 0;
+    }
+
     // vulkan internals
     struct vulkan_context
     {
@@ -93,17 +117,20 @@ namespace
 
     struct pen_state
     {
-        u32         shader[3]; // vs, fs, cs
-        u32*        colour_attachments = nullptr;
-        u32         depth_attachment = 0;
-        u32         colour_slice;
-        u32         depth_slice;
-        u32         clear_state;
-        viewport    vp;
-        rect        sr;
-        u32         vertex_buffer;
-        u32         index_buffer;
-        u32         raster;
+        u32             shader[3]; // vs, fs, cs
+        u32*            colour_attachments = nullptr;
+        u32             depth_attachment = 0;
+        u32             colour_slice;
+        u32             depth_slice;
+        u32             clear_state;
+        viewport        vp;
+        rect            sr;
+        u32             vertex_buffer;
+        u32             index_buffer;
+        u32             input_layout;
+        u32             raster;
+        VkRenderPass    pass;
+        VkVertexInputBindingDescription* vertex_input_bindings = nullptr;
     };
     pen_state _state;
 
@@ -120,7 +147,7 @@ namespace
         VkDeviceMemory  mem;
     };
 
-    enum class e_shd
+    enum e_shd
     {
         vertex,
         fragment,
@@ -152,6 +179,7 @@ namespace
             clear_state                             clear;
             vulkan_buffer                           buffer;
             VkPipelineRasterizationStateCreateInfo  raster;
+            VkVertexInputAttributeDescription*      vertex_attributes;
         };
     };
     res_pool<resource_allocation> _res_pool;
@@ -581,35 +609,136 @@ namespace
         rp_begin_info.pClearValues = &clear_value;
 
         vkCmdBeginRenderPass(_ctx.cmd_bufs[_ctx.img_index], &rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+        _state.pass = pass;
     }
 
-    void bind_pipeline()
+    void bind_pipeline(u32 primitive_topology)
     {
         // check for invalidation
 
         // create pipeline
 
+        // raster
         VkGraphicsPipelineCreateInfo info = {};
         info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
         info.pRasterizationState = &_res_pool.get(_state.raster).raster;
-        
-        // next
-        info.pViewportState = nullptr;
 
-        // todo.
+        // input assembly
+        VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
+        inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+        inputAssembly.topology = to_vk_primitive_topology(primitive_topology);
+        inputAssembly.primitiveRestartEnable = VK_FALSE;
+
+        info.pInputAssemblyState = &inputAssembly;
+
+        // viewport / scissor
+        viewport& vp = _state.vp;
+        rect& sr = _state.sr;
+        VkViewport viewport = {};
+        viewport.x = vp.x;
+        viewport.y = vp.y;
+        viewport.width = vp.width;
+        viewport.height = vp.height;
+        viewport.minDepth = vp.min_depth;
+        viewport.maxDepth = vp.max_depth;
+
+        VkRect2D scissor = {};
+        scissor.offset = { (s32)sr.left, (s32)sr.top };
+        scissor.extent = { (u32)sr.right - (u32)sr.left, (u32)sr.top - (u32)sr.bottom };
+
+        VkPipelineViewportStateCreateInfo viewportState = {};
+        viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+        viewportState.viewportCount = 1;
+        viewportState.pViewports = &viewport;
+        viewportState.scissorCount = 1;
+        viewportState.pScissors = &scissor;
+        
+        info.pViewportState = &viewportState;
+
+        // shader stages
+        u32 vs = _state.shader[e_shd::vertex];
+        u32 fs = _state.shader[e_shd::fragment];
+
+        VkPipelineShaderStageCreateInfo vertex_shader_info = {};
+        vertex_shader_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        vertex_shader_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
+        vertex_shader_info.module = _res_pool.get(vs).shader.module;
+        vertex_shader_info.pName = "vs_main";
+
+        VkPipelineShaderStageCreateInfo fragment_shader_info = {};
+        fragment_shader_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        fragment_shader_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+        fragment_shader_info.module = _res_pool.get(fs).shader.module;
+        fragment_shader_info.pName = "ps_main";
+
+        VkPipelineShaderStageCreateInfo shader_stages[] = { vertex_shader_info, fragment_shader_info };
+
         info.stageCount = 2;
-        info.pStages = nullptr;
-        info.pVertexInputState = nullptr;
-        info.pInputAssemblyState = nullptr;
-        info.pMultisampleState = nullptr;
-        info.pColorBlendState = nullptr;
-        info.layout = {};
-        info.renderPass = {};
+        info.pStages = shader_stages;
+
+        // vertex input
+
+        VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
+        vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+
+        auto& va = _res_pool.get(_state.input_layout).vertex_attributes;
+        auto& vb = _state.vertex_input_bindings;
+        vertex_input_info.vertexBindingDescriptionCount = sb_count(vb);
+        vertex_input_info.vertexAttributeDescriptionCount = sb_count(va);
+        vertex_input_info.pVertexBindingDescriptions = vb;
+        vertex_input_info.pVertexAttributeDescriptions = va;
+
+        info.pVertexInputState = &vertex_input_info;
+
+        // blending
+
+        VkPipelineColorBlendAttachmentState colour_blend_attachment = {};
+        colour_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+        colour_blend_attachment.blendEnable = VK_FALSE;
+        
+        VkPipelineColorBlendStateCreateInfo colour_blend = {};
+        colour_blend.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+        colour_blend.logicOpEnable = VK_FALSE;
+        colour_blend.logicOp = VK_LOGIC_OP_COPY;
+        colour_blend.attachmentCount = 1;
+        colour_blend.pAttachments = &colour_blend_attachment;
+        colour_blend.blendConstants[0] = 0.0f;
+        colour_blend.blendConstants[1] = 0.0f;
+        colour_blend.blendConstants[2] = 0.0f;
+        colour_blend.blendConstants[3] = 0.0f;
+
+        info.pColorBlendState = &colour_blend;
+
+        // multisample
+
+        VkPipelineMultisampleStateCreateInfo multisampling = {};
+        multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+        multisampling.sampleShadingEnable = VK_FALSE;
+        multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+        info.pMultisampleState = &multisampling;
+
+        // layout
+        VkPipelineLayout pipeline_layout;
+        VkPipelineLayoutCreateInfo pipeline_layout_info = {};
+        pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        pipeline_layout_info.setLayoutCount = 0;
+        pipeline_layout_info.pushConstantRangeCount = 0;
+
+        CHECK_CALL(vkCreatePipelineLayout(_ctx.device, &pipeline_layout_info, nullptr, &pipeline_layout));
+
+        info.layout = pipeline_layout;
+
+        // pass
+
+        info.renderPass = _state.pass;
         info.subpass = 0;
         info.basePipelineHandle = VK_NULL_HANDLE;
 
         VkPipeline pipeline;
         CHECK_CALL(vkCreateGraphicsPipelines(_ctx.device, VK_NULL_HANDLE, 1, &info, nullptr, &pipeline));
+
+        vkCmdBindPipeline(_ctx.cmd_bufs[_ctx.img_index], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
     }
 }
 
@@ -754,12 +883,27 @@ namespace pen
 
         void renderer_create_input_layout(const input_layout_creation_params& params, u32 resource_slot)
         {
+            _res_pool.insert({}, resource_slot);
+            auto& res = _res_pool.get(resource_slot).vertex_attributes;
+            res = nullptr;
 
+            VkVertexInputBindingDescription* bindings = nullptr;
+
+            for (u32 i = 0; i < params.num_elements; ++i)
+            {
+                VkVertexInputAttributeDescription attr;
+                attr.location = i;
+                attr.offset = params.input_layout[i].aligned_byte_offset;
+                attr.format = to_vk_vertex_format(params.input_layout[i].format);
+                attr.binding = params.input_layout[i].input_slot;
+
+                sb_push(res, attr);
+            }
         }
 
         void renderer_set_input_layout(u32 layout_index)
         {
-
+            _state.input_layout = layout_index;
         }
 
         void renderer_link_shader_program(const shader_link_params& params, u32 resource_slot)
@@ -803,12 +947,25 @@ namespace pen
 
         void renderer_set_vertex_buffers(u32* buffer_indices, u32 num_buffers, u32 start_slot, const u32* strides, const u32* offsets)
         {
+            if (_state.vertex_input_bindings)
+            {
+                sb_free(_state.vertex_input_bindings);
+                _state.vertex_input_bindings = nullptr;
+            }
+
             static VkBuffer _bufs[8];
             static VkDeviceSize _offsets[8];
             for (u32 i = 0; i < num_buffers; ++i)
             {
                 _bufs[i] = _res_pool.get(buffer_indices[i]).buffer.buf;
                 _offsets[i] = offsets[i];
+
+                VkVertexInputBindingDescription vb;
+                vb.binding = i;
+                vb.inputRate = i == 0 ? VK_VERTEX_INPUT_RATE_VERTEX : VK_VERTEX_INPUT_RATE_INSTANCE;
+                vb.stride = strides[i];
+
+                sb_push(_state.vertex_input_bindings, vb);
             }
 
             vkCmdBindVertexBuffers(_ctx.cmd_bufs[_ctx.img_index], start_slot, num_buffers, _bufs, _offsets);
@@ -902,9 +1059,9 @@ namespace pen
 
         void renderer_draw(u32 vertex_count, u32 start_vertex, u32 primitive_topology)
         {
-            bind_pipeline();
+            bind_pipeline(primitive_topology);
 
-            //vkCmdDraw(_ctx.cmd_bufs[_ctx.img_index], vertex_count, 1, 0, 0);
+            vkCmdDraw(_ctx.cmd_bufs[_ctx.img_index], vertex_count, 1, 0, 0);
         }
 
         void renderer_draw_indexed(u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology)
