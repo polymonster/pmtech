@@ -84,7 +84,25 @@ namespace
 
     VkFormat to_vk_vertex_format(u32 pen_vertex_format)
     {
-        return 0;
+        switch (pen_vertex_format)
+        {
+            case PEN_VERTEX_FORMAT_FLOAT1:
+                return VK_FORMAT_R32_SFLOAT;
+            case PEN_VERTEX_FORMAT_FLOAT2:
+                return VK_FORMAT_R32G32_SFLOAT;
+            case PEN_VERTEX_FORMAT_FLOAT3:
+                return VK_FORMAT_R32G32B32_SFLOAT;
+            case PEN_VERTEX_FORMAT_FLOAT4:
+                return VK_FORMAT_R32G32B32A32_SFLOAT;
+            case PEN_VERTEX_FORMAT_UNORM4:
+                return VK_FORMAT_R8G8B8A8_UNORM;
+            case PEN_VERTEX_FORMAT_UNORM2:
+                return VK_FORMAT_R8G8_UNORM;
+            case PEN_VERTEX_FORMAT_UNORM1:
+                return VK_FORMAT_R8_UNORM;
+        }
+        PEN_ASSERT(0);
+        return VK_FORMAT_R32G32B32A32_SFLOAT;
     }
 
     // vulkan internals
@@ -624,12 +642,12 @@ namespace
         info.pRasterizationState = &_res_pool.get(_state.raster).raster;
 
         // input assembly
-        VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
-        inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-        inputAssembly.topology = to_vk_primitive_topology(primitive_topology);
-        inputAssembly.primitiveRestartEnable = VK_FALSE;
+        VkPipelineInputAssemblyStateCreateInfo input_assembly = {};
+        input_assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+        input_assembly.topology = to_vk_primitive_topology(primitive_topology);
+        input_assembly.primitiveRestartEnable = VK_FALSE;
 
-        info.pInputAssemblyState = &inputAssembly;
+        info.pInputAssemblyState = &input_assembly;
 
         // viewport / scissor
         viewport& vp = _state.vp;
@@ -644,7 +662,7 @@ namespace
 
         VkRect2D scissor = {};
         scissor.offset = { (s32)sr.left, (s32)sr.top };
-        scissor.extent = { (u32)sr.right - (u32)sr.left, (u32)sr.top - (u32)sr.bottom };
+        scissor.extent = { (u32)sr.right - (u32)sr.left, (u32)sr.bottom - (u32)sr.top };
 
         VkPipelineViewportStateCreateInfo viewportState = {};
         viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -663,13 +681,13 @@ namespace
         vertex_shader_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         vertex_shader_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
         vertex_shader_info.module = _res_pool.get(vs).shader.module;
-        vertex_shader_info.pName = "vs_main";
+        vertex_shader_info.pName = "main";
 
         VkPipelineShaderStageCreateInfo fragment_shader_info = {};
         fragment_shader_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         fragment_shader_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
         fragment_shader_info.module = _res_pool.get(fs).shader.module;
-        fragment_shader_info.pName = "ps_main";
+        fragment_shader_info.pName = "main";
 
         VkPipelineShaderStageCreateInfo shader_stages[] = { vertex_shader_info, fragment_shader_info };
 
