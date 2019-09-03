@@ -118,6 +118,56 @@ namespace
         return VK_INDEX_TYPE_UINT16;
     }
 
+    VkFilter to_vk_filter(u32 pen_filter)
+    {
+        switch (pen_filter)
+        {
+        case PEN_FILTER_MIN_MAG_MIP_LINEAR:
+        case PEN_FILTER_LINEAR:
+            return VK_FILTER_LINEAR;
+        case PEN_FILTER_MIN_MAG_MIP_POINT:
+        case PEN_FILTER_POINT:
+            return VK_FILTER_NEAREST;
+        }
+        PEN_ASSERT(0);
+        return VK_FILTER_LINEAR;
+    }
+
+    VkSamplerMipmapMode to_vk_mip_map_mode(u32 pen_filter)
+    {
+        switch (pen_filter)
+        {
+        case PEN_FILTER_MIN_MAG_MIP_LINEAR:
+            return VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        case PEN_FILTER_MIN_MAG_MIP_POINT:
+            return VK_SAMPLER_MIPMAP_MODE_NEAREST;
+        case PEN_FILTER_POINT:
+        case PEN_FILTER_LINEAR:
+            return VK_SAMPLER_MIPMAP_MODE_NEAREST;
+        }
+        PEN_ASSERT(0);
+        return VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    }
+
+    VkSamplerAddressMode to_vk_sampler_address_mode(u32 pen_sampler_address_mode)
+    {
+        switch (pen_sampler_address_mode)
+        {
+        case PEN_TEXTURE_ADDRESS_WRAP:
+            return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        case PEN_TEXTURE_ADDRESS_MIRROR:
+            return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+        case PEN_TEXTURE_ADDRESS_CLAMP:
+            return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        case PEN_TEXTURE_ADDRESS_BORDER:
+            return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+        case PEN_TEXTURE_ADDRESS_MIRROR_ONCE:
+            return VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
+        }
+        PEN_ASSERT(0);
+        return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    }
+
     // vulkan internals
     struct vulkan_context
     {
@@ -1071,7 +1121,7 @@ namespace pen
 
             CHECK_CALL(vkCreateImageView(_ctx.device, &view_info, nullptr, &vt.image_view));
 
-            // todo tile / swizzle
+            // todo tile images and copy data
         }
 
         void renderer_create_sampler(const sampler_creation_params& scp, u32 resource_slot)
@@ -1079,24 +1129,24 @@ namespace pen
             VkSamplerCreateInfo info = {};
             info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 
-            info.magFilter = VK_FILTER_LINEAR;
-            info.minFilter = VK_FILTER_LINEAR;
+            info.magFilter = to_vk_filter(scp.filter);
+            info.minFilter = to_vk_filter(scp.filter);
+            info.mipmapMode = to_vk_mip_map_mode(scp.filter);
 
-            info.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-            info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-            info.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+            info.addressModeU = to_vk_sampler_address_mode(scp.address_u);
+            info.addressModeV = to_vk_sampler_address_mode(scp.address_v);
+            info.addressModeW = to_vk_sampler_address_mode(scp.address_w);
 
-            info.anisotropyEnable = VK_FALSE;
+            info.anisotropyEnable = scp.max_anisotropy > 0;
             info.maxAnisotropy = scp.max_anisotropy;
 
             info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
 
             info.unnormalizedCoordinates = VK_FALSE;
-
             info.compareEnable = VK_FALSE;
+
             info.compareOp = VK_COMPARE_OP_ALWAYS;
 
-            info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
             info.mipLodBias = scp.mip_lod_bias;
             info.minLod = scp.min_lod;
             info.maxLod = scp.max_lod;
