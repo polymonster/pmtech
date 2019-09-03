@@ -193,7 +193,7 @@ namespace pen
         u32   width;
         u32   height;
         s32   num_mips;
-        u32   num_arrays; // num array slices
+        u32   num_arrays; // num array slices, 6 for cubemap or image depth for 3d texture
         u32   format;
         u32   sample_count;
         u32   sample_quality;
