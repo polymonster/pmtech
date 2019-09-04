@@ -196,22 +196,51 @@ namespace
     };
     vulkan_context _ctx;
 
+    enum class e_binding_type
+    {
+        texture,
+        cbuffer
+    };
+
+    struct pen_binding
+    {
+        e_binding_type type;
+        union
+        {
+            struct
+            {
+                u32 index;
+                u32 sampler_index;
+                u32 slot;
+                u32 bind_flags;
+            };
+
+            struct
+            {
+                u32 index;
+                u32 slot;
+                u32 bind_flags;
+            };
+        };
+    };
+
     struct pen_state
     {
-        u32             shader[3]; // vs, fs, cs
-        u32*            colour_attachments = nullptr;
-        u32             depth_attachment = 0;
-        u32             colour_slice;
-        u32             depth_slice;
-        u32             clear_state;
-        viewport        vp;
-        rect            sr;
-        u32             vertex_buffer;
-        u32             index_buffer;
-        u32             input_layout;
-        u32             raster;
-        VkRenderPass    pass;
-        VkVertexInputBindingDescription* vertex_input_bindings = nullptr;
+        u32                                 shader[3]; // vs, fs, cs
+        u32*                                colour_attachments = nullptr;
+        u32                                 depth_attachment = 0;
+        u32                                 colour_slice;
+        u32                                 depth_slice;
+        u32                                 clear_state;
+        viewport                            vp;
+        rect                                sr;
+        u32                                 vertex_buffer;
+        u32                                 index_buffer;
+        u32                                 input_layout;
+        u32                                 raster;
+        VkRenderPass                        pass;
+        VkVertexInputBindingDescription*    vertex_input_bindings = nullptr;
+        pen_binding*                        bindings = nullptr;
     };
     pen_state _state;
 
@@ -800,11 +829,55 @@ namespace
         info.pMultisampleState = &multisampling;
 
         // layout
+
         VkPipelineLayout pipeline_layout;
         VkPipelineLayoutCreateInfo pipeline_layout_info = {};
         pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipeline_layout_info.setLayoutCount = 0;
         pipeline_layout_info.pushConstantRangeCount = 0;
+
+        VkDescriptorSetLayoutBinding* vk_bindings = nullptr;
+
+        u32 num_bindings = sb_count(_state.bindings);
+        for (u32 i = 0; i < num_bindings; ++i)
+        {
+            auto& b = _state.bindings[i];
+
+            VkDescriptorSetLayoutBinding vb = {};
+            vb.binding = b.slot;
+            vb.descriptorCount = 1;
+            vb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+            vb.pImmutableSamplers = nullptr;
+
+            switch (b.type)
+            {
+            case e_binding_type::texture:
+                vb.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                break;
+            case e_binding_type::cbuffer:
+                PEN_ASSERT(0);
+                break;
+            }
+
+            sb_push(vk_bindings, vb);
+        }
+
+        if (num_bindings > 0)
+        {
+            VkDescriptorSetLayoutCreateInfo descriptor_info = {};
+            descriptor_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+            descriptor_info.bindingCount = sb_count(vk_bindings);
+            descriptor_info.pBindings = vk_bindings;
+
+            VkDescriptorSetLayout descriptor_set;
+            CHECK_CALL(vkCreateDescriptorSetLayout(_ctx.device, &descriptor_info, nullptr, &descriptor_set));
+
+            pipeline_layout_info.setLayoutCount = 1;
+            pipeline_layout_info.pSetLayouts = &descriptor_set;
+
+            sb_free(_state.bindings);
+            _state.bindings = nullptr;
+        }
+
 
         CHECK_CALL(vkCreatePipelineLayout(_ctx.device, &pipeline_layout_info, nullptr, &pipeline_layout));
 
@@ -820,6 +893,67 @@ namespace
         CHECK_CALL(vkCreateGraphicsPipelines(_ctx.device, VK_NULL_HANDLE, 1, &info, nullptr, &pipeline));
 
         vkCmdBindPipeline(_ctx.cmd_bufs[_ctx.img_index], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+    }
+
+    void bind_descriptor_sets()
+    {
+        // check for invalidation
+
+        VkDescriptorPoolSize pool_size = {};
+        pool_size.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        pool_size.descriptorCount = 1;
+
+        VkDescriptorPoolCreateInfo pool_info = {};
+        pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        pool_info.poolSizeCount = 1;
+        pool_info.pPoolSizes = &pool_size;
+        pool_info.maxSets = 1;
+
+        VkDescriptorSetAllocateInfo alloc_info = {};
+        alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        alloc_info.descriptorPool = descriptorPool;
+        alloc_info.descriptorSetCount = 1;
+        alloc_info.pSetLayouts = layouts.data();
+
+        //vkCreateDescriptorPool()
+
+        /*
+        descriptorSets.resize(swapChainImages.size());
+        if (vkAllocateDescriptorSets(device, &allocInfo, descriptorSets.data()) != VK_SUCCESS) {
+            throw std::runtime_error("failed to allocate descriptor sets!");
+        }
+
+        for (size_t i = 0; i < swapChainImages.size(); i++) {
+            VkDescriptorBufferInfo bufferInfo = {};
+            bufferInfo.buffer = uniformBuffers[i];
+            bufferInfo.offset = 0;
+            bufferInfo.range = sizeof(UniformBufferObject);
+
+            VkWriteDescriptorSet descriptorWrite = {};
+            descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrite.dstSet = descriptorSets[i];
+            descriptorWrite.dstBinding = 0;
+            descriptorWrite.dstArrayElement = 0;
+            descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptorWrite.descriptorCount = 1;
+            descriptorWrite.pBufferInfo = &bufferInfo;
+
+            vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
+        }
+        */
+
+        /*
+        std::vector<VkDescriptorSetLayout> layouts(swapChainImages.size(), descriptorSetLayout);
+        
+        VkDescriptorSetAllocateInfo alloc_info = {};
+        alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        alloc_info.descriptorPool = descriptorPool;
+        alloc_info.descriptorSetCount = 1
+        alloc_info.pSetLayouts = descriptor_set;
+        */
+
+        //VkWriteDescriptorSet
+        //vkUpdateDescriptorSets
     }
 }
 
@@ -1143,8 +1277,8 @@ namespace pen
             info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
 
             info.unnormalizedCoordinates = VK_FALSE;
-            info.compareEnable = VK_FALSE;
 
+            info.compareEnable = VK_FALSE;
             info.compareOp = VK_COMPARE_OP_ALWAYS;
 
             info.mipLodBias = scp.mip_lod_bias;
@@ -1154,7 +1288,14 @@ namespace pen
 
         void renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 bind_flags)
         {
+            pen_binding b;
+            b.type = e_binding_type::texture;
+            b.index = texture_index;
+            b.sampler_index = sampler_index;
+            b.slot = resource_slot;
+            b.bind_flags = bind_flags;
 
+            sb_push(_state.bindings, b);
         }
 
         void renderer_create_rasterizer_state(const rasteriser_state_creation_params& rscp, u32 resource_slot)
@@ -1216,6 +1357,7 @@ namespace pen
         void renderer_draw(u32 vertex_count, u32 start_vertex, u32 primitive_topology)
         {
             bind_pipeline(primitive_topology);
+            bind_descriptor_sets();
 
             vkCmdDraw(_ctx.cmd_bufs[_ctx.img_index], vertex_count, 1, 0, 0);
         }
@@ -1223,14 +1365,15 @@ namespace pen
         inline void _draw_index_instanced(u32 instance_count, 
             u32 start_instance, u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology)
         {
+            bind_pipeline(primitive_topology);
+            bind_descriptor_sets();
+
             vkCmdDrawIndexed(_ctx.cmd_bufs[_ctx.img_index], 
                 index_count, instance_count, start_index, base_vertex, start_instance);
         }
 
         void renderer_draw_indexed(u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology)
         {
-            bind_pipeline(primitive_topology);
-
             _draw_index_instanced(1, 0, index_count, start_index, base_vertex, primitive_topology);
         }
 
