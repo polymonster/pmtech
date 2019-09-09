@@ -76,8 +76,8 @@ void blend_layers(const scene_view& scene_view)
     static u32 background_texture = put::load_texture("data/textures/blend_test_bg.dds");
     static u32 foreground_texture = put::load_texture("data/textures/blend_test_fg.dds");
 
-    static u32 wrap_linear = pmfx::get_render_state(PEN_HASH("wrap_linear"), pmfx::RS_SAMPLER);
-    static u32 disable_blend = pmfx::get_render_state(PEN_HASH("disabled"), pmfx::RS_BLEND);
+    u32 wrap_linear = pmfx::get_render_state(PEN_HASH("wrap_linear"), pmfx::RS_SAMPLER);
+    u32 disable_blend = pmfx::get_render_state(PEN_HASH("disabled"), pmfx::RS_BLEND);
 
     if (!is_valid(scene_view.pmfx_shader))
         return;

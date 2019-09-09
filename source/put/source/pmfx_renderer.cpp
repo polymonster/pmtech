@@ -2432,7 +2432,7 @@ namespace put
             for (u32 i = 0; i < 6; ++i)
             {
                 pen::renderer_present();
-                pen::renderer_dispatch();
+                pen::renderer_consume_cmd_buffer();
             }
 
             release_script_resources();
