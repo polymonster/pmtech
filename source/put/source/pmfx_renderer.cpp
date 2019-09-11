@@ -400,11 +400,11 @@ namespace put
             return res;
         }
 
-        render_state* get_state_by_hash(hash_id hash)
+        render_state* get_state_by_hash(hash_id hash, u32 type)
         {
             size_t num = s_render_states.size();
             for (s32 i = 0; i < num; ++i)
-                if (s_render_states[i].hash == hash)
+                if (s_render_states[i].hash == hash && s_render_states[i].type == type)
                     return &s_render_states[i];
 
             return nullptr;
@@ -600,7 +600,7 @@ namespace put
                 rs.id_name = PEN_HASH(rs.name);
                 rs.type = RS_SAMPLER;
 
-                render_state* existing_state = get_state_by_hash(hh);
+                render_state* existing_state = get_state_by_hash(hh, RS_SAMPLER);
                 if (existing_state)
                     rs.handle = existing_state->handle;
                 else
@@ -639,7 +639,7 @@ namespace put
                 rs.id_name = PEN_HASH(rs.name);
                 rs.type = RS_RASTERIZER;
 
-                render_state* existing_state = get_state_by_hash(hh);
+                render_state* existing_state = get_state_by_hash(hh, RS_RASTERIZER);
                 if (existing_state)
                     rs.handle = existing_state->handle;
                 else
@@ -760,7 +760,7 @@ namespace put
                 rs.id_name = PEN_HASH(rs.name);
                 rs.type = RS_DEPTH_STENCIL;
 
-                render_state* existing_state = get_state_by_hash(hh);
+                render_state* existing_state = get_state_by_hash(hh, RS_DEPTH_STENCIL);
                 if (existing_state)
                     rs.handle = existing_state->handle;
                 else
@@ -925,7 +925,7 @@ namespace put
             rs.id_name = PEN_HASH(view_name);
             rs.type = RS_BLEND;
 
-            render_state* existing_state = get_state_by_hash(hh);
+            render_state* existing_state = get_state_by_hash(hh, RS_BLEND);
             if (existing_state)
                 rs.handle = existing_state->handle;
             else
@@ -2457,7 +2457,9 @@ namespace put
 
         void release_script_resources()
         {
-            // release render states
+
+#if 0
+			// release render states.. can cause some problems with hot relaod
             for (auto& rs : s_render_states)
             {
                 // dev_console_log("release state %i : %s (%i)", rs.type, rs.name.c_str(), rs.handle);
@@ -2478,6 +2480,7 @@ namespace put
                         break;
                 }
             }
+#endif
 
             // release render targets
             for (auto& rt : s_render_targets)
