@@ -257,6 +257,8 @@ namespace
         hash_id hash;
         u32     handle;
 
+		bool	copy;
+
         e_render_state_type type;
     };
 
@@ -400,11 +402,11 @@ namespace put
             return res;
         }
 
-        render_state* get_state_by_hash(hash_id hash)
+        render_state* get_state_by_hash(hash_id hash, u32 type)
         {
             size_t num = s_render_states.size();
             for (s32 i = 0; i < num; ++i)
-                if (s_render_states[i].hash == hash)
+                if (s_render_states[i].hash == hash && s_render_states[i].type == type)
                     return &s_render_states[i];
 
             return nullptr;
@@ -599,12 +601,18 @@ namespace put
                 rs.name = state.name();
                 rs.id_name = PEN_HASH(rs.name);
                 rs.type = RS_SAMPLER;
+				rs.copy = false;
 
-                render_state* existing_state = get_state_by_hash(hh);
-                if (existing_state)
-                    rs.handle = existing_state->handle;
-                else
-                    rs.handle = pen::renderer_create_sampler(scp);
+                render_state* existing_state = get_state_by_hash(hh, RS_SAMPLER);
+				if (existing_state)
+				{
+					rs.handle = existing_state->handle;
+					rs.copy = true;
+				}
+				else
+				{
+					rs.handle = pen::renderer_create_sampler(scp);
+				}
 
                 s_render_states.push_back(rs);
             }
@@ -638,12 +646,18 @@ namespace put
                 rs.name = state.name();
                 rs.id_name = PEN_HASH(rs.name);
                 rs.type = RS_RASTERIZER;
+				rs.copy = false;
 
-                render_state* existing_state = get_state_by_hash(hh);
-                if (existing_state)
-                    rs.handle = existing_state->handle;
-                else
-                    rs.handle = pen::renderer_create_rasterizer_state(rcp);
+                render_state* existing_state = get_state_by_hash(hh, RS_RASTERIZER);
+				if (existing_state)
+				{
+					rs.handle = existing_state->handle;
+					rs.copy = true;
+				}
+				else
+				{
+					rs.handle = pen::renderer_create_rasterizer_state(rcp);
+				}
 
                 s_render_states.push_back(rs);
             }
@@ -693,6 +707,8 @@ namespace put
                 rs.id_name = PEN_HASH(state.name().c_str());
                 rs.type = RS_BLEND;
                 rs.handle = pen::renderer_create_blend_state(bcp);
+				rs.copy = false;
+
                 s_render_states.push_back(rs);
             }
         }
@@ -759,12 +775,18 @@ namespace put
                 rs.name = state.name();
                 rs.id_name = PEN_HASH(rs.name);
                 rs.type = RS_DEPTH_STENCIL;
+				rs.copy = false;
 
-                render_state* existing_state = get_state_by_hash(hh);
-                if (existing_state)
-                    rs.handle = existing_state->handle;
-                else
-                    rs.handle = pen::renderer_create_depth_stencil_state(dscp);
+                render_state* existing_state = get_state_by_hash(hh, RS_DEPTH_STENCIL);
+				if (existing_state)
+				{
+					rs.handle = existing_state->handle;
+					rs.copy = true;
+				}
+				else
+				{
+					rs.handle = pen::renderer_create_depth_stencil_state(dscp);
+				}
 
                 s_render_states.push_back(rs);
             }
@@ -924,12 +946,18 @@ namespace put
             rs.name = view_name;
             rs.id_name = PEN_HASH(view_name);
             rs.type = RS_BLEND;
+			rs.copy = false;
 
-            render_state* existing_state = get_state_by_hash(hh);
-            if (existing_state)
-                rs.handle = existing_state->handle;
-            else
-                rs.handle = pen::renderer_create_blend_state(bcp);
+            render_state* existing_state = get_state_by_hash(hh, RS_BLEND);
+			if (existing_state)
+			{
+				rs.handle = existing_state->handle;
+				rs.copy = true;
+			}
+			else
+			{
+				rs.handle = pen::renderer_create_blend_state(bcp);
+			}
 
             s_render_states.push_back(rs);
 
@@ -2432,7 +2460,7 @@ namespace put
             for (u32 i = 0; i < 6; ++i)
             {
                 pen::renderer_present();
-                pen::renderer_dispatch();
+                pen::renderer_consume_cmd_buffer();
             }
 
             release_script_resources();
@@ -2457,10 +2485,12 @@ namespace put
 
         void release_script_resources()
         {
-            // release render states
             for (auto& rs : s_render_states)
             {
-                // dev_console_log("release state %i : %s (%i)", rs.type, rs.name.c_str(), rs.handle);
+				if (rs.copy)
+					continue;
+
+				// PEN_LOG("release state %i : %s (%i)\n", rs.type, rs.name.c_str(), rs.handle);
 
                 switch (rs.type)
                 {

@@ -1375,6 +1375,7 @@ namespace pen
         for (u32 i = 0; i < bcp.num_render_targets; ++i)
         {
             memcpy(&bd.RenderTarget[i], (void*)&(bcp.render_targets[i]), sizeof(render_target_blend));
+			PEN_ASSERT(bcp.render_targets[i].render_target_write_mask >= 0xf); // 0xf is max value supported
         }
 
         CHECK_CALL(s_device->CreateBlendState(&bd, &_res_pool[resource_index].blend_state));
