@@ -173,12 +173,8 @@ namespace
         u32 vf = VK_IMAGE_USAGE_SAMPLED_BIT;
         if (pen_texture_usage & PEN_BIND_RENDER_TARGET)
             vf |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-        if (pen_texture_usage & PEN_BIND_SHADER_RESOURCE)
-            vf |= 0;
         if (pen_texture_usage & PEN_BIND_DEPTH_STENCIL)
-            vf |= 0;
-        if (pen_texture_usage & PEN_BIND_SHADER_WRITE)
-            vf |= 0;
+            vf |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
         return (VkImageUsageFlagBits)vf;
     }
 
@@ -720,7 +716,11 @@ namespace
             col.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
             col.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
             col.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-            col.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+            if (ica < sb_count(_ctx.swap_chain_images))
+                col.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+            else
+                col.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
             VkAttachmentReference ref = {};
             ref.attachment = i;
@@ -1008,6 +1008,8 @@ namespace
         for (u32 i = 0; i < nb; ++i)
         {
             pen_binding& pb = _state.bindings[i];
+            if (pb.index == 0)
+                continue;
 
             VkDescriptorImageInfo image_info = {};
             image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -1139,7 +1141,7 @@ namespace pen
 
         void renderer_sync()
         {
-            // stub.. this fnction is for metal
+            // stub.. this function is for metal
         }
 
         void renderer_create_clear_state(const clear_state& cs, u32 resource_slot)
@@ -1355,7 +1357,7 @@ namespace pen
             info.mipLevels = tcp.num_mips;
             info.imageType = VK_IMAGE_TYPE_2D;
             info.format = VK_FORMAT_B8G8R8A8_UNORM;
-            info.usage = to_vk_texture_usage(tcp.usage);
+            info.usage = to_vk_texture_usage(tcp.bind_flags);
             info.tiling = VK_IMAGE_TILING_OPTIMAL;
             info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
             info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
