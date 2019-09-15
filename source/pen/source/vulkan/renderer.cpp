@@ -168,6 +168,20 @@ namespace
         return VK_SAMPLER_ADDRESS_MODE_REPEAT;
     }
 
+    VkImageUsageFlagBits to_vk_texture_usage(u32 pen_texture_usage)
+    {
+        u32 vf = VK_IMAGE_USAGE_SAMPLED_BIT;
+        if (pen_texture_usage & PEN_BIND_RENDER_TARGET)
+            vf |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        if (pen_texture_usage & PEN_BIND_SHADER_RESOURCE)
+            vf |= 0;
+        if (pen_texture_usage & PEN_BIND_DEPTH_STENCIL)
+            vf |= 0;
+        if (pen_texture_usage & PEN_BIND_SHADER_WRITE)
+            vf |= 0;
+        return (VkImageUsageFlagBits)vf;
+    }
+
     // vulkan internals
     struct vulkan_context
     {
@@ -248,10 +262,11 @@ namespace
 
     struct vulkan_texture
     {
-        VkImageView     image_view;
-        VkImage         image;
-        VkFormat        format;
-        VkDeviceMemory  mem = 0;
+        VkImageView                 image_view;
+        VkImage                     image;
+        VkFormat                    format;
+        VkDeviceMemory              mem = 0;
+        texture_creation_params*    tcp;
     };
 
     struct vulkan_buffer
@@ -424,6 +439,12 @@ namespace
             vt.image_view = iv;
             vt.image = _ctx.swap_chain_images[i];
             vt.format = VK_FORMAT_B8G8R8A8_UNORM;
+
+            vt.tcp = new texture_creation_params();
+            memset(vt.tcp, 0x0, sizeof(vt.tcp));
+
+            vt.tcp->width = pen_window.width;
+            vt.tcp->height = pen_window.height;
         }
 
         delete images;
@@ -665,10 +686,27 @@ namespace
         VkAttachmentReference*   colour_refs = nullptr;
         VkImageView*             colour_img_view = nullptr;
 
+        if (_state.pass)
+        {
+            // end current pass
+            vkCmdEndRenderPass(_ctx.cmd_bufs[_ctx.ii]);
+            _state.pass = nullptr;
+        }
+
+        size_t fbw, fbh;
+
         for (u32 i = 0; i < sb_count(_state.colour_attachments); ++i)
         {
             u32 ica = _state.colour_attachments[i];
-            const vulkan_texture& vt = _res_pool.get(ica + _ctx.ii).texture;
+
+            // backbuffer roll swap chain
+            if(ica == 0)
+                ica += _ctx.ii;
+
+            const vulkan_texture& vt = _res_pool.get(ica).texture;
+
+            fbw = vt.tcp->width;
+            fbh = vt.tcp->height;
 
             VkAttachmentDescription col = {};
             col.format = vt.format;
@@ -726,8 +764,8 @@ namespace
         fb_info.renderPass = pass;
         fb_info.attachmentCount = sb_count(colour_img_view);
         fb_info.pAttachments = colour_img_view;
-        fb_info.width = pen_window.width;
-        fb_info.height = pen_window.height;
+        fb_info.width = fbw;
+        fb_info.height = fbh;
         fb_info.layers = 1;
 
         VkFramebuffer fb;
@@ -746,14 +784,13 @@ namespace
         VkImageSubresourceRange img_range = {};
         img_range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         img_range.levelCount = 1;
-        img_range.layerCount = 1;
 
         VkRenderPassBeginInfo rp_begin_info = {};
         rp_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         rp_begin_info.renderPass = pass;
         rp_begin_info.framebuffer = fb;
         rp_begin_info.renderArea.offset = { 0, 0 };
-        rp_begin_info.renderArea.extent = { 1280, 720 };
+        rp_begin_info.renderArea.extent = { (u32)fbw, (u32)fbh };
         rp_begin_info.clearValueCount = 1;
         rp_begin_info.pClearValues = &clear_value;
 
@@ -1303,6 +1340,10 @@ namespace pen
             _res_pool.insert({}, resource_slot);
             vulkan_texture& vt = _res_pool.get(resource_slot).texture;
 
+            // texture formats todo.
+            vt.format = VK_FORMAT_B8G8R8A8_UNORM;
+            vt.tcp = new texture_creation_params(tcp);
+
             // image
             VkImageCreateInfo info = {};
             info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -1314,7 +1355,7 @@ namespace pen
             info.mipLevels = tcp.num_mips;
             info.imageType = VK_IMAGE_TYPE_2D;
             info.format = VK_FORMAT_B8G8R8A8_UNORM;
-            info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+            info.usage = to_vk_texture_usage(tcp.usage);
             info.tiling = VK_IMAGE_TILING_OPTIMAL;
             info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
             info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -1531,7 +1572,7 @@ namespace pen
 
         void renderer_create_render_target(const texture_creation_params& tcp, u32 resource_slot, bool track)
         {
-
+            return renderer_create_texture(tcp, resource_slot);
         }
 
         void renderer_set_targets(const u32* const colour_targets, u32 num_colour_targets, u32 depth_target, u32 colour_face, u32 depth_face)
@@ -1572,6 +1613,8 @@ namespace pen
         void renderer_present()
         {
             vkCmdEndRenderPass(_ctx.cmd_bufs[_ctx.ii]);
+            _state.pass = nullptr;
+
             vkEndCommandBuffer(_ctx.cmd_bufs[_ctx.ii]);
 
             VkSubmitInfo info = {};

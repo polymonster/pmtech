@@ -503,7 +503,7 @@ namespace pen
         // render targets
         void renderer_create_render_target(const texture_creation_params& tcp, u32 resource_slot, bool track = true);
         void renderer_set_targets(const u32* const colour_targets, u32 num_colour_targets, u32 depth_target,
-                                  u32 colour_face = 0, u32 depth_face = 0);
+                                  u32 colour_slice = 0, u32 depth_slice = 0);
         void renderer_set_resolve_targets(u32 colour_target, u32 depth_target);
         void renderer_set_stream_out_target(u32 buffer_index);
         void renderer_resolve_target(u32 target, e_msaa_resolve_type type, resolve_resources res);
