@@ -1,6 +1,7 @@
 #include "renderer.h"
 #include "console.h"
 #include "data_struct.h"
+#include "hash.h"
 
 #include "vulkan/vulkan.h"
 
@@ -16,6 +17,8 @@ a_u8                               g_window_resize(0);
 using namespace pen;
 
 #define NBB 3
+#define MAX_TEXTURE_DESCRIPTOR_SETS 4096 // I dont like this and wish the pool didnt need to be allocated up front.
+#define MAX_CBUFFER_DESCRIPTOR_SETS 4096
 
 namespace
 {
@@ -168,13 +171,15 @@ namespace
         return VK_SAMPLER_ADDRESS_MODE_REPEAT;
     }
 
-    VkImageUsageFlagBits to_vk_texture_usage(u32 pen_texture_usage)
+    VkImageUsageFlagBits to_vk_texture_usage(u32 pen_texture_usage, bool has_data)
     {
         u32 vf = VK_IMAGE_USAGE_SAMPLED_BIT;
         if (pen_texture_usage & PEN_BIND_RENDER_TARGET)
             vf |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         if (pen_texture_usage & PEN_BIND_DEPTH_STENCIL)
             vf |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        if (has_data)
+            vf |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         return (VkImageUsageFlagBits)vf;
     }
 
@@ -202,7 +207,8 @@ namespace
         VkSemaphore                         sem_img_avail[NBB];
         VkSemaphore                         sem_render_finished[NBB];
         VkFence                             fences[NBB];
-        VkPhysicalDeviceMemoryProperties    mem_properties;                  
+        VkPhysicalDeviceMemoryProperties    mem_properties;        
+        VkDescriptorPool                    descriptor_pool;
     };
     vulkan_context _ctx;
 
@@ -234,14 +240,36 @@ namespace
         };
     };
 
+    struct vk_pipeline_cache
+    {
+        hash_id     hash;
+        VkPipeline  pipeline;
+    };
+    vk_pipeline_cache* s_pipeline_cache = nullptr;
+
+    struct vk_pass_cache
+    {
+        hash_id                 hash;
+        VkRenderPassBeginInfo   begin_info;
+        VkRenderPass            pass;
+        VkClearValue            clear_value;
+    };
+    vk_pass_cache* s_pass_cache = nullptr;
+
     struct pen_state
     {
-        u32                                 shader[3]; // vs, fs, cs
+        // hashes
+        hash_id                             hpass = 0;
+        hash_id                             hpipeline = 0;
+        hash_id                             hdescriptors = 0;
+        // hash for pass
         u32*                                colour_attachments = nullptr;
         u32                                 depth_attachment = 0;
         u32                                 colour_slice;
         u32                                 depth_slice;
         u32                                 clear_state;
+        // hash for pipeline
+        u32                                 shader[3]; // vs, fs, cs
         viewport                            vp;
         rect                                sr;
         u32                                 vertex_buffer;
@@ -249,10 +277,11 @@ namespace
         u32                                 input_layout;
         u32                                 raster;
         VkRenderPass                        pass;
+        pen_binding*                        bindings = nullptr;
+        // vulkan cached state
         VkPipelineLayout                    pipeline_layout;
         VkVertexInputBindingDescription*    vertex_input_bindings = nullptr;
-        VkDescriptorSetLayout*              descriptor_set_layouts = nullptr;
-        pen_binding*                        bindings = nullptr;
+        VkDescriptorSet                     descriptor_set;
     };
     pen_state _state;
 
@@ -308,6 +337,18 @@ namespace
         };
     };
     res_pool<resource_allocation> _res_pool;
+
+    // hash contents of a stretchy buffer
+    template<typename T>
+    hash_id sb_hash(T* sb)
+    {
+        u32 c = sb_count(sb);
+        HashMurmur2A hh;
+        hh.begin();
+        for (u32 i = 0; i < c; ++i)
+            hh.add(sb[i]);
+        return hh.end();
+    }
 
     void enumerate_layers()
     {
@@ -370,8 +411,12 @@ namespace
     {
         VkDebugUtilsMessengerCreateInfoEXT info = {};
         info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-        info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-        info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT 
+            | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT 
+            | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT 
+            | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT 
+            | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
         info.pfnUserCallback = debug_callback;
         info.pUserData = nullptr;
 
@@ -466,6 +511,28 @@ namespace
             sb_push(_ctx.cmd_bufs, VkCommandBuffer());
 
         CHECK_CALL(vkAllocateCommandBuffers(_ctx.device, &buf_info, _ctx.cmd_bufs));
+    }
+
+    void create_descriptor_set_pool(u32 num_texture, u32 num_cbuffer)
+    {
+        // one large pool for all descriptor sets to be allocated from
+
+        VkDescriptorPoolSize pool_sizes[] = {
+            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER , num_texture },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER , num_cbuffer },
+        };
+
+        u32 max_sets = 0;
+        for (auto& ps : pool_sizes)
+            max_sets += ps.descriptorCount;
+
+        VkDescriptorPoolCreateInfo pool_info = {};
+        pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        pool_info.poolSizeCount = PEN_ARRAY_SIZE(pool_sizes);
+        pool_info.pPoolSizes = &pool_sizes[0];
+        pool_info.maxSets = max_sets;
+
+        CHECK_CALL(vkCreateDescriptorPool(_ctx.device, &pool_info, nullptr, &_ctx.descriptor_pool));
     }
 
     // quick shitty functions for testing, better having a pool of these to burn through
@@ -654,6 +721,8 @@ namespace
 
         create_sync_primitives();
 
+        create_descriptor_set_pool(MAX_TEXTURE_DESCRIPTOR_SETS, MAX_CBUFFER_DESCRIPTOR_SETS);
+
         delete queue_families;
         delete devices;
     }
@@ -673,6 +742,29 @@ namespace
         return 0;
     }
 
+    void begin_pass_from_cache(vk_pass_cache& vk_pc)
+    {
+        if (_state.pass == vk_pc.pass)
+            return;
+
+        if (_state.pass)
+        {
+            // end current pass
+            vkCmdEndRenderPass(_ctx.cmd_bufs[_ctx.ii]);
+            _state.pass = nullptr;
+        }
+
+        clear_state& cs = _res_pool.get(_state.clear_state).clear;
+        VkClearColorValue clear_colour = { cs.r, cs.g, cs.b, cs.a };
+        vk_pc.clear_value = {};
+        vk_pc.clear_value.color = clear_colour;
+        vk_pc.begin_info.clearValueCount = 1;
+        vk_pc.begin_info.pClearValues = &vk_pc.clear_value;
+
+        vkCmdBeginRenderPass(_ctx.cmd_bufs[_ctx.ii], &vk_pc.begin_info, VK_SUBPASS_CONTENTS_INLINE);
+        _state.pass = vk_pc.pass;
+    }
+
     void begin_pass()
     {
         const clear_state& clear = _res_pool.get(_state.clear_state).clear;
@@ -682,11 +774,26 @@ namespace
         VkAttachmentReference*   colour_refs = nullptr;
         VkImageView*             colour_img_view = nullptr;
 
-        if (_state.pass)
+        // hash the pass state and check invalidation
+        HashMurmur2A hh;
+        hh.begin();
+        hh.add(sb_hash(_state.colour_attachments));
+        hh.add(&_state.depth_attachment, offsetof(pen_state, shader) - offsetof(pen_state, depth_attachment));
+        // have to add a new pass for each swap chain img
+        for (u32 i = 0; i < sb_count(_state.colour_attachments); ++i)
+            if (_state.colour_attachments[i] == 0)
+                hh.add(_ctx.ii);
+        hash_id ph = hh.end();
+
+        // check in pipeline hashes
+        u32 pcc = sb_count(s_pass_cache);
+        for (u32 i = 0; i < pcc; ++i)
         {
-            // end current pass
-            vkCmdEndRenderPass(_ctx.cmd_bufs[_ctx.ii]);
-            _state.pass = nullptr;
+            if (s_pass_cache[i].hash == ph)
+            {
+                begin_pass_from_cache(s_pass_cache[i]);
+                return;
+            }
         }
 
         size_t fbw, fbh;
@@ -778,24 +885,27 @@ namespace
         // clear
         clear_state& cs = _res_pool.get(_state.clear_state).clear;
         VkClearColorValue clear_colour = { cs.r, cs.g, cs.b, cs.a };
-        VkClearValue clear_value = {};
-        clear_value.color = clear_colour;
 
-        VkImageSubresourceRange img_range = {};
-        img_range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        img_range.levelCount = 1;
+        // add new pass into pass cache
+        u32 pc_idx = sb_count(s_pass_cache);
+        sb_push(s_pass_cache, vk_pass_cache());
+        vk_pass_cache& vk_pc = s_pass_cache[pc_idx];
+        vk_pc.hash = ph;
+        vk_pc.pass = pass;
 
-        VkRenderPassBeginInfo rp_begin_info = {};
-        rp_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        rp_begin_info.renderPass = pass;
-        rp_begin_info.framebuffer = fb;
-        rp_begin_info.renderArea.offset = { 0, 0 };
-        rp_begin_info.renderArea.extent = { (u32)fbw, (u32)fbh };
-        rp_begin_info.clearValueCount = 1;
-        rp_begin_info.pClearValues = &clear_value;
+        vk_pc.clear_value = {};
+        vk_pc.clear_value.color = clear_colour;
 
-        vkCmdBeginRenderPass(_ctx.cmd_bufs[_ctx.ii], &rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
-        _state.pass = pass;
+        vk_pc.begin_info = {};
+        vk_pc.begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        vk_pc.begin_info.renderPass = pass;
+        vk_pc.begin_info.framebuffer = fb;
+        vk_pc.begin_info.renderArea.offset = { 0, 0 };
+        vk_pc.begin_info.renderArea.extent = { (u32)fbw, (u32)fbh };
+        vk_pc.begin_info.clearValueCount = 1;
+        vk_pc.begin_info.pClearValues = &vk_pc.clear_value;
+
+        begin_pass_from_cache(vk_pc);
     }
 
     void bind_pipeline(u32 primitive_topology)
@@ -863,7 +973,6 @@ namespace
         info.pStages = shader_stages;
 
         // vertex input
-
         VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
         vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
@@ -877,7 +986,6 @@ namespace
         info.pVertexInputState = &vertex_input_info;
 
         // blending
-
         VkPipelineColorBlendAttachmentState colour_blend_attachment = {};
         colour_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
         colour_blend_attachment.blendEnable = VK_FALSE;
@@ -896,7 +1004,6 @@ namespace
         info.pColorBlendState = &colour_blend;
 
         // multisample
-
         VkPipelineMultisampleStateCreateInfo multisampling = {};
         multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
         multisampling.sampleShadingEnable = VK_FALSE;
@@ -905,7 +1012,6 @@ namespace
         info.pMultisampleState = &multisampling;
 
         // layout
-
         VkPipelineLayout pipeline_layout;
         VkPipelineLayoutCreateInfo pipeline_layout_info = {};
         pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -937,9 +1043,6 @@ namespace
             sb_push(vk_bindings, vb);
         }
 
-        sb_free(_state.descriptor_set_layouts);
-        _state.descriptor_set_layouts = nullptr;
-
         if (num_bindings > 0)
         {
             VkDescriptorSetLayoutCreateInfo descriptor_info = {};
@@ -947,13 +1050,19 @@ namespace
             descriptor_info.bindingCount = sb_count(vk_bindings);
             descriptor_info.pBindings = vk_bindings;
 
-            VkDescriptorSetLayout descriptor_set;
-            CHECK_CALL(vkCreateDescriptorSetLayout(_ctx.device, &descriptor_info, nullptr, &descriptor_set));
+            VkDescriptorSetLayout descriptor_set_layout;
+            CHECK_CALL(vkCreateDescriptorSetLayout(_ctx.device, &descriptor_info, nullptr, &descriptor_set_layout));
 
             pipeline_layout_info.setLayoutCount = 1;
-            pipeline_layout_info.pSetLayouts = &descriptor_set;
+            pipeline_layout_info.pSetLayouts = &descriptor_set_layout;
 
-            sb_push(_state.descriptor_set_layouts, descriptor_set);
+            VkDescriptorSetAllocateInfo alloc_info = {};
+            alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+            alloc_info.descriptorPool = _ctx.descriptor_pool;
+            alloc_info.descriptorSetCount = 1;
+            alloc_info.pSetLayouts = &descriptor_set_layout;
+
+            CHECK_CALL(vkAllocateDescriptorSets(_ctx.device, &alloc_info, &_state.descriptor_set));
         }
 
         CHECK_CALL(vkCreatePipelineLayout(_ctx.device, &pipeline_layout_info, nullptr, &pipeline_layout));
@@ -961,7 +1070,6 @@ namespace
         info.layout = pipeline_layout;
 
         // pass
-
         info.renderPass = _state.pass;
         info.subpass = 0;
         info.basePipelineHandle = VK_NULL_HANDLE;
@@ -974,36 +1082,11 @@ namespace
 
     void bind_descriptor_sets()
     {
+        // cache / invalidate
+
         u32 nb = sb_count(_state.bindings);
         if (nb == 0)
             return;
-
-        // check for invalidation
-        static VkDescriptorPool pool = 0;
-
-        if (!pool)
-        {
-            VkDescriptorPoolSize pool_size = {};
-            pool_size.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            pool_size.descriptorCount = 1024;
-
-            VkDescriptorPoolCreateInfo pool_info = {};
-            pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-            pool_info.poolSizeCount = 1;
-            pool_info.pPoolSizes = &pool_size;
-            pool_info.maxSets = 1024;
-
-            CHECK_CALL(vkCreateDescriptorPool(_ctx.device, &pool_info, nullptr, &pool));
-        }
-
-        VkDescriptorSetAllocateInfo alloc_info = {};
-        alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        alloc_info.descriptorPool = pool;
-        alloc_info.descriptorSetCount = sb_count(_state.descriptor_set_layouts);
-        alloc_info.pSetLayouts = _state.descriptor_set_layouts;
-
-        VkDescriptorSet set;
-        CHECK_CALL(vkAllocateDescriptorSets(_ctx.device, &alloc_info, &set));
 
         for (u32 i = 0; i < nb; ++i)
         {
@@ -1018,7 +1101,7 @@ namespace
 
             VkWriteDescriptorSet descriptor_write = {};
             descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptor_write.dstSet = set;
+            descriptor_write.dstSet = _state.descriptor_set;
             descriptor_write.dstBinding = pb.slot;
             descriptor_write.dstArrayElement = 0;
             descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -1029,7 +1112,7 @@ namespace
         }
 
         vkCmdBindDescriptorSets(_ctx.cmd_bufs[_ctx.ii], 
-            VK_PIPELINE_BIND_POINT_GRAPHICS, _state.pipeline_layout, 0, 1, &set, 0, nullptr);
+            VK_PIPELINE_BIND_POINT_GRAPHICS, _state.pipeline_layout, 0, 1, &_state.descriptor_set, 0, nullptr);
 
         sb_free(_state.bindings);
         _state.bindings = nullptr;
@@ -1129,6 +1212,8 @@ namespace pen
             for (u32 i = 0; i < sb_count(_ctx.swap_chain_images); ++i)
                 vkDestroyImage(_ctx.device, _ctx.swap_chain_images[i], nullptr);
 
+            vkDestroyCommandPool(_ctx.device, _ctx.cmd_pool, nullptr);
+            vkDestroyDescriptorPool(_ctx.device, _ctx.descriptor_pool, nullptr);
             vkDestroySurfaceKHR(_ctx.instance, _ctx.surface, nullptr);
             vkDestroySwapchainKHR(_ctx.device, _ctx.swap_chain, nullptr);
             vkDestroyInstance(_ctx.instance, nullptr);
@@ -1357,7 +1442,7 @@ namespace pen
             info.mipLevels = tcp.num_mips;
             info.imageType = VK_IMAGE_TYPE_2D;
             info.format = VK_FORMAT_B8G8R8A8_UNORM;
-            info.usage = to_vk_texture_usage(tcp.bind_flags);
+            info.usage = to_vk_texture_usage(tcp.bind_flags, tcp.data);
             info.tiling = VK_IMAGE_TILING_OPTIMAL;
             info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
             info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -1535,6 +1620,7 @@ namespace pen
 
         void renderer_draw(u32 vertex_count, u32 start_vertex, u32 primitive_topology)
         {
+            begin_pass();
             bind_pipeline(primitive_topology);
             bind_descriptor_sets();
 
@@ -1544,6 +1630,7 @@ namespace pen
         inline void _draw_index_instanced(u32 instance_count, 
             u32 start_instance, u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology)
         {
+            begin_pass();
             bind_pipeline(primitive_topology);
             bind_descriptor_sets();
 
@@ -1588,8 +1675,6 @@ namespace pen
             _state.depth_attachment = depth_target;
             _state.depth_slice = depth_face;
             _state.colour_slice = colour_face;
-
-            begin_pass();
         }
 
         void renderer_set_resolve_targets(u32 colour_target, u32 depth_target)
