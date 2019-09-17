@@ -240,21 +240,21 @@ namespace
         };
     };
 
-    struct vk_pipeline_cache
-    {
-        hash_id     hash;
-        VkPipeline  pipeline;
-    };
-    vk_pipeline_cache* s_pipeline_cache = nullptr;
-
     struct vk_pass_cache
     {
-        hash_id                 hash;
         VkRenderPassBeginInfo   begin_info;
         VkRenderPass            pass;
-        VkClearValue            clear_value;
     };
-    vk_pass_cache* s_pass_cache = nullptr;
+    hash_id*        s_pass_cache_hash = nullptr;
+    vk_pass_cache*  s_pass_cache = nullptr;
+
+    struct vk_pipeline_cache
+    {
+        VkPipeline      pipeline;
+        VkDescriptorSet descriptor_set;
+    };
+    hash_id*            s_pipeline_cache_hash = nullptr;
+    vk_pipeline_cache*  s_pipeline_cache = nullptr;
 
     struct pen_state
     {
@@ -742,31 +742,70 @@ namespace
         return 0;
     }
 
-    void begin_pass_from_cache(vk_pass_cache& vk_pc)
+    void end_render_pass()
+    {
+        // end current pass
+        vkCmdEndRenderPass(_ctx.cmd_bufs[_ctx.ii]);
+
+        // clear bindings / free mem
+        sb_free(_state.bindings);
+
+        _state.pass = nullptr;
+        _state.bindings = nullptr;
+
+        // clear hashes
+        _state.hpipeline = 0;
+        _state.hpass = 0;
+        _state.hdescriptors = 0;
+    }
+
+    void begin_pass_from_cache(const vk_pass_cache& vk_pc, hash_id hash)
     {
         if (_state.pass == vk_pc.pass)
             return;
 
         if (_state.pass)
-        {
-            // end current pass
-            vkCmdEndRenderPass(_ctx.cmd_bufs[_ctx.ii]);
-            _state.pass = nullptr;
-        }
+            end_render_pass();
 
-        clear_state& cs = _res_pool.get(_state.clear_state).clear;
-        VkClearColorValue clear_colour = { cs.r, cs.g, cs.b, cs.a };
-        vk_pc.clear_value = {};
-        vk_pc.clear_value.color = clear_colour;
-        vk_pc.begin_info.clearValueCount = 1;
-        vk_pc.begin_info.pClearValues = &vk_pc.clear_value;
-
+        // begin new pass
         vkCmdBeginRenderPass(_ctx.cmd_bufs[_ctx.ii], &vk_pc.begin_info, VK_SUBPASS_CONTENTS_INLINE);
         _state.pass = vk_pc.pass;
+        _state.hpass = hash;
+    }
+
+    void bind_pipeline_from_cache(const vk_pipeline_cache& pc, hash_id hash)
+    {
+        vkCmdBindPipeline(_ctx.cmd_bufs[_ctx.ii], VK_PIPELINE_BIND_POINT_GRAPHICS, pc.pipeline);
+        _state.descriptor_set = pc.descriptor_set;
+        _state.hpipeline = hash;
     }
 
     void begin_pass()
     {
+        // hash the pass state and check invalidation
+        HashMurmur2A hh;
+        hh.begin();
+        hh.add(sb_hash(_state.colour_attachments));
+        hh.add(&_state.depth_attachment, offsetof(pen_state, shader) - offsetof(pen_state, depth_attachment));
+        hash_id ph = hh.end();
+
+        // already bound
+        if (ph == _state.hpass)
+            return;
+
+        // check in pass hashes
+        u32 pcc = sb_count(s_pass_cache);
+        for (u32 i = 0; i < pcc; ++i)
+        {
+            if (s_pass_cache_hash[i] == ph)
+            {
+                // found exisiting
+                begin_pass_from_cache(s_pass_cache[i], ph);
+                return;
+            }
+        }
+
+        // begin building a new pipeline
         const clear_state& clear = _res_pool.get(_state.clear_state).clear;
 
         // attachments
@@ -774,37 +813,10 @@ namespace
         VkAttachmentReference*   colour_refs = nullptr;
         VkImageView*             colour_img_view = nullptr;
 
-        // hash the pass state and check invalidation
-        HashMurmur2A hh;
-        hh.begin();
-        hh.add(sb_hash(_state.colour_attachments));
-        hh.add(&_state.depth_attachment, offsetof(pen_state, shader) - offsetof(pen_state, depth_attachment));
-        // have to add a new pass for each swap chain img
-        for (u32 i = 0; i < sb_count(_state.colour_attachments); ++i)
-            if (_state.colour_attachments[i] == 0)
-                hh.add(_ctx.ii);
-        hash_id ph = hh.end();
-
-        // check in pipeline hashes
-        u32 pcc = sb_count(s_pass_cache);
-        for (u32 i = 0; i < pcc; ++i)
-        {
-            if (s_pass_cache[i].hash == ph)
-            {
-                begin_pass_from_cache(s_pass_cache[i]);
-                return;
-            }
-        }
-
         size_t fbw, fbh;
-
         for (u32 i = 0; i < sb_count(_state.colour_attachments); ++i)
         {
             u32 ica = _state.colour_attachments[i];
-
-            // backbuffer roll swap chain
-            if(ica == 0)
-                ica += _ctx.ii;
 
             const vulkan_texture& vt = _res_pool.get(ica).texture;
 
@@ -889,12 +901,12 @@ namespace
         // add new pass into pass cache
         u32 pc_idx = sb_count(s_pass_cache);
         sb_push(s_pass_cache, vk_pass_cache());
+        sb_push(s_pass_cache_hash, ph);
         vk_pass_cache& vk_pc = s_pass_cache[pc_idx];
-        vk_pc.hash = ph;
         vk_pc.pass = pass;
 
-        vk_pc.clear_value = {};
-        vk_pc.clear_value.color = clear_colour;
+        VkClearValue* clear_value = new VkClearValue();
+        clear_value->color = clear_colour;
 
         vk_pc.begin_info = {};
         vk_pc.begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -903,16 +915,37 @@ namespace
         vk_pc.begin_info.renderArea.offset = { 0, 0 };
         vk_pc.begin_info.renderArea.extent = { (u32)fbw, (u32)fbh };
         vk_pc.begin_info.clearValueCount = 1;
-        vk_pc.begin_info.pClearValues = &vk_pc.clear_value;
+        vk_pc.begin_info.pClearValues = clear_value;
 
-        begin_pass_from_cache(vk_pc);
+        begin_pass_from_cache(vk_pc, ph);
     }
 
     void bind_pipeline(u32 primitive_topology)
     {
         // check for invalidation
+        HashMurmur2A hh;
+        hh.begin();
+        hh.add(sb_hash(_state.bindings));
+        hh.add(&_state.vp, offsetof(pen_state, bindings) - offsetof(pen_state, vp));
+        hash_id ph = hh.end();
 
-        // create pipeline
+        // already bound
+        if (ph == _state.hpipeline)
+            return;
+
+        // check in pipeline hashes
+        u32 plc = sb_count(s_pipeline_cache);
+        for (u32 i = 0; i < plc; ++i)
+        {
+            if (s_pipeline_cache_hash[i] == ph)
+            {
+                // found exisiting
+                bind_pipeline_from_cache(s_pipeline_cache[i], ph);
+                return;
+            }
+        }
+
+        // create new pipeline
 
         // raster
         VkGraphicsPipelineCreateInfo info = {};
@@ -1077,15 +1110,26 @@ namespace
         VkPipeline pipeline;
         CHECK_CALL(vkCreateGraphicsPipelines(_ctx.device, VK_NULL_HANDLE, 1, &info, nullptr, &pipeline));
 
-        vkCmdBindPipeline(_ctx.cmd_bufs[_ctx.ii], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+        vk_pipeline_cache new_pipeline;
+        new_pipeline.pipeline = pipeline;
+        new_pipeline.descriptor_set = _state.descriptor_set;
+
+        u32 idx = sb_count(s_pipeline_cache);
+        sb_push(s_pipeline_cache_hash, ph);
+        sb_push(s_pipeline_cache, new_pipeline);
+
+        bind_pipeline_from_cache(s_pipeline_cache[idx], ph);
     }
 
     void bind_descriptor_sets()
     {
         // cache / invalidate
-
         u32 nb = sb_count(_state.bindings);
         if (nb == 0)
+            return;
+
+        hash_id h = sb_hash(_state.bindings);
+        if (h == _state.hdescriptors)
             return;
 
         for (u32 i = 0; i < nb; ++i)
@@ -1114,8 +1158,7 @@ namespace
         vkCmdBindDescriptorSets(_ctx.cmd_bufs[_ctx.ii], 
             VK_PIPELINE_BIND_POINT_GRAPHICS, _state.pipeline_layout, 0, 1, &_state.descriptor_set, 0, nullptr);
 
-        sb_free(_state.bindings);
-        _state.bindings = nullptr;
+        _state.hdescriptors = h;
     }
 }
 
@@ -1239,6 +1282,9 @@ namespace pen
         void renderer_clear(u32 clear_state_index, u32 colour_face, u32 depth_face)
         {
             _state.clear_state = clear_state_index;
+
+            // we may just call clear, to clear and make no draws
+            begin_pass();
         }
 
         void renderer_load_shader(const pen::shader_load_params& params, u32 resource_slot)
@@ -1670,7 +1716,12 @@ namespace pen
             _state.colour_attachments = nullptr;
 
             for (u32 i = 0; i < num_colour_targets; ++i)
-                sb_push(_state.colour_attachments, colour_targets[i]);
+            {
+                u32 ct = colour_targets[i];
+                if (ct == 0)
+                    ct += _ctx.ii;
+                sb_push(_state.colour_attachments, ct);
+            }
 
             _state.depth_attachment = depth_target;
             _state.depth_slice = depth_face;
@@ -1699,8 +1750,7 @@ namespace pen
 
         void renderer_present()
         {
-            vkCmdEndRenderPass(_ctx.cmd_bufs[_ctx.ii]);
-            _state.pass = nullptr;
+            end_render_pass();
 
             vkEndCommandBuffer(_ctx.cmd_bufs[_ctx.ii]);
 
