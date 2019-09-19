@@ -24,7 +24,8 @@ pmfx:
         "supported_platforms":
         {
             "hlsl": ["5_0"],
-            "metal": ["all"]
+            "metal": ["all"],
+            "glsl": ["450"]
         },
         
         "cs" : "cs_main_greyscale",

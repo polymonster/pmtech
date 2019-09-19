@@ -197,6 +197,8 @@ namespace
         VkQueue                             graphics_queue;
         u32                                 present_family_index;
         VkQueue                             present_queue;
+        u32                                 compute_family_index;
+        VkQueue                             compute_queue;
         VkDevice                            device;
         VkSurfaceKHR                        surface;
         VkSwapchainKHR                      swap_chain;
@@ -250,8 +252,9 @@ namespace
 
     struct vk_pipeline_cache
     {
-        VkPipeline      pipeline;
-        VkDescriptorSet descriptor_set;
+        VkPipeline          pipeline;
+        VkDescriptorSet     descriptor_set;
+        VkPipelineLayout    layout;
     };
     hash_id*            s_pipeline_cache_hash = nullptr;
     vk_pipeline_cache*  s_pipeline_cache = nullptr;
@@ -599,34 +602,37 @@ namespace
 
         _ctx.physical_device = devices[0];
 
-        // find gfx queue
+        // surface
+        create_surface(params);
+        
+
+        // find queues
         _ctx.num_queue_families = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(_ctx.physical_device, &_ctx.num_queue_families, nullptr);
 
         VkQueueFamilyProperties* queue_families = new VkQueueFamilyProperties[_ctx.num_queue_families];
         vkGetPhysicalDeviceQueueFamilyProperties(_ctx.physical_device, &_ctx.num_queue_families, queue_families);
 
-        // surface
-        create_surface(params);
-        
         _ctx.graphics_family_index = -1;
         _ctx.present_family_index = -1;
+        _ctx.compute_family_index = -1;
         for (u32 i = 0; i < _ctx.num_queue_families; ++i)
         {
             if (queue_families[i].queueCount > 0 && queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
-            {
                 _ctx.graphics_family_index = i;
-            }
+
+            if (queue_families[i].queueCount > 0 && queue_families[i].queueFlags & VK_QUEUE_COMPUTE_BIT)
+                _ctx.compute_family_index = i;
 
             VkBool32 present = false;
             vkGetPhysicalDeviceSurfaceSupportKHR(_ctx.physical_device, i, _ctx.surface, &present);
             if (queue_families[i].queueCount > 0 && present)
-            {
                 _ctx.present_family_index = i;
-            }
+
         }
         PEN_ASSERT(_ctx.graphics_family_index != -1);
         PEN_ASSERT(_ctx.present_family_index != -1);
+        PEN_ASSERT(_ctx.compute_family_index != -1);
 
         // gfx queue
         f32 pri = 1.0f;
@@ -636,15 +642,24 @@ namespace
         gfx_queue_info.queueCount = 1;
         gfx_queue_info.pQueuePriorities = &pri;
 
+        // present queue
         VkDeviceQueueCreateInfo present_queue_info = {};
         present_queue_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         present_queue_info.queueFamilyIndex = _ctx.present_family_index;
         present_queue_info.queueCount = 1;
         present_queue_info.pQueuePriorities = &pri;
 
+        // compute queue
+        VkDeviceQueueCreateInfo compute_queue_info = {};
+        compute_queue_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        compute_queue_info.queueFamilyIndex = _ctx.compute_family_index;
+        compute_queue_info.queueCount = 1;
+        compute_queue_info.pQueuePriorities = &pri;
+
         VkDeviceQueueCreateInfo* queues = nullptr;
         sb_push(queues, gfx_queue_info);
         sb_push(queues, present_queue_info);
+        sb_push(queues, compute_queue_info);
 
         // device
         VkPhysicalDeviceFeatures features = {};
@@ -676,6 +691,7 @@ namespace
 
         vkGetDeviceQueue(_ctx.device, _ctx.graphics_family_index, 0, &_ctx.graphics_queue);
         vkGetDeviceQueue(_ctx.device, _ctx.present_family_index, 0, &_ctx.present_queue);
+        vkGetDeviceQueue(_ctx.device, _ctx.compute_family_index, 0, &_ctx.compute_queue);
 
         // swap chain
 
@@ -773,10 +789,11 @@ namespace
         _state.hpass = hash;
     }
 
-    void bind_pipeline_from_cache(const vk_pipeline_cache& pc, hash_id hash)
+    void bind_render_pipeline_from_cache(const vk_pipeline_cache& pc, hash_id hash)
     {
         vkCmdBindPipeline(_ctx.cmd_bufs[_ctx.ii], VK_PIPELINE_BIND_POINT_GRAPHICS, pc.pipeline);
         _state.descriptor_set = pc.descriptor_set;
+        _state.pipeline_layout = pc.layout;
         _state.hpipeline = hash;
     }
 
@@ -920,7 +937,65 @@ namespace
         begin_pass_from_cache(vk_pc, ph);
     }
 
-    void bind_pipeline(u32 primitive_topology)
+    void create_pipeline_layout(VkPipelineLayout& layout, VkDescriptorSet& descriptor_set)
+    {
+        // layout
+        VkPipelineLayoutCreateInfo pipeline_layout_info = {};
+        pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        pipeline_layout_info.pushConstantRangeCount = 0;
+
+        VkDescriptorSetLayoutBinding* vk_bindings = nullptr;
+
+        u32 num_bindings = sb_count(_state.bindings);
+        for (u32 i = 0; i < num_bindings; ++i)
+        {
+            auto& b = _state.bindings[i];
+
+            VkDescriptorSetLayoutBinding vb = {};
+            vb.binding = b.slot;
+            vb.descriptorCount = 1;
+            vb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+            vb.pImmutableSamplers = nullptr;
+
+            switch (b.type)
+            {
+            case e_binding_type::texture:
+                vb.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                break;
+            case e_binding_type::cbuffer:
+                PEN_ASSERT(0);
+                break;
+            }
+
+            sb_push(vk_bindings, vb);
+        }
+
+        if (num_bindings > 0)
+        {
+            VkDescriptorSetLayoutCreateInfo descriptor_info = {};
+            descriptor_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+            descriptor_info.bindingCount = sb_count(vk_bindings);
+            descriptor_info.pBindings = vk_bindings;
+
+            VkDescriptorSetLayout descriptor_set_layout;
+            CHECK_CALL(vkCreateDescriptorSetLayout(_ctx.device, &descriptor_info, nullptr, &descriptor_set_layout));
+
+            pipeline_layout_info.setLayoutCount = 1;
+            pipeline_layout_info.pSetLayouts = &descriptor_set_layout;
+
+            VkDescriptorSetAllocateInfo alloc_info = {};
+            alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+            alloc_info.descriptorPool = _ctx.descriptor_pool;
+            alloc_info.descriptorSetCount = 1;
+            alloc_info.pSetLayouts = &descriptor_set_layout;
+
+            CHECK_CALL(vkAllocateDescriptorSets(_ctx.device, &alloc_info, &descriptor_set));
+        }
+
+        CHECK_CALL(vkCreatePipelineLayout(_ctx.device, &pipeline_layout_info, nullptr, &layout));
+    }
+
+    void bind_render_pipeline(u32 primitive_topology)
     {
         // check for invalidation
         HashMurmur2A hh;
@@ -940,7 +1015,7 @@ namespace
             if (s_pipeline_cache_hash[i] == ph)
             {
                 // found exisiting
-                bind_pipeline_from_cache(s_pipeline_cache[i], ph);
+                bind_render_pipeline_from_cache(s_pipeline_cache[i], ph);
                 return;
             }
         }
@@ -1041,66 +1116,13 @@ namespace
         multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
         multisampling.sampleShadingEnable = VK_FALSE;
         multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-
         info.pMultisampleState = &multisampling;
 
         // layout
-        VkPipelineLayout pipeline_layout;
-        VkPipelineLayoutCreateInfo pipeline_layout_info = {};
-        pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipeline_layout_info.pushConstantRangeCount = 0;
-
-        VkDescriptorSetLayoutBinding* vk_bindings = nullptr;
-
-        u32 num_bindings = sb_count(_state.bindings);
-        for (u32 i = 0; i < num_bindings; ++i)
-        {
-            auto& b = _state.bindings[i];
-
-            VkDescriptorSetLayoutBinding vb = {};
-            vb.binding = b.slot;
-            vb.descriptorCount = 1;
-            vb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-            vb.pImmutableSamplers = nullptr;
-
-            switch (b.type)
-            {
-            case e_binding_type::texture:
-                vb.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                break;
-            case e_binding_type::cbuffer:
-                PEN_ASSERT(0);
-                break;
-            }
-
-            sb_push(vk_bindings, vb);
-        }
-
-        if (num_bindings > 0)
-        {
-            VkDescriptorSetLayoutCreateInfo descriptor_info = {};
-            descriptor_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-            descriptor_info.bindingCount = sb_count(vk_bindings);
-            descriptor_info.pBindings = vk_bindings;
-
-            VkDescriptorSetLayout descriptor_set_layout;
-            CHECK_CALL(vkCreateDescriptorSetLayout(_ctx.device, &descriptor_info, nullptr, &descriptor_set_layout));
-
-            pipeline_layout_info.setLayoutCount = 1;
-            pipeline_layout_info.pSetLayouts = &descriptor_set_layout;
-
-            VkDescriptorSetAllocateInfo alloc_info = {};
-            alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-            alloc_info.descriptorPool = _ctx.descriptor_pool;
-            alloc_info.descriptorSetCount = 1;
-            alloc_info.pSetLayouts = &descriptor_set_layout;
-
-            CHECK_CALL(vkAllocateDescriptorSets(_ctx.device, &alloc_info, &_state.descriptor_set));
-        }
-
-        CHECK_CALL(vkCreatePipelineLayout(_ctx.device, &pipeline_layout_info, nullptr, &pipeline_layout));
-        _state.pipeline_layout = pipeline_layout;
-        info.layout = pipeline_layout;
+        VkPipelineLayout layout;
+        VkDescriptorSet descriptor_set;
+        create_pipeline_layout(layout, descriptor_set);
+        info.layout = layout;
 
         // pass
         info.renderPass = _state.pass;
@@ -1112,13 +1134,39 @@ namespace
 
         vk_pipeline_cache new_pipeline;
         new_pipeline.pipeline = pipeline;
-        new_pipeline.descriptor_set = _state.descriptor_set;
+        new_pipeline.descriptor_set = descriptor_set;
+        new_pipeline.layout = layout;
 
         u32 idx = sb_count(s_pipeline_cache);
         sb_push(s_pipeline_cache_hash, ph);
         sb_push(s_pipeline_cache, new_pipeline);
 
-        bind_pipeline_from_cache(s_pipeline_cache[idx], ph);
+        bind_render_pipeline_from_cache(s_pipeline_cache[idx], ph);
+    }
+
+    void bind_compute_pipeline()
+    {
+        VkComputePipelineCreateInfo info = {};
+        info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+        info.flags = 0;
+
+        // layout
+        VkPipelineLayout layout;
+        VkDescriptorSet descriptor_set;
+        create_pipeline_layout(layout, descriptor_set);
+        info.layout = layout;
+
+        // shader
+        u32 cs = _state.shader[e_shd::compute];
+        VkPipelineShaderStageCreateInfo compute_shader_info = {};
+        compute_shader_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        compute_shader_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
+        compute_shader_info.module = _res_pool.get(cs).shader.module;
+        compute_shader_info.pName = "main";
+        info.stage = compute_shader_info;
+
+        VkPipeline pipeline;
+        CHECK_CALL(vkCreateComputePipelines(_ctx.device, VK_NULL_HANDLE, 1, &info, nullptr, &pipeline));
     }
 
     void bind_descriptor_sets()
@@ -1667,7 +1715,7 @@ namespace pen
         void renderer_draw(u32 vertex_count, u32 start_vertex, u32 primitive_topology)
         {
             begin_pass();
-            bind_pipeline(primitive_topology);
+            bind_render_pipeline(primitive_topology);
             bind_descriptor_sets();
 
             vkCmdDraw(_ctx.cmd_bufs[_ctx.ii], vertex_count, 1, 0, 0);
@@ -1677,7 +1725,7 @@ namespace pen
             u32 start_instance, u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology)
         {
             begin_pass();
-            bind_pipeline(primitive_topology);
+            bind_render_pipeline(primitive_topology);
             bind_descriptor_sets();
 
             vkCmdDrawIndexed(_ctx.cmd_bufs[_ctx.ii], 
@@ -1702,6 +1750,8 @@ namespace pen
 
         void renderer_dispatch_compute(uint3 grid, uint3 num_threads)
         {
+            bind_compute_pipeline();
+
 
         }
 
