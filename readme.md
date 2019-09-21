@@ -2,8 +2,6 @@
 [![Build Status](https://travis-ci.org/polymonster/pmtech.svg?branch=master)](https://travis-ci.org/polymonster/pmtech) [![Build Status](https://ci.appveyor.com/api/projects/status/5n3aguiq1ppjrhws?svg=true)](https://ci.appveyor.com/project/polymonster/pmtech) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Track on https://trello.com/b/05omR9Mj/igneous](https://img.shields.io/badge/track-on_trello-007BC2.svg?logo=trello&logoColor=ffffff&labelColor=026AA7)](https://trello.com/b/ciujzpUT)
 
-A lightweight code base with powerful features that can be used for games and real-time graphics applications.
-
 **Features**
 - Lightweight: Minimalistic, simple apis, shallow call stacks. 
 - Cross Platform: Windows, macOS, iOS, Linux, Android ([wip](https://trello.com/b/ciujzpUT)).  
