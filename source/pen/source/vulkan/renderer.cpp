@@ -259,6 +259,17 @@ namespace
     hash_id*            s_pipeline_cache_hash = nullptr;
     vk_pipeline_cache*  s_pipeline_cache = nullptr;
 
+    enum e_shd
+    {
+        vertex,
+        fragment,
+        geometry,
+        stream_out,
+        compute,
+        count
+    };
+    static_assert(e_shd::compute == PEN_SHADER_TYPE_CS, "mismatched shader types");
+
     struct pen_state
     {
         // hashes
@@ -272,7 +283,7 @@ namespace
         u32                                 depth_slice;
         u32                                 clear_state;
         // hash for pipeline
-        u32                                 shader[3]; // vs, fs, cs
+        u32                                 shader[e_shd::count]; // vs, fs, gs, so, cs
         viewport                            vp;
         rect                                sr;
         u32                                 vertex_buffer;
@@ -301,13 +312,6 @@ namespace
     {
         VkBuffer        buf;
         VkDeviceMemory  mem;
-    };
-
-    enum e_shd
-    {
-        vertex,
-        fragment,
-        compute
     };
 
     struct vulkan_shader
@@ -659,7 +663,7 @@ namespace
         VkDeviceQueueCreateInfo* queues = nullptr;
         sb_push(queues, gfx_queue_info);
         sb_push(queues, present_queue_info);
-        sb_push(queues, compute_queue_info);
+        // sb_push(queues, compute_queue_info);
 
         // device
         VkPhysicalDeviceFeatures features = {};
@@ -1160,7 +1164,7 @@ namespace
         u32 cs = _state.shader[e_shd::compute];
         VkPipelineShaderStageCreateInfo compute_shader_info = {};
         compute_shader_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        compute_shader_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
+        compute_shader_info.stage = VK_SHADER_STAGE_COMPUTE_BIT;
         compute_shader_info.module = _res_pool.get(cs).shader.module;
         compute_shader_info.pName = "main";
         info.stage = compute_shader_info;
