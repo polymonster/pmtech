@@ -1,0 +1,24 @@
+{
+    tools: {
+        premake: "../tools/premake/premake5"
+    },
+    
+    mac: {
+        premake: [
+            "xcode4",
+            "--renderer=metal", 
+            "--platform_dir=osx", 
+            "--pmtech_dir=../"
+        ]
+    },
+    
+    macgl: {
+        jsn_inherit: ["mac"],
+        premake: [
+            "xcode4",
+            "--renderer=opengl", 
+            "--platform_dir=osx", 
+            "--pmtech_dir=../"
+        ]
+    }
+}

@@ -364,6 +364,9 @@ void test_ray_vs_obb(ecs_scene* scene, bool initialise)
     static debug_extents e = {vec3f(-10.0, -10.0, -10.0), vec3f(10.0, 10.0, 10.0)};
 
     bool randomise = ImGui::Button("Randomise");
+    
+    static bool show_unit_aabb_space = false;
+    ImGui::Checkbox("Show Unit AABB Space", &show_unit_aabb_space);
 
     if (initialise || randomise)
     {
@@ -377,6 +380,26 @@ void test_ray_vs_obb(ecs_scene* scene, bool initialise)
 
     vec3f ip = vec3f::zero();
     bool  intersect = maths::ray_vs_obb(scene->world_matrices[obb.node], ray.origin, ray.direction, ip);
+    
+    if(show_unit_aabb_space)
+    {
+        mat4  invm = mat::inverse4x4(scene->world_matrices[obb.node]);
+        vec3f tr1  = invm.transform_vector(vec4f(ray.origin, 1.0f)).xyz;
+        
+        invm.set_translation(vec3f::zero());
+        vec3f trv = invm.transform_vector(vec4f(ray.direction, 1.0f)).xyz;
+        
+        bool ii = maths::ray_vs_aabb(-vec3f::one(), vec3f::one(), tr1, normalised(trv), ip);
+        
+        put::dbg::add_aabb(-vec3f::one(), vec3f::one(), vec4f::cyan());
+        
+        put::dbg::add_line(tr1, tr1 + trv * 1000.0f, vec4f::magenta());
+        
+        if(ii)
+        {
+            put::dbg::add_point(ip, 0.1f, vec4f::green());
+        }
+    }
 
     vec4f col = vec4f::green();
 
@@ -959,7 +982,7 @@ void maths_test_ui(ecs_scene* scene)
     
     static bool animate = false;
     static bool initialise = true;
-    static bool gen_tests = true;
+    static bool gen_tests = false;
 
     if (ImGui::Combo("Test", &test_index, test_names, PEN_ARRAY_SIZE(test_names)))
         initialise = true;

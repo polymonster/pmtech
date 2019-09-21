@@ -387,6 +387,7 @@ if __name__ == "__main__":
             copy_steps.append(action)
 
     for step in build_steps:
+        print(step)
         subprocess.check_call(step, shell=True)
 
     if "premake" in execute_actions:
