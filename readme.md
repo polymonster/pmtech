@@ -3,13 +3,13 @@
 [![Track on https://trello.com/b/05omR9Mj/igneous](https://img.shields.io/badge/track-on_trello-007BC2.svg?logo=trello&logoColor=ffffff&labelColor=026AA7)](https://trello.com/b/ciujzpUT)
 
 **Features**
-- Lightweight: Minimalistic, simple apis, shallow call stacks. 
 - Cross Platform: Windows, macOS, iOS, Linux, Android ([wip](https://trello.com/b/ciujzpUT)).  
 - Rendering Backends: Direct3D11, OpenGL3.1+, OpenGLES3+, Metal, Vulkan ([wip](https://trello.com/b/ciujzpUT)).
 - Supported Compilers: vs2017+, Clang 6+, Apple LLVM 9+, Gcc 7+. 
-- Low-level abstractions: Input, gamepad, timers, threads, window, os, file system, etc. 
+- Lightweight: Minimalistic, simple apis, shallow call stacks. 
 - Data-Oriented: Instruction and data cache friendly design for optimal performance. 
 - Multithreaded: Async render, physics, audio and entity component system.  
+- Low-level abstractions: Input, gamepad, timers, threads, window, os, file system, etc. 
 - [Ecs](https://github.com/polymonster/pmtech/wiki/Ecs): Entity component system and root motion animation system.
 - [Pmfx](https://github.com/polymonster/pmtech/wiki/Pmfx): Scriptable renderer, shader, compute and post-processing system.
 - Tools: Graphical editor, volume texture / signed distance field generator.
