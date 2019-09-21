@@ -10,6 +10,7 @@
 //      Direct3D11 (win32)
 //      OpenGL3.1+ (osx, linux) and OpenGLES3.1+ (ios, android)
 //      Metal (osx, ios)
+//      Vulkan (win32) [wip]
 
 // Public api used by the user thread will store function call arguments in a command buffer
 // Dedicated thread will wait on a semaphore until renderer_consume_command_buffer is called
@@ -193,7 +194,7 @@ namespace pen
         u32   width;
         u32   height;
         s32   num_mips;
-        u32   num_arrays; // num array slices
+        u32   num_arrays; // num array slices, 6 for cubemap or image depth for 3d texture
         u32   format;
         u32   sample_count;
         u32   sample_quality;
@@ -503,7 +504,7 @@ namespace pen
         // render targets
         void renderer_create_render_target(const texture_creation_params& tcp, u32 resource_slot, bool track = true);
         void renderer_set_targets(const u32* const colour_targets, u32 num_colour_targets, u32 depth_target,
-                                  u32 colour_face = 0, u32 depth_face = 0);
+                                  u32 colour_slice = 0, u32 depth_slice = 0);
         void renderer_set_resolve_targets(u32 colour_target, u32 depth_target);
         void renderer_set_stream_out_target(u32 buffer_index);
         void renderer_resolve_target(u32 target, e_msaa_resolve_type type, resolve_resources res);

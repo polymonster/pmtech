@@ -5,7 +5,7 @@
 #ifndef _renderer_definitions_h
 #define _renderer_definitions_h
 
-#define PEN_RENDERER_METAL
+#define PEN_RENDERER_VULKAN
 
 enum null_values
 {
