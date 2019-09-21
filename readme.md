@@ -2,14 +2,14 @@
 [![Build Status](https://travis-ci.org/polymonster/pmtech.svg?branch=master)](https://travis-ci.org/polymonster/pmtech) [![Build Status](https://ci.appveyor.com/api/projects/status/5n3aguiq1ppjrhws?svg=true)](https://ci.appveyor.com/project/polymonster/pmtech) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Track on https://trello.com/b/05omR9Mj/igneous](https://img.shields.io/badge/track-on_trello-007BC2.svg?logo=trello&logoColor=ffffff&labelColor=026AA7)](https://trello.com/b/ciujzpUT)
 
-A lightweight code base with powerful features that can be used for games and real-time graphics applications. This project focuses on data-oriented and multithreaded code with minimalistic procedural api's, sticking to [orthodox c++](https://gist.github.com/bkaradzic/2e39896bc7d8c34e042b) principles.
+A lightweight code base with powerful features that can be used for games and real-time graphics applications.
 
 **Features**
+- Lightweight: Minimalistic, simple apis, shallow call stacks. 
 - Cross Platform: Windows, MacOS, Linux, iOS, Android ([wip](https://trello.com/b/ciujzpUT)).  
+- Rendering Backends: Direct3D11, OpenGL3.1+, OpenGLES3+, Metal, Vulkan ([wip](https://trello.com/b/ciujzpUT)).
 - Supported Compilers: vs2017+, Clang 6+, Apple LLVM 9+, Gcc 7+. 
-- Rendering Backends: Direct3D11, OpenGL3.1+, OpenGLES3+, Metal, Vulkan ([wip](https://trello.com/b/ciujzpUT)). 
-- Low-level abstractions: Input, gamepad, timers, threads, window, os, file system, etc.
-- Lightweight: Simple apis, shallow call stacks, minimal dependencies.  
+- Low-level abstractions: Input, gamepad, timers, threads, window, os, file system, etc. 
 - Data-Oriented: Instruction and data cache friendly code for optimal performance. 
 - Multithreaded: Async render, physics, audio and entity component system.  
 - [Ecs](https://github.com/polymonster/pmtech/wiki/Ecs): Entity component system and root motion animation system.
