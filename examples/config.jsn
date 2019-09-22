@@ -10,6 +10,7 @@
             "--platform_dir=osx", 
             "--pmtech_dir=../"
         ],
+
         copy: [
             ["assets/audio", "bin/mac/data/audio"],
             ["../assets/audio", "bin/mac/data/audio"],
