@@ -19,6 +19,7 @@ using namespace pen;
 #define NBB 3
 #define MAX_TEXTURE_DESCRIPTOR_SETS 4096 // I dont like this and wish the pool didnt need to be allocated up front.
 #define MAX_CBUFFER_DESCRIPTOR_SETS 4096
+#define MAX_STORAGE_IMAGE_DESCRIPTOR_SETS 4096
 
 namespace
 {
@@ -183,6 +184,18 @@ namespace
         return (VkImageUsageFlagBits)vf;
     }
 
+    VkShaderStageFlags to_vk_stage(u32 pen_bind_flags)
+    {
+        u32 ss = 0;
+        if (pen_bind_flags & pen::TEXTURE_BIND_VS || pen_bind_flags & pen::CBUFFER_BIND_VS)
+            ss |= VK_SHADER_STAGE_VERTEX_BIT;
+        if (pen_bind_flags & pen::TEXTURE_BIND_PS || pen_bind_flags & pen::CBUFFER_BIND_PS)
+            ss |= VK_SHADER_STAGE_FRAGMENT_BIT;
+        if (pen_bind_flags & pen::TEXTURE_BIND_CS)
+            ss |= VK_SHADER_STAGE_COMPUTE_BIT;
+        return (VkShaderStageFlags)ss;
+    }
+
     // vulkan internals
     struct vulkan_context
     {
@@ -205,6 +218,8 @@ namespace
         VkImage*                            swap_chain_images = nullptr;
         VkCommandPool                       cmd_pool;
         VkCommandBuffer*                    cmd_bufs = nullptr;
+        VkCommandPool                       cmd_pool_compute;
+        VkCommandBuffer                     cmd_buf_compute;
         u32                                 ii = 0;
         VkSemaphore                         sem_img_avail[NBB];
         VkSemaphore                         sem_render_finished[NBB];
@@ -214,15 +229,10 @@ namespace
     };
     vulkan_context _ctx;
 
-    enum class e_binding_type
-    {
-        texture,
-        cbuffer
-    };
-
     struct pen_binding
     {
-        e_binding_type type;
+        u32                 stage;
+        VkDescriptorType    descriptor_type;
         union
         {
             struct
@@ -518,15 +528,32 @@ namespace
             sb_push(_ctx.cmd_bufs, VkCommandBuffer());
 
         CHECK_CALL(vkAllocateCommandBuffers(_ctx.device, &buf_info, _ctx.cmd_bufs));
+
+        // allocate command buffer for compute
+        VkCommandPoolCreateInfo compute_pool_info = {};
+        compute_pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        compute_pool_info.queueFamilyIndex = _ctx.compute_family_index;
+        compute_pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+        CHECK_CALL(vkCreateCommandPool(_ctx.device, &compute_pool_info, nullptr, &_ctx.cmd_pool_compute));
+
+        // Create a command buffer for compute operations
+        VkCommandBufferAllocateInfo compute_buf_info = {};
+        compute_buf_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        compute_buf_info.commandPool = _ctx.cmd_pool;
+        compute_buf_info.commandBufferCount = 1;
+        compute_buf_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+
+        CHECK_CALL(vkAllocateCommandBuffers(_ctx.device, &compute_buf_info, &_ctx.cmd_buf_compute));
     }
 
-    void create_descriptor_set_pool(u32 num_texture, u32 num_cbuffer)
+    void create_descriptor_set_pool()
     {
         // one large pool for all descriptor sets to be allocated from
 
         VkDescriptorPoolSize pool_sizes[] = {
-            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER , num_texture },
-            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER , num_cbuffer },
+            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER , MAX_TEXTURE_DESCRIPTOR_SETS },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER , MAX_CBUFFER_DESCRIPTOR_SETS },
+            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE , MAX_STORAGE_IMAGE_DESCRIPTOR_SETS },
         };
 
         u32 max_sets = 0;
@@ -609,7 +636,6 @@ namespace
         // surface
         create_surface(params);
         
-
         // find queues
         _ctx.num_queue_families = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(_ctx.physical_device, &_ctx.num_queue_families, nullptr);
@@ -741,7 +767,7 @@ namespace
 
         create_sync_primitives();
 
-        create_descriptor_set_pool(MAX_TEXTURE_DESCRIPTOR_SETS, MAX_CBUFFER_DESCRIPTOR_SETS);
+        create_descriptor_set_pool();
 
         delete queue_families;
         delete devices;
@@ -958,18 +984,9 @@ namespace
             VkDescriptorSetLayoutBinding vb = {};
             vb.binding = b.slot;
             vb.descriptorCount = 1;
-            vb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+            vb.stageFlags = b.stage;
             vb.pImmutableSamplers = nullptr;
-
-            switch (b.type)
-            {
-            case e_binding_type::texture:
-                vb.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                break;
-            case e_binding_type::cbuffer:
-                PEN_ASSERT(0);
-                break;
-            }
+            vb.descriptorType = b.descriptor_type;
 
             sb_push(vk_bindings, vb);
         }
@@ -1171,9 +1188,14 @@ namespace
 
         VkPipeline pipeline;
         CHECK_CALL(vkCreateComputePipelines(_ctx.device, VK_NULL_HANDLE, 1, &info, nullptr, &pipeline));
+
+        vkCmdBindPipeline(_ctx.cmd_buf_compute, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
+
+        _state.pipeline_layout = layout;
+        _state.descriptor_set = descriptor_set;
     }
 
-    void bind_descriptor_sets()
+    void bind_descriptor_sets(VkCommandBuffer cmd_buf, VkPipelineBindPoint bind_point)
     {
         // cache / invalidate
         u32 nb = sb_count(_state.bindings);
@@ -1200,15 +1222,15 @@ namespace
             descriptor_write.dstSet = _state.descriptor_set;
             descriptor_write.dstBinding = pb.slot;
             descriptor_write.dstArrayElement = 0;
-            descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            descriptor_write.descriptorType = pb.descriptor_type;
             descriptor_write.descriptorCount = 1;
             descriptor_write.pImageInfo = &image_info;
 
             vkUpdateDescriptorSets(_ctx.device, 1, &descriptor_write, 0, nullptr);
         }
 
-        vkCmdBindDescriptorSets(_ctx.cmd_bufs[_ctx.ii], 
-            VK_PIPELINE_BIND_POINT_GRAPHICS, _state.pipeline_layout, 0, 1, &_state.descriptor_set, 0, nullptr);
+        vkCmdBindDescriptorSets(cmd_buf, 
+            bind_point, _state.pipeline_layout, 0, 1, &_state.descriptor_set, 0, nullptr);
 
         _state.hdescriptors = h;
     }
@@ -1650,8 +1672,16 @@ namespace pen
 
         void renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 bind_flags)
         {
+            if (texture_index == 0)
+                return;
+
+            vulkan_texture& vt = _res_pool.get(texture_index).texture;
+
             pen_binding b;
-            b.type = e_binding_type::texture;
+            b.descriptor_type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            b.stage = to_vk_stage(bind_flags);
+            if (bind_flags & pen::TEXTURE_BIND_CS)
+                b.descriptor_type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
             b.index = texture_index;
             b.sampler_index = sampler_index;
             b.slot = resource_slot;
@@ -1720,7 +1750,7 @@ namespace pen
         {
             begin_pass();
             bind_render_pipeline(primitive_topology);
-            bind_descriptor_sets();
+            bind_descriptor_sets(_ctx.cmd_bufs[_ctx.ii], VK_PIPELINE_BIND_POINT_GRAPHICS);
 
             vkCmdDraw(_ctx.cmd_bufs[_ctx.ii], vertex_count, 1, 0, 0);
         }
@@ -1730,7 +1760,7 @@ namespace pen
         {
             begin_pass();
             bind_render_pipeline(primitive_topology);
-            bind_descriptor_sets();
+            bind_descriptor_sets(_ctx.cmd_bufs[_ctx.ii], VK_PIPELINE_BIND_POINT_GRAPHICS);
 
             vkCmdDrawIndexed(_ctx.cmd_bufs[_ctx.ii], 
                 index_count, instance_count, start_index, base_vertex, start_instance);
@@ -1754,9 +1784,20 @@ namespace pen
 
         void renderer_dispatch_compute(uint3 grid, uint3 num_threads)
         {
+            VkCommandBufferBeginInfo begin_info = {};
+            begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+            vkBeginCommandBuffer(_ctx.cmd_buf_compute, &begin_info);
+
             bind_compute_pipeline();
+            bind_descriptor_sets(_ctx.cmd_buf_compute, VK_PIPELINE_BIND_POINT_COMPUTE);
 
+            vkCmdDispatch(_ctx.cmd_buf_compute, grid.x / num_threads.x, grid.y / num_threads.y, grid.z / num_threads.z);
 
+            vkEndCommandBuffer(_ctx.cmd_buf_compute);
+
+            sb_free(_state.bindings);
+            _state.bindings = nullptr;
         }
 
         void renderer_create_render_target(const texture_creation_params& tcp, u32 resource_slot, bool track)
