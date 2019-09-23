@@ -174,7 +174,7 @@ namespace
 
     VkImageUsageFlagBits to_vk_texture_usage(u32 pen_texture_usage, bool has_data)
     {
-        u32 vf = VK_IMAGE_USAGE_SAMPLED_BIT;
+        u32 vf = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
         if (pen_texture_usage & PEN_BIND_RENDER_TARGET)
             vf |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         if (pen_texture_usage & PEN_BIND_DEPTH_STENCIL)
@@ -219,11 +219,12 @@ namespace
         VkCommandPool                       cmd_pool;
         VkCommandBuffer*                    cmd_bufs = nullptr;
         VkCommandPool                       cmd_pool_compute;
-        VkCommandBuffer                     cmd_buf_compute;
-        u32                                 ii = 0;
+        VkCommandBuffer*                    cmd_buf_compute = nullptr;
+        u32                                 ii = 0; // image index 0 - NBB, next = (ii + i)%NBB
         VkSemaphore                         sem_img_avail[NBB];
         VkSemaphore                         sem_render_finished[NBB];
         VkFence                             fences[NBB];
+        VkFence                             compute_fences[NBB];
         VkPhysicalDeviceMemoryProperties    mem_properties;        
         VkDescriptorPool                    descriptor_pool;
     };
@@ -539,11 +540,15 @@ namespace
         // Create a command buffer for compute operations
         VkCommandBufferAllocateInfo compute_buf_info = {};
         compute_buf_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        compute_buf_info.commandPool = _ctx.cmd_pool;
-        compute_buf_info.commandBufferCount = 1;
+        compute_buf_info.commandPool = _ctx.cmd_pool_compute;
+        compute_buf_info.commandBufferCount = NBB;
         compute_buf_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
-        CHECK_CALL(vkAllocateCommandBuffers(_ctx.device, &compute_buf_info, &_ctx.cmd_buf_compute));
+        // make enough size
+        for (u32 i = 0; i < compute_buf_info.commandBufferCount; ++i)
+            sb_push(_ctx.cmd_buf_compute, VkCommandBuffer());
+
+        CHECK_CALL(vkAllocateCommandBuffers(_ctx.device, &compute_buf_info, _ctx.cmd_buf_compute));
     }
 
     void create_descriptor_set_pool()
@@ -605,6 +610,81 @@ namespace
         vkFreeCommandBuffers(_ctx.device, _ctx.cmd_pool, 1, &cmd_buf);
     }
 
+    void _transition_image(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout)
+    {
+        VkCommandBuffer cmd_buf = begin_cmd_buffer();
+
+        VkImageMemoryBarrier barrier = {};
+        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        barrier.oldLayout = old_layout;
+        barrier.newLayout = new_layout;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.image = image;
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        barrier.subresourceRange.baseMipLevel = 0;
+        barrier.subresourceRange.levelCount = 1;
+        barrier.subresourceRange.baseArrayLayer = 0;
+        barrier.subresourceRange.layerCount = 1;
+
+        VkPipelineStageFlags src_stage;
+        VkPipelineStageFlags dst_stage;
+
+        if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED
+            && new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+        {
+            barrier.srcAccessMask = 0;
+            barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+            src_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            dst_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        }
+        else if (old_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+            && new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        {
+            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+            src_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+            dst_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        }
+        else if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED
+            && new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        {
+            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+            src_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+            dst_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+        }
+        else if (old_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+            && new_layout == VK_IMAGE_LAYOUT_GENERAL)
+        {
+            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+            src_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+            dst_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+        }
+        else if (old_layout == VK_IMAGE_LAYOUT_GENERAL
+            && new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        {
+            barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+            src_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+            dst_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+        }
+        else
+        {
+            // unsupported transition
+            PEN_ASSERT(0);
+        }
+
+        vkCmdPipelineBarrier(cmd_buf, src_stage, dst_stage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+        end_cmd_buffer(cmd_buf);
+    }
+
     void create_sync_primitives()
     {
         VkSemaphoreCreateInfo sem_info = {};
@@ -619,6 +699,7 @@ namespace
             CHECK_CALL(vkCreateSemaphore(_ctx.device, &sem_info, nullptr, &_ctx.sem_img_avail[i]));
             CHECK_CALL(vkCreateSemaphore(_ctx.device, &sem_info, nullptr, &_ctx.sem_render_finished[i]));
             CHECK_CALL(vkCreateFence(_ctx.device, &fence_info, nullptr, &_ctx.fences[i]));
+            CHECK_CALL(vkCreateFence(_ctx.device, &fence_info, nullptr, &_ctx.compute_fences[i]));
         }
     }
 
@@ -1189,7 +1270,7 @@ namespace
         VkPipeline pipeline;
         CHECK_CALL(vkCreateComputePipelines(_ctx.device, VK_NULL_HANDLE, 1, &info, nullptr, &pipeline));
 
-        vkCmdBindPipeline(_ctx.cmd_buf_compute, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
+        vkCmdBindPipeline(_ctx.cmd_buf_compute[_ctx.ii], VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
         _state.pipeline_layout = layout;
         _state.descriptor_set = descriptor_set;
@@ -1212,8 +1293,23 @@ namespace
             if (pb.index == 0)
                 continue;
 
+            vulkan_texture& vt = _res_pool.get(pb.index).texture;
+
+            // switch layouts
+            /*
+            _transition_image(vt.image,
+                VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+            */
             VkDescriptorImageInfo image_info = {};
-            image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE)
+            {
+                image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+            }
+            else
+            {
+                image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            }
+
             image_info.imageView = _res_pool[pb.index].texture.image_view;
             image_info.sampler = _res_pool[pb.sampler_index].sampler;
 
@@ -1494,54 +1590,6 @@ namespace pen
 
         }
 
-        static void _transition_image(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout) 
-        {
-            VkCommandBuffer cmd_buf = begin_cmd_buffer();
-
-            VkImageMemoryBarrier barrier = {};
-            barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-            barrier.oldLayout = old_layout;
-            barrier.newLayout = new_layout;
-            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier.image = image;
-            barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            barrier.subresourceRange.baseMipLevel = 0;
-            barrier.subresourceRange.levelCount = 1;
-            barrier.subresourceRange.baseArrayLayer = 0;
-            barrier.subresourceRange.layerCount = 1;
-
-            VkPipelineStageFlags src_stage;
-            VkPipelineStageFlags dst_stage;
-
-            if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED 
-                && new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) 
-            {
-                barrier.srcAccessMask = 0;
-                barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
-                src_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-                dst_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            }
-            else if (old_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL 
-                && new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) 
-            {
-                barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-                barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-                src_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-                dst_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-            }
-            else 
-            {
-                // unsupported transition
-                PEN_ASSERT(0);
-            }
-
-            vkCmdPipelineBarrier(cmd_buf, src_stage, dst_stage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-            end_cmd_buffer(cmd_buf);
-        }
-
         void renderer_create_texture(const texture_creation_params& tcp, u32 resource_slot)
         {
             _res_pool.insert({}, resource_slot);
@@ -1634,6 +1682,11 @@ namespace pen
 
                 vkDestroyBuffer(_ctx.device, buf, nullptr);
                 vkFreeMemory(_ctx.device, mem, nullptr);
+            }
+            else
+            {
+                _transition_image(vt.image,
+                    VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
             }
         }
 
@@ -1787,14 +1840,18 @@ namespace pen
             VkCommandBufferBeginInfo begin_info = {};
             begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-            vkBeginCommandBuffer(_ctx.cmd_buf_compute, &begin_info);
+            // Use a fence to ensure that compute command buffer has finished executing before using it again
+            vkWaitForFences(_ctx.device, 1, &_ctx.compute_fences[_ctx.ii], VK_TRUE, UINT64_MAX);
+            vkResetFences(_ctx.device, 1, &_ctx.compute_fences[_ctx.ii]);
+
+            vkBeginCommandBuffer(_ctx.cmd_buf_compute[_ctx.ii], &begin_info);
 
             bind_compute_pipeline();
-            bind_descriptor_sets(_ctx.cmd_buf_compute, VK_PIPELINE_BIND_POINT_COMPUTE);
+            bind_descriptor_sets(_ctx.cmd_buf_compute[_ctx.ii], VK_PIPELINE_BIND_POINT_COMPUTE);
 
-            vkCmdDispatch(_ctx.cmd_buf_compute, grid.x / num_threads.x, grid.y / num_threads.y, grid.z / num_threads.z);
+            vkCmdDispatch(_ctx.cmd_buf_compute[_ctx.ii], grid.x / num_threads.x, grid.y / num_threads.y, grid.z / num_threads.z);
 
-            vkEndCommandBuffer(_ctx.cmd_buf_compute);
+            vkEndCommandBuffer(_ctx.cmd_buf_compute[_ctx.ii]);
 
             sb_free(_state.bindings);
             _state.bindings = nullptr;
@@ -1849,6 +1906,15 @@ namespace pen
 
             vkEndCommandBuffer(_ctx.cmd_bufs[_ctx.ii]);
 
+            // submit compute
+
+            VkSubmitInfo compute_submit_info = {};
+            compute_submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+            compute_submit_info.commandBufferCount = 1;
+            compute_submit_info.pCommandBuffers = &_ctx.cmd_buf_compute[_ctx.ii];
+
+            CHECK_CALL(vkQueueSubmit(_ctx.compute_queue, 1, &compute_submit_info, _ctx.compute_fences[_ctx.ii]));
+
             VkSubmitInfo info = {};
             info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
             info.commandBufferCount = 1;
@@ -1882,6 +1948,7 @@ namespace pen
 
             u32 next_frame = (_ctx.ii + 1) % NBB;
             new_frame(next_frame);
+
         }
 
         void renderer_push_perf_marker(const c8* name)
