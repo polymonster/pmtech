@@ -66,7 +66,10 @@ PEN_TRV pen::user_entry(void* params)
     texture_info ti;
     put::get_texture_info(test_texture, ti);
 
-    ti.data = nullptr;
+    ti.data_size = ti.width * ti.height * 4;
+    ti.data = pen::memory_alloc(ti.data_size);
+    memset(ti.data, 255, ti.data_size);
+    
     ti.num_mips = 1;
     ti.bind_flags |= PEN_BIND_SHADER_WRITE;
     ti.format = PEN_TEX_FORMAT_RGBA8_UNORM;
