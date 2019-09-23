@@ -1,5 +1,6 @@
 import platform
 import os
+import shutil
 
 
 def get_platform_name_args(args):
@@ -48,6 +49,41 @@ def get_platform_exe_run(platform):
     else:
         return "./"
 
+
+# create a new dir if it doesnt already exist and not throw an exception
+def create_dir(dst_file):
+    dir = os.path.dirname(dst_file)
+    if not os.path.exists(dir):
+        os.makedirs(dir)
+
+
+# copy src_file to dst_file creating directory if necessary
+def copy_file_create_dir(src_file, dst_file):
+    if not os.path.exists(src_file):
+        print("[error] " + src_file + " does not exist!")
+        return False
+    try:
+        create_dir(dst_file)
+        src_file = os.path.normpath(src_file)
+        dst_file = os.path.normpath(dst_file)
+        shutil.copyfile(src_file, dst_file)
+        print("copy " + src_file + " to " + dst_file)
+        return True
+    except Exception as e:
+        print("[error] failed to copy " + src_file)
+        return False
+
+
+# copy src_file to dst_file creating directory if necessary only if the src file is newer than dst
+def copy_file_create_dir_if_newer(src_file, dst_file):
+    if not os.path.exists(src_file):
+        print("[error] src_file " + src_file + " does not exist!")
+        return
+    if os.path.exists(dst_file):
+        if os.path.getmtime(dst_file) >= os.path.getmtime(src_file):
+            print(dst_file + " up-to-date")
+            return
+    copy_file_create_dir(src_file, dst_file)
 
 if __name__ == "__main__":
     print("util")
