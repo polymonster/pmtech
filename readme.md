@@ -6,7 +6,7 @@
 - Operating System: Windows (x64), macOS, iOS, Linux (x64), Android ([wip](https://trello.com/b/ciujzpUT)).  
 - Compilers: vs2017+, Clang 6+, Apple LLVM 9+, Gcc 7+. 
 - Rendering Backends: Direct3D11, OpenGL3.1+, OpenGLES3+, Metal, Vulkan ([wip](https://trello.com/b/ciujzpUT)).
-- Shader Langauges: hlsl sm3+, glsl 330+, metal, spir-v.
+- Shader Langauges: HLSL Shader Model 3.0+, GLSL 330+, Metal, SPIR-V.
 
 **Features**
 - Lightweight: Minimalistic, simple apis, shallow call stacks. 
