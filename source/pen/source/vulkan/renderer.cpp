@@ -317,6 +317,8 @@ namespace
         VkFormat                    format;
         VkDeviceMemory              mem = 0;
         texture_creation_params*    tcp;
+        VkImageLayout               layout;
+        bool                        compute_shader_write = false;
     };
 
     struct vulkan_buffer
@@ -574,7 +576,7 @@ namespace
         CHECK_CALL(vkCreateDescriptorPool(_ctx.device, &pool_info, nullptr, &_ctx.descriptor_pool));
     }
 
-    // quick shitty functions for testing, better having a pool of these to burn through
+    // quick dirty functions for testing, better having a pool of these to burn through
     VkCommandBuffer begin_cmd_buffer() 
     {
         VkCommandBufferAllocateInfo info = {};
@@ -610,6 +612,34 @@ namespace
         vkFreeCommandBuffers(_ctx.device, _ctx.cmd_pool, 1, &cmd_buf);
     }
 
+    void _transition_image_cs(VkCommandBuffer cmd_buf, VkImage image, VkFormat format, VkImageLayout old_layout, 
+        VkImageLayout new_layout)
+    {
+        VkImageMemoryBarrier barrier = {};
+        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        barrier.oldLayout = old_layout;
+        barrier.newLayout = new_layout;
+        barrier.srcQueueFamilyIndex = _ctx.compute_family_index;
+        barrier.dstQueueFamilyIndex = _ctx.compute_family_index;
+        barrier.image = image;
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        barrier.subresourceRange.baseMipLevel = 0;
+        barrier.subresourceRange.levelCount = 1;
+        barrier.subresourceRange.baseArrayLayer = 0;
+        barrier.subresourceRange.layerCount = 1;
+
+        VkPipelineStageFlags src_stage;
+        VkPipelineStageFlags dst_stage;
+
+        barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+
+        src_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+        dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+
+        vkCmdPipelineBarrier(cmd_buf, src_stage, dst_stage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+    }
+
     void _transition_image(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout)
     {
         VkCommandBuffer cmd_buf = begin_cmd_buffer();
@@ -618,8 +648,8 @@ namespace
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         barrier.oldLayout = old_layout;
         barrier.newLayout = new_layout;
-        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.srcQueueFamilyIndex = _ctx.graphics_family_index;
+        barrier.dstQueueFamilyIndex = _ctx.graphics_family_index;;
         barrier.image = image;
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         barrier.subresourceRange.baseMipLevel = 0;
@@ -655,24 +685,6 @@ namespace
             barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
             src_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            dst_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-        }
-        else if (old_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-            && new_layout == VK_IMAGE_LAYOUT_GENERAL)
-        {
-            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-            src_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            dst_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-        }
-        else if (old_layout == VK_IMAGE_LAYOUT_GENERAL
-            && new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-        {
-            barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-            src_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
             dst_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
         }
         else
@@ -1295,21 +1307,20 @@ namespace
 
             vulkan_texture& vt = _res_pool.get(pb.index).texture;
 
-            // switch layouts
-            /*
-            _transition_image(vt.image,
-                VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-            */
+            // switch layouts for writable cs textures
             VkDescriptorImageInfo image_info = {};
             if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE)
             {
-                image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-            }
-            else
-            {
-                image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                if (vt.layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+                {
+                    _transition_image_cs(_ctx.cmd_buf_compute[_ctx.ii], vt.image,
+                        VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL);
+
+                    vt.layout = VK_IMAGE_LAYOUT_GENERAL;
+                }
             }
 
+            image_info.imageLayout = vt.layout;
             image_info.imageView = _res_pool[pb.index].texture.image_view;
             image_info.sampler = _res_pool[pb.sampler_index].sampler;
 
@@ -1599,6 +1610,9 @@ namespace pen
             vt.format = VK_FORMAT_B8G8R8A8_UNORM;
             vt.tcp = new texture_creation_params(tcp);
 
+            if (tcp.bind_flags & PEN_BIND_SHADER_WRITE)
+                vt.compute_shader_write = true;
+
             // image
             VkImageCreateInfo info = {};
             info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -1688,6 +1702,8 @@ namespace pen
                 _transition_image(vt.image,
                     VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
             }
+
+            vt.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         }
 
         void renderer_create_sampler(const sampler_creation_params& scp, u32 resource_slot)
@@ -1862,7 +1878,8 @@ namespace pen
             return renderer_create_texture(tcp, resource_slot);
         }
 
-        void renderer_set_targets(const u32* const colour_targets, u32 num_colour_targets, u32 depth_target, u32 colour_face, u32 depth_face)
+        void renderer_set_targets(const u32* const colour_targets, u32 num_colour_targets, u32 depth_target, u32 colour_face, 
+            u32 depth_face)
         {
             sb_clear(_state.colour_attachments);
             _state.colour_attachments = nullptr;
