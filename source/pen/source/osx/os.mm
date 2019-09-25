@@ -608,9 +608,7 @@ int        main(int argc, char** argv)
 
     // window creation
     NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
-    NSLog(@"NSApp=%@", NSApp);
     [NSApplication sharedApplication];
-    NSLog(@"NSApp=%@", NSApp);
 
     id dg = [app_delegate shared_delegate];
     [NSApp setDelegate:dg];

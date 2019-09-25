@@ -101,9 +101,18 @@ function setup_env_ios()
 	}
 end
 
+function setup_env_osx()
+	xcodebuildsettings
+	{
+		["MACOSX_DEPLOYMENT_TARGET"] = "10.14"
+	}
+end
+
 function setup_env()
     if platform == "ios" then
         setup_env_ios()
+    elseif platform == "osx" then
+        setup_env_osx()
     end
 end
 

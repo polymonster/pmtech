@@ -944,8 +944,9 @@ namespace pen
         {
             id<MTLLibrary> lib;
             
-            static const bool compile = false;
-            if(compile)
+            static const c8* c = "MTLB";
+            bool bin = memcmp(params.byte_code, &c[0], 4) == 0;
+            if(!bin) // compile source
             {
                 const c8* csrc = (const c8*)params.byte_code;
                 NSString* str = [[NSString alloc] initWithBytes:csrc length:params.byte_code_size encoding:NSASCIIStringEncoding];
