@@ -2,7 +2,8 @@
     base: {
         tools: {
             premake: "../tools/premake/premake5",
-            pmfx: "../third_party/pmfx-shader/build_pmfx.py"
+            pmfx: "../third_party/pmfx-shader/build_pmfx.py",
+            texturec: "../third_party/texturec/$platform/texturec"
         },
     
         env: {
@@ -35,6 +36,11 @@
             ["assets/configs", "bin/osx/data/configs"],
             ["../assets/configs", "bin/osx/data/configs"],
             ["../assets/fonts", "bin/osx/data/fonts"]
+        ],
+        
+        textures: [
+            ["assets/textures", "bin/osx/data/textures"],
+            ["../assets/textures", "bin/osx/data/textures"]
         ],
         
         clean: [

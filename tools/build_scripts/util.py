@@ -85,5 +85,22 @@ def copy_file_create_dir_if_newer(src_file, dst_file):
             return
     copy_file_create_dir(src_file, dst_file)
 
+
+# member wise merge 2 dicts, second will overwrite dest
+def merge_dicts(dest, second):
+    for k, v in second.items():
+        if type(v) == dict:
+            if k not in dest or type(dest[k]) != dict:
+                dest[k] = dict()
+            merge_dicts(dest[k], v)
+        else:
+            dest[k] = v
+
+
+# change file extension to ext
+def change_ext(file, ext):
+    return os.path.splitext(file)[0] + ext
+
+
 if __name__ == "__main__":
     print("util")

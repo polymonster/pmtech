@@ -238,6 +238,7 @@ def write_joint_file():
 
     helpers.output_file.joints.append(joint_data)
 
+
 # entry
 for root, dirs, files in os.walk(model_dir):
     dependencies_directory = dict()
