@@ -7,7 +7,9 @@ import util
 import subprocess
 import platform
 import shutil
+import time
 import jsn.jsn as jsn
+
 
 # returns tool to run from cmdline with .exe
 def tool_to_platform(tool):
@@ -35,6 +37,56 @@ def is_excluded(file):
         if file.find(ex) != -1:
             return True
     return False
+
+
+# windows only, prompt user to supply their windows sdk version
+def configure_windows_sdk(config):
+    if "sdk_version" in config.keys():
+        return
+    print("Windows SDK version not set.")
+    print("Please enter the windows sdk you want to use.")
+    print("You can find available sdk versions in:")
+    print("Visual Studio > Project Properties > General > Windows SDK Version.")
+    input_sdk = str(input())
+    config["sdk_version"] = input_sdk
+    bj = open("config_user.jsn", "w+")
+    bj.write(json.dumps(config, indent=4))
+    bj.close()
+    return
+
+
+# windows only, configure vcvarsall directory for commandline vc compilation
+def configure_vc_vars_all(config):
+    if "vcvarsall_dir" in config.keys():
+        if os.path.exists(config["vcvarsall_dir"]):
+            return
+    while True:
+        print("Cannot find 'vcvarsall.bat'")
+        print("Please enter the full path to the vc2017/vc2019 installation directory containing vcvarsall.bat")
+        input_dir = str(input())
+        input_dir = input_dir.strip("\"")
+        input_dir = os.path.normpath(input_dir)
+        if os.path.exists(input_dir):
+            config["vcvarsall_dir"] = input_dir
+            bj = open("config_user.jsn", "w+")
+            bj.write(json.dumps(config, indent=4))
+            bj.close()
+            return
+        else:
+            time.sleep(1)
+
+
+# configure user settings for each platform
+def configure_user(config):
+    config_user = dict()
+    if os.path.exists("config_user.jsn"):
+        config_user = jsn.loads(open("config_user.jsn", "r").read())
+    if util.get_platform_name() == "win32":
+        configure_vc_vars_all(config_user)
+        configure_windows_sdk(config_user)
+    if os.path.exists("config_user.jsn"):
+        config_user = jsn.loads(open("config_user.jsn", "r").read())
+        util.merge_dicts(config, config_user)
 
 
 # look for export.json in directory tree, combine and override exports by depth, override further by fnmatch
@@ -122,7 +174,6 @@ def run_premake(config):
         cmd += " " + c
     # add pmtech dir
     cmd += " --pmtech_dir=\"" + config["env"]["pmtech_dir"] + "\""
-    print(cmd)
     subprocess.call(cmd, shell=True)
 
 
@@ -131,13 +182,27 @@ def run_pmfx(config):
     cmd = python_tool_to_platform(config["tools"]["pmfx"])
     for c in config["pmfx"]:
         cmd += " " + c
-    print(cmd)
     subprocess.call(cmd, shell=True)
 
 
 # models
 def run_models(config):
     pass
+
+
+# third_party libs
+def run_thirdparty(config):
+    shell_build = ["linux", "osx", "ios"]
+    third_party_folder = os.path.join(config["env"]["pmtech_dir"], "third_party")
+    third_party_build = ""
+    if util.get_platform_name() in shell_build:
+        third_party_build = "cd " + third_party_folder + "; ./build_libs.sh " + util.get_platform_name()
+    else:
+        args = ""
+        args += config["env"]["pmtech_dir"] + "/" + " "
+        args += config["sdk_version"] + " "
+        third_party_build += "cd " + third_party_folder + "&& build_libs.bat \"" + config["vcvarsall_dir"] + "\"" + " " + args
+    return third_party_build
 
 
 # textures
@@ -192,7 +257,13 @@ if __name__ == "__main__":
 
     # load jsn, inherit etc
     config_all = jsn.loads(open("config.jsn", "r").read())
-    print(json.dumps(config_all, indent=4))
+
+    # first arg is build profile
+    config = config_all[sys.argv[1]]
+
+    # load config user for user specific values (sdk version, vcvarsall.bat etc.)
+    configure_user(config)
+    print(json.dumps(config, indent=4))
 
     # tasks are executed in order they are declared
     tasks = collections.OrderedDict()
@@ -201,10 +272,6 @@ if __name__ == "__main__":
     tasks["models"] = run_models
     tasks["textures"] = run_textures
     tasks["copy"] = run_copy
-
-    # first arg is build profile
-    config = config_all[sys.argv[1]]
-    print(json.dumps(config, indent=4))
 
     # clean is a special task, you must specify separately
     if "-clean" in sys.argv:
