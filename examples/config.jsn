@@ -1,4 +1,8 @@
 {
+    //
+    // common
+    //
+    
     base: {
         tools: {
             premake: "../tools/premake/premake5",
@@ -11,6 +15,10 @@
             pmtech_dir: "../"
         },
     },
+    
+    //
+    // mac
+    //
     
     mac: {
         jsn_inherit: ["base"],
@@ -60,7 +68,7 @@
         ]
     },
     
-    macgl: {
+    mac-gl: {
         jsn_inherit: ["mac"],
         
         premake: [
@@ -78,5 +86,77 @@
             "-t shader_temp",
             "-source"
         ]
+    },
+    
+    //
+    // win32
+    //
+    
+    win32: {
+        jsn_inherit: ["base"],
+        
+        clean: [
+            "build/win32",
+            "bin/win32",
+            "shader_structs",
+            "temp"
+        ],
+        
+        libs: [
+            "cd ../third_party && ./build_libs.sh osx",
+        ],
+        
+        premake: [
+            "vs2017",
+            "--renderer=dx11", 
+            "--platform_dir=win32"
+        ],
+        
+        pmfx: [
+            "-shader_platform hlsl",
+            "-shader_version 3_0",
+            "-i assets/shaders ../assets/shaders",
+            "-o bin/osx/data/pmfx/hlsl",
+            "-h shader_structs",
+            "-t shader_temp",
+            "-source"
+        ],
+        
+        models: [
+            ["assets/mesh", "bin/win32/data/models"]
+        ],
+        
+        textures: [
+            ["assets/textures", "bin/win32/data/textures"],
+            ["../assets/textures", "bin/win32/data/textures"]
+        ],
+        
+        copy: [
+            ["assets/audio", "bin/win32/data/audio"],
+            ["../assets/audio", "bin/win32/data/audio"],
+            ["assets/configs", "bin/win32/data/configs"],
+            ["../assets/configs", "bin/win32/data/configs"],
+            ["../assets/fonts", "bin/win32/data/fonts"]
+        ]
+    },
+    
+    win32-vulkan: {
+        jsn_inherit: ["win32"],
+        
+        premake: [
+            "vs2017",
+            "--renderer=vulkan", 
+            "--platform_dir=win32"
+        ],
+        
+        pmfx: [
+            "-shader_platform spir-v",
+            "-shader_version 450",
+            "-i assets/shaders ../assets/shaders",
+            "-o bin/osx/data/pmfx/spir-v",
+            "-h shader_structs",
+            "-t shader_temp",
+            "-source"
+        ],
     }
 }
