@@ -157,5 +157,55 @@
             "-t temp/shaders",
             "-source"
         ],
+    },
+    
+    // linux
+    
+    linux: {
+        jsn_inherit: ["base"],
+        
+        clean: [
+            "build/linux",
+            "bin/linux",
+            "shader_structs",
+            "temp"
+        ],
+        
+        libs: [
+            "cd ../third_party && ./build_libs.sh linux",
+        ],
+        
+        premake: [
+            "vs2017",
+            "--renderer=opengl", 
+            "--platform_dir=linux"
+        ],
+        
+        pmfx: [
+            "-shader_platform glsl",
+            "-shader_version 330",
+            "-i assets/shaders ../assets/shaders",
+            "-o bin/linux/data/pmfx/glsl",
+            "-h shader_structs",
+            "-t temp/shaders",
+            "-source"
+        ],
+        
+        models: [
+            ["assets/mesh", "bin/linux/data/models"]
+        ],
+        
+        textures: [
+            ["assets/textures", "bin/linux/data/textures"],
+            ["../assets/textures", "bin/linux/data/textures"]
+        ],
+        
+        copy: [
+            ["assets/audio", "bin/linux/data/audio"],
+            ["../assets/audio", "bin/linux/data/audio"],
+            ["assets/configs", "bin/linux/data/configs"],
+            ["../assets/configs", "bin/linux/data/configs"],
+            ["../assets/fonts", "bin/linux/data/fonts"]
+        ]
     }
 }
