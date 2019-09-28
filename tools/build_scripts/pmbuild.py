@@ -330,7 +330,7 @@ def pmbuild_help(config):
     print("\noptions:")
     print("    -help (display this dialog).")
     print("    -<task> -help (display task help).")
-    print("    -cfg (print jsn config for current profile")
+    print("    -cfg (print jsn config for current profile).")
     print("\nprofiles:")
     print("    config.jsn (edit task settings in here)")
     for p in config.keys():
