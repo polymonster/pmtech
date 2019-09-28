@@ -8,6 +8,7 @@ import subprocess
 import platform
 import shutil
 import time
+import dependencies
 import jsn.jsn as jsn
 
 
@@ -185,6 +186,14 @@ def get_task_files_containers(task):
     return container_files
 
 
+# gets a list of files within container to track in dependencies
+def get_container_dep_inputs(container_filepath, dep_inputs):
+    cf = open(container_filepath, "r").read().split("\n")
+    for cff in cf:
+        dep_inputs.append(cff)
+    return dep_inputs
+
+
 # copy files, directories or wildcards
 def run_copy(config):
     print("--------------------------------------------------------------------------------")
@@ -195,6 +204,16 @@ def run_copy(config):
         files = get_task_files(task)
         for f in files:
             util.copy_file_create_dir_if_newer(f[0], f[1])
+
+
+def copy_help(config):
+    print("copy help ----------------------------------------------------------------------")
+    print("--------------------------------------------------------------------------------")
+    print("\njsn syntax: array of [src, dst] pairs.")
+    print("copy: [")
+    print("    [<src files, directories or wildcards>, <dst file or folder>],")
+    print("    ...")
+    print("]")
 
 
 # premake
@@ -210,6 +229,21 @@ def run_premake(config):
     subprocess.call(cmd, shell=True)
 
 
+def premake_help(config):
+    print("premake help -------------------------------------------------------------------")
+    print("--------------------------------------------------------------------------------")
+    print("\njsn syntax: array of [<action>, cmdline options..]")
+    print("premake: [")
+    print("    [\"<action> (vs2017, xcode4, gmake, android-studio)\"],")
+    print("    [\"--premake_option <value>\"],")
+    print("    ...")
+    print("]\n")
+    print("reguires: config[\"env\"][\"pmtech_dir\"]\n")
+    cmd = tool_to_platform(config["tools"]["premake"])
+    cmd += " --help"
+    subprocess.call(cmd, shell=True)
+
+
 # pmfx
 def run_pmfx(config):
     cmd = python_tool_to_platform(config["tools"]["pmfx"])
@@ -218,24 +252,56 @@ def run_pmfx(config):
     subprocess.call(cmd, shell=True)
 
 
+def pmfx_help(config):
+    print("pmfx help ----------------------------------------------------------------------")
+    print("--------------------------------------------------------------------------------")
+    print("\njsn syntax: array of [cmdline options, ..]")
+    print("pmfx: [")
+    print("    [\"-pmfx_option <value>\"],")
+    print("    ...")
+    print("]\n")
+    cmd = python_tool_to_platform(config["tools"]["pmfx"])
+    cmd += " -help"
+    subprocess.call(cmd, shell=True)
+
+
 # models
 def run_models(config):
     pass
 
 
-# third_party libs
-def run_thirdparty(config):
-    shell_build = ["linux", "osx", "ios"]
-    third_party_folder = os.path.join(config["env"]["pmtech_dir"], "third_party")
-    third_party_build = ""
-    if util.get_platform_name() in shell_build:
-        third_party_build = "cd " + third_party_folder + "; ./build_libs.sh " + util.get_platform_name()
+# build third_party libs
+def run_libs(config):
+    print("--------------------------------------------------------------------------------")
+    print("libs ---------------------------------------------------------------------------")
+    print("--------------------------------------------------------------------------------")
+    shell = ["linux", "osx", "ios"]
+    cmd = ""
+    for arg in config["libs"]:
+        cmd += arg + " "
+    if util.get_platform_name() in shell:
+        cmd += util.get_platform_name()
     else:
         args = ""
         args += config["env"]["pmtech_dir"] + "/" + " "
         args += config["sdk_version"] + " "
-        third_party_build += "cd " + third_party_folder + "&& build_libs.bat \"" + config["vcvarsall_dir"] + "\"" + " " + args
-    return third_party_build
+        cmd += config["vcvarsall_dir"] + "\"" + " " + args
+    subprocess.call(cmd, shell=True)
+
+
+def libs_help(config):
+    print("libs help ----------------------------------------------------------------------")
+    print("--------------------------------------------------------------------------------")
+    print("\njsn syntax: array of [cmdlines, ..]")
+    print("libs: [")
+    print("    [\"command line\"],")
+    print("    ...")
+    print("]\n")
+    print("reguires:")
+    print("    config[\"env\"][\"pmtech_dir\"]")
+    print("    win32:")
+    print("        config[\"sdk_version\"]")
+    print("        config[\"vcvarsall_dir\"]")
 
 
 # textures
@@ -255,9 +321,13 @@ def run_textures(config):
                 util.copy_file_create_dir_if_newer(f[0], f[1])
             if fext in conv_fmt:
                 export = export_config_for_file(f[0])
+                dep_inputs = [f[0]]
                 if fext in cont_fmt:
                     export = export_config_for_directory(f[0], "osx")
+                    dep_inputs = get_container_dep_inputs(f[0], dep_inputs)
                 dst = util.change_ext(f[1], ".dds")
+                dep_outputs = [dst]
+                # dep = dependencies.create_dependency_info(dep_inputs, dep_outputs)
                 util.create_dir(dst)
                 cmd = tool_cmd + " "
                 cmd += "-f " + f[0] + " "
@@ -267,6 +337,13 @@ def run_textures(config):
                 cmd += "-o " + dst
                 print("texturec " + f[0])
                 subprocess.call(cmd, shell=True)
+
+
+# calls texturec --help
+def textures_help(config):
+    tool_cmd = tool_to_platform(config["tools"]["texturec"])
+    subprocess.call(tool_cmd + " --help", shell=True)
+    subprocess.call(tool_cmd + " --formats", shell=True)
 
 
 # clean
@@ -283,6 +360,41 @@ def run_clean(config):
             shutil.rmtree(clean_task)
 
 
+def clean_help(config):
+    print("clean help ---------------------------------------------------------------------")
+    print("--------------------------------------------------------------------------------")
+    print("\njsn syntax: array of [directories to remove...].")
+    print("clean: [")
+    print("    [<rm dir>],")
+    print("    ...")
+    print("]")
+
+
+# top level help
+def pmbuild_help(config):
+    print("pmbuild -help ------------------------------------------------------------------")
+    print("--------------------------------------------------------------------------------")
+    print("\nusage: pmbuild <profile> <tasks...>")
+    print("\noptions:")
+    print("    -help (display this dialog).")
+    print("    -<task> -help (display task help).")
+    print("    -cfg (print jsn config for current profile")
+    print("\nprofiles:")
+    print("    config.jsn (edit task settings in here)")
+    for p in config.keys():
+        print(" " * 8 + p)
+    print("\ntasks (in order of execution):")
+    print("    -all (builds all tasks).")
+    print("    -n<task name> (excludes task).")
+    print("    -clean (delete specified directories).")
+    print("    -libs (build thirdparty libs).")
+    print("    -premake (run premake, generate ide projects).")
+    print("    -models (convert to binary model, skeleton and material format).")
+    print("    -pmfx (shader compilation, code-gen, meta-data gen).")
+    print("    -textures (convert, compress, generate mip-maps, arrays, cubemaps).")
+    print("    -copy (copy files, folders or wildcards) [src, dst].")
+
+
 # entry point of pmbuild
 if __name__ == "__main__":
     print("--------------------------------------------------------------------------------")
@@ -297,32 +409,50 @@ if __name__ == "__main__":
     # load jsn, inherit etc
     config_all = jsn.loads(open("config.jsn", "r").read())
 
+    # top level help
+    if "-help" in sys.argv or len(sys.argv) == 1:
+        if len(sys.argv) <= 2:
+            pmbuild_help(config_all)
+            exit(0)
+
+    call = "run"
+    if "-help" in sys.argv:
+        call = "help"
+
     # first arg is build profile
-    config = config_all[sys.argv[1]]
+    if call == "run":
+        config = config_all[sys.argv[1]]
+        # load config user for user specific values (sdk version, vcvarsall.bat etc.)
+        configure_user(config)
+        if "-cfg" in sys.argv:
+            print(json.dumps(config, indent=4))
+    else:
+        config = config_all["base"]
 
-    # load config user for user specific values (sdk version, vcvarsall.bat etc.)
-    configure_user(config)
-    print(json.dumps(config, indent=4))
-
-    # tasks are executed in order they are declared
+    # tasks are executed in order they are declared here
     tasks = collections.OrderedDict()
-    tasks["premake"] = run_premake
-    tasks["pmfx"] = run_pmfx
+    tasks["libs"] = {"run": run_libs,  "help": libs_help}
+    tasks["premake"] = {"run": run_premake, "help": premake_help}
+    tasks["pmfx"] = {"run": run_pmfx, "help": pmfx_help}
     tasks["models"] = run_models
-    tasks["textures"] = run_textures
-    tasks["copy"] = run_copy
+    tasks["textures"] = {"run": run_textures, "help": textures_help}
+    tasks["copy"] = {"run": run_copy, "help": copy_help}
 
     # clean is a special task, you must specify separately
     if "-clean" in sys.argv:
-        run_clean(config)
+        if call == "help":
+            clean_help(config)
+        else:
+            run_clean(config)
 
     # run tasks in order they are specified.
     for key in tasks.keys():
-        if key not in config.keys():
-            continue
+        if call == "run":
+            if key not in config.keys():
+                continue
         if "-all" in sys.argv and "-n" + key not in sys.argv:
-            tasks.get(key, lambda config: '')(config)
+            tasks.get(key, lambda config: '')[call](config)
         elif len(sys.argv) != 2 and "-" + key in sys.argv:
-            tasks.get(key, lambda config: '')(config)
+            tasks.get(key, lambda config: '')[call](config)
         elif len(sys.argv) == 2:
-            tasks.get(key, lambda config: '')(config)
+            tasks.get(key, lambda config: '')[call](config)

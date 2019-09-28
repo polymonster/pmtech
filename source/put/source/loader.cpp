@@ -21,6 +21,18 @@
 
 using namespace put;
 
+// dxgi formats
+#define DXGI_RG32_FLOAT             16
+#define DXGI_RGBA32_FLOAT           2
+#define DXGI_RGBA8_UNORM            28
+#define DXGI_R8_UNORM               61
+#define DXGI_A8_UNORM               65
+#define DXGI_BC1_UNORM              71
+#define DXGI_BC2_UNORM              74
+#define DXGI_BC3_UNORM              77
+#define DXGI_BC4_UNORM              80
+#define DXGI_BC5_UNORM              83
+
 namespace
 {
     enum texture_type
@@ -155,19 +167,45 @@ namespace
         return width * height * block_size;
     }
 
-    u32 dxgi_format_to_texture_format(const dx10_header* dxh, u32& block_size)
+    u32 dxgi_format_to_texture_format(const dx10_header* dxh, bool& compressed, u32& block_size)
     {
         switch (dxh->dxgi_format)
         {
-            case 2:
+            case DXGI_RGBA32_FLOAT:
                 block_size = 16;
                 return PEN_TEX_FORMAT_R32G32B32A32_FLOAT;
-            case 16:
+            case DXGI_RG32_FLOAT:
                 block_size = 8;
                 return PEN_TEX_FORMAT_R32G32_FLOAT;
-            case 28:
+            case DXGI_RGBA8_UNORM:
                 block_size = 4;
                 return PEN_TEX_FORMAT_RGBA8_UNORM;
+            case DXGI_R8_UNORM:
+                block_size = 1;
+                return PEN_TEX_FORMAT_R8_UNORM;
+            case DXGI_A8_UNORM:
+                block_size = 1;
+                return PEN_TEX_FORMAT_R8_UNORM;
+            case DXGI_BC1_UNORM:
+                block_size = 8;
+                compressed = true;
+                return PEN_TEX_FORMAT_BC1_UNORM;
+            case DXGI_BC2_UNORM:
+                block_size = 16;
+                compressed = true;
+                return PEN_TEX_FORMAT_BC2_UNORM;
+            case DXGI_BC3_UNORM:
+                block_size = 16;
+                compressed = true;
+                return PEN_TEX_FORMAT_BC3_UNORM;
+            case DXGI_BC4_UNORM:
+                block_size = 8;
+                compressed = true;
+                return PEN_TEX_FORMAT_BC4_UNORM;
+            case DXGI_BC5_UNORM:
+                block_size = 16;
+                compressed = true;
+                return PEN_TEX_FORMAT_BC5_UNORM;
         }
 
         PEN_ASSERT_MSG(0, "Unsupported Image Format");
@@ -220,12 +258,12 @@ namespace
             if (rgba == 0xffffffff)
             {
                 block_size = pixel_format.size / 8;
-                return PEN_TEX_FORMAT_BGRA8_UNORM;
+                return PEN_TEX_FORMAT_RGBA8_UNORM;
             }
             else if (rgba == 0xffffff)
             {
                 block_size = pixel_format.size / 8;
-                return PEN_TEX_FORMAT_BGRA8_UNORM;
+                return PEN_TEX_FORMAT_RGBA8_UNORM;
             }
         }
 
@@ -288,7 +326,7 @@ namespace
         {
             dx10_header* dxh = (dx10_header*)top_image_start;
 
-            format = dxgi_format_to_texture_format(dxh, block_size);
+            format = dxgi_format_to_texture_format(dxh, compressed, block_size);
 
             top_image_start += sizeof(dx10_header);
         }

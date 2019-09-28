@@ -14,6 +14,10 @@
     mac: {
         jsn_inherit: ["base"],
         
+        libs: [
+            "cd ../third_party && ./build_libs.sh osx",
+        ],
+        
         premake: [
             "xcode4",
             "--renderer=metal", 
