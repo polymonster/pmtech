@@ -50,7 +50,7 @@ def configure_windows_sdk(config):
     print("Visual Studio > Project Properties > General > Windows SDK Version.")
     input_sdk = str(input())
     config["sdk_version"] = input_sdk
-    bj = open("config_user.jsn", "w+")
+    bj = open("config.user.jsn", "w+")
     bj.write(json.dumps(config, indent=4))
     bj.close()
     return
@@ -69,7 +69,7 @@ def configure_vc_vars_all(config):
         input_dir = os.path.normpath(input_dir)
         if os.path.exists(input_dir):
             config["vcvarsall_dir"] = input_dir
-            bj = open("config_user.jsn", "w+")
+            bj = open("config.user.jsn", "w+")
             bj.write(json.dumps(config, indent=4))
             bj.close()
             return
@@ -80,13 +80,13 @@ def configure_vc_vars_all(config):
 # configure user settings for each platform
 def configure_user(config):
     config_user = dict()
-    if os.path.exists("config_user.jsn"):
-        config_user = jsn.loads(open("config_user.jsn", "r").read())
+    if os.path.exists("config.user.jsn"):
+        config_user = jsn.loads(open("config.user.jsn", "r").read())
     if util.get_platform_name() == "win32":
         configure_vc_vars_all(config_user)
         configure_windows_sdk(config_user)
-    if os.path.exists("config_user.jsn"):
-        config_user = jsn.loads(open("config_user.jsn", "r").read())
+    if os.path.exists("config.user.jsn"):
+        config_user = jsn.loads(open("config.user.jsn", "r").read())
         util.merge_dicts(config, config_user)
 
 
@@ -258,13 +258,15 @@ def run_libs(config):
     cmd = ""
     for arg in config["libs"]:
         cmd += arg + " "
+        print(arg)
     if util.get_platform_name() in shell:
         cmd += util.get_platform_name()
     else:
         args = ""
         args += config["env"]["pmtech_dir"] + "/" + " "
         args += config["sdk_version"] + " "
-        cmd += config["vcvarsall_dir"] + "\"" + " " + args
+        cmd += "\"" + config["vcvarsall_dir"] + "\"" + " " + args
+        print(cmd)
     subprocess.call(cmd, shell=True)
 
 
@@ -461,6 +463,7 @@ if __name__ == "__main__":
     print("--------------------------------------------------------------------------------")
     print("pmbuild (v3) -------------------------------------------------------------------")
     print("--------------------------------------------------------------------------------")
+    print("")
 
     # must have config.json in working directory
     if not os.path.exists("config.jsn"):
