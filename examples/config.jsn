@@ -86,6 +86,26 @@
             "-source"
         ]
     },
+
+    mac-gl-ci: {
+        jsn_inherit: ["mac"],
+        
+        premake: [
+            "gmake",
+            "--renderer=opengl", 
+            "--platform_dir=osx"
+        ]
+    },
+
+    mac-metal-ci: {
+        jsn_inherit: ["mac"],
+        
+        premake: [
+            "gmake",
+            "--renderer=metal", 
+            "--platform_dir=osx"
+        ]
+    },
     
     //
     // win32
