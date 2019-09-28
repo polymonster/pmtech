@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-cd ../examples
+cd examples
 ../pmbuild2 linux -libs -premake
 cd build/linux
 g++ -v
