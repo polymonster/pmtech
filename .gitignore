@@ -1,11 +1,7 @@
-# Windows image file caches
+# Windows
 Thumbs.db
 ehthumbs.db
-
-# Folder config file
 Desktop.ini
-
-# Recycle Bin used on file shares
 $RECYCLE.BIN/
 
 *.cab
@@ -14,7 +10,6 @@ $RECYCLE.BIN/
 *.msp
 *.lnk
 .vscode
-
 .DS_Store
 .AppleDouble
 .LSOverride
@@ -44,3 +39,4 @@ Temporary Items
 .apdisk
 build_config_user.json
 test_results/
+**/container.txt

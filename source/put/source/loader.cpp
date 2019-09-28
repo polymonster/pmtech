@@ -165,6 +165,9 @@ namespace
             case 16:
                 block_size = 8;
                 return PEN_TEX_FORMAT_R32G32_FLOAT;
+            case 28:
+                block_size = 4;
+                return PEN_TEX_FORMAT_RGBA8_UNORM;
         }
 
         PEN_ASSERT_MSG(0, "Unsupported Image Format");

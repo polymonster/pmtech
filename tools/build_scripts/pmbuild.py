@@ -117,7 +117,7 @@ def export_config_for_file(filename):
     return dir_config
 
 
-# get files for task, will iterate dirs, match wildcards or return single files
+# get files for task, will iterate dirs, match wildcards or return single files, returned in tuple (src, dst)
 def get_task_files(task):
     outputs = []
     if len(task) != 2:
@@ -150,6 +150,39 @@ def get_task_files(task):
             util.copy_file_create_dir_if_newer(task[0], task[1])
             outputs.append((task[0], task[1]))
     return outputs
+
+
+# get files for a task sorted by directory
+def get_task_files_containers(task):
+    container_ext = ".cube"
+    files = get_task_files(task)
+    container_files = []
+    skip = 0
+    for fi in range(0, len(files)):
+        if fi < skip:
+            continue
+        f = files[fi]
+        cpos = f[0].find(container_ext)
+        if cpos != -1:
+            container_name = f[0][:cpos + len(container_ext)]
+            export = export_config_for_directory(container_name, "osx")
+            container_src = container_name + "/container.txt"
+            container_dst = os.path.dirname(container_src)
+            cf = (container_src, container_dst)
+            file_list = ""
+            for xf in export["files"]:
+                file_list += os.path.join(container_name, xf) + "\n"
+            open(container_src, "w+").write(file_list)
+            container_files.append(cf)
+            for gi in range(fi+1, len(files)):
+                ff = files[gi]
+                cur_container_name = ff[0][:cpos + len(container_ext)]
+                if cur_container_name != container_name:
+                    skip = gi
+                    break
+        else:
+            container_files.append(f)
+    return container_files
 
 
 # copy files, directories or wildcards
@@ -212,19 +245,25 @@ def run_textures(config):
     print("--------------------------------------------------------------------------------")
     tool_cmd = tool_to_platform(config["tools"]["texturec"])
     for task in config["textures"]:
-        files = get_task_files(task)
+        files = get_task_files_containers(task)
         for f in files:
             copy_fmt = [".dds", ".pmv"]
-            conv_fmt = [".png", ".jpg", ".tga", ".bmp"]
-            if os.path.splitext(f[1])[1] in copy_fmt:
+            conv_fmt = [".png", ".jpg", ".tga", ".bmp", ".txt"]
+            cont_fmt = [".txt"]
+            fext = os.path.splitext(f[0])[1]
+            if fext in copy_fmt:
                 util.copy_file_create_dir_if_newer(f[0], f[1])
-            if os.path.splitext(f[1])[1] in conv_fmt:
+            if fext in conv_fmt:
                 export = export_config_for_file(f[0])
+                if fext in cont_fmt:
+                    export = export_config_for_directory(f[0], "osx")
                 dst = util.change_ext(f[1], ".dds")
                 util.create_dir(dst)
                 cmd = tool_cmd + " "
                 cmd += "-f " + f[0] + " "
                 cmd += "-t " + export["format"] + " "
+                if "cubemap" in export.keys() and export["cubemap"]:
+                    cmd += " --cubearray "
                 cmd += "-o " + dst
                 print("texturec " + f[0])
                 subprocess.call(cmd, shell=True)
