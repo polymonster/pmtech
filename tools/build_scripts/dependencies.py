@@ -89,6 +89,8 @@ def create_dependency_info(inputs, outputs):
         o = unstrict_json_safe_filename(o)
         info[o] = []
         for i in inputs:
+            if not os.path.exists(i):
+                continue
             info[o].append(create_info(i))
     return info
 
@@ -104,6 +106,7 @@ def check_up_to_date(dependencies, dest_file):
     d_json = json.loads(d_str)
 
     file_exists = False
+
     for d in d_json["files"]:
         for key in d.keys():
             dependecy_file = sanitize_filename(key)
@@ -141,12 +144,13 @@ def check_up_to_date_single(dest_file):
                         print(os.path.basename(dest_file) + ": dest does not exist.")
                         return False
                     if i["timestamp"] < os.path.getmtime(sanitized):
+                        print(sanitized)
                         print(os.path.basename(dest_file) + ": is out of date.")
                         return False
 
     if not file_exists:
         return False
-
+    print(dest_file + " up to date")
     return True
 
 

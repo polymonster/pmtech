@@ -168,12 +168,20 @@ def get_task_files_containers(task):
             container_name = f[0][:cpos + len(container_ext)]
             export = export_config_for_directory(container_name, "osx")
             container_src = container_name + "/container.txt"
-            container_dst = os.path.dirname(container_src)
+            container_dst = os.path.dirname(f[1])
             cf = (container_src, container_dst)
             file_list = ""
             for xf in export["files"]:
                 file_list += os.path.join(container_name, xf) + "\n"
-            open(container_src, "w+").write(file_list)
+            update_container = False
+            if os.path.exists(container_src):
+                cur_container = open(container_src, "r").read()
+                if cur_container != file_list:
+                    update_container = True
+            else:
+                update_container = True
+            if update_container:
+                open(container_src, "w+").write(file_list)
             container_files.append(cf)
             for gi in range(fi+1, len(files)):
                 ff = files[gi]
@@ -229,6 +237,9 @@ def run_pmfx(config):
 
 # models
 def run_models(config):
+    print("--------------------------------------------------------------------------------")
+    print("models -------------------------------------------------------------------------")
+    print("--------------------------------------------------------------------------------")
     tool_cmd = python_tool_to_platform(config["tools"]["models"])
     for task in config["models"]:
         task_files = get_task_files(task)
@@ -279,17 +290,22 @@ def run_textures(config):
                     export = export_config_for_directory(f[0], "osx")
                     dep_inputs = get_container_dep_inputs(f[0], dep_inputs)
                 dst = util.change_ext(f[1], ".dds")
-                dep_outputs = [dst]
-                # dep = dependencies.create_dependency_info(dep_inputs, dep_outputs)
-                util.create_dir(dst)
-                cmd = tool_cmd + " "
-                cmd += "-f " + f[0] + " "
-                cmd += "-t " + export["format"] + " "
-                if "cubemap" in export.keys() and export["cubemap"]:
-                    cmd += " --cubearray "
-                cmd += "-o " + dst
-                print("texturec " + f[0])
-                subprocess.call(cmd, shell=True)
+                if not dependencies.check_up_to_date_single(dst):
+                    dep_outputs = [dst]
+                    dep_info = dependencies.create_dependency_info(dep_inputs, dep_outputs)
+                    dep = dict()
+                    dep["files"] = list()
+                    dep["files"].append(dep_info)
+                    util.create_dir(dst)
+                    cmd = tool_cmd + " "
+                    cmd += "-f " + f[0] + " "
+                    cmd += "-t " + export["format"] + " "
+                    if "cubemap" in export.keys() and export["cubemap"]:
+                        cmd += " --cubearray "
+                    cmd += "-o " + dst
+                    print("texturec " + f[0])
+                    subprocess.call(cmd, shell=True)
+                    dependencies.write_to_file_single(dep, util.change_ext(dst, ".json"))
 
 
 # clean
@@ -433,6 +449,13 @@ def copy_help(config):
     print("\n")
 
 
+# print duration of job, ts is start time
+def print_duration(ts):
+    millis = int((time.time() - ts) * 1000)
+    print("--------------------------------------------------------------------------------")
+    print("Took (" + str(millis) + "ms)")
+
+
 # entry point of pmbuild
 if __name__ == "__main__":
     print("--------------------------------------------------------------------------------")
@@ -488,9 +511,13 @@ if __name__ == "__main__":
         if call == "run":
             if key not in config.keys():
                 continue
+        ts = time.time()
         if "-all" in sys.argv and "-n" + key not in sys.argv:
             tasks.get(key, lambda config: '')[call](config)
+            print_duration(ts)
         elif len(sys.argv) != 2 and "-" + key in sys.argv:
             tasks.get(key, lambda config: '')[call](config)
+            print_duration(ts)
         elif len(sys.argv) == 2:
             tasks.get(key, lambda config: '')[call](config)
+            print_duration(ts)

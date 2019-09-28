@@ -283,7 +283,6 @@ for file in file_list:
         file_info = dependencies.create_dependency_info(dependency_inputs, dependency_outputs)
         deps["files"].append(file_info)
         if dependencies.check_up_to_date_single(depends_dest + ".pmm"):
-            print(f + " already up to date")
             continue
         parse_obj.write_geometry(os.path.basename(file), root)
         helpers.output_file.write(base_out_file + ".pmm")
