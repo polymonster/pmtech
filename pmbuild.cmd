@@ -1,0 +1,1 @@
+py -3 %~dp0/tools/build_scripts/pmbuild.py %*

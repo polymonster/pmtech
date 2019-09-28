@@ -26,7 +26,6 @@
         clean: [
             "build/osx",
             "bin/osx",
-            "shader_structs",
             "temp"
         ],
         
@@ -46,7 +45,7 @@
             "-i assets/shaders ../assets/shaders",
             "-o bin/osx/data/pmfx/metal",
             "-h shader_structs",
-            "-t shader_temp",
+            "-t temp/shaders",
             "-source"
         ],
         
@@ -83,8 +82,28 @@
             "-i assets/shaders ../assets/shaders",
             "-o bin/osx/data/shaders",
             "-h shader_structs",
-            "-t shader_temp",
+            "-t temp/shaders",
             "-source"
+        ]
+    },
+
+    mac-gl-ci: {
+        jsn_inherit: ["mac"],
+        
+        premake: [
+            "gmake",
+            "--renderer=opengl", 
+            "--platform_dir=osx"
+        ]
+    },
+
+    mac-metal-ci: {
+        jsn_inherit: ["mac"],
+        
+        premake: [
+            "gmake",
+            "--renderer=metal", 
+            "--platform_dir=osx"
         ]
     },
     
@@ -103,7 +122,7 @@
         ],
         
         libs: [
-            "cd ../third_party && ./build_libs.sh osx",
+            "cd ..\\third_party && .\\build_libs.bat ",
         ],
         
         premake: [
@@ -116,9 +135,9 @@
             "-shader_platform hlsl",
             "-shader_version 3_0",
             "-i assets/shaders ../assets/shaders",
-            "-o bin/osx/data/pmfx/hlsl",
+            "-o bin/win32/data/pmfx/hlsl",
             "-h shader_structs",
-            "-t shader_temp",
+            "-t temp/shaders",
             "-source"
         ],
         
@@ -150,13 +169,67 @@
         ],
         
         pmfx: [
-            "-shader_platform spir-v",
-            "-shader_version 450",
+            "-shader_platform spirv",
+            "-shader_version 420",
             "-i assets/shaders ../assets/shaders",
-            "-o bin/osx/data/pmfx/spir-v",
+            "-o bin/win32/data/pmfx/spirv",
             "-h shader_structs",
-            "-t shader_temp",
+            "-t temp/shaders",
             "-source"
         ],
+    },
+    
+    // linux
+    
+    linux: {
+        jsn_inherit: ["base"],
+
+        tools: {
+            premake: "../tools/premake/premake5_linux"
+	},
+        
+        clean: [
+            "build/linux",
+            "bin/linux",
+            "shader_structs",
+            "temp"
+        ],
+        
+        libs: [
+            "cd ../third_party && ./build_libs.sh linux",
+        ],
+        
+        premake: [
+            "gmake",
+            "--renderer=opengl", 
+            "--platform_dir=linux"
+        ],
+        
+        pmfx: [
+            "-shader_platform glsl",
+            "-shader_version 330",
+            "-i assets/shaders ../assets/shaders",
+            "-o bin/linux/data/pmfx/glsl",
+            "-h shader_structs",
+            "-t temp/shaders",
+            "-source"
+        ],
+        
+        models: [
+            ["assets/mesh", "bin/linux/data/models"]
+        ],
+        
+        textures: [
+            ["assets/textures", "bin/linux/data/textures"],
+            ["../assets/textures", "bin/linux/data/textures"]
+        ],
+        
+        copy: [
+            ["assets/audio", "bin/linux/data/audio"],
+            ["../assets/audio", "bin/linux/data/audio"],
+            ["assets/configs", "bin/linux/data/configs"],
+            ["../assets/configs", "bin/linux/data/configs"],
+            ["../assets/fonts", "bin/linux/data/fonts"]
+        ]
     }
 }

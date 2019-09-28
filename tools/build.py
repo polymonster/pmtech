@@ -272,7 +272,8 @@ def build_thirdparty_libs():
             args += build_config["pmtech_dir"] + "/" + " "
         if "sdk_version" in build_config.keys():
             args += build_config["sdk_version"] + " "
-        third_party_build += "cd " + third_party_folder + "&& build_libs.bat \"" + build_config["vcvarsall_dir"] + "\"" + " " + args
+        third_party_build += "cd " + third_party_folder + \
+                             "&& build_libs.bat \"" + build_config["vcvarsall_dir"] + "\"" + " " + args
     return third_party_build
 
 
