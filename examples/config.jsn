@@ -3,7 +3,8 @@
         tools: {
             premake: "../tools/premake/premake5",
             pmfx: "../third_party/pmfx-shader/build_pmfx.py",
-            texturec: "../third_party/texturec/$platform/texturec"
+            texturec: "../third_party/texturec/$platform/texturec",
+            models: "../tools/build_scripts/build_models.py"
         },
     
         env: {
@@ -13,6 +14,13 @@
     
     mac: {
         jsn_inherit: ["base"],
+        
+        clean: [
+            "build/osx",
+            "bin/osx",
+            "shader_structs",
+            "temp"
+        ],
         
         libs: [
             "cd ../third_party && ./build_libs.sh osx",
@@ -33,13 +41,9 @@
             "-t shader_temp",
             "-source"
         ],
-
-        copy: [
-            ["assets/audio", "bin/osx/data/audio"],
-            ["../assets/audio", "bin/osx/data/audio"],
-            ["assets/configs", "bin/osx/data/configs"],
-            ["../assets/configs", "bin/osx/data/configs"],
-            ["../assets/fonts", "bin/osx/data/fonts"]
+        
+        models: [
+            ["assets/mesh", "bin/osx/data/models"]
         ],
         
         textures: [
@@ -47,11 +51,12 @@
             ["../assets/textures", "bin/osx/data/textures"]
         ],
         
-        clean: [
-            "build/osx",
-            "bin/osx",
-            "shader_structs",
-            "temp"
+        copy: [
+            ["assets/audio", "bin/osx/data/audio"],
+            ["../assets/audio", "bin/osx/data/audio"],
+            ["assets/configs", "bin/osx/data/configs"],
+            ["../assets/configs", "bin/osx/data/configs"],
+            ["../assets/fonts", "bin/osx/data/fonts"]
         ]
     },
     

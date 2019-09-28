@@ -67,7 +67,6 @@ def parse_library_images(library_node):
                 texture_sub_dir = corrected[texture_src + len(identifier):len(corrected)]
                 texture_bin = os.path.join("data", "textures", texture_sub_dir)
                 lib_img.filename = texture_bin
-                print(texture_bin)
                 image_list.append(lib_img)
                 break
 
@@ -176,9 +175,6 @@ def parse_materials(dae_root, materials_root):
 
 def write_material_file(mat):
     # write out materials
-
-    print("packing material: " + mat.id)
-
     material_data = [struct.pack("i", (int(helpers.version_number)))]
 
     # float values

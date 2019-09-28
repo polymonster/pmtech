@@ -597,34 +597,37 @@ ps_output ps_forward_lit( vs_output input )
     }
     
     // area lights textured
-    int ts = num_area_lights;
-    int num_area_lights_textured = int(area_light_info.y);
-    for(int i = ts; i < ts + num_area_lights_textured; ++i)
+    if:(!SSS)
     {
-        float slice = area_lights[i].colour.w;
-        float levels = 8.0;
-        float2 inv_texel = float2(1.0/640.0, 1.0/480.0);
-        float2 inv_texel_x = float2(1.0, 1.0) - inv_texel;
+        int ts = num_area_lights;
+        int num_area_lights_textured = int(area_light_info.y);
+        for(int i = ts; i < ts + num_area_lights_textured; ++i)
+        {
+            float slice = area_lights[i].colour.w;
+            float levels = 8.0;
+            float2 inv_texel = float2(1.0/640.0, 1.0/480.0);
+            float2 inv_texel_x = float2(1.0, 1.0) - inv_texel;
         
-        float3 points[4];
-        for(int j = 0; j < 4; ++j)
-            points[j] = area_lights[i].corners[j].xyz;
+            float3 points[4];
+            for(int j = 0; j < 4; ++j)
+                points[j] = area_lights[i].corners[j].xyz;
 
-        float3 v = -normalize(input.world_pos.xyz - camera_view_pos.xyz);
-        float3 pos = input.world_pos.xyz;
+            float3 v = -normalize(input.world_pos.xyz - camera_view_pos.xyz);
+            float3 pos = input.world_pos.xyz;
         
-        // diffuse
-        float4 diff_uv = area_light_diffuse_uv(points, pos, n, v);
-        float2 duv = clamp(diff_uv.xy, inv_texel, inv_texel_x);
-        float3 diff = sample_texture_array_level( area_light_textures, duv, slice, diff_uv.z * levels).rgb * diff_uv.w;
+            // diffuse
+            float4 diff_uv = area_light_diffuse_uv(points, pos, n, v);
+            float2 duv = clamp(diff_uv.xy, inv_texel, inv_texel_x);
+            float3 diff = sample_texture_array_level( area_light_textures, duv, slice, diff_uv.z * levels).rgb * diff_uv.w;
         
-        // specular 
-        float4 spec_uv = area_light_specular_uv(points, pos, ro_sample.x, n, v);
-        float2 suv = clamp(spec_uv.xy, inv_texel, inv_texel_x);
-        float3 spec = sample_texture_array_level(area_light_textures, suv, slice, spec_uv.z * levels).rgb * spec_uv.w; 
+            // specular 
+            float4 spec_uv = area_light_specular_uv(points, pos, ro_sample.x, n, v);
+            float2 suv = clamp(spec_uv.xy, inv_texel, inv_texel_x);
+            float3 spec = sample_texture_array_level(area_light_textures, suv, slice, spec_uv.z * levels).rgb * spec_uv.w; 
         
-        float3 light_col = (spec.rgb + diff.rgb) / (2.0 * pi);        
-        lit_colour += light_col;
+            float3 light_col = (spec.rgb + diff.rgb) / (2.0 * pi);        
+            lit_colour += light_col;
+        }
     }
 
     output.colour.rgb = lit_colour.rgb;    

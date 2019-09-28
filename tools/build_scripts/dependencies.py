@@ -118,6 +118,34 @@ def check_up_to_date(dependencies, dest_file):
 
     if not file_exists:
         return False
+    return True
+
+
+def check_up_to_date_single(dest_file):
+    dep_filename = dest_file.replace(os.path.splitext(dest_file)[1], ".json")
+    if not os.path.exists(dep_filename):
+        print(os.path.basename(dest_file) + ": deps does not exist.")
+        return False
+    file = open(dep_filename)
+    d_str = file.read()
+    d_json = json.loads(d_str)
+    file_exists = False
+    for d in d_json["files"]:
+        for key in d.keys():
+            dependecy_file = sanitize_filename(key)
+            if dest_file == dependecy_file:
+                for i in d[key]:
+                    file_exists = True
+                    sanitized = sanitize_filename(i["name"])
+                    if not os.path.exists(sanitized):
+                        print(os.path.basename(dest_file) + ": dest does not exist.")
+                        return False
+                    if i["timestamp"] < os.path.getmtime(sanitized):
+                        print(os.path.basename(dest_file) + ": is out of date.")
+                        return False
+
+    if not file_exists:
+        return False
 
     return True
 
@@ -131,3 +159,9 @@ def write_to_file(dependencies):
         output_d.close()
     except:
         return
+
+
+def write_to_file_single(deps, file):
+    output_d = open(file, 'wb+')
+    output_d.write(bytes(json.dumps(deps, indent=4), 'UTF-8'))
+    output_d.close()

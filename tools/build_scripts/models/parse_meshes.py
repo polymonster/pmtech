@@ -439,8 +439,6 @@ def write_geometry_file(geom_instance):
     if num_meshes == 0:
         return
 
-    print("packing geometry: " + geom_instance.name)
-
     geometry_data = [struct.pack("i", (int(helpers.version_number))),
                      struct.pack("i", (int(num_meshes)))]
 

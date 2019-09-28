@@ -206,16 +206,6 @@ def run_copy(config):
             util.copy_file_create_dir_if_newer(f[0], f[1])
 
 
-def copy_help(config):
-    print("copy help ----------------------------------------------------------------------")
-    print("--------------------------------------------------------------------------------")
-    print("\njsn syntax: array of [src, dst] pairs.")
-    print("copy: [")
-    print("    [<src files, directories or wildcards>, <dst file or folder>],")
-    print("    ...")
-    print("]")
-
-
 # premake
 def run_premake(config):
     print("--------------------------------------------------------------------------------")
@@ -229,21 +219,6 @@ def run_premake(config):
     subprocess.call(cmd, shell=True)
 
 
-def premake_help(config):
-    print("premake help -------------------------------------------------------------------")
-    print("--------------------------------------------------------------------------------")
-    print("\njsn syntax: array of [<action>, cmdline options..]")
-    print("premake: [")
-    print("    [\"<action> (vs2017, xcode4, gmake, android-studio)\"],")
-    print("    [\"--premake_option <value>\"],")
-    print("    ...")
-    print("]\n")
-    print("reguires: config[\"env\"][\"pmtech_dir\"]\n")
-    cmd = tool_to_platform(config["tools"]["premake"])
-    cmd += " --help"
-    subprocess.call(cmd, shell=True)
-
-
 # pmfx
 def run_pmfx(config):
     cmd = python_tool_to_platform(config["tools"]["pmfx"])
@@ -252,21 +227,14 @@ def run_pmfx(config):
     subprocess.call(cmd, shell=True)
 
 
-def pmfx_help(config):
-    print("pmfx help ----------------------------------------------------------------------")
-    print("--------------------------------------------------------------------------------")
-    print("\njsn syntax: array of [cmdline options, ..]")
-    print("pmfx: [")
-    print("    [\"-pmfx_option <value>\"],")
-    print("    ...")
-    print("]\n")
-    cmd = python_tool_to_platform(config["tools"]["pmfx"])
-    cmd += " -help"
-    subprocess.call(cmd, shell=True)
-
-
 # models
 def run_models(config):
+    tool_cmd = python_tool_to_platform(config["tools"]["models"])
+    for task in config["models"]:
+        task_files = get_task_files(task)
+        for f in task_files:
+            cmd = " -i " + f[0] + " -o " + os.path.dirname(f[1])
+            subprocess.call(tool_cmd + cmd, shell=True)
     pass
 
 
@@ -287,21 +255,6 @@ def run_libs(config):
         args += config["sdk_version"] + " "
         cmd += config["vcvarsall_dir"] + "\"" + " " + args
     subprocess.call(cmd, shell=True)
-
-
-def libs_help(config):
-    print("libs help ----------------------------------------------------------------------")
-    print("--------------------------------------------------------------------------------")
-    print("\njsn syntax: array of [cmdlines, ..]")
-    print("libs: [")
-    print("    [\"command line\"],")
-    print("    ...")
-    print("]\n")
-    print("reguires:")
-    print("    config[\"env\"][\"pmtech_dir\"]")
-    print("    win32:")
-    print("        config[\"sdk_version\"]")
-    print("        config[\"vcvarsall_dir\"]")
 
 
 # textures
@@ -339,13 +292,6 @@ def run_textures(config):
                 subprocess.call(cmd, shell=True)
 
 
-# calls texturec --help
-def textures_help(config):
-    tool_cmd = tool_to_platform(config["tools"]["texturec"])
-    subprocess.call(tool_cmd + " --help", shell=True)
-    subprocess.call(tool_cmd + " --formats", shell=True)
-
-
 # clean
 def run_clean(config):
     print("--------------------------------------------------------------------------------")
@@ -358,16 +304,6 @@ def run_clean(config):
         elif os.path.isdir(clean_task):
             print("directory " + clean_task)
             shutil.rmtree(clean_task)
-
-
-def clean_help(config):
-    print("clean help ---------------------------------------------------------------------")
-    print("--------------------------------------------------------------------------------")
-    print("\njsn syntax: array of [directories to remove...].")
-    print("clean: [")
-    print("    [<rm dir>],")
-    print("    ...")
-    print("]")
 
 
 # top level help
@@ -393,6 +329,108 @@ def pmbuild_help(config):
     print("    -pmfx (shader compilation, code-gen, meta-data gen).")
     print("    -textures (convert, compress, generate mip-maps, arrays, cubemaps).")
     print("    -copy (copy files, folders or wildcards) [src, dst].")
+    print("\n")
+
+
+def clean_help(config):
+    print("clean help ---------------------------------------------------------------------")
+    print("--------------------------------------------------------------------------------")
+    print("\njsn syntax: array of [directories to remove...].")
+    print("clean: [")
+    print("    [<rm dir>],")
+    print("    ...")
+    print("]")
+    print("\n")
+
+
+def libs_help(config):
+    print("libs help ----------------------------------------------------------------------")
+    print("--------------------------------------------------------------------------------")
+    print("\njsn syntax: array of [cmdlines, ..]")
+    print("libs: [")
+    print("    [\"command line\"],")
+    print("    ...")
+    print("]\n")
+    print("reguires:")
+    print("    config[\"env\"][\"pmtech_dir\"]")
+    print("    win32:")
+    print("        config[\"sdk_version\"]")
+    print("        config[\"vcvarsall_dir\"]")
+    print("\n")
+
+
+def premake_help(config):
+    print("premake help -------------------------------------------------------------------")
+    print("--------------------------------------------------------------------------------")
+    print("\njsn syntax: array of [<action>, cmdline options..]")
+    print("premake: [")
+    print("    [\"<action> (vs2017, xcode4, gmake, android-studio)\"],")
+    print("    [\"--premake_option <value>\"],")
+    print("    ...")
+    print("]\n")
+    print("reguires: config[\"env\"][\"pmtech_dir\"]\n")
+    cmd = tool_to_platform(config["tools"]["premake"])
+    cmd += " --help"
+    subprocess.call(cmd, shell=True)
+    print("\n")
+
+
+def pmfx_help(config):
+    print("pmfx help ----------------------------------------------------------------------")
+    print("--------------------------------------------------------------------------------")
+    print("\njsn syntax: array of [cmdline options, ..]")
+    print("pmfx: [")
+    print("    [\"-pmfx_option <value>\"],")
+    print("    ...")
+    print("]\n")
+    cmd = python_tool_to_platform(config["tools"]["pmfx"])
+    cmd += " -help"
+    subprocess.call(cmd, shell=True)
+    print("\n")
+
+
+def models_help(config):
+    print("models help --------------------------------------------------------------------")
+    print("--------------------------------------------------------------------------------")
+    print("\njsn syntax: array of [src, dst] pairs.")
+    print("models: [")
+    print("    [<src files, directories or wildcards>, <dst file or folder>],")
+    print("    ...")
+    print("]")
+    print("accepted file formats: .dae, .obj")
+    print("\n")
+
+
+def textures_help(config):
+    print("textures help ------------------------------------------------------------------")
+    print("--------------------------------------------------------------------------------")
+    print("\njsn syntax: array of [src, dst] pairs.")
+    print("copy: [")
+    print("    [<src files, directories or wildcards>, <dst file or folder>],")
+    print("    ...")
+    print("]")
+    print("export.jsn:")
+    print("{")
+    print("    format: \"RGBA8\"")
+    print("    filename.png {")
+    print("        format: \"override_per_file\"")
+    print("    }")
+    print("}\n")
+    tool_cmd = tool_to_platform(config["tools"]["texturec"])
+    subprocess.call(tool_cmd + " --help", shell=True)
+    subprocess.call(tool_cmd + " --formats", shell=True)
+    print("\n")
+
+
+def copy_help(config):
+    print("copy help ----------------------------------------------------------------------")
+    print("--------------------------------------------------------------------------------")
+    print("\njsn syntax: array of [src, dst] pairs.")
+    print("copy: [")
+    print("    [<src files, directories or wildcards>, <dst file or folder>],")
+    print("    ...")
+    print("]")
+    print("\n")
 
 
 # entry point of pmbuild
@@ -434,7 +472,7 @@ if __name__ == "__main__":
     tasks["libs"] = {"run": run_libs,  "help": libs_help}
     tasks["premake"] = {"run": run_premake, "help": premake_help}
     tasks["pmfx"] = {"run": run_pmfx, "help": pmfx_help}
-    tasks["models"] = run_models
+    tasks["models"] = {"run": run_models, "help": models_help}
     tasks["textures"] = {"run": run_textures, "help": textures_help}
     tasks["copy"] = {"run": run_copy, "help": copy_help}
 
