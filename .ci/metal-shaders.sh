@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 cd examples
-../pmbuild2 mac-gl -pmfx
+../pmbuild2 mac -pmfx
