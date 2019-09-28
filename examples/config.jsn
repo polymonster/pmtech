@@ -163,6 +163,10 @@
     
     linux: {
         jsn_inherit: ["base"],
+
+        tools: {
+            premake: "../tools/premake/premake5_linux"
+	},
         
         clean: [
             "build/linux",
@@ -176,7 +180,7 @@
         ],
         
         premake: [
-            "vs2017",
+            "gmake",
             "--renderer=opengl", 
             "--platform_dir=linux"
         ],
