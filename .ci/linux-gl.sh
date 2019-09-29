@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 cd examples
-../pmbuild2 linux -libs -premake
+../pmbuild linux -libs -premake
 cd build/linux
 g++ -v
 make config=debug
