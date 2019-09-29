@@ -11,6 +11,7 @@
 
 #import <Metal/Metal.h>
 #import <MetalKit/MetalKit.h>
+#import <Availability.h>
 
 using namespace pen;
 
@@ -1194,8 +1195,15 @@ namespace pen
                     num_arrays = _tcp.num_arrays;
                     td.arrayLength = num_arrays;
 
+#if __MAC_OS_X_VERSION_MAX_ALLOWED > 1014
                     if (msaa)
                         td.textureType = MTLTextureType2DMultisampleArray;
+#else
+                    if (msaa)
+                    {
+                        _tcp.sample_count = 1;
+                    }
+#endif
                 }
                 else if (msaa)
                 {

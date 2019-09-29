@@ -22,3 +22,6 @@ matrix:
     - language: glsl
       os: osx
       script: ./.ci/glsl-shaders.sh
+    - language: metal
+      os: osx
+      script: ./.ci/metal-shaders.sh
