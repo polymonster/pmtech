@@ -1,0 +1,9 @@
+version: 1.0.{build}
+image: Visual Studio 2017
+init:
+- ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+environment:
+  APPVEYOR_RDP_PASSWORD: PmtechSecret99*
+build_script:
+- cmd: "git submodule update --init --recursive\ncd third_party\nbuild_libs.bat\ncd .. \ncd examples\n..\\\\pmbuild win32 -premake\ncd build\\win32\nmsbuild examples_win32.sln /p:Configuration=Debug\nmsbuild examples_win32.sln /p:Configuration=Release"
+test: off
