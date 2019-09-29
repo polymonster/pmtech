@@ -78,13 +78,14 @@ def configure_vc_vars_all(config):
 
 
 # configure user settings for each platform
-def configure_user(config):
+def configure_user(config, args):
     config_user = dict()
     if os.path.exists("config.user.jsn"):
         config_user = jsn.loads(open("config.user.jsn", "r").read())
     if util.get_platform_name() == "win32":
-        configure_vc_vars_all(config_user)
-        configure_windows_sdk(config_user)
+        if "-msbuild" not in sys.argv:
+            configure_vc_vars_all(config_user)
+            configure_windows_sdk(config_user)
     if os.path.exists("config.user.jsn"):
         config_user = jsn.loads(open("config.user.jsn", "r").read())
         util.merge_dicts(config, config_user)
@@ -333,6 +334,7 @@ def pmbuild_help(config):
     print("    -help (display this dialog).")
     print("    -<task> -help (display task help).")
     print("    -cfg (print jsn config for current profile).")
+    print("    -msbuild (indicates msbuild prompt and no need to call vcvarsall.bat")
     print("\nprofiles:")
     print("    config.jsn (edit task settings in here)")
     for p in config.keys():
@@ -487,7 +489,7 @@ if __name__ == "__main__":
     if call == "run":
         config = config_all[sys.argv[1]]
         # load config user for user specific values (sdk version, vcvarsall.bat etc.)
-        configure_user(config)
+        configure_user(config, sys.argv)
         if "-cfg" in sys.argv:
             print(json.dumps(config, indent=4))
     else:
