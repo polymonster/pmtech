@@ -18,7 +18,7 @@
 - Tools: Graphical editor, volume texture / signed distance field generator.
 - [Examples](https://github.com/polymonster/pmtech/wiki/Examples): 30+ samples and unit tests.
 - [Build Pipeline](https://github.com/polymonster/pmtech/wiki/Build-Pipeline): project generation, compilation, asset building and packaging. 
-- Visit the [wiki](https://github.com/polymonster/pmtech/wiki) for more information.
+- Visit the [wiki](https://github.com/polymonster/pmtech/wiki) for more information. 
 
 **Usage**  
 - Take a look at the getting started [instructions](https://github.com/polymonster/pmtech/wiki/Building-Examples). 
