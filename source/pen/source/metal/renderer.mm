@@ -1195,7 +1195,7 @@ namespace pen
                     num_arrays = _tcp.num_arrays;
                     td.arrayLength = num_arrays;
 
-#if __MAC_OS_X_VERSION_MAX_ALLOWED > 1014
+#if 0 // disabled for travis ci
                     if (msaa)
                         td.textureType = MTLTextureType2DMultisampleArray;
 #else
