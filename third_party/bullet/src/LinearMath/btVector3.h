@@ -12,8 +12,6 @@ subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
-
-
 #ifndef BT_VECTOR3_H
 #define BT_VECTOR3_H
 

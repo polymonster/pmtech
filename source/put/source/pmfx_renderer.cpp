@@ -51,7 +51,8 @@ namespace
         VF_TEMPLATE = (1<<2),       // dont automatically render. but build the view to be rendered from elsewhere.
         VF_ABSTRACT = (1<<3),       // abstract views can be used to render view templates, to perform multi-pass rendering.
         VF_RESOLVE = (1<<4),        // after view has completed, render targets are resolved.
-        VF_GENERATE_MIPS = (1 << 5) // generate mip maps for the render target after resolving
+        VF_GENERATE_MIPS = (1 << 5),// generate mip maps for the render target after resolving
+        VF_COMPUTE = (1<<6)         // runs a compute job instead of render job
     };
 
     struct mode_map
@@ -168,7 +169,8 @@ namespace
     const mode_map k_view_types[] = {
         "normal", 0,
         "template", VF_TEMPLATE,
-        "abstract", VF_ABSTRACT
+        "abstract", VF_ABSTRACT,
+        "compute", VF_COMPUTE
     };
     // clang-format on
 
@@ -1535,7 +1537,7 @@ namespace put
                             if (r.collection == pen::TEXTURE_COLLECTION_CUBE)
                             {
                                 new_view.num_arrays = 6;
-                                new_view.view_flags = VF_CUBEMAP;
+                                new_view.view_flags |= VF_CUBEMAP;
                             }
 
                             if (cur_rt == 0)
@@ -2715,10 +2717,29 @@ namespace put
 
         void render_view(view_params& v)
         {
+            // compute doesnt need render pipeline setup
+            if(v.view_flags & VF_COMPUTE)
+            {
+                scene_view sv;
+                sv.scene = v.scene;
+                sv.render_flags = v.render_flags;
+                sv.technique = v.id_technique;
+                sv.camera = v.camera;
+                sv.pmfx_shader = v.pmfx_shader;
+                sv.permutation = v.technique_permutation;
+                
+                for (s32 rf = 0; rf < v.render_functions.size(); ++rf)
+                    v.render_functions[rf](sv);
+                
+                return;
+            }
+            
+            // render pipeline
+            
             // early out.. nothing to render
             if (v.num_colour_targets == 0 && v.depth_target == PEN_INVALID_HANDLE)
                 return;
-
+            
             static u32 cb_2d = PEN_INVALID_HANDLE;
             static u32 cb_sampler_info = PEN_INVALID_HANDLE;
             if (!is_valid(cb_2d))

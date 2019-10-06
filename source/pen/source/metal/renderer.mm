@@ -1125,20 +1125,29 @@ namespace pen
 
         void renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
         {
-            validate_render_encoder();
-
             u32 bi = buffer_index;
 
             if (flags & pen::CBUFFER_BIND_VS)
             {
-                [_state.render_encoder setVertexBuffer:_res_pool.get(bi).buffer.read() offset:0 atIndex:resource_slot + CBUF_OFFSET];
+                validate_render_encoder();
+                [_state.render_encoder setVertexBuffer:_res_pool.get(bi).buffer.read() offset:0
+                                               atIndex:resource_slot + CBUF_OFFSET];
             }
 
             if (flags & pen::CBUFFER_BIND_PS)
-                [_state.render_encoder setFragmentBuffer:_res_pool.get(bi).buffer.read() offset:0 atIndex:resource_slot + CBUF_OFFSET];
+            {
+                validate_render_encoder();
+                [_state.render_encoder setFragmentBuffer:_res_pool.get(bi).buffer.read() offset:0
+                                                 atIndex:resource_slot + CBUF_OFFSET];
+            }
 
-            // flags & cs
             // compute command encoder
+            if (flags & pen::CBUFFER_BIND_CS)
+            {
+                validate_compute_encoder();
+                [_state.compute_encoder setBuffer:_res_pool.get(bi).buffer.read() offset:0
+                                          atIndex:resource_slot + CBUF_OFFSET];
+            }
         }
 
         void renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset)

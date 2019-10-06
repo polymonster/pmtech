@@ -41,14 +41,51 @@ shader_resources
 
 void cs_main_boids(uint3 gid : SV_DispatchThreadID)
 {
-    // float4 test = sample_texture(bb, input.texcoord);
+    float3 p = rw_boids[gid.x].pos.xyz;
+    float3 vel = float3(0.0, 0.0, 0.0);
+    
+    // toward target
+    float3 tt = -p;
+    vel += normalize(tt) * 0.1;
+    
+    float3 mp = p;
+    for(int i = 0; i < 32*32; ++i)
+    {
+        mp += rw_boids[i].pos.xyz;
+    }   
+    
+    mp /= 32.0*32.0;
+    vel += (mp-p) * 0.01;
+    
+    // avoidance
+    /*
+    for(int i = 0; i < 32*32; ++i)
+    {   
+        if(i == gid.x)
+            continue;
+            
+        float3 p2 = rw_boids[i].pos.xyz;
+        float3 tp = p - p2;
+        
+        if(dot(tp, tp) > 0)
+        {
+            float l = length(tp);
+        
+            if(l < 0.1)
+                vel += normalize(tp) * 0.1;
+        }
+    }
+    */
+
+    rw_boids[gid.x].vel.xyz = vel.xyz;
+    rw_boids[gid.x].pos.xyz += rw_boids[gid.x].vel.xyz;
 }
 
 vs_output vs_main( vs_input input, uint ii : SV_InstanceID, uint vi : SV_VertexID )
 {
     vs_output output;
     
-    float4 boid_pos = input.position; // + read_boids[ii].pos;
+    float4 boid_pos = input.position + read_boids[ii].pos;
     
     output.position = output.position = mul( boid_pos, vp_matrix );
     
@@ -74,7 +111,7 @@ pmfx:
         },
         
         "cs" : "cs_main_boids",
-        "threads": [16, 16, 1]
+        "threads": [10, 1, 1]
     },
     
     "boids_render":

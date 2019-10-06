@@ -18,7 +18,7 @@
         view_boids:
         {
             target : [main_colour, main_depth],
-            clear_colour : [0.0, 1.0, 1.0, 1.0],
+            clear_colour : [0.0, 0.0, 0.0, 1.0],
             clear_depth : 1.0,
             colour_write_mask : 0xf,
             blend_state : disabled,
@@ -30,12 +30,21 @@
             pmfx_shader : "compute_demo",
             technique : "boids_render",
             scene_views : ["boids"]
+        },
+        
+        update_boids:
+        {
+            type: "compute",
+            pmfx_shader : "compute_demo",
+            technique : "boids_update",
+            scene_views : ["boids_update"]
         }
     },
               
     view_sets: 
     {
 		boids: [
+		    update_boids,
             view_boids,
             editor_view
         ]
