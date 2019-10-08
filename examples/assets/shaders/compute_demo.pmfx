@@ -109,7 +109,7 @@ void cs_main_boids(uint3 gid : SV_DispatchThreadID)
         }
     } 
     
-    if(1)
+    if(info.y >= 1.0)
     {
         float y = gid.x / 32;
         float x = gid.x % 32;
@@ -117,14 +117,14 @@ void cs_main_boids(uint3 gid : SV_DispatchThreadID)
         rw_boids[gid.x].vel.xyz = float3(0.0, 0.0, 0.0);
     }
     
-    rw_boids[gid.x].pos.xyz = float3(0, 0, 0);
+    rw_boids[gid.x].pos.w = 0.0;
 }
 
 vs_output vs_main( vs_input input, uint ii : SV_InstanceID, uint vi : SV_VertexID )
 {
     vs_output output;
     
-    float4 boid_pos = input.position + read_boids[0].pos;
+    float4 boid_pos = input.position + read_boids[ii].pos;
     
     output.position = output.position = mul( boid_pos, vp_matrix );
     
