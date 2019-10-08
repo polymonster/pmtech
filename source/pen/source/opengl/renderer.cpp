@@ -1873,7 +1873,7 @@ namespace pen
         CHECK_CALL(glBindBufferBase(GL_UNIFORM_BUFFER, resource_slot, res.handle));
     }
     
-    void renderer_set_structured_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
+    void direct::renderer_set_structured_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
     {
         PEN_ASSERT(0); // stubbed.. use metal on mac or d3d / vulkan on windows
     }
