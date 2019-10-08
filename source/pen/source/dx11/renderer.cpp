@@ -41,7 +41,8 @@ namespace
     u64 s_frame = 0;
 } // namespace
 
-#define D3D_DEBUG_LEVEL 1
+// level 0 = no errors, level 1 = print errors, level 2 = assert on error
+#define D3D_DEBUG_LEVEL 2
 
 #if D3D_DEBUG_LEVEL > 0
 #include <comdef.h>
@@ -406,6 +407,13 @@ namespace pen
         ID3D11GeometryShader* gs;
     };
 
+    struct ua_buffer
+    {
+        ID3D11Buffer*               buf;
+        ID3D11UnorderedAccessView*  uav;
+        ID3D11ShaderResourceView*   srv;
+    };
+
     struct resource_allocation
     {
         u32 type = 0;
@@ -418,7 +426,7 @@ namespace pen
             ID3D11ComputeShader*           compute_shader;
             ID3D11GeometryShader*          geometry_shader;
             stream_out_shader              stream_out_shader;
-            ID3D11Buffer*                  generic_buffer;
+            ua_buffer                      generic_buffer;
             texture_resource*              texture_resource;
             texture2d_internal*            texture_2d;
             texture3d_internal*            texture_3d;
@@ -739,6 +747,12 @@ namespace pen
         bd.BindFlags = (D3D11_BIND_FLAG)params.bind_flags;
         bd.CPUAccessFlags = params.cpu_access_flags;
 
+        if (bd.BindFlags & PEN_BIND_UNORDERED_ACCESS)
+        {
+            bd.MiscFlags |= D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+            bd.StructureByteStride = params.stride;
+        }
+
         if (params.data)
         {
             D3D11_SUBRESOURCE_DATA initial_data;
@@ -746,11 +760,34 @@ namespace pen
 
             initial_data.pSysMem = params.data;
 
-            CHECK_CALL(s_device->CreateBuffer(&bd, &initial_data, &_res_pool[resource_index].generic_buffer));
+            CHECK_CALL(s_device->CreateBuffer(&bd, &initial_data, &_res_pool[resource_index].generic_buffer.buf));
         }
         else
         {
-            CHECK_CALL(s_device->CreateBuffer(&bd, nullptr, &_res_pool[resource_index].generic_buffer));
+            CHECK_CALL(s_device->CreateBuffer(&bd, nullptr, &_res_pool[resource_index].generic_buffer.buf));
+        }
+
+        if (bd.BindFlags & PEN_BIND_UNORDERED_ACCESS)
+        {
+            // uav if we need it
+            D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc = {};
+            uav_desc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+            uav_desc.Format = DXGI_FORMAT_UNKNOWN;
+            uav_desc.Buffer.FirstElement = 0;
+            uav_desc.Buffer.NumElements = params.buffer_size / params.stride;
+
+            CHECK_CALL(s_device->CreateUnorderedAccessView(_res_pool[resource_index].generic_buffer.buf, &uav_desc,
+                &_res_pool[resource_index].generic_buffer.uav));
+
+            // srv if we need it
+            D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+            srv_desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
+            srv_desc.Format = DXGI_FORMAT_UNKNOWN;
+            srv_desc.BufferEx.FirstElement = 0;
+            srv_desc.BufferEx.NumElements = params.buffer_size / params.stride;
+
+            CHECK_CALL(s_device->CreateShaderResourceView(_res_pool[resource_index].generic_buffer.buf, &srv_desc,
+                &_res_pool[resource_index].generic_buffer.srv));
         }
     }
 
@@ -772,7 +809,7 @@ namespace pen
         ID3D11Buffer* buffers[4];
 
         for (s32 i = 0; i < num_buffers; ++i)
-            buffers[i] = _res_pool[buffer_indices[i]].generic_buffer;
+            buffers[i] = _res_pool[buffer_indices[i]].generic_buffer.buf;
 
         s_immediate_context->IASetVertexBuffers(start_slot, num_buffers, buffers, strides, offsets);
     }
@@ -784,7 +821,7 @@ namespace pen
 
     void direct::renderer_set_index_buffer(u32 buffer_index, u32 format, u32 offset)
     {
-        s_immediate_context->IASetIndexBuffer(_res_pool[buffer_index].generic_buffer, (DXGI_FORMAT)format, offset);
+        s_immediate_context->IASetIndexBuffer(_res_pool[buffer_index].generic_buffer.buf, (DXGI_FORMAT)format, offset);
     }
 
     void direct::renderer_draw(u32 vertex_count, u32 start_vertex, u32 primitive_topology)
@@ -1390,12 +1427,59 @@ namespace pen
     {
         if (flags & pen::CBUFFER_BIND_PS)
         {
-            s_immediate_context->PSSetConstantBuffers(resource_slot, 1, &_res_pool[buffer_index].generic_buffer);
+            s_immediate_context->PSSetConstantBuffers(resource_slot, 1, &_res_pool[buffer_index].generic_buffer.buf);
         }
 
         if (flags & pen::CBUFFER_BIND_VS)
         {
-            s_immediate_context->VSSetConstantBuffers(resource_slot, 1, &_res_pool[buffer_index].generic_buffer);
+            s_immediate_context->VSSetConstantBuffers(resource_slot, 1, &_res_pool[buffer_index].generic_buffer.buf);
+        }
+
+        if (flags & pen::CBUFFER_BIND_CS)
+        {
+            s_immediate_context->CSSetConstantBuffers(resource_slot, 1, &_res_pool[buffer_index].generic_buffer.buf);
+        }
+    }
+
+    void direct::renderer_set_structured_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
+    {
+        static ID3D11Buffer*              null_buffer = nullptr;
+        static ID3D11ShaderResourceView*  null_srv = nullptr;
+        static ID3D11UnorderedAccessView* null_uav = nullptr;
+
+        ID3D11Buffer**              buffer = &null_buffer;
+        ID3D11ShaderResourceView**  srv = &null_srv;
+        ID3D11UnorderedAccessView** uav = &null_uav;
+
+        if (buffer_index > 0)
+        {
+            buffer = &_res_pool[buffer_index].generic_buffer.buf;
+            srv = &_res_pool[buffer_index].generic_buffer.srv;
+            uav = &_res_pool[buffer_index].generic_buffer.uav;
+        }
+
+        if (flags & pen::SBUFFER_BIND_CS)
+        {
+            if (flags & SBUFFER_BIND_WRITE)
+            {
+                // rw
+                s_immediate_context->CSSetUnorderedAccessViews(resource_slot, 1, uav, nullptr);
+            }
+            else
+            {
+                // r
+                s_immediate_context->CSSetShaderResources(resource_slot, 1, srv);
+            }
+        }
+
+        if (flags & pen::SBUFFER_BIND_VS)
+        {
+            s_immediate_context->VSSetShaderResources(resource_slot, 1, srv);
+        }
+
+        if (flags & pen::SBUFFER_BIND_PS)
+        {
+            s_immediate_context->PSSetShaderResources(resource_slot, 1, srv);
         }
     }
 
@@ -1403,12 +1487,12 @@ namespace pen
     {
         D3D11_MAPPED_SUBRESOURCE mapped_res = {0};
 
-        s_immediate_context->Map(_res_pool[buffer_index].generic_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);
+        s_immediate_context->Map(_res_pool[buffer_index].generic_buffer.buf, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);
 
         void* p_data = (void*)((size_t)mapped_res.pData + offset);
         memcpy(p_data, data, data_size);
 
-        s_immediate_context->Unmap(_res_pool[buffer_index].generic_buffer, 0);
+        s_immediate_context->Unmap(_res_pool[buffer_index].generic_buffer.buf, 0);
     }
 
     void direct::renderer_read_back_resource(const resource_read_back_params& rrbp)
@@ -1494,7 +1578,7 @@ namespace pen
 
     void direct::renderer_release_buffer(u32 buffer_index)
     {
-        _res_pool[buffer_index].generic_buffer->Release();
+        _res_pool[buffer_index].generic_buffer.buf->Release();
     }
 
     void direct::renderer_release_texture(u32 texture_index)
@@ -1606,7 +1690,7 @@ namespace pen
         }
         else
         {
-            ID3D11Buffer* buffers[] = {_res_pool[buffer_index].generic_buffer};
+            ID3D11Buffer* buffers[] = {_res_pool[buffer_index].generic_buffer.buf};
             UINT          offsets[] = {0};
 
             s_immediate_context->SOSetTargets(1, buffers, offsets);

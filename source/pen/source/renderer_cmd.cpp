@@ -58,6 +58,7 @@ namespace
         CMD_CREATE_BLEND_STATE,
         CMD_SET_BLEND_STATE,
         CMD_SET_CONSTANT_BUFFER,
+        CMD_SET_STRUCTURED_BUFFER,
         CMD_UPDATE_BUFFER,
         CMD_CREATE_DEPTH_STENCIL_STATE,
         CMD_SET_DEPTH_STENCIL_STATE,
@@ -155,7 +156,7 @@ namespace
         u32 bind_flags;
     };
 
-    struct set_constant_buffer_cmd
+    struct set_buffer_cmd
     {
         u32 buffer_index;
         u32 resource_slot;
@@ -212,7 +213,7 @@ namespace
             viewport                         set_viewport;
             rect                             set_rect;
             blend_creation_params            create_blend_state;
-            set_constant_buffer_cmd          set_constant_buffer;
+            set_buffer_cmd                   set_buffer;
             update_buffer_cmd                update_buffer;
             depth_stencil_creation_params*   p_create_depth_stencil_state;
             texture_creation_params          create_render_target;
@@ -383,8 +384,13 @@ namespace pen
                 break;
 
             case CMD_SET_CONSTANT_BUFFER:
-                direct::renderer_set_constant_buffer(cmd.set_constant_buffer.buffer_index,
-                                                     cmd.set_constant_buffer.resource_slot, cmd.set_constant_buffer.flags);
+                direct::renderer_set_constant_buffer(cmd.set_buffer.buffer_index,
+                                                     cmd.set_buffer.resource_slot, cmd.set_buffer.flags);
+                break;
+
+            case CMD_SET_STRUCTURED_BUFFER:
+                direct::renderer_set_structured_buffer(cmd.set_buffer.buffer_index,
+                    cmd.set_buffer.resource_slot, cmd.set_buffer.flags);
                 break;
 
             case CMD_UPDATE_BUFFER:
@@ -1155,9 +1161,22 @@ namespace pen
 
         cmd.command_index = CMD_SET_CONSTANT_BUFFER;
 
-        cmd.set_constant_buffer.buffer_index = buffer_index;
-        cmd.set_constant_buffer.resource_slot = resource_slot;
-        cmd.set_constant_buffer.flags = flags;
+        cmd.set_buffer.buffer_index = buffer_index;
+        cmd.set_buffer.resource_slot = resource_slot;
+        cmd.set_buffer.flags = flags;
+
+        _cmd_buffer.put(cmd);
+    }
+
+    void renderer_set_structured_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
+    {
+        renderer_cmd cmd;
+
+        cmd.command_index = CMD_SET_STRUCTURED_BUFFER;
+
+        cmd.set_buffer.buffer_index = buffer_index;
+        cmd.set_buffer.resource_slot = resource_slot;
+        cmd.set_buffer.flags = flags;
 
         _cmd_buffer.put(cmd);
     }

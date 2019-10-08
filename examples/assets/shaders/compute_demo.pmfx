@@ -32,7 +32,7 @@ struct ps_output
     float4 colour : SV_Target;
 };
 
-cbuffer controls : register(b14)
+cbuffer controls : register(b0)
 {
     float4 info; // x = boid count
     float4 target;
@@ -41,9 +41,8 @@ cbuffer controls : register(b14)
 shader_resources
 {
     texture_2d( diffuse_texture, 0 );
-    structured_buffer_rw( boid, rw_boids, 12);
-    structured_buffer( boid, read_boids, 13);
-    // structured_buffer( controls, ci, 14);
+    structured_buffer_rw( boid, rw_boids, 12 );
+    structured_buffer( boid, read_boids, 13 );
 };
 
 void cs_main_boids(uint3 gid : SV_DispatchThreadID)
@@ -110,20 +109,22 @@ void cs_main_boids(uint3 gid : SV_DispatchThreadID)
         }
     } 
     
-    if(info.y >= 1.0)
+    if(1)
     {
         float y = gid.x / 32;
         float x = gid.x % 32;
         rw_boids[gid.x].pos.xyz = float3(x, y, 100.0);
         rw_boids[gid.x].vel.xyz = float3(0.0, 0.0, 0.0);
     }
+    
+    rw_boids[gid.x].pos.xyz = float3(0, 0, 0);
 }
 
 vs_output vs_main( vs_input input, uint ii : SV_InstanceID, uint vi : SV_VertexID )
 {
     vs_output output;
     
-    float4 boid_pos = input.position + read_boids[ii].pos;
+    float4 boid_pos = input.position + read_boids[0].pos;
     
     output.position = output.position = mul( boid_pos, vp_matrix );
     

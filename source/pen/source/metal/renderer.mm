@@ -1122,8 +1122,8 @@ namespace pen
             ib.offset = offset;
             ib.size_bytes = index_size_bytes(format);
         }
-
-        void renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
+        
+        inline void _set_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
         {
             u32 bi = buffer_index;
 
@@ -1148,6 +1148,16 @@ namespace pen
                 [_state.compute_encoder setBuffer:_res_pool.get(bi).buffer.read() offset:0
                                           atIndex:resource_slot + CBUF_OFFSET];
             }
+        }
+        
+        void renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
+        {
+            _set_buffer(buffer_index, resource_slot, flags);
+        }
+        
+        void renderer_set_structured_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
+        {
+            _set_buffer(buffer_index, resource_slot, flags);
         }
 
         void renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset)

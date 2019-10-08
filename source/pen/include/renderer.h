@@ -124,6 +124,7 @@ namespace pen
         u32 bind_flags;
         u32 cpu_access_flags;
         u32 buffer_size;
+        u32 stride; // for structured buffer
 
         void* data;
     };
@@ -322,6 +323,17 @@ namespace pen
         CBUFFER_BIND_CS = 1 << 3
     };
 
+    enum e_sbuffer_bind_flags
+    {
+        SBUFFER_BIND_NO_FLAGS = 0,
+        SBUFFER_BIND_PS = 1 << 1,
+        SBUFFER_BIND_VS = 1 << 2,
+        SBUFFER_BIND_CS = 1 << 3,
+        SBUFFER_BIND_READ = 1 << 4,
+        SBUFFER_BIND_WRITE = 1 << 5,
+        SBUFFER_BIND_RW = SBUFFER_BIND_READ | SBUFFER_BIND_WRITE
+    };
+
     enum e_msaa_resolve_type
     {
         RESOLVE_AVERAGE = 0,
@@ -379,6 +391,7 @@ namespace pen
 
     void renderer_set_index_buffer(u32 buffer_index, u32 format, u32 offset);
     void renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 flags);
+    void renderer_set_structured_buffer(u32 buffer_index, u32 resource_slot, u32 flags);
     void renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset = 0);
 
     // textures
@@ -471,6 +484,7 @@ namespace pen
                                          const u32* offsets);
         void renderer_set_index_buffer(u32 buffer_index, u32 format, u32 offset);
         void renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 flags);
+        void renderer_set_structured_buffer(u32 buffer_index, u32 resource_slot, u32 flags);
         void renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset);
 
         // textures
