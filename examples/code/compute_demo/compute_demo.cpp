@@ -14,7 +14,18 @@ pen::window_creation_params pen_window{
 namespace
 {
     u32 boids_buffer;
-    u32 num_boids = 32 * 32;
+    u32 control_buffer;
+
+    u32 boid_sqrt = 128;
+    u32 num_boids = boid_sqrt * boid_sqrt;
+
+    struct controls
+    {
+        float4 info; // x = boid count
+        float4 target;
+    };
+
+    controls s_controls;
 }
 
 void render_boids(const scene_view& view)
@@ -32,11 +43,31 @@ void render_boids(const scene_view& view)
 
 void update_boids(const scene_view& view)
 {
+    ImGui::Begin("controls");
+    s_controls.info.y = 0.0;
+    if(ImGui::Button("reset"))
+        s_controls.info.y = 1.0f;
+    
+    static f32 pt = pen::get_time_ms();
+    static f32 tt = 0.0f;
+    tt = pen::get_time_ms() - pt;
+    
+    if(tt > 3000.0f)
+    {
+        s_controls.target = vec4f(rand()%100-50, rand()%100-50, rand()%100-50, 1.0f);
+        tt = 0.0f;
+    }
+    
+    pen::renderer_update_buffer(control_buffer, &s_controls, sizeof(controls));
+    
+    ImGui::End();
+    
     pmfx::set_technique_perm(view.pmfx_shader, view.technique, 0);
     
+    pen::renderer_set_constant_buffer(control_buffer, 14, pen::CBUFFER_BIND_CS);
     pen::renderer_set_constant_buffer(boids_buffer, 12-4, pen::CBUFFER_BIND_CS);
     
-    pen::renderer_dispatch_compute({32*32, 1, 1}, {4*4, 1, 1});
+    pen::renderer_dispatch_compute({num_boids, 1, 1}, {1024, 1, 1});
 }
 
 void example_setup(ecs_scene* scene, camera& cam)
@@ -57,22 +88,6 @@ void example_setup(ecs_scene* scene, camera& cam)
     
     compute_demo::boid* bb = new compute_demo::boid[num_boids];
     
-    vec4f p = vec4f::zero();
-    for(u32 i = 0; i < 32; ++i)
-    {
-        p.x = 0.0f;
-        
-        for(u32 j = 0; j < 32; ++j)
-        {
-            u32 ii = j*32+i;
-            bb[ii].pos = p;
-            
-            p.x += 5.0f;
-        }
-        
-        p.y += 5.0f;
-    }
-    
     // create buffer for boids
     pen::buffer_creation_params bcp;
     bcp.cpu_access_flags = 0;
@@ -81,6 +96,16 @@ void example_setup(ecs_scene* scene, camera& cam)
     bcp.data = bb;
     
     boids_buffer = pen::renderer_create_buffer(bcp);
+    
+    s_controls.info = {(f32)num_boids, 1.0, (f32)boid_sqrt, 0.0};
+    s_controls.target = vec4f::zero();
+    
+    bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+    bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+    bcp.buffer_size = sizeof(controls);
+    bcp.data = (void*)&s_controls;
+    
+    control_buffer = pen::renderer_create_buffer(bcp);
 }
 
 void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)

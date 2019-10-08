@@ -64,4 +64,9 @@ namespace compute_demo
     {
         light_data single_light;
     };
+    struct controls
+    {
+        float4 info;
+        float4 target;
+    };
 }

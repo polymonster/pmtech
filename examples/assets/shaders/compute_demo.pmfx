@@ -32,33 +32,44 @@ struct ps_output
     float4 colour : SV_Target;
 };
 
+cbuffer controls : register(b14)
+{
+    float4 info; // x = boid count
+    float4 target;
+};
+
 shader_resources
 {
     texture_2d( diffuse_texture, 0 );
     structured_buffer_rw( boid, rw_boids, 12);
     structured_buffer( boid, read_boids, 13);
+    // structured_buffer( controls, ci, 14);
 };
 
 void cs_main_boids(uint3 gid : SV_DispatchThreadID)
-{
+{        
     float3 p = rw_boids[gid.x].pos.xyz;
-    float3 vel = float3(0.0, 0.0, 0.0);
-    
+    float3 vel = rw_boids[gid.x].vel.xyz * 0.99;
+        
     // toward target
-    float3 tt = -p;
+    float3 vp = target.xyz;
+    float3 tt = vp-p;
     vel += normalize(tt) * 0.1;
     
-    float3 mp = p;
-    for(int i = 0; i < 32*32; ++i)
+    float3 mv = float3(0.0, 0.0, 0.0);
+    float3 mp = float3(0.0, 0.0, 0.0);
+    for(int i = 0; i < info.x; ++i)
     {
         mp += rw_boids[i].pos.xyz;
+        mv += rw_boids[gid.x].vel.xyz;
     }   
     
-    mp /= 32.0*32.0;
-    vel += (mp-p) * 0.01;
+    mp /= info.x;
+    mv /= info.x;
     
+    vel += normalize(mp-p) * 0.1;
+        
     // avoidance
-    /*
     for(int i = 0; i < 32*32; ++i)
     {   
         if(i == gid.x)
@@ -75,10 +86,37 @@ void cs_main_boids(uint3 gid : SV_DispatchThreadID)
                 vel += normalize(tp) * 0.1;
         }
     }
-    */
+    
+    vel = lerp(mv, vel, 0.5);
 
     rw_boids[gid.x].vel.xyz = vel.xyz;
     rw_boids[gid.x].pos.xyz += rw_boids[gid.x].vel.xyz;
+    
+    float3 min = float3(-50.0, 0.0, -50.0);
+    float3 max = float3( 50.0, 50.0,  50.0);
+    
+    for(int a = 0; a < 3; ++a)
+    {
+        if(rw_boids[gid.x].pos[a] < min[a])
+        {
+            rw_boids[gid.x].pos[a] = min[a];
+            rw_boids[gid.x].vel[a] *= -1.0;
+        }
+        
+        if(rw_boids[gid.x].pos[a] > max[a])
+        {
+            rw_boids[gid.x].pos[a] = max[a];
+            rw_boids[gid.x].vel[a] *= -1.0;
+        }
+    } 
+    
+    if(info.y >= 1.0)
+    {
+        float y = gid.x / 32;
+        float x = gid.x % 32;
+        rw_boids[gid.x].pos.xyz = float3(x, y, 100.0);
+        rw_boids[gid.x].vel.xyz = float3(0.0, 0.0, 0.0);
+    }
 }
 
 vs_output vs_main( vs_input input, uint ii : SV_InstanceID, uint vi : SV_VertexID )
