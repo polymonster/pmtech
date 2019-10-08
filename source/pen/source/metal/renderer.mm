@@ -1125,6 +1125,9 @@ namespace pen
         
         inline void _set_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
         {
+            if(buffer_index == 0)
+                return;
+            
             u32 bi = buffer_index;
 
             if (flags & pen::CBUFFER_BIND_VS)
