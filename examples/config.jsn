@@ -186,7 +186,7 @@
 
         tools: {
             premake: "../tools/premake/premake5_linux"
-	},
+	    },
         
         clean: [
             "build/linux",
@@ -230,6 +230,26 @@
             ["assets/configs", "bin/linux/data/configs"],
             ["../assets/configs", "bin/linux/data/configs"],
             ["../assets/fonts", "bin/linux/data/fonts"]
+        ]
+    },
+
+    linux-vulkan: {
+        jsn_inherit: ["linux"],
+
+        premake: [
+            "gmake",
+            "--renderer=vulkan", 
+            "--platform_dir=linux"
+        ],
+
+        pmfx: [
+            "-shader_platform spirv",
+            "-shader_version 450",
+            "-i assets/shaders ../assets/shaders",
+            "-o bin/linux/data/pmfx/spirv",
+            "-h shader_structs",
+            "-t temp/shaders",
+            "-source"
         ]
     }
 }
