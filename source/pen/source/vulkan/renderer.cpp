@@ -196,6 +196,12 @@ namespace
         return (VkShaderStageFlags)ss;
     }
 
+    enum e_submit_flags
+    {
+        SUBMIT_GRAPHICS = 1<<0,
+        SUBMIT_COMPUTE  = 1<<1
+    };
+
     // vulkan internals
     struct vulkan_context
     {
@@ -220,13 +226,14 @@ namespace
         VkCommandBuffer*                    cmd_bufs = nullptr;
         VkCommandPool                       cmd_pool_compute;
         VkCommandBuffer*                    cmd_buf_compute = nullptr;
-        u32                                 ii = 0; // image index 0 - NBB, next = (ii + i)%NBB
+        u32                                 ii = 0; // image index 0 - NBB, next = (ii + i) % NBB
         VkSemaphore                         sem_img_avail[NBB];
         VkSemaphore                         sem_render_finished[NBB];
         VkFence                             fences[NBB];
         VkFence                             compute_fences[NBB];
         VkPhysicalDeviceMemoryProperties    mem_properties;        
         VkDescriptorPool                    descriptor_pool;
+        u32                                 submit_flags = 0;
     };
     vulkan_context _ctx;
 
@@ -561,6 +568,7 @@ namespace
             { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER , MAX_TEXTURE_DESCRIPTOR_SETS },
             { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER , MAX_CBUFFER_DESCRIPTOR_SETS },
             { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE , MAX_STORAGE_IMAGE_DESCRIPTOR_SETS },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_CBUFFER_DESCRIPTOR_SETS }
         };
 
         u32 max_sets = 0;
@@ -1379,6 +1387,8 @@ namespace pen
             vkResetFences(_ctx.device, 1, &_ctx.fences[_ctx.ii]);
 
             CHECK_CALL(vkBeginCommandBuffer(_ctx.cmd_bufs[_ctx.ii], &begin_info));
+
+            _ctx.submit_flags |= SUBMIT_GRAPHICS;
         }
 
         u32 renderer_initialise(void* params, u32 bb_res, u32 bb_depth_res)
@@ -1593,7 +1603,19 @@ namespace pen
 
         void renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
         {
+            return;
 
+            if (buffer_index == 0)
+                return;
+
+            pen_binding b;
+            b.descriptor_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+            b.stage = to_vk_stage(flags);
+            b.index = buffer_index;
+            b.slot = resource_slot;
+            b.bind_flags = flags;
+
+            sb_push(_state.bindings, b);
         }
         
         void renderer_set_structured_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
@@ -1774,7 +1796,6 @@ namespace pen
             res.depthClampEnable = VK_FALSE;
             res.depthBiasEnable = VK_FALSE;
             res.lineWidth = 1.0f;
-            res.rasterizerDiscardEnable = rscp.depth_clip_enable;
             res.polygonMode = to_vk_polygon_mode(rscp.fill_mode);
             res.cullMode = to_vk_cull_mode(rscp.cull_mode);
             res.frontFace = rscp.front_ccw ? VK_FRONT_FACE_COUNTER_CLOCKWISE : VK_FRONT_FACE_CLOCKWISE;
@@ -1874,6 +1895,8 @@ namespace pen
 
             vkEndCommandBuffer(_ctx.cmd_buf_compute[_ctx.ii]);
 
+            _ctx.submit_flags |= SUBMIT_COMPUTE;
+
             sb_free(_state.bindings);
             _state.bindings = nullptr;
         }
@@ -1928,14 +1951,16 @@ namespace pen
 
             vkEndCommandBuffer(_ctx.cmd_bufs[_ctx.ii]);
 
-            // submit compute
+            if (_ctx.submit_flags & SUBMIT_COMPUTE)
+            {
+                // submit compute
+                VkSubmitInfo compute_submit_info = {};
+                compute_submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+                compute_submit_info.commandBufferCount = 1;
+                compute_submit_info.pCommandBuffers = &_ctx.cmd_buf_compute[_ctx.ii];
 
-            VkSubmitInfo compute_submit_info = {};
-            compute_submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-            compute_submit_info.commandBufferCount = 1;
-            compute_submit_info.pCommandBuffers = &_ctx.cmd_buf_compute[_ctx.ii];
-
-            CHECK_CALL(vkQueueSubmit(_ctx.compute_queue, 1, &compute_submit_info, _ctx.compute_fences[_ctx.ii]));
+                CHECK_CALL(vkQueueSubmit(_ctx.compute_queue, 1, &compute_submit_info, _ctx.compute_fences[_ctx.ii]));
+            }
 
             VkSubmitInfo info = {};
             info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -1968,9 +1993,9 @@ namespace pen
 
             CHECK_CALL(vkQueuePresentKHR(_ctx.present_queue, &present));
 
+            _ctx.submit_flags = 0;
             u32 next_frame = (_ctx.ii + 1) % NBB;
             new_frame(next_frame);
-
         }
 
         void renderer_push_perf_marker(const c8* name)
