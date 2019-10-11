@@ -262,7 +262,7 @@ for file in file_list:
     assets_pos = root.find(model_dir)
     assets_pos += len(model_dir) + 1
     sub_dir = root[int(assets_pos):int(len(root))]
-    out_dir = os.path.join(helpers.build_dir, sub_dir)
+    out_dir = os.path.join(helpers.build_dir)
     current_filename = os.path.basename(file)
     helpers.current_filename = current_filename
     helpers.build_dir = out_dir
