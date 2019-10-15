@@ -196,6 +196,66 @@ namespace
         return (VkShaderStageFlags)ss;
     }
 
+    VkBlendOp to_vk_blend_op(u32 pen_blend_op)
+    {
+        switch (pen_blend_op)
+        {
+        case PEN_BLEND_OP_ADD:
+            return VK_BLEND_OP_ADD;
+        case PEN_BLEND_OP_SUBTRACT:
+            return VK_BLEND_OP_SUBTRACT;
+        case PEN_BLEND_OP_REV_SUBTRACT:
+            return VK_BLEND_OP_REVERSE_SUBTRACT;
+        case PEN_BLEND_OP_MIN:
+            return VK_BLEND_OP_MIN;
+        case PEN_BLEND_OP_MAX:
+            return VK_BLEND_OP_MAX;
+        }
+        PEN_ASSERT(0);
+        return VK_BLEND_OP_ADD;
+    }
+
+    VkBlendFactor to_vk_blend_factor(u32 pen_blend_factor)
+    {
+        switch (pen_blend_factor)
+        {
+        case PEN_BLEND_ZERO:
+            return VK_BLEND_FACTOR_ZERO;
+        case PEN_BLEND_ONE:
+            return VK_BLEND_FACTOR_ONE;
+        case PEN_BLEND_SRC_COLOR:
+            return VK_BLEND_FACTOR_SRC_COLOR;
+        case PEN_BLEND_INV_SRC_COLOR:
+            return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+        case PEN_BLEND_SRC_ALPHA:
+            return VK_BLEND_FACTOR_SRC_ALPHA;
+        case PEN_BLEND_INV_SRC_ALPHA:
+            return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        case PEN_BLEND_DEST_ALPHA:
+            return VK_BLEND_FACTOR_DST_ALPHA;
+        case PEN_BLEND_INV_DEST_ALPHA:
+            return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+        case PEN_BLEND_INV_DEST_COLOR:
+            return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
+        case PEN_BLEND_SRC_ALPHA_SAT:
+            return VK_BLEND_FACTOR_SRC_ALPHA_SATURATE;
+        case PEN_BLEND_SRC1_COLOR:
+            return VK_BLEND_FACTOR_SRC1_COLOR;
+        case PEN_BLEND_INV_SRC1_COLOR:
+            return VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR;
+        case PEN_BLEND_SRC1_ALPHA:
+            return VK_BLEND_FACTOR_SRC1_ALPHA;
+        case PEN_BLEND_INV_SRC1_ALPHA:
+            return VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;
+        case PEN_BLEND_BLEND_FACTOR:
+        case PEN_BLEND_INV_BLEND_FACTOR:
+            PEN_ASSERT(0);
+            break;
+        }
+        PEN_ASSERT(0);
+        return VK_BLEND_FACTOR_ZERO;
+    }
+
     enum e_submit_flags
     {
         SUBMIT_GRAPHICS = 1<<0,
@@ -1670,6 +1730,21 @@ namespace pen
             vkCmdBindIndexBuffer(_ctx.cmd_bufs[_ctx.ii], buf, offset, to_vk_index_type(format));
         }
 
+        inline void _set_binding(const pen_binding& b)
+        {
+            u32 num = sb_count(_state.bindings);
+            for (u32 i = 0; i < num; ++i)
+            {
+                if (_state.bindings[i].slot == b.slot)
+                {
+                    _state.bindings[i] = b;
+                    return;
+                }
+            }
+
+            sb_push(_state.bindings, b);
+        }
+
         void renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
         {
             if (buffer_index == 0)
@@ -1682,7 +1757,7 @@ namespace pen
             b.slot = resource_slot;
             b.bind_flags = flags;
 
-            sb_push(_state.bindings, b);
+            _set_binding(b);
         }
         
         void renderer_set_structured_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
@@ -1858,7 +1933,7 @@ namespace pen
             b.slot = resource_slot;
             b.bind_flags = bind_flags;
 
-            sb_push(_state.bindings, b);
+            _set_binding(b);
         }
 
         void renderer_create_rasterizer_state(const rasteriser_state_creation_params& rscp, u32 resource_slot)
@@ -1899,18 +1974,31 @@ namespace pen
             bs.attachments = nullptr;
             for (u32 i = 0; i < bcp.num_render_targets; ++i)
             {
+                pen::render_target_blend& rtb = bcp.render_targets[i];
+
                 VkPipelineColorBlendAttachmentState attach = {};
-                attach.colorWriteMask = bcp.render_targets[i].render_target_write_mask;
-                attach.blendEnable = bcp.render_targets[i].blend_enable;
+                attach.colorWriteMask = rtb.render_target_write_mask;
+                attach.blendEnable = rtb.blend_enable;
 
-                // todo
-                attach.colorBlendOp = VK_BLEND_OP_ADD;
-                attach.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-                attach.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+                if (rtb.blend_enable)
+                {
+                    attach.colorBlendOp = to_vk_blend_op(rtb.blend_op);
+                    attach.srcColorBlendFactor = to_vk_blend_factor(rtb.src_blend);
+                    attach.dstColorBlendFactor = to_vk_blend_factor(rtb.dest_blend);
 
-                attach.alphaBlendOp = VK_BLEND_OP_ADD;
-                attach.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-                attach.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+                    if (bcp.independent_blend_enable)
+                    {
+                        attach.alphaBlendOp = to_vk_blend_op(rtb.blend_op_alpha);
+                        attach.srcAlphaBlendFactor = to_vk_blend_factor(rtb.src_blend_alpha);
+                        attach.dstAlphaBlendFactor = to_vk_blend_factor(rtb.dest_blend_alpha);
+                    }
+                    else
+                    {
+                        attach.alphaBlendOp = attach.colorBlendOp;
+                        attach.srcAlphaBlendFactor = attach.srcColorBlendFactor;
+                        attach.dstAlphaBlendFactor = attach.dstColorBlendFactor;
+                    }
+                }
 
                 sb_push(bs.attachments, attach);
             }
@@ -2144,12 +2232,16 @@ namespace pen
 
         void renderer_release_texture(u32 texture_index)
         {
+            vulkan_texture& vt = _res_pool.get(texture_index).texture;
 
+            vkDestroyImage(_ctx.device, vt.image, nullptr);
+            vkDestroyImageView(_ctx.device, vt.image_view, nullptr);
+            vkFreeMemory(_ctx.device, vt.mem, nullptr);
         }
 
         void renderer_release_sampler(u32 sampler)
         {
-
+            vkDestroySampler(_ctx.device, _res_pool.get(sampler).sampler, nullptr);
         }
 
         void renderer_release_raster_state(u32 raster_state_index)
@@ -2165,12 +2257,13 @@ namespace pen
 
         void renderer_release_render_target(u32 render_target)
         {
-
+            renderer_release_texture(render_target);
         }
 
         void renderer_release_input_layout(u32 input_layout)
         {
-
+            VkVertexInputAttributeDescription* vi = _res_pool.get(input_layout).vertex_attributes;
+            sb_free(vi);
         }
 
         void renderer_release_depth_stencil_state(u32 depth_stencil_state)
