@@ -2,6 +2,14 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
+/*
+#define GLEW_BUILD
+#include "GL/glew.h"
+#include "GL/wglew.h"
+#include "GL/glew.c"
+#undef GLEW_BUILD
+*/
+
 #include <windows.h>
 
 #include "input.h"
@@ -30,6 +38,86 @@ struct window_params
 };
 
 static u32 s_return_code = 0;
+
+#ifdef PEN_RENDERER_OPENGL
+namespace
+{
+    struct wgl_context
+    {
+        HDC     dc;
+        HGLRC   glrc;
+    };
+    wgl_context s_glctx;
+
+    void create_gl_context(HWND wnd)
+    {
+        s_glctx.dc = GetDC(wnd);
+        
+        PIXELFORMATDESCRIPTOR pfd;
+        memset(&pfd, 0, sizeof(pfd));
+
+        pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
+        pfd.nVersion = 1;
+        pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+        pfd.iPixelType = PFD_TYPE_RGBA;
+        pfd.cColorBits = 32;
+        pfd.cAlphaBits = 8;
+        pfd.cDepthBits = 24;
+        pfd.cStencilBits = 8;
+        pfd.iLayerType = PFD_MAIN_PLANE;
+
+        int pf = ChoosePixelFormat(s_glctx.dc, &pfd);
+        DescribePixelFormat(s_glctx.dc, pf, sizeof(PIXELFORMATDESCRIPTOR), &pfd);
+        int result = SetPixelFormat(s_glctx.dc, pf, &pfd);
+        HGLRC temp = wglCreateContext(s_glctx.dc);
+        wglMakeCurrent(s_glctx.dc, temp);
+
+        int attribs[] =
+        {
+            WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
+            WGL_CONTEXT_MINOR_VERSION_ARB, 3,
+            WGL_CONTEXT_FLAGS_ARB, 0,
+            0
+        };
+
+        // create gl 4 context
+        int error = glewInit();
+        if (wglewIsSupported("WGL_ARB_create_context") == 1)
+        {
+            s_glctx.glrc = wglCreateContextAttribsARB(s_glctx.dc, 0, attribs);
+            wglMakeCurrent(NULL, NULL);
+            wglDeleteContext(temp);
+            result = wglMakeCurrent(s_glctx.dc, s_glctx.glrc);
+            
+            // todo.
+            //glEnable(GL_DEBUG_OUTPUT);
+            //glDebugMessageCallback(debugCallback, nullptr);
+        }
+        else
+        {
+            s_glctx.glrc = temp;
+        }
+    }
+
+    extern void pen_make_gl_context_current()
+    {
+        wglMakeCurrent(s_glctx.dc, s_glctx.glrc);
+    }
+
+    extern void pen_gl_swap_buffers()
+    {
+        SwapBuffers(s_glctx.dc);
+    }
+
+    extern void pen_window_resize()
+    {
+        u32 a = 0;
+    }
+}
+#define create_ctx(wnd) 
+#else
+#define create_ctx
+#endif
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, INT nCmdShow)
 {

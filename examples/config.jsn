@@ -179,6 +179,26 @@
         ],
     },
     
+    win32-gl: {
+        jsn_inherit: ["win32"],
+        
+        premake: [
+            "vs2017",
+            "--renderer=opengl", 
+            "--platform_dir=win32"
+        ],
+        
+        pmfx: [
+            "-shader_platform spirv",
+            "-shader_version 330",
+            "-i assets/shaders ../assets/shaders",
+            "-o bin/win32/data/pmfx/glsl",
+            "-h shader_structs",
+            "-t temp/shaders",
+            "-source"
+        ],
+    },
+    
     // linux
     
     linux: {

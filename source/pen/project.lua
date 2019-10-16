@@ -27,6 +27,12 @@ local function setup_win32()
         {
             "$(VK_SDK_PATH)/Include"
         }
+    elseif renderer_dir == "opengl" then         
+        includedirs
+        {
+            "../../third_party/glew/include",
+            "../../third_party/glew/src"
+        }
     end
     systemversion(windows_sdk_version())
     disablewarnings { "4800", "4305", "4018", "4244", "4267", "4996" }

@@ -382,7 +382,7 @@ namespace pen
     struct framebuffer
     {
         hash_id hash;
-        GLuint  framebuffer;
+        GLuint  _framebuffer;
     };
     static framebuffer* s_framebuffers;
 
@@ -1457,7 +1457,7 @@ namespace pen
 
             if (fb.hash == h)
             {
-                CHECK_CALL(glBindFramebuffer(GL_FRAMEBUFFER, fb.framebuffer));
+                CHECK_CALL(glBindFramebuffer(GL_FRAMEBUFFER, fb._framebuffer));
                 CHECK_CALL(glDrawBuffers(num_colour_targets, k_draw_buffers));
 
                 return;
@@ -1530,7 +1530,7 @@ namespace pen
 
         framebuffer new_fb;
         new_fb.hash = h;
-        new_fb.framebuffer = fbh;
+        new_fb._framebuffer = fbh;
 
         sb_push(s_framebuffers, new_fb);
     }
@@ -1587,7 +1587,7 @@ namespace pen
             auto& fb = s_framebuffers[i];
             for (s32 i = 0; i < 2; ++i)
                 if (fb.hash == hash[i])
-                    fbos[i] = fb.framebuffer;
+                    fbos[i] = fb._framebuffer;
         }
 
         for (s32 i = 0; i < 2; ++i)
