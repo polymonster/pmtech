@@ -49,7 +49,7 @@
 #ifdef __linux__
 #include "GL/glew.h"
 #elif _WIN32
-#define GLEW_BUILD
+#define GLEW_STATIC
 #include "GL/glew.h"
 #include "GL/wglew.h"
 #else // osx

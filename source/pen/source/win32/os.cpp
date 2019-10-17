@@ -2,14 +2,6 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-/*
-#define GLEW_BUILD
-#include "GL/glew.h"
-#include "GL/wglew.h"
-#include "GL/glew.c"
-#undef GLEW_BUILD
-*/
-
 #include <windows.h>
 
 #include "input.h"
@@ -39,7 +31,11 @@ struct window_params
 
 static u32 s_return_code = 0;
 
+// OpenGL Render Context
+
 #ifdef PEN_RENDERER_OPENGL
+#define GLEW_STATIC
+#include "GL/glew.c"
 namespace
 {
     struct wgl_context
@@ -98,25 +94,26 @@ namespace
             s_glctx.glrc = temp;
         }
     }
-
-    extern void pen_make_gl_context_current()
-    {
-        wglMakeCurrent(s_glctx.dc, s_glctx.glrc);
-    }
-
-    extern void pen_gl_swap_buffers()
-    {
-        SwapBuffers(s_glctx.dc);
-    }
-
-    extern void pen_window_resize()
-    {
-        u32 a = 0;
-    }
 }
-#define create_ctx(wnd) 
+
+extern void pen_make_gl_context_current()
+{
+	wglMakeCurrent(s_glctx.dc, s_glctx.glrc);
+}
+
+extern void pen_gl_swap_buffers()
+{
+	SwapBuffers(s_glctx.dc);
+}
+
+extern void pen_window_resize()
+{
+	u32 a = 0;
+}
+
+#define create_ctx(wnd) create_gl_context(wnd)
 #else
-#define create_ctx
+#define create_ctx(wnd) (void)wnd
 #endif
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, INT nCmdShow)
@@ -166,6 +163,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 
     // init renderer will enter a loop wait for rendering commands, and call os update
     HWND hwnd = (HWND)pen::window_get_primary_display_handle();
+	create_ctx(hwnd);
     pen::renderer_init((void*)&hwnd, true);
 
     // exit program

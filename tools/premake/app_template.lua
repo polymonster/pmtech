@@ -85,6 +85,10 @@ local function setup_win32()
         {
             pmtech_dir .. "/third_party/glew/lib/win64"
         }
+		links 
+        { 
+            "OpenGL32.lib"
+        }
     else
     	links 
         { 

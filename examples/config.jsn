@@ -189,7 +189,7 @@
         ],
         
         pmfx: [
-            "-shader_platform spirv",
+            "-shader_platform glsl",
             "-shader_version 330",
             "-i assets/shaders ../assets/shaders",
             "-o bin/win32/data/pmfx/glsl",
