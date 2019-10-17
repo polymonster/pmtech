@@ -1,0 +1,8 @@
+version: 1.0.{build}
+build_script:
+- cmd: >-
+    git submodule update --init --recursive
+
+    cd examples
+
+    ../pmbuild win32 -pmfx
