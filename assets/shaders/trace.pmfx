@@ -26,9 +26,7 @@ vs_output vs_ndc_quad( vs_input input )
 
     output.position = input.position;
     output.texcoord = input.texcoord;
-    
-    output.position.y = output.position.y * viewport_correction.x;
-    
+        
     return output;
 }
 
