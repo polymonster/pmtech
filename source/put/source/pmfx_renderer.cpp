@@ -240,8 +240,6 @@ namespace
         bool stash_output = false;
         u32  stashed_output_rt = PEN_INVALID_HANDLE;
         f32  stashed_rt_aspect = 0.0f;
-
-        bool viewport_correction = true; // todo put this into flags?
     };
 
     struct edited_post_process
@@ -1519,10 +1517,6 @@ namespace put
                     Str     target_str = targets[t].as_str();
                     hash_id target_hash = PEN_HASH(target_str.c_str());
 
-                    new_view.viewport_correction = pen::renderer_viewport_vup();
-                    if (target_hash == k_id_main_colour || target_hash == k_id_main_depth)
-                        new_view.viewport_correction = false;
-
                     bool found = false;
                     for (auto& r : s_render_targets)
                     {
@@ -2549,11 +2543,6 @@ namespace put
             s_scene_view_renderers.clear();
         }
 
-        struct post_process_per_view
-        {
-            vec4f viewport_correction;
-        };
-
         void fullscreen_quad(const scene_view& sv)
         {
             static ecs::geometry_resource* quad = ecs::get_geometry_resource(PEN_HASH("full_screen_quad"));
@@ -2787,7 +2776,6 @@ namespace put
             sv.blend_state = v.blend_state;
             sv.camera = v.camera;
             sv.viewport = &vp;
-            sv.viewport_correction = v.viewport_correction;
             sv.cb_2d_view = cb_2d;
             sv.pmfx_shader = v.pmfx_shader;
             sv.permutation = v.technique_permutation;
@@ -2804,7 +2792,7 @@ namespace put
                     if (v.view_flags & VF_CUBEMAP)
                         put::camera_set_cubemap_face(v.camera, a);
 
-                    put::camera_update_shader_constants(v.camera, v.viewport_correction);
+                    put::camera_update_shader_constants(v.camera);
                     sv.cb_view = v.camera->cbuffer;
                 }
                 else
@@ -2812,7 +2800,7 @@ namespace put
                     // this code path is untested.
                     static put::camera c;
                     put::camera_create_orthographic(&c, vp.x, vp.width, vp.y, vp.height, 0.0f, 1.0f);
-                    put::camera_update_shader_constants(&c, v.viewport_correction);
+                    put::camera_update_shader_constants(&c);
                     sv.cb_view = c.cbuffer;
                 }
 

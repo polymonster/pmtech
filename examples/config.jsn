@@ -195,7 +195,8 @@
             "-o bin/win32/data/pmfx/glsl",
             "-h shader_structs",
             "-t temp/shaders",
-            "-source"
+            "-source",
+            "-v_flip"
         ],
     },
     

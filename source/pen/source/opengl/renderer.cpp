@@ -402,6 +402,7 @@ namespace pen
         u32    gs;
         u32    so;
         GLuint program;
+        GLuint vflip_uniform;
         u8     uniform_block_location[MAX_UNIFORM_BUFFERS];
         u8     texture_location[MAX_SHADER_TEXTURES];
     };
@@ -448,6 +449,7 @@ namespace pen
         u32  raster_state = 0;
         u32  base_vertex = 0;
         bool backbuffer_bound = false;
+        bool v_flip = false;
         u8   constant_buffer_bindings[MAX_UNIFORM_BUFFERS] = {0};
         u32  index_format = GL_UNSIGNED_SHORT;
         u32  depth_stencil_state;
@@ -575,7 +577,7 @@ namespace pen
         CHECK_CALL(glGetProgramiv(program_id, GL_LINK_STATUS, &result));
         CHECK_CALL(glGetProgramiv(program_id, GL_INFO_LOG_LENGTH, &info_log_length));
 
-        if (info_log_length > 0)
+        if (result == GL_FALSE && info_log_length > 0)
         {
             char* info_log_buf = (char*)memory_alloc(info_log_length + 1);
 
@@ -591,6 +593,7 @@ namespace pen
         program.ps = ps;
         program.so = so;
         program.program = program_id;
+        program.vflip_uniform = glGetUniformLocation(program.program, "v_flip");
 
         for (s32 i = 0; i < MAX_UNIFORM_BUFFERS; ++i)
         {
@@ -960,12 +963,14 @@ namespace pen
         }
         else
         {
-            if (g_current_state.vertex_shader != g_bound_state.vertex_shader ||
-                g_current_state.pixel_shader != g_bound_state.pixel_shader)
+            if (g_current_state.vertex_shader != g_bound_state.vertex_shader || 
+                g_current_state.pixel_shader != g_bound_state.pixel_shader ||
+                g_current_state.v_flip != g_bound_state.v_flip)
             {
                 g_bound_state.vertex_shader = g_current_state.vertex_shader;
                 g_bound_state.pixel_shader = g_current_state.pixel_shader;
                 g_bound_state.stream_out_shader = g_current_state.stream_out_shader;
+                g_bound_state.v_flip = g_current_state.v_flip;
 
                 shader_program* linked_program = nullptr;
 
@@ -994,6 +999,13 @@ namespace pen
                 for (s32 i = 0; i < MAX_UNIFORM_BUFFERS; ++i)
                     if (linked_program->texture_location[i] != INVALID_LOC)
                         CHECK_CALL(glUniform1i(linked_program->texture_location[i], i));
+
+                // we need to flip all geometry that is rendered into render targets to be consistent with d3d
+                float v_flip = 1.0f;
+                if (!g_current_state.backbuffer_bound)
+                    v_flip = -1.0f;
+
+                glUniform1f(linked_program->vflip_uniform, v_flip);
             }
         }
 
@@ -1415,12 +1427,14 @@ namespace pen
         if (use_back_buffer)
         {
             g_current_state.backbuffer_bound = true;
+            g_current_state.v_flip = false;
 
             CHECK_CALL(glBindFramebuffer(GL_FRAMEBUFFER, s_backbuffer_fbo));
             CHECK_CALL(glDrawBuffer(GL_BACK));
             return;
         }
 
+        g_current_state.v_flip = true;
         g_current_state.backbuffer_bound = false;
 
         bool msaa = false;

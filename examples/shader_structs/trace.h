@@ -27,6 +27,7 @@ namespace trace
         
         float4 camera_view_pos;
         float4 camera_view_dir;
+        
         float4 viewport_correction;
     };
     struct per_draw_call

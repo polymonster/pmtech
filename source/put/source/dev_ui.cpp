@@ -1013,10 +1013,6 @@ namespace put
 
             // viewport
             cb.params.w = 0.0f;
-            if (pen::renderer_viewport_vup())
-            {
-                cb.params.w = 1.0f;
-            }
 
             // mips
             if (ImGui::Button(ICON_FA_MINUS))
