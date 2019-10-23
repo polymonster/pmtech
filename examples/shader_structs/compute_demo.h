@@ -27,14 +27,10 @@ namespace compute_demo
     {
         float4x4 vp_matrix;
         float4x4 view_matrix;
-        
         float4x4 vp_matrix_inverse;
         float4x4 view_matrix_inverse;
-        
         float4 camera_view_pos;
         float4 camera_view_dir;
-        
-        float4 viewport_correction;
     };
     struct per_draw_call
     {
