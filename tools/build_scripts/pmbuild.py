@@ -298,6 +298,8 @@ def run_textures(config):
                     dep_inputs = get_container_dep_inputs(f[0], dep_inputs)
                 dst = util.change_ext(f[1], ".dds")
                 if not dependencies.check_up_to_date_single(dst):
+                    if "format" not in export.keys():
+                        export["format"] = "RGBA8"
                     dep_outputs = [dst]
                     dep_info = dependencies.create_dependency_info(dep_inputs, dep_outputs)
                     dep = dict()
