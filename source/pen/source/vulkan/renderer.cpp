@@ -24,7 +24,7 @@ using namespace pen;
 namespace
 {
     // conversion functions
-    VkBufferUsageFlags to_vk_buffer_usage(u32 pen_bind_flags)
+    pen_inline VkBufferUsageFlags to_vk_buffer_usage(u32 pen_bind_flags)
     {
         switch (pen_bind_flags)
         {
@@ -39,7 +39,7 @@ namespace
         return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     }
 
-    VkPolygonMode to_vk_polygon_mode(u32 pen_polygon_mode)
+    pen_inline VkPolygonMode to_vk_polygon_mode(u32 pen_polygon_mode)
     {
         switch (pen_polygon_mode)
         {
@@ -52,7 +52,7 @@ namespace
         return VK_POLYGON_MODE_FILL;
     }
 
-    VkCullModeFlags to_vk_cull_mode(u32 pen_cull_mode)
+    pen_inline VkCullModeFlags to_vk_cull_mode(u32 pen_cull_mode)
     {
         switch (pen_cull_mode)
         {
@@ -67,7 +67,7 @@ namespace
         return VK_CULL_MODE_NONE;
     }
 
-    VkPrimitiveTopology to_vk_primitive_topology(u32 pen_primitive_topology)
+    pen_inline VkPrimitiveTopology to_vk_primitive_topology(u32 pen_primitive_topology)
     {
         switch (pen_primitive_topology)
         {
@@ -86,7 +86,7 @@ namespace
         return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     }
 
-    VkFormat to_vk_vertex_format(u32 pen_vertex_format)
+    pen_inline VkFormat to_vk_vertex_format(u32 pen_vertex_format)
     {
         switch (pen_vertex_format)
         {
@@ -109,7 +109,7 @@ namespace
         return VK_FORMAT_R32G32B32A32_SFLOAT;
     }
 
-    VkIndexType to_vk_index_type(u32 pen_index_type)
+    pen_inline VkIndexType to_vk_index_type(u32 pen_index_type)
     {
         switch (pen_index_type)
         {
@@ -122,7 +122,7 @@ namespace
         return VK_INDEX_TYPE_UINT16;
     }
 
-    VkFilter to_vk_filter(u32 pen_filter)
+    pen_inline VkFilter to_vk_filter(u32 pen_filter)
     {
         switch (pen_filter)
         {
@@ -137,7 +137,7 @@ namespace
         return VK_FILTER_LINEAR;
     }
 
-    VkSamplerMipmapMode to_vk_mip_map_mode(u32 pen_filter)
+    pen_inline VkSamplerMipmapMode to_vk_mip_map_mode(u32 pen_filter)
     {
         switch (pen_filter)
         {
@@ -153,7 +153,7 @@ namespace
         return VK_SAMPLER_MIPMAP_MODE_NEAREST;
     }
 
-    VkSamplerAddressMode to_vk_sampler_address_mode(u32 pen_sampler_address_mode)
+    pen_inline VkSamplerAddressMode to_vk_sampler_address_mode(u32 pen_sampler_address_mode)
     {
         switch (pen_sampler_address_mode)
         {
@@ -172,7 +172,7 @@ namespace
         return VK_SAMPLER_ADDRESS_MODE_REPEAT;
     }
 
-    VkImageUsageFlagBits to_vk_texture_usage(u32 pen_texture_usage, bool has_data)
+    pen_inline VkImageUsageFlagBits to_vk_texture_usage(u32 pen_texture_usage, bool has_data)
     {
         u32 vf = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
         if (pen_texture_usage & PEN_BIND_RENDER_TARGET)
@@ -184,7 +184,7 @@ namespace
         return (VkImageUsageFlagBits)vf;
     }
 
-    VkShaderStageFlags to_vk_stage(u32 pen_bind_flags)
+    pen_inline VkShaderStageFlags to_vk_stage(u32 pen_bind_flags)
     {
         u32 ss = 0;
         if (pen_bind_flags & pen::TEXTURE_BIND_VS || pen_bind_flags & pen::CBUFFER_BIND_VS)
@@ -195,6 +195,113 @@ namespace
             ss |= VK_SHADER_STAGE_COMPUTE_BIT;
         return (VkShaderStageFlags)ss;
     }
+
+    pen_inline VkBlendOp to_vk_blend_op(u32 pen_blend_op)
+    {
+        switch (pen_blend_op)
+        {
+        case PEN_BLEND_OP_ADD:
+            return VK_BLEND_OP_ADD;
+        case PEN_BLEND_OP_SUBTRACT:
+            return VK_BLEND_OP_SUBTRACT;
+        case PEN_BLEND_OP_REV_SUBTRACT:
+            return VK_BLEND_OP_REVERSE_SUBTRACT;
+        case PEN_BLEND_OP_MIN:
+            return VK_BLEND_OP_MIN;
+        case PEN_BLEND_OP_MAX:
+            return VK_BLEND_OP_MAX;
+        }
+        PEN_ASSERT(0);
+        return VK_BLEND_OP_ADD;
+    }
+
+    pen_inline VkBlendFactor to_vk_blend_factor(u32 pen_blend_factor)
+    {
+        switch (pen_blend_factor)
+        {
+        case PEN_BLEND_ZERO:
+            return VK_BLEND_FACTOR_ZERO;
+        case PEN_BLEND_ONE:
+            return VK_BLEND_FACTOR_ONE;
+        case PEN_BLEND_SRC_COLOR:
+            return VK_BLEND_FACTOR_SRC_COLOR;
+        case PEN_BLEND_INV_SRC_COLOR:
+            return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+        case PEN_BLEND_SRC_ALPHA:
+            return VK_BLEND_FACTOR_SRC_ALPHA;
+        case PEN_BLEND_INV_SRC_ALPHA:
+            return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        case PEN_BLEND_DEST_ALPHA:
+            return VK_BLEND_FACTOR_DST_ALPHA;
+        case PEN_BLEND_INV_DEST_ALPHA:
+            return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+        case PEN_BLEND_INV_DEST_COLOR:
+            return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
+        case PEN_BLEND_SRC_ALPHA_SAT:
+            return VK_BLEND_FACTOR_SRC_ALPHA_SATURATE;
+        case PEN_BLEND_SRC1_COLOR:
+            return VK_BLEND_FACTOR_SRC1_COLOR;
+        case PEN_BLEND_INV_SRC1_COLOR:
+            return VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR;
+        case PEN_BLEND_SRC1_ALPHA:
+            return VK_BLEND_FACTOR_SRC1_ALPHA;
+        case PEN_BLEND_INV_SRC1_ALPHA:
+            return VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;
+        case PEN_BLEND_BLEND_FACTOR:
+        case PEN_BLEND_INV_BLEND_FACTOR:
+            PEN_ASSERT(0);
+            break;
+        }
+        PEN_ASSERT(0);
+        return VK_BLEND_FACTOR_ZERO;
+    }
+
+    pen_inline VkFormat to_vk_image_format(u32 pen_image_format)
+    {
+        switch (pen_image_format)
+        {
+        case PEN_TEX_FORMAT_RGBA8_UNORM:
+            return VK_FORMAT_R8G8B8A8_UNORM;
+        case PEN_TEX_FORMAT_BGRA8_UNORM:
+            return VK_FORMAT_R8G8B8A8_UNORM;
+        case PEN_TEX_FORMAT_R32G32B32A32_FLOAT:
+            return VK_FORMAT_R8G8B8A8_UNORM;
+        case PEN_TEX_FORMAT_R32G32_FLOAT:
+            return VK_FORMAT_R8G8B8A8_UNORM;
+        case PEN_TEX_FORMAT_R32_FLOAT:
+            return VK_FORMAT_R8G8B8A8_UNORM;
+        case PEN_TEX_FORMAT_R16G16B16A16_FLOAT:
+            return VK_FORMAT_R8G8B8A8_UNORM;
+        case PEN_TEX_FORMAT_R16_FLOAT:
+            return VK_FORMAT_R8G8B8A8_UNORM;
+        case PEN_TEX_FORMAT_R32_UINT:
+            return VK_FORMAT_R8G8B8A8_UNORM;
+        case PEN_TEX_FORMAT_R8_UNORM:
+            return VK_FORMAT_R8G8B8A8_UNORM;
+        case PEN_TEX_FORMAT_BC1_UNORM:
+            return VK_FORMAT_R8G8B8A8_UNORM;
+        case PEN_TEX_FORMAT_BC2_UNORM:
+            return VK_FORMAT_R8G8B8A8_UNORM;
+        case PEN_TEX_FORMAT_BC3_UNORM:
+            return VK_FORMAT_R8G8B8A8_UNORM;
+        case PEN_TEX_FORMAT_BC4_UNORM:
+            return VK_FORMAT_R8G8B8A8_UNORM;
+        case PEN_TEX_FORMAT_BC5_UNORM:
+            return VK_FORMAT_R8G8B8A8_UNORM;
+        case PEN_TEX_FORMAT_D24_UNORM_S8_UINT:
+            return VK_FORMAT_R8G8B8A8_UNORM;
+            break;
+        }
+        // unhandled
+        PEN_ASSERT(0);
+        return VK_FORMAT_UNDEFINED;
+    }
+
+    enum e_submit_flags
+    {
+        SUBMIT_GRAPHICS = 1<<0,
+        SUBMIT_COMPUTE  = 1<<1
+    };
 
     // vulkan internals
     struct vulkan_context
@@ -220,13 +327,14 @@ namespace
         VkCommandBuffer*                    cmd_bufs = nullptr;
         VkCommandPool                       cmd_pool_compute;
         VkCommandBuffer*                    cmd_buf_compute = nullptr;
-        u32                                 ii = 0; // image index 0 - NBB, next = (ii + i)%NBB
+        u32                                 ii = 0; // image index 0 - NBB, next = (ii + i) % NBB
         VkSemaphore                         sem_img_avail[NBB];
         VkSemaphore                         sem_render_finished[NBB];
         VkFence                             fences[NBB];
         VkFence                             compute_fences[NBB];
         VkPhysicalDeviceMemoryProperties    mem_properties;        
         VkDescriptorPool                    descriptor_pool;
+        u32                                 submit_flags = 0;
     };
     vulkan_context _ctx;
 
@@ -264,7 +372,7 @@ namespace
     struct vk_pipeline_cache
     {
         VkPipeline          pipeline;
-        VkDescriptorSet     descriptor_set;
+        VkDescriptorSet     descriptor_set[NBB];
         VkPipelineLayout    layout;
     };
     hash_id*            s_pipeline_cache_hash = nullptr;
@@ -301,6 +409,7 @@ namespace
         u32                                 index_buffer;
         u32                                 input_layout;
         u32                                 raster;
+        u32                                 blend = -1;
         VkRenderPass                        pass;
         pen_binding*                        bindings = nullptr;
         // vulkan cached state
@@ -323,14 +432,38 @@ namespace
 
     struct vulkan_buffer
     {
-        VkBuffer        buf;
-        VkDeviceMemory  mem;
+        VkBuffer        buf[NBB];
+        VkDeviceMemory  mem[NBB];
+        u32             size;
+        bool            dynamic;
+
+        VkBuffer& get_buffer()
+        {
+            if (dynamic)
+                return buf[_ctx.ii];
+
+            return buf[0];
+        }
+
+        VkDeviceMemory& get_mem()
+        {
+            if (dynamic)
+                return mem[_ctx.ii];
+
+            return mem[0];
+        }
     };
 
     struct vulkan_shader
     {
         VkShaderModule module;
         e_shd          type;
+    };
+
+    struct vulkan_blend_state
+    {
+        VkPipelineColorBlendAttachmentState* attachments;
+        VkPipelineColorBlendStateCreateInfo  info;
     };
 
     enum class e_res
@@ -354,6 +487,7 @@ namespace
             VkPipelineRasterizationStateCreateInfo  raster;
             VkVertexInputAttributeDescription*      vertex_attributes;
             VkSampler                               sampler;
+            vulkan_blend_state                      blend;
         };
     };
     res_pool<resource_allocation> _res_pool;
@@ -561,6 +695,7 @@ namespace
             { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER , MAX_TEXTURE_DESCRIPTOR_SETS },
             { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER , MAX_CBUFFER_DESCRIPTOR_SETS },
             { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE , MAX_STORAGE_IMAGE_DESCRIPTOR_SETS },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_CBUFFER_DESCRIPTOR_SETS }
         };
 
         u32 max_sets = 0;
@@ -885,12 +1020,7 @@ namespace
     {
         // end current pass
         vkCmdEndRenderPass(_ctx.cmd_bufs[_ctx.ii]);
-
-        // clear bindings / free mem
-        sb_free(_state.bindings);
-
         _state.pass = nullptr;
-        _state.bindings = nullptr;
 
         // clear hashes
         _state.hpipeline = 0;
@@ -915,7 +1045,7 @@ namespace
     void bind_render_pipeline_from_cache(const vk_pipeline_cache& pc, hash_id hash)
     {
         vkCmdBindPipeline(_ctx.cmd_bufs[_ctx.ii], VK_PIPELINE_BIND_POINT_GRAPHICS, pc.pipeline);
-        _state.descriptor_set = pc.descriptor_set;
+        _state.descriptor_set = pc.descriptor_set[_ctx.ii];
         _state.pipeline_layout = pc.layout;
         _state.hpipeline = hash;
     }
@@ -1060,7 +1190,7 @@ namespace
         begin_pass_from_cache(vk_pc, ph);
     }
 
-    void create_pipeline_layout(VkPipelineLayout& layout, VkDescriptorSet& descriptor_set)
+    void create_pipeline_layout(VkPipelineLayout& layout, VkDescriptorSet* descriptor_set)
     {
         // layout
         VkPipelineLayoutCreateInfo pipeline_layout_info = {};
@@ -1103,7 +1233,8 @@ namespace
             alloc_info.descriptorSetCount = 1;
             alloc_info.pSetLayouts = &descriptor_set_layout;
 
-            CHECK_CALL(vkAllocateDescriptorSets(_ctx.device, &alloc_info, &descriptor_set));
+            for(u32 i = 0; i < NBB; ++i)
+                CHECK_CALL(vkAllocateDescriptorSets(_ctx.device, &alloc_info, &descriptor_set[i]));
         }
 
         CHECK_CALL(vkCreatePipelineLayout(_ctx.device, &pipeline_layout_info, nullptr, &layout));
@@ -1115,7 +1246,7 @@ namespace
         HashMurmur2A hh;
         hh.begin();
         hh.add(sb_hash(_state.bindings));
-        hh.add(&_state.vp, offsetof(pen_state, bindings) - offsetof(pen_state, vp));
+        hh.add(&_state.shader[0], offsetof(pen_state, bindings) - offsetof(pen_state, shader));
         hash_id ph = hh.end();
 
         // already bound
@@ -1208,22 +1339,30 @@ namespace
         info.pVertexInputState = &vertex_input_info;
 
         // blending
-        VkPipelineColorBlendAttachmentState colour_blend_attachment = {};
-        colour_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-        colour_blend_attachment.blendEnable = VK_FALSE;
-        
-        VkPipelineColorBlendStateCreateInfo colour_blend = {};
-        colour_blend.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-        colour_blend.logicOpEnable = VK_FALSE;
-        colour_blend.logicOp = VK_LOGIC_OP_COPY;
-        colour_blend.attachmentCount = 1;
-        colour_blend.pAttachments = &colour_blend_attachment;
-        colour_blend.blendConstants[0] = 0.0f;
-        colour_blend.blendConstants[1] = 0.0f;
-        colour_blend.blendConstants[2] = 0.0f;
-        colour_blend.blendConstants[3] = 0.0f;
+        if (_state.blend != -1)
+        {
+            info.pColorBlendState = &_res_pool.get(_state.blend).blend.info;
+        }
+        else
+        {
+            // make default
+            VkPipelineColorBlendAttachmentState colour_blend_attachment = {};
+            colour_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+            colour_blend_attachment.blendEnable = VK_FALSE;
 
-        info.pColorBlendState = &colour_blend;
+            VkPipelineColorBlendStateCreateInfo colour_blend = {};
+            colour_blend.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+            colour_blend.logicOpEnable = VK_FALSE;
+            colour_blend.logicOp = VK_LOGIC_OP_COPY;
+            colour_blend.attachmentCount = 1;
+            colour_blend.pAttachments = &colour_blend_attachment;
+            colour_blend.blendConstants[0] = 0.0f;
+            colour_blend.blendConstants[1] = 0.0f;
+            colour_blend.blendConstants[2] = 0.0f;
+            colour_blend.blendConstants[3] = 0.0f;
+
+            info.pColorBlendState = &colour_blend;
+        }
 
         // multisample
         VkPipelineMultisampleStateCreateInfo multisampling = {};
@@ -1234,8 +1373,8 @@ namespace
 
         // layout
         VkPipelineLayout layout;
-        VkDescriptorSet descriptor_set;
-        create_pipeline_layout(layout, descriptor_set);
+        VkDescriptorSet descriptor_set[3];
+        create_pipeline_layout(layout, &descriptor_set[0]);
         info.layout = layout;
 
         // pass
@@ -1248,7 +1387,8 @@ namespace
 
         vk_pipeline_cache new_pipeline;
         new_pipeline.pipeline = pipeline;
-        new_pipeline.descriptor_set = descriptor_set;
+        for(u32 i = 0; i < NBB; ++i)
+            new_pipeline.descriptor_set[i] = descriptor_set[i];
         new_pipeline.layout = layout;
 
         u32 idx = sb_count(s_pipeline_cache);
@@ -1266,8 +1406,8 @@ namespace
 
         // layout
         VkPipelineLayout layout;
-        VkDescriptorSet descriptor_set;
-        create_pipeline_layout(layout, descriptor_set);
+        VkDescriptorSet descriptor_set[NBB];
+        create_pipeline_layout(layout, &descriptor_set[0]);
         info.layout = layout;
 
         // shader
@@ -1285,7 +1425,7 @@ namespace
         vkCmdBindPipeline(_ctx.cmd_buf_compute[_ctx.ii], VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
         _state.pipeline_layout = layout;
-        _state.descriptor_set = descriptor_set;
+        _state.descriptor_set = descriptor_set[_ctx.ii];
     }
 
     void bind_descriptor_sets(VkCommandBuffer cmd_buf, VkPipelineBindPoint bind_point)
@@ -1305,33 +1445,56 @@ namespace
             if (pb.index == 0)
                 continue;
 
-            vulkan_texture& vt = _res_pool.get(pb.index).texture;
-
-            // switch layouts for writable cs textures
-            VkDescriptorImageInfo image_info = {};
-            if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE)
-            {
-                if (vt.layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-                {
-                    _transition_image_cs(_ctx.cmd_buf_compute[_ctx.ii], vt.image,
-                        VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL);
-
-                    vt.layout = VK_IMAGE_LAYOUT_GENERAL;
-                }
-            }
-
-            image_info.imageLayout = vt.layout;
-            image_info.imageView = _res_pool[pb.index].texture.image_view;
-            image_info.sampler = _res_pool[pb.sampler_index].sampler;
-
             VkWriteDescriptorSet descriptor_write = {};
+
             descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             descriptor_write.dstSet = _state.descriptor_set;
             descriptor_write.dstBinding = pb.slot;
             descriptor_write.dstArrayElement = 0;
             descriptor_write.descriptorType = pb.descriptor_type;
             descriptor_write.descriptorCount = 1;
-            descriptor_write.pImageInfo = &image_info;
+
+            VkDescriptorImageInfo image_info = {};
+            VkDescriptorBufferInfo buf_info = {};
+
+            switch (pb.descriptor_type)
+            {
+                case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+                {
+                    vulkan_buffer& vb = _res_pool.get(pb.index).buffer;
+
+                    buf_info.buffer = vb.get_buffer();
+                    buf_info.offset = 0;
+                    buf_info.range = vb.size;
+
+                    descriptor_write.pBufferInfo = &buf_info;
+                }
+                break;
+                case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+                case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+                {
+                    vulkan_texture& vt = _res_pool.get(pb.index).texture;
+
+                    // switch layouts for writable cs textures
+                    if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE)
+                    {
+                        if (vt.layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+                        {
+                            _transition_image_cs(_ctx.cmd_buf_compute[_ctx.ii], vt.image,
+                                VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL);
+
+                            vt.layout = VK_IMAGE_LAYOUT_GENERAL;
+                        }
+                    }
+
+                    image_info.imageLayout = vt.layout;
+                    image_info.imageView = _res_pool[pb.index].texture.image_view;
+                    image_info.sampler = _res_pool[pb.sampler_index].sampler;
+
+                    descriptor_write.pImageInfo = &image_info;
+                }
+                break;
+            }
 
             vkUpdateDescriptorSets(_ctx.device, 1, &descriptor_write, 0, nullptr);
         }
@@ -1379,6 +1542,8 @@ namespace pen
             vkResetFences(_ctx.device, 1, &_ctx.fences[_ctx.ii]);
 
             CHECK_CALL(vkBeginCommandBuffer(_ctx.cmd_bufs[_ctx.ii], &begin_info));
+
+            _ctx.submit_flags |= SUBMIT_GRAPHICS;
         }
 
         u32 renderer_initialise(void* params, u32 bb_res, u32 bb_depth_res)
@@ -1552,10 +1717,22 @@ namespace pen
         {
             _res_pool.insert({}, resource_slot);
             vulkan_buffer& res = _res_pool.get(resource_slot).buffer;
+            res.size = params.buffer_size;
 
-            _create_buffer_internal(to_vk_buffer_usage(params.bind_flags), 
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                params.data, params.buffer_size, res.buf, res.mem);
+            u32 c = 1;
+            res.dynamic = false;
+            if (params.cpu_access_flags & PEN_CPU_ACCESS_WRITE)
+            {
+                res.dynamic = true;               
+                c = NBB;
+            }
+
+            for (u32 i = 0; i < c; ++i)
+            {
+                _create_buffer_internal(to_vk_buffer_usage(params.bind_flags),
+                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                    params.data, params.buffer_size, res.buf[i], res.mem[i]);
+            }
         }
 
         void renderer_set_vertex_buffers(u32* buffer_indices, 
@@ -1571,7 +1748,7 @@ namespace pen
             static VkDeviceSize _offsets[8];
             for (u32 i = 0; i < num_buffers; ++i)
             {
-                _bufs[i] = _res_pool.get(buffer_indices[i]).buffer.buf;
+                _bufs[i] = _res_pool.get(buffer_indices[i]).buffer.get_buffer();
                 _offsets[i] = offsets[i];
 
                 VkVertexInputBindingDescription vb;
@@ -1587,13 +1764,38 @@ namespace pen
 
         void renderer_set_index_buffer(u32 buffer_index, u32 format, u32 offset)
         {
-            VkBuffer buf = _res_pool.get(buffer_index).buffer.buf;
+            VkBuffer buf = _res_pool.get(buffer_index).buffer.get_buffer();
             vkCmdBindIndexBuffer(_ctx.cmd_bufs[_ctx.ii], buf, offset, to_vk_index_type(format));
+        }
+
+        inline void _set_binding(const pen_binding& b)
+        {
+            u32 num = sb_count(_state.bindings);
+            for (u32 i = 0; i < num; ++i)
+            {
+                if (_state.bindings[i].slot == b.slot)
+                {
+                    _state.bindings[i] = b;
+                    return;
+                }
+            }
+
+            sb_push(_state.bindings, b);
         }
 
         void renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
         {
+            if (buffer_index == 0)
+                return;
 
+            pen_binding b;
+            b.descriptor_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            b.stage = to_vk_stage(flags);
+            b.index = buffer_index;
+            b.slot = resource_slot;
+            b.bind_flags = flags;
+
+            _set_binding(b);
         }
         
         void renderer_set_structured_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
@@ -1603,7 +1805,15 @@ namespace pen
 
         void renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset)
         {
+            if (data_size == 0)
+                return;
 
+            VkDeviceMemory mem = _res_pool.get(buffer_index).buffer.get_mem();
+
+            void* map_data;
+            vkMapMemory(_ctx.device, mem, 0, data_size, 0, &map_data);
+            memcpy(map_data, data, (size_t)data_size);
+            vkUnmapMemory(_ctx.device, mem);
         }
 
         void renderer_create_texture(const texture_creation_params& tcp, u32 resource_slot)
@@ -1761,7 +1971,7 @@ namespace pen
             b.slot = resource_slot;
             b.bind_flags = bind_flags;
 
-            sb_push(_state.bindings, b);
+            _set_binding(b);
         }
 
         void renderer_create_rasterizer_state(const rasteriser_state_creation_params& rscp, u32 resource_slot)
@@ -1774,7 +1984,6 @@ namespace pen
             res.depthClampEnable = VK_FALSE;
             res.depthBiasEnable = VK_FALSE;
             res.lineWidth = 1.0f;
-            res.rasterizerDiscardEnable = rscp.depth_clip_enable;
             res.polygonMode = to_vk_polygon_mode(rscp.fill_mode);
             res.cullMode = to_vk_cull_mode(rscp.cull_mode);
             res.frontFace = rscp.front_ccw ? VK_FRONT_FACE_COUNTER_CLOCKWISE : VK_FRONT_FACE_CLOCKWISE;
@@ -1797,12 +2006,56 @@ namespace pen
 
         void renderer_create_blend_state(const blend_creation_params& bcp, u32 resource_slot)
         {
+            _res_pool.insert({}, resource_slot);
+            vulkan_blend_state& bs = _res_pool.get(resource_slot).blend;
 
+            bs.attachments = nullptr;
+            for (u32 i = 0; i < bcp.num_render_targets; ++i)
+            {
+                pen::render_target_blend& rtb = bcp.render_targets[i];
+
+                VkPipelineColorBlendAttachmentState attach = {};
+                attach.colorWriteMask = rtb.render_target_write_mask;
+                attach.blendEnable = rtb.blend_enable;
+
+                if (rtb.blend_enable)
+                {
+                    attach.colorBlendOp = to_vk_blend_op(rtb.blend_op);
+                    attach.srcColorBlendFactor = to_vk_blend_factor(rtb.src_blend);
+                    attach.dstColorBlendFactor = to_vk_blend_factor(rtb.dest_blend);
+
+                    if (bcp.independent_blend_enable)
+                    {
+                        attach.alphaBlendOp = to_vk_blend_op(rtb.blend_op_alpha);
+                        attach.srcAlphaBlendFactor = to_vk_blend_factor(rtb.src_blend_alpha);
+                        attach.dstAlphaBlendFactor = to_vk_blend_factor(rtb.dest_blend_alpha);
+                    }
+                    else
+                    {
+                        attach.alphaBlendOp = attach.colorBlendOp;
+                        attach.srcAlphaBlendFactor = attach.srcColorBlendFactor;
+                        attach.dstAlphaBlendFactor = attach.dstColorBlendFactor;
+                    }
+                }
+
+                sb_push(bs.attachments, attach);
+            }
+
+            bs.info = {};
+            bs.info.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+            bs.info.logicOpEnable = VK_FALSE;
+            bs.info.logicOp = VK_LOGIC_OP_COPY;
+            bs.info.attachmentCount = sb_count(bs.attachments);
+            bs.info.pAttachments = bs.attachments;
+            bs.info.blendConstants[0] = 0.0f;
+            bs.info.blendConstants[1] = 0.0f;
+            bs.info.blendConstants[2] = 0.0f;
+            bs.info.blendConstants[3] = 0.0f;
         }
 
         void renderer_set_blend_state(u32 blend_state_index)
         {
-
+            _state.blend = blend_state_index;
         }
 
         void renderer_create_depth_stencil_state(const depth_stencil_creation_params& dscp, u32 resource_slot)
@@ -1874,6 +2127,8 @@ namespace pen
 
             vkEndCommandBuffer(_ctx.cmd_buf_compute[_ctx.ii]);
 
+            _ctx.submit_flags |= SUBMIT_COMPUTE;
+
             sb_free(_state.bindings);
             _state.bindings = nullptr;
         }
@@ -1886,6 +2141,9 @@ namespace pen
         void renderer_set_targets(const u32* const colour_targets, u32 num_colour_targets, u32 depth_target, u32 colour_face, 
             u32 depth_face)
         {
+            sb_free(_state.bindings);
+            _state.bindings = nullptr;
+
             sb_clear(_state.colour_attachments);
             _state.colour_attachments = nullptr;
 
@@ -1928,14 +2186,16 @@ namespace pen
 
             vkEndCommandBuffer(_ctx.cmd_bufs[_ctx.ii]);
 
-            // submit compute
+            if (_ctx.submit_flags & SUBMIT_COMPUTE)
+            {
+                // submit compute
+                VkSubmitInfo compute_submit_info = {};
+                compute_submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+                compute_submit_info.commandBufferCount = 1;
+                compute_submit_info.pCommandBuffers = &_ctx.cmd_buf_compute[_ctx.ii];
 
-            VkSubmitInfo compute_submit_info = {};
-            compute_submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-            compute_submit_info.commandBufferCount = 1;
-            compute_submit_info.pCommandBuffers = &_ctx.cmd_buf_compute[_ctx.ii];
-
-            CHECK_CALL(vkQueueSubmit(_ctx.compute_queue, 1, &compute_submit_info, _ctx.compute_fences[_ctx.ii]));
+                CHECK_CALL(vkQueueSubmit(_ctx.compute_queue, 1, &compute_submit_info, _ctx.compute_fences[_ctx.ii]));
+            }
 
             VkSubmitInfo info = {};
             info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -1968,9 +2228,9 @@ namespace pen
 
             CHECK_CALL(vkQueuePresentKHR(_ctx.present_queue, &present));
 
+            _ctx.submit_flags = 0;
             u32 next_frame = (_ctx.ii + 1) % NBB;
             new_frame(next_frame);
-
         }
 
         void renderer_push_perf_marker(const c8* name)
@@ -2002,18 +2262,27 @@ namespace pen
         void renderer_release_buffer(u32 buffer_index)
         {
             vulkan_buffer& buf = _res_pool.get(buffer_index).buffer;
-            vkDestroyBuffer(_ctx.device, buf.buf, nullptr);
-            vkFreeMemory(_ctx.device, buf.mem, nullptr);
+            u32 c = buf.dynamic ? NBB : 1;
+            
+            for (u32 i = 0; i < c; ++i)
+            {
+                vkDestroyBuffer(_ctx.device, buf.buf[i], nullptr);
+                vkFreeMemory(_ctx.device, buf.mem[i], nullptr);
+            }
         }
 
         void renderer_release_texture(u32 texture_index)
         {
+            vulkan_texture& vt = _res_pool.get(texture_index).texture;
 
+            vkDestroyImage(_ctx.device, vt.image, nullptr);
+            vkDestroyImageView(_ctx.device, vt.image_view, nullptr);
+            vkFreeMemory(_ctx.device, vt.mem, nullptr);
         }
 
         void renderer_release_sampler(u32 sampler)
         {
-
+            vkDestroySampler(_ctx.device, _res_pool.get(sampler).sampler, nullptr);
         }
 
         void renderer_release_raster_state(u32 raster_state_index)
@@ -2023,17 +2292,19 @@ namespace pen
 
         void renderer_release_blend_state(u32 blend_state)
         {
-
+            vulkan_blend_state& res = _res_pool.get(blend_state).blend;
+            sb_free(res.attachments);
         }
 
         void renderer_release_render_target(u32 render_target)
         {
-
+            renderer_release_texture(render_target);
         }
 
         void renderer_release_input_layout(u32 input_layout)
         {
-
+            VkVertexInputAttributeDescription* vi = _res_pool.get(input_layout).vertex_attributes;
+            sb_free(vi);
         }
 
         void renderer_release_depth_stencil_state(u32 depth_stencil_state)

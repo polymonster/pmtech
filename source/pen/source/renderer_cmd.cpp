@@ -580,6 +580,7 @@ namespace pen
 
         if (renderer_viewport_vup())
         {
+            // flip gl in the y.
             std::swap<f32>(quad_vertices[0].v, quad_vertices[1].v);
             std::swap<f32>(quad_vertices[2].v, quad_vertices[3].v);
         }

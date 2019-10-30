@@ -862,6 +862,8 @@ namespace put
 
         void poll_for_changes()
         {
+            return;
+
             static bool initialised = false;
 
             static Str shader_compiler_str = "";

@@ -19,6 +19,14 @@ project "put"
         "../../third_party/bullet/lib/" .. bullet_lib_dir,
     }
     
+    -- need to refactor renderer defs to remove this
+    if platform_dir == "win32" and renderer_dir == "opengl" then
+        includedirs
+        {
+            "../../third_party/glew/include"
+        }
+    end
+    
     includedirs
     {
         "source",

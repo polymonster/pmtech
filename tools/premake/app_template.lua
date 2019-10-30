@@ -76,6 +76,19 @@ local function setup_win32()
         {
             "vulkan-1.lib"
         }
+    elseif renderer_dir == "opengl" then
+        includedirs
+        {
+            pmtech_dir .. "/third_party/glew/include"
+        }
+        libdirs
+        {
+            pmtech_dir .. "/third_party/glew/lib/win64"
+        }
+		links 
+        { 
+            "OpenGL32.lib"
+        }
     else
     	links 
         { 

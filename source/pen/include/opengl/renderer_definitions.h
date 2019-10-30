@@ -5,6 +5,8 @@
 #ifndef _renderer_definitions_h
 #define _renderer_definitions_h
 
+#define PEN_RENDERER_OPENGL
+
 #if __APPLE__
 #include "TargetConditionals.h"
 #if TARGET_OS_IPHONE
@@ -46,6 +48,10 @@
 #else
 #ifdef __linux__
 #include "GL/glew.h"
+#elif _WIN32
+#define GLEW_STATIC
+#include "GL/glew.h"
+#include "GL/wglew.h"
 #else // osx
 #include <OpenGL/gl3.h>
 #include <OpenGL/gl3ext.h>

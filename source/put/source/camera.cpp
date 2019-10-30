@@ -252,7 +252,7 @@ namespace put
         camera_create_perspective(p_camera, p_camera->fov, p_camera->aspect, p_camera->near_plane, p_camera->far_plane);
     }
 
-    void camera_update_shader_constants(camera* p_camera, bool viewport_correction)
+    void camera_update_shader_constants(camera* p_camera)
     {
         // create cbuffer if needed
         if (p_camera->cbuffer == PEN_INVALID_HANDLE)
@@ -280,32 +280,9 @@ namespace put
 
         camera_update_frustum(p_camera);
 
-        if (viewport_correction && !(p_camera->flags & CF_VP_CORRECTED))
-        {
-            p_camera->flags |= CF_VP_CORRECTED;
-            p_camera->flags |= CF_INVALIDATED;
-        }
-
-        if (!viewport_correction && (p_camera->flags & CF_VP_CORRECTED))
-        {
-            p_camera->flags &= ~CF_VP_CORRECTED;
-            p_camera->flags |= CF_INVALIDATED;
-        }
-
         camera_cbuffer wvp;
 
-        static mat4 scale = mat::create_scale(vec3f(1.0f, -1.0f, 1.0f));
-
-        if (viewport_correction && pen::renderer_viewport_vup())
-        {
-            wvp.view_projection = scale * (p_camera->proj * p_camera->view);
-            wvp.viewport_correction = vec4f(-1.0f, 1.0f, 0.0f, 0.0f);
-        }
-        else
-        {
-            wvp.view_projection = p_camera->proj * p_camera->view;
-            wvp.viewport_correction = vec4f(1.0f, 0.0f, 0.0f, 0.0f);
-        }
+        wvp.view_projection = p_camera->proj * p_camera->view;
 
         mat4 inv_view = mat::inverse3x4(p_camera->view);
         wvp.view_matrix = p_camera->view;

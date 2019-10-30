@@ -16,14 +16,13 @@
 - [Ecs](https://github.com/polymonster/pmtech/wiki/Ecs): Entity component system and root motion animation system.
 - [Pmfx](https://github.com/polymonster/pmtech/wiki/Pmfx): Scriptable renderer, shader, compute and post-processing system.
 - Tools: Graphical editor, volume texture / signed distance field generator.
-- [Examples](https://github.com/polymonster/pmtech/wiki/Examples): 30+ samples and unit tests.
 - [Build Pipeline](https://github.com/polymonster/pmtech/wiki/Build-Pipeline): project generation, compilation, asset building and packaging. 
+- [Examples](https://github.com/polymonster/pmtech/wiki/Examples): 30+ samples and unit tests.
 - Visit the [wiki](https://github.com/polymonster/pmtech/wiki) for more information. 
 
 **Usage**  
 - Take a look at the getting started [instructions](https://github.com/polymonster/pmtech/wiki/Building-Examples). 
 - All features in pmtech are demonstarted and unit tested through [examples](https://github.com/polymonster/pmtech/wiki/Examples). 
-- Documentation is not thorough but the [source](https://github.com/polymonster/pmtech/wiki/Source-Code) is simple and easy to follow.
 
 **Media**  
 

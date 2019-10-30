@@ -63,12 +63,8 @@ PEN_TRV pen::user_entry(void* params)
     // manually scale 16:9 to 1:1
     f32 x_size = 0.5f / ((f32)pen_window.width / pen_window.height);
 
-    // manually handle differences with gl coordinate system
     f32 uv_y_a = 1.0f;
     f32 uv_y_b = 0.0f;
-
-    if (pen::renderer_viewport_vup())
-        std::swap(uv_y_a, uv_y_b);
 
     // create vertex buffer for a quad
     textured_vertex quad_vertices[] = {

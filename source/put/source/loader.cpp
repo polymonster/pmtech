@@ -434,6 +434,8 @@ namespace put
 {
     Str get_build_cmd()
     {
+        return "";
+
         static Str build_tool_str = "";
         if (build_tool_str == "")
         {
@@ -595,6 +597,8 @@ namespace put
 
     void poll_hot_loader()
     {
+        return;
+
         // print build cmd to console first time init
         get_build_cmd();
 

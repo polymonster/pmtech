@@ -67,6 +67,8 @@ def configure_vc_vars_all(config):
         input_dir = str(input())
         input_dir = input_dir.strip("\"")
         input_dir = os.path.normpath(input_dir)
+        if os.path.isfile(input_dir):
+            input_dir = os.path.dirname(input_dir)
         if os.path.exists(input_dir):
             config["vcvarsall_dir"] = input_dir
             bj = open("config.user.jsn", "w+")
@@ -225,6 +227,8 @@ def run_premake(config):
         cmd += " " + c
     # add pmtech dir
     cmd += " --pmtech_dir=\"" + config["env"]["pmtech_dir"] + "\""
+    if "sdk_version" in config.keys():
+        cmd += " --sdk_version=\"" + str(config["sdk_version"]) + "\""
     subprocess.call(cmd, shell=True)
 
 

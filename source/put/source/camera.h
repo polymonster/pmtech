@@ -18,7 +18,6 @@ namespace put
     enum camera_flags : u32
     {
         CF_INVALIDATED = 1 << 1,
-        CF_VP_CORRECTED = 1 << 2,
         CF_ORTHO = 1 << 3,
         CF_WINDOW_ASPECT = 1 << 4
     };
@@ -31,7 +30,6 @@ namespace put
         mat4  view_matrix_inverse;
         vec4f view_position;
         vec4f view_direction;
-        vec4f viewport_correction;
     };
 
     struct frustum
@@ -80,7 +78,7 @@ namespace put
     void camera_update_frustum(camera* p_camera);
     void camera_update_modelling(camera* p_camera, bool has_focus = true, camera_settings settings = {});
     void camera_update_fly(camera* p_camera, bool has_focus = true, camera_settings settings = {});
-    void camera_update_shader_constants(camera* p_camera, bool viewport_correction = false);
+    void camera_update_shader_constants(camera* p_camera);
     void camera_update_shadow_frustum(put::camera* p_camera, vec3f light_dir, vec3f min, vec3f max);
 } // namespace put
 

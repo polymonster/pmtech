@@ -1,12 +1,10 @@
 import os
 import xml.etree.ElementTree as ET
 import struct
-import json
 import dependencies
 import time
 import util
 import sys
-
 import models.helpers as helpers
 import models.parse_meshes as parse_meshes
 import models.parse_materials as parse_materials
@@ -15,18 +13,9 @@ import models.parse_obj as parse_obj
 
 stats_start = time.time()
 root_dir = os.getcwd()
-
-config = open("build_config.json")
-build_config = json.loads(config.read())
-
-model_dir = util.correct_path(build_config["models_dir"])
-
+model_dir = ""
 schema = "{http://www.collada.org/2005/11/COLLADASchema}"
 transform_types = ["translate", "rotate", "matrix"]
-
-# create models dir
-if not os.path.exists(helpers.build_dir):
-    os.makedirs(helpers.build_dir)
 
 geom_attach_data_list = []
 material_attach_data_list = []
@@ -38,7 +27,6 @@ parent_list = []
 animations = []
 geometries = []
 materials = []
-
 
 def parse_visual_scenes(root):
     for scene in root.iter(schema+'visual_scene'):
@@ -198,10 +186,8 @@ def write_joint_file():
         return
 
     numjoints = len(joint_list)
-
     joint_data = [struct.pack("i", (int(helpers.version_number))),
                   struct.pack("i", (int(len(animations))))]
-
     # write out anims
     for animation_instance in animations:
         num_times = len(animation_instance.inputs)
@@ -233,22 +219,9 @@ if "-i" in sys.argv and "-o" in sys.argv:
             file_list.append(sys.argv[a+1])
         if sys.argv[a] == "-o":
             helpers.build_dir = sys.argv[a+1]
-    pass
-else:
-    # pmbuild v2 path
-    print("--------------------------------------------------------------------------------")
-    print("pmtech model and animation conversion ------------------------------------------")
-    print("--------------------------------------------------------------------------------")
-    helpers.bin_dir = os.path.join(os.getcwd(), "bin", helpers.platform, "")
-    helpers.build_dir = os.path.join(os.getcwd(), "bin", helpers.platform, "data", "models")
-    for root, dirs, files in os.walk(model_dir):
-        deps = dict()
-        deps["files"] = []
-        for file in files:
-            if not file.endswith(".obj") and not file.endswith(".dae"):
-                continue
-            file_list.append(os.path.join(root, file))
-
+            # create models dir
+            if not os.path.exists(helpers.build_dir):
+                os.makedirs(helpers.build_dir)
 
 # build list of files
 for file in file_list:
@@ -259,10 +232,8 @@ for file in file_list:
     f = file
     root = os.path.dirname(f)
     [fnoext, fext] = os.path.splitext(file)
-    assets_pos = root.find(model_dir)
-    assets_pos += len(model_dir) + 1
-    sub_dir = root[int(assets_pos):int(len(root))]
-    out_dir = os.path.join(helpers.build_dir)
+
+    out_dir = helpers.build_dir
     current_filename = os.path.basename(file)
     helpers.current_filename = current_filename
     helpers.build_dir = out_dir
