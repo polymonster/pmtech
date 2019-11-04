@@ -16,7 +16,7 @@ a_u8                               g_window_resize(0);
 
 using namespace pen;
 
-#define NBB 3
+#define NBB 3                            // num "back buffers" / swap chains / inflight command buffers
 #define MAX_TEXTURE_DESCRIPTOR_SETS 4096 // I dont like this and wish the pool didnt need to be allocated up front.
 #define MAX_CBUFFER_DESCRIPTOR_SETS 4096
 #define MAX_STORAGE_IMAGE_DESCRIPTOR_SETS 4096
@@ -263,33 +263,33 @@ namespace
         case PEN_TEX_FORMAT_RGBA8_UNORM:
             return VK_FORMAT_R8G8B8A8_UNORM;
         case PEN_TEX_FORMAT_BGRA8_UNORM:
-            return VK_FORMAT_R8G8B8A8_UNORM;
+            return VK_FORMAT_B8G8R8A8_UNORM;
         case PEN_TEX_FORMAT_R32G32B32A32_FLOAT:
-            return VK_FORMAT_R8G8B8A8_UNORM;
+            return VK_FORMAT_R32G32B32A32_SFLOAT;
         case PEN_TEX_FORMAT_R32G32_FLOAT:
-            return VK_FORMAT_R8G8B8A8_UNORM;
+            return VK_FORMAT_R32G32_SFLOAT;
         case PEN_TEX_FORMAT_R32_FLOAT:
-            return VK_FORMAT_R8G8B8A8_UNORM;
+            return VK_FORMAT_R32_SFLOAT;
         case PEN_TEX_FORMAT_R16G16B16A16_FLOAT:
-            return VK_FORMAT_R8G8B8A8_UNORM;
+            return VK_FORMAT_R16G16B16A16_SFLOAT;
         case PEN_TEX_FORMAT_R16_FLOAT:
-            return VK_FORMAT_R8G8B8A8_UNORM;
+            return VK_FORMAT_R16_SFLOAT;
         case PEN_TEX_FORMAT_R32_UINT:
-            return VK_FORMAT_R8G8B8A8_UNORM;
+            return VK_FORMAT_R32_UINT;
         case PEN_TEX_FORMAT_R8_UNORM:
-            return VK_FORMAT_R8G8B8A8_UNORM;
+            return VK_FORMAT_R8_UNORM;
         case PEN_TEX_FORMAT_BC1_UNORM:
-            return VK_FORMAT_R8G8B8A8_UNORM;
+            return VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
         case PEN_TEX_FORMAT_BC2_UNORM:
-            return VK_FORMAT_R8G8B8A8_UNORM;
+            return VK_FORMAT_BC2_UNORM_BLOCK;
         case PEN_TEX_FORMAT_BC3_UNORM:
-            return VK_FORMAT_R8G8B8A8_UNORM;
+            return VK_FORMAT_BC3_UNORM_BLOCK;
         case PEN_TEX_FORMAT_BC4_UNORM:
-            return VK_FORMAT_R8G8B8A8_UNORM;
+            return VK_FORMAT_BC4_UNORM_BLOCK;
         case PEN_TEX_FORMAT_BC5_UNORM:
-            return VK_FORMAT_R8G8B8A8_UNORM;
+            return VK_FORMAT_BC5_UNORM_BLOCK;
         case PEN_TEX_FORMAT_D24_UNORM_S8_UINT:
-            return VK_FORMAT_R8G8B8A8_UNORM;
+            return VK_FORMAT_D24_UNORM_S8_UINT;
             break;
         }
         // unhandled
@@ -371,9 +371,10 @@ namespace
 
     struct vk_pipeline_cache
     {
-        VkPipeline          pipeline;
-        VkDescriptorSet     descriptor_set[NBB];
-        VkPipelineLayout    layout;
+        VkPipeline              pipeline;
+        VkDescriptorSetLayout   descriptor_set_layout;
+        VkDescriptorSet*        descriptor_set[NBB] = { 0 }; // array of sets per pipeline, per in flight command buffer
+        VkPipelineLayout        pipeline_layout;
     };
     hash_id*            s_pipeline_cache_hash = nullptr;
     vk_pipeline_cache*  s_pipeline_cache = nullptr;
@@ -415,9 +416,18 @@ namespace
         // vulkan cached state
         VkPipelineLayout                    pipeline_layout;
         VkVertexInputBindingDescription*    vertex_input_bindings = nullptr;
-        VkDescriptorSet                     descriptor_set;
+        VkDescriptorSetLayout               descriptor_set_layout;
+        u32                                 descriptor_set_index;
+        u32                                 pipeline_index = -1;
     };
     pen_state _state;
+
+    struct descriptor_set_alloc
+    {
+        VkDescriptorSet set;
+        u64             frame;
+    };
+    descriptor_set_alloc* s_descriptor_sets = nullptr;
 
     struct vulkan_texture
     {
@@ -1042,12 +1052,14 @@ namespace
         _state.hpass = hash;
     }
 
-    void bind_render_pipeline_from_cache(const vk_pipeline_cache& pc, hash_id hash)
+    void bind_render_pipeline_from_cache(const vk_pipeline_cache& pc, hash_id hash, u32 index)
     {
         vkCmdBindPipeline(_ctx.cmd_bufs[_ctx.ii], VK_PIPELINE_BIND_POINT_GRAPHICS, pc.pipeline);
-        _state.descriptor_set = pc.descriptor_set[_ctx.ii];
-        _state.pipeline_layout = pc.layout;
+        _state.descriptor_set_layout = pc.descriptor_set_layout;
+        _state.pipeline_layout = pc.pipeline_layout;
         _state.hpipeline = hash;
+        _state.descriptor_set_index = 0;
+        _state.pipeline_index = index;
     }
 
     void begin_pass()
@@ -1190,7 +1202,7 @@ namespace
         begin_pass_from_cache(vk_pc, ph);
     }
 
-    void create_pipeline_layout(VkPipelineLayout& layout, VkDescriptorSet* descriptor_set)
+    void create_pipeline_layout(VkPipelineLayout& pipeline_layout, VkDescriptorSetLayout& descriptor_set_layout)
     {
         // layout
         VkPipelineLayoutCreateInfo pipeline_layout_info = {};
@@ -1221,23 +1233,13 @@ namespace
             descriptor_info.bindingCount = sb_count(vk_bindings);
             descriptor_info.pBindings = vk_bindings;
 
-            VkDescriptorSetLayout descriptor_set_layout;
             CHECK_CALL(vkCreateDescriptorSetLayout(_ctx.device, &descriptor_info, nullptr, &descriptor_set_layout));
 
             pipeline_layout_info.setLayoutCount = 1;
             pipeline_layout_info.pSetLayouts = &descriptor_set_layout;
-
-            VkDescriptorSetAllocateInfo alloc_info = {};
-            alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-            alloc_info.descriptorPool = _ctx.descriptor_pool;
-            alloc_info.descriptorSetCount = 1;
-            alloc_info.pSetLayouts = &descriptor_set_layout;
-
-            for(u32 i = 0; i < NBB; ++i)
-                CHECK_CALL(vkAllocateDescriptorSets(_ctx.device, &alloc_info, &descriptor_set[i]));
         }
 
-        CHECK_CALL(vkCreatePipelineLayout(_ctx.device, &pipeline_layout_info, nullptr, &layout));
+        CHECK_CALL(vkCreatePipelineLayout(_ctx.device, &pipeline_layout_info, nullptr, &pipeline_layout));
     }
 
     void bind_render_pipeline(u32 primitive_topology)
@@ -1246,7 +1248,13 @@ namespace
         HashMurmur2A hh;
         hh.begin();
         hh.add(sb_hash(_state.bindings));
-        hh.add(&_state.shader[0], offsetof(pen_state, bindings) - offsetof(pen_state, shader));
+        hh.add(&_state.shader[0], e_shd::count * sizeof(u32));
+        hh.add(_state.blend);
+        hh.add(_state.vertex_buffer);
+        hh.add(_state.index_buffer);
+        hh.add(_state.input_layout);
+        //hh.add(&_state.vp, sizeof(viewport));
+        //hh.add(&_state.sr, sizeof(rect));
         hash_id ph = hh.end();
 
         // already bound
@@ -1260,7 +1268,7 @@ namespace
             if (s_pipeline_cache_hash[i] == ph)
             {
                 // found exisiting
-                bind_render_pipeline_from_cache(s_pipeline_cache[i], ph);
+                bind_render_pipeline_from_cache(s_pipeline_cache[i], ph, i);
                 return;
             }
         }
@@ -1372,10 +1380,10 @@ namespace
         info.pMultisampleState = &multisampling;
 
         // layout
-        VkPipelineLayout layout;
-        VkDescriptorSet descriptor_set[3];
-        create_pipeline_layout(layout, &descriptor_set[0]);
-        info.layout = layout;
+        VkPipelineLayout pipeline_layout;
+        VkDescriptorSetLayout descriptor_set_layout;
+        create_pipeline_layout(pipeline_layout, descriptor_set_layout);
+        info.layout = pipeline_layout;
 
         // pass
         info.renderPass = _state.pass;
@@ -1387,15 +1395,14 @@ namespace
 
         vk_pipeline_cache new_pipeline;
         new_pipeline.pipeline = pipeline;
-        for(u32 i = 0; i < NBB; ++i)
-            new_pipeline.descriptor_set[i] = descriptor_set[i];
-        new_pipeline.layout = layout;
+        new_pipeline.pipeline_layout = pipeline_layout;
+        new_pipeline.descriptor_set_layout = descriptor_set_layout;
 
         u32 idx = sb_count(s_pipeline_cache);
         sb_push(s_pipeline_cache_hash, ph);
         sb_push(s_pipeline_cache, new_pipeline);
 
-        bind_render_pipeline_from_cache(s_pipeline_cache[idx], ph);
+        bind_render_pipeline_from_cache(s_pipeline_cache[idx], ph, idx);
     }
 
     void bind_compute_pipeline()
@@ -1405,10 +1412,10 @@ namespace
         info.flags = 0;
 
         // layout
-        VkPipelineLayout layout;
-        VkDescriptorSet descriptor_set[NBB];
-        create_pipeline_layout(layout, &descriptor_set[0]);
-        info.layout = layout;
+        VkPipelineLayout pipeline_layout;
+        VkDescriptorSetLayout descriptor_set_layout;
+        create_pipeline_layout(pipeline_layout, descriptor_set_layout);
+        info.layout = pipeline_layout;
 
         // shader
         u32 cs = _state.shader[e_shd::compute];
@@ -1424,8 +1431,8 @@ namespace
 
         vkCmdBindPipeline(_ctx.cmd_buf_compute[_ctx.ii], VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
-        _state.pipeline_layout = layout;
-        _state.descriptor_set = descriptor_set[_ctx.ii];
+        _state.pipeline_layout = pipeline_layout;
+        _state.descriptor_set_layout = descriptor_set_layout;
     }
 
     void bind_descriptor_sets(VkCommandBuffer cmd_buf, VkPipelineBindPoint bind_point)
@@ -1439,6 +1446,17 @@ namespace
         if (h == _state.hdescriptors)
             return;
 
+        // allocate a descriptor set
+        VkDescriptorSet descriptor_set = 0;
+        VkDescriptorSetAllocateInfo alloc_info = {};
+        alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        alloc_info.descriptorPool = _ctx.descriptor_pool;
+        alloc_info.descriptorSetCount = 1;
+        alloc_info.pSetLayouts = &_state.descriptor_set_layout;
+        CHECK_CALL(vkAllocateDescriptorSets(_ctx.device, &alloc_info, &descriptor_set));
+
+        _state.descriptor_set_index++;
+
         for (u32 i = 0; i < nb; ++i)
         {
             pen_binding& pb = _state.bindings[i];
@@ -1448,7 +1466,7 @@ namespace
             VkWriteDescriptorSet descriptor_write = {};
 
             descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptor_write.dstSet = _state.descriptor_set;
+            descriptor_write.dstSet = descriptor_set;
             descriptor_write.dstBinding = pb.slot;
             descriptor_write.dstArrayElement = 0;
             descriptor_write.descriptorType = pb.descriptor_type;
@@ -1481,7 +1499,7 @@ namespace
                         if (vt.layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
                         {
                             _transition_image_cs(_ctx.cmd_buf_compute[_ctx.ii], vt.image,
-                                VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL);
+                                vt.format, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL);
 
                             vt.layout = VK_IMAGE_LAYOUT_GENERAL;
                         }
@@ -1500,7 +1518,7 @@ namespace
         }
 
         vkCmdBindDescriptorSets(cmd_buf, 
-            bind_point, _state.pipeline_layout, 0, 1, &_state.descriptor_set, 0, nullptr);
+            bind_point, _state.pipeline_layout, 0, 1, &descriptor_set, 0, nullptr);
 
         _state.hdescriptors = h;
     }
@@ -1822,7 +1840,7 @@ namespace pen
             vulkan_texture& vt = _res_pool.get(resource_slot).texture;
 
             // texture formats todo.
-            vt.format = VK_FORMAT_B8G8R8A8_UNORM;
+            vt.format = to_vk_image_format(tcp.format);
             vt.tcp = new texture_creation_params(tcp);
 
             if (tcp.bind_flags & PEN_BIND_SHADER_WRITE)
@@ -1838,7 +1856,7 @@ namespace pen
             info.samples = (VkSampleCountFlagBits)tcp.sample_count;
             info.mipLevels = tcp.num_mips;
             info.imageType = VK_IMAGE_TYPE_2D;
-            info.format = VK_FORMAT_B8G8R8A8_UNORM;
+            info.format = vt.format;
             info.usage = to_vk_texture_usage(tcp.bind_flags, tcp.data);
             info.tiling = VK_IMAGE_TILING_OPTIMAL;
             info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -1863,7 +1881,7 @@ namespace pen
             view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
             view_info.image = vt.image;
             view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-            view_info.format = VK_FORMAT_B8G8R8A8_UNORM;
+            view_info.format = vt.format;
             view_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
             view_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
             view_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -1885,7 +1903,7 @@ namespace pen
                     tcp.data, tcp.data_size, buf, mem);
 
                 _transition_image(vt.image, 
-                    VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+                    vt.format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
                 VkBufferImageCopy region = {};
                 region.bufferOffset = 0;
@@ -1907,7 +1925,7 @@ namespace pen
                 end_cmd_buffer(cmd);
 
                 _transition_image(vt.image,
-                    VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                    vt.format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
                 vkDestroyBuffer(_ctx.device, buf, nullptr);
                 vkFreeMemory(_ctx.device, mem, nullptr);
@@ -1915,7 +1933,7 @@ namespace pen
             else
             {
                 _transition_image(vt.image,
-                    VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                    vt.format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
             }
 
             vt.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
