@@ -17,9 +17,6 @@ a_u8                               g_window_resize(0);
 using namespace pen;
 
 #define NBB 3                            // num "back buffers" / swap chains / inflight command buffers
-#define MAX_TEXTURE_DESCRIPTOR_SETS 4096 // I dont like this and wish the pool didnt need to be allocated up front.
-#define MAX_CBUFFER_DESCRIPTOR_SETS 4096
-#define MAX_STORAGE_IMAGE_DESCRIPTOR_SETS 4096
 
 namespace
 {
@@ -172,9 +169,27 @@ namespace
         return VK_SAMPLER_ADDRESS_MODE_REPEAT;
     }
 
-    pen_inline VkImageUsageFlagBits to_vk_texture_usage(u32 pen_texture_usage, bool has_data)
+    pen_inline bool is_compressed_tex_format(u32 pen_format)
     {
-        u32 vf = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
+        switch (pen_format)
+        {
+        case PEN_TEX_FORMAT_BC1_UNORM:
+        case PEN_TEX_FORMAT_BC2_UNORM:
+        case PEN_TEX_FORMAT_BC3_UNORM:
+        case PEN_TEX_FORMAT_BC4_UNORM:
+        case PEN_TEX_FORMAT_BC5_UNORM:
+            return true;
+        }
+
+        return false;
+    }
+
+    pen_inline VkImageUsageFlagBits to_vk_texture_usage(u32 pen_texture_usage, u32 pen_texture_format, bool has_data)
+    {
+        u32 vf = VK_IMAGE_USAGE_SAMPLED_BIT;
+        if (!is_compressed_tex_format(pen_texture_format))
+            vf |= VK_IMAGE_USAGE_STORAGE_BIT;
+
         if (pen_texture_usage & PEN_BIND_RENDER_TARGET)
             vf |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         if (pen_texture_usage & PEN_BIND_DEPTH_STENCIL)
@@ -333,7 +348,7 @@ namespace
         VkFence                             fences[NBB];
         VkFence                             compute_fences[NBB];
         VkPhysicalDeviceMemoryProperties    mem_properties;        
-        VkDescriptorPool                    descriptor_pool;
+        VkDescriptorPool                    descriptor_pool[NBB];
         u32                                 submit_flags = 0;
     };
     vulkan_context _ctx;
@@ -697,15 +712,15 @@ namespace
         CHECK_CALL(vkAllocateCommandBuffers(_ctx.device, &compute_buf_info, _ctx.cmd_buf_compute));
     }
 
-    void create_descriptor_set_pool()
+    void create_descriptor_set_pools(u32 size)
     {
         // one large pool for all descriptor sets to be allocated from
 
         VkDescriptorPoolSize pool_sizes[] = {
-            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER , MAX_TEXTURE_DESCRIPTOR_SETS },
-            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER , MAX_CBUFFER_DESCRIPTOR_SETS },
-            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE , MAX_STORAGE_IMAGE_DESCRIPTOR_SETS },
-            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_CBUFFER_DESCRIPTOR_SETS }
+            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER , size },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER , size },
+            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE , size },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, size }
         };
 
         u32 max_sets = 0;
@@ -718,7 +733,8 @@ namespace
         pool_info.pPoolSizes = &pool_sizes[0];
         pool_info.maxSets = max_sets;
 
-        CHECK_CALL(vkCreateDescriptorPool(_ctx.device, &pool_info, nullptr, &_ctx.descriptor_pool));
+        for(u32 i = 0; i < NBB; ++i)
+            CHECK_CALL(vkCreateDescriptorPool(_ctx.device, &pool_info, nullptr, &_ctx.descriptor_pool[i]));
     }
 
     // quick dirty functions for testing, better having a pool of these to burn through
@@ -1005,7 +1021,7 @@ namespace
 
         create_sync_primitives();
 
-        create_descriptor_set_pool();
+        create_descriptor_set_pools(4096);
 
         delete queue_families;
         delete devices;
@@ -1052,13 +1068,16 @@ namespace
         _state.hpass = hash;
     }
 
-    void bind_render_pipeline_from_cache(const vk_pipeline_cache& pc, hash_id hash, u32 index)
+    void bind_pipeline_from_cache(const vk_pipeline_cache& pc, VkPipelineBindPoint bind_point, hash_id hash, u32 index)
     {
-        vkCmdBindPipeline(_ctx.cmd_bufs[_ctx.ii], VK_PIPELINE_BIND_POINT_GRAPHICS, pc.pipeline);
+        if(bind_point == VK_PIPELINE_BIND_POINT_COMPUTE)
+            vkCmdBindPipeline(_ctx.cmd_buf_compute[_ctx.ii], bind_point, pc.pipeline);
+        else
+            vkCmdBindPipeline(_ctx.cmd_bufs[_ctx.ii], bind_point, pc.pipeline);
+
         _state.descriptor_set_layout = pc.descriptor_set_layout;
         _state.pipeline_layout = pc.pipeline_layout;
         _state.hpipeline = hash;
-        _state.descriptor_set_index = 0;
         _state.pipeline_index = index;
     }
 
@@ -1247,14 +1266,9 @@ namespace
         // check for invalidation
         HashMurmur2A hh;
         hh.begin();
-        hh.add(sb_hash(_state.bindings));
         hh.add(&_state.shader[0], e_shd::count * sizeof(u32));
         hh.add(_state.blend);
-        hh.add(_state.vertex_buffer);
-        hh.add(_state.index_buffer);
         hh.add(_state.input_layout);
-        //hh.add(&_state.vp, sizeof(viewport));
-        //hh.add(&_state.sr, sizeof(rect));
         hash_id ph = hh.end();
 
         // already bound
@@ -1268,7 +1282,7 @@ namespace
             if (s_pipeline_cache_hash[i] == ph)
             {
                 // found exisiting
-                bind_render_pipeline_from_cache(s_pipeline_cache[i], ph, i);
+                bind_pipeline_from_cache(s_pipeline_cache[i], VK_PIPELINE_BIND_POINT_GRAPHICS, ph, i);
                 return;
             }
         }
@@ -1402,7 +1416,7 @@ namespace
         sb_push(s_pipeline_cache_hash, ph);
         sb_push(s_pipeline_cache, new_pipeline);
 
-        bind_render_pipeline_from_cache(s_pipeline_cache[idx], ph, idx);
+        bind_pipeline_from_cache(s_pipeline_cache[idx], VK_PIPELINE_BIND_POINT_GRAPHICS, ph, idx);
     }
 
     void bind_compute_pipeline()
@@ -1410,6 +1424,28 @@ namespace
         VkComputePipelineCreateInfo info = {};
         info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
         info.flags = 0;
+        
+        HashMurmur2A hh;
+        hh.begin();
+        hh.add(_state.shader[e_shd::compute]);
+        hash_id ph = hh.end();
+
+        // already bound
+        if (ph == _state.hpipeline)
+            return;
+
+        // check in pipeline hashes
+        u32 plc = sb_count(s_pipeline_cache);
+        for (u32 i = 0; i < plc; ++i)
+        {
+            if (s_pipeline_cache_hash[i] == ph)
+            {
+                // found exisiting
+                bind_pipeline_from_cache(s_pipeline_cache[i], VK_PIPELINE_BIND_POINT_COMPUTE, ph, i);
+                return;
+            }
+        }
+
 
         // layout
         VkPipelineLayout pipeline_layout;
@@ -1429,10 +1465,16 @@ namespace
         VkPipeline pipeline;
         CHECK_CALL(vkCreateComputePipelines(_ctx.device, VK_NULL_HANDLE, 1, &info, nullptr, &pipeline));
 
-        vkCmdBindPipeline(_ctx.cmd_buf_compute[_ctx.ii], VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
+        vk_pipeline_cache new_pipeline;
+        new_pipeline.pipeline = pipeline;
+        new_pipeline.pipeline_layout = pipeline_layout;
+        new_pipeline.descriptor_set_layout = descriptor_set_layout;
 
-        _state.pipeline_layout = pipeline_layout;
-        _state.descriptor_set_layout = descriptor_set_layout;
+        u32 idx = sb_count(s_pipeline_cache);
+        sb_push(s_pipeline_cache_hash, ph);
+        sb_push(s_pipeline_cache, new_pipeline);
+
+        bind_pipeline_from_cache(s_pipeline_cache[idx], VK_PIPELINE_BIND_POINT_COMPUTE, ph, idx);
     }
 
     void bind_descriptor_sets(VkCommandBuffer cmd_buf, VkPipelineBindPoint bind_point)
@@ -1450,7 +1492,7 @@ namespace
         VkDescriptorSet descriptor_set = 0;
         VkDescriptorSetAllocateInfo alloc_info = {};
         alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        alloc_info.descriptorPool = _ctx.descriptor_pool;
+        alloc_info.descriptorPool = _ctx.descriptor_pool[_ctx.ii];
         alloc_info.descriptorSetCount = 1;
         alloc_info.pSetLayouts = &_state.descriptor_set_layout;
         CHECK_CALL(vkAllocateDescriptorSets(_ctx.device, &alloc_info, &descriptor_set));
@@ -1531,6 +1573,17 @@ namespace pen
     static renderer_info s_renderer_info;
     const renderer_info& renderer_get_info()
     {
+        s_renderer_info.caps = PEN_CAPS_TEXTURE_MULTISAMPLE
+            | PEN_CAPS_DEPTH_CLAMP
+            | PEN_CAPS_GPU_TIMER
+            | PEN_CAPS_COMPUTE
+            | PEN_CAPS_TEX_FORMAT_BC1
+            | PEN_CAPS_TEX_FORMAT_BC2
+            | PEN_CAPS_TEX_FORMAT_BC3
+            | PEN_CAPS_TEX_FORMAT_BC4
+            | PEN_CAPS_TEX_FORMAT_BC5
+            ;
+
         return s_renderer_info;
     }
 
@@ -1559,9 +1612,21 @@ namespace pen
             vkWaitForFences(_ctx.device, 1, &_ctx.fences[_ctx.ii], VK_TRUE, (s32)-1);
             vkResetFences(_ctx.device, 1, &_ctx.fences[_ctx.ii]);
 
+            if (_ctx.submit_flags & SUBMIT_COMPUTE)
+            {
+                // Use a fence to ensure that compute command buffer has finished executing before using it again
+                vkWaitForFences(_ctx.device, 1, &_ctx.compute_fences[_ctx.ii], VK_TRUE, UINT64_MAX);
+                vkResetFences(_ctx.device, 1, &_ctx.compute_fences[_ctx.ii]);
+                _ctx.submit_flags = 0;
+            }
+
             CHECK_CALL(vkBeginCommandBuffer(_ctx.cmd_bufs[_ctx.ii], &begin_info));
 
             _ctx.submit_flags |= SUBMIT_GRAPHICS;
+            
+            vkResetDescriptorPool(_ctx.device, _ctx.descriptor_pool[next_frame], 0);
+            _state.descriptor_set_index = 0;
+
         }
 
         u32 renderer_initialise(void* params, u32 bb_res, u32 bb_depth_res)
@@ -1619,8 +1684,10 @@ namespace pen
             for (u32 i = 0; i < sb_count(_ctx.swap_chain_images); ++i)
                 vkDestroyImage(_ctx.device, _ctx.swap_chain_images[i], nullptr);
 
+            for (u32 i = 0; i < NBB; ++i)
+                vkDestroyDescriptorPool(_ctx.device, _ctx.descriptor_pool[i], nullptr);
+
             vkDestroyCommandPool(_ctx.device, _ctx.cmd_pool, nullptr);
-            vkDestroyDescriptorPool(_ctx.device, _ctx.descriptor_pool, nullptr);
             vkDestroySurfaceKHR(_ctx.instance, _ctx.surface, nullptr);
             vkDestroySwapchainKHR(_ctx.device, _ctx.swap_chain, nullptr);
             vkDestroyInstance(_ctx.instance, nullptr);
@@ -1857,7 +1924,7 @@ namespace pen
             info.mipLevels = tcp.num_mips;
             info.imageType = VK_IMAGE_TYPE_2D;
             info.format = vt.format;
-            info.usage = to_vk_texture_usage(tcp.bind_flags, tcp.data);
+            info.usage = to_vk_texture_usage(tcp.bind_flags, tcp.format, tcp.data);
             info.tiling = VK_IMAGE_TILING_OPTIMAL;
             info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
             info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -2132,10 +2199,6 @@ namespace pen
             VkCommandBufferBeginInfo begin_info = {};
             begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-            // Use a fence to ensure that compute command buffer has finished executing before using it again
-            vkWaitForFences(_ctx.device, 1, &_ctx.compute_fences[_ctx.ii], VK_TRUE, UINT64_MAX);
-            vkResetFences(_ctx.device, 1, &_ctx.compute_fences[_ctx.ii]);
-
             vkBeginCommandBuffer(_ctx.cmd_buf_compute[_ctx.ii], &begin_info);
 
             bind_compute_pipeline();
@@ -2246,7 +2309,6 @@ namespace pen
 
             CHECK_CALL(vkQueuePresentKHR(_ctx.present_queue, &present));
 
-            _ctx.submit_flags = 0;
             u32 next_frame = (_ctx.ii + 1) % NBB;
             new_frame(next_frame);
         }
