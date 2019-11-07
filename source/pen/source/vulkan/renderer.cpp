@@ -16,97 +16,97 @@ a_u8                               g_window_resize(0);
 
 using namespace pen;
 
-#define NBB 3                            // num "back buffers" / swap chains / inflight command buffers
+#define NBB 3 // num "back buffers" / swap chains / inflight command buffers
 
 namespace
 {
     // conversion functions
-    pen_inline VkBufferUsageFlags to_vk_buffer_usage(u32 pen_bind_flags)
+    VkBufferUsageFlags to_vk_buffer_usage(u32 pen_bind_flags)
     {
         switch (pen_bind_flags)
         {
-            case PEN_BIND_VERTEX_BUFFER:
-                return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-            case PEN_BIND_INDEX_BUFFER:
-                return VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-            case PEN_BIND_CONSTANT_BUFFER:
-                return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        case PEN_BIND_VERTEX_BUFFER:
+            return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        case PEN_BIND_INDEX_BUFFER:
+            return VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+        case PEN_BIND_CONSTANT_BUFFER:
+            return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         }
         PEN_ASSERT(0);
         return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     }
 
-    pen_inline VkPolygonMode to_vk_polygon_mode(u32 pen_polygon_mode)
+    VkPolygonMode to_vk_polygon_mode(u32 pen_polygon_mode)
     {
         switch (pen_polygon_mode)
         {
-            case PEN_FILL_SOLID:
-                return VK_POLYGON_MODE_FILL;
-            case PEN_FILL_WIREFRAME:
-                return VK_POLYGON_MODE_LINE;
+        case PEN_FILL_SOLID:
+            return VK_POLYGON_MODE_FILL;
+        case PEN_FILL_WIREFRAME:
+            return VK_POLYGON_MODE_LINE;
         }
         PEN_ASSERT(0);
         return VK_POLYGON_MODE_FILL;
     }
 
-    pen_inline VkCullModeFlags to_vk_cull_mode(u32 pen_cull_mode)
+    VkCullModeFlags to_vk_cull_mode(u32 pen_cull_mode)
     {
         switch (pen_cull_mode)
         {
-            case PEN_CULL_NONE:
-                return VK_CULL_MODE_NONE;
-            case PEN_CULL_FRONT:
-                return VK_CULL_MODE_FRONT_BIT;
-            case PEN_CULL_BACK:
-                return VK_CULL_MODE_BACK_BIT;
+        case PEN_CULL_NONE:
+            return VK_CULL_MODE_NONE;
+        case PEN_CULL_FRONT:
+            return VK_CULL_MODE_FRONT_BIT;
+        case PEN_CULL_BACK:
+            return VK_CULL_MODE_BACK_BIT;
         }
         PEN_ASSERT(0);
         return VK_CULL_MODE_NONE;
     }
 
-    pen_inline VkPrimitiveTopology to_vk_primitive_topology(u32 pen_primitive_topology)
+    VkPrimitiveTopology to_vk_primitive_topology(u32 pen_primitive_topology)
     {
         switch (pen_primitive_topology)
         {
-            case PEN_PT_POINTLIST:
-                return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-            case PEN_PT_LINELIST:
-                return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-            case PEN_PT_LINESTRIP:
-                return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
-            case PEN_PT_TRIANGLELIST:
-                return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-            case PEN_PT_TRIANGLESTRIP:
-                return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+        case PEN_PT_POINTLIST:
+            return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+        case PEN_PT_LINELIST:
+            return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+        case PEN_PT_LINESTRIP:
+            return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+        case PEN_PT_TRIANGLELIST:
+            return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        case PEN_PT_TRIANGLESTRIP:
+            return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
         }
         PEN_ASSERT(0);
         return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     }
 
-    pen_inline VkFormat to_vk_vertex_format(u32 pen_vertex_format)
+    VkFormat to_vk_vertex_format(u32 pen_vertex_format)
     {
         switch (pen_vertex_format)
         {
-            case PEN_VERTEX_FORMAT_FLOAT1:
-                return VK_FORMAT_R32_SFLOAT;
-            case PEN_VERTEX_FORMAT_FLOAT2:
-                return VK_FORMAT_R32G32_SFLOAT;
-            case PEN_VERTEX_FORMAT_FLOAT3:
-                return VK_FORMAT_R32G32B32_SFLOAT;
-            case PEN_VERTEX_FORMAT_FLOAT4:
-                return VK_FORMAT_R32G32B32A32_SFLOAT;
-            case PEN_VERTEX_FORMAT_UNORM4:
-                return VK_FORMAT_R8G8B8A8_UNORM;
-            case PEN_VERTEX_FORMAT_UNORM2:
-                return VK_FORMAT_R8G8_UNORM;
-            case PEN_VERTEX_FORMAT_UNORM1:
-                return VK_FORMAT_R8_UNORM;
+        case PEN_VERTEX_FORMAT_FLOAT1:
+            return VK_FORMAT_R32_SFLOAT;
+        case PEN_VERTEX_FORMAT_FLOAT2:
+            return VK_FORMAT_R32G32_SFLOAT;
+        case PEN_VERTEX_FORMAT_FLOAT3:
+            return VK_FORMAT_R32G32B32_SFLOAT;
+        case PEN_VERTEX_FORMAT_FLOAT4:
+            return VK_FORMAT_R32G32B32A32_SFLOAT;
+        case PEN_VERTEX_FORMAT_UNORM4:
+            return VK_FORMAT_R8G8B8A8_UNORM;
+        case PEN_VERTEX_FORMAT_UNORM2:
+            return VK_FORMAT_R8G8_UNORM;
+        case PEN_VERTEX_FORMAT_UNORM1:
+            return VK_FORMAT_R8_UNORM;
         }
         PEN_ASSERT(0);
         return VK_FORMAT_R32G32B32A32_SFLOAT;
     }
 
-    pen_inline VkIndexType to_vk_index_type(u32 pen_index_type)
+    VkIndexType to_vk_index_type(u32 pen_index_type)
     {
         switch (pen_index_type)
         {
@@ -119,7 +119,7 @@ namespace
         return VK_INDEX_TYPE_UINT16;
     }
 
-    pen_inline VkFilter to_vk_filter(u32 pen_filter)
+    VkFilter to_vk_filter(u32 pen_filter)
     {
         switch (pen_filter)
         {
@@ -134,7 +134,7 @@ namespace
         return VK_FILTER_LINEAR;
     }
 
-    pen_inline VkSamplerMipmapMode to_vk_mip_map_mode(u32 pen_filter)
+    VkSamplerMipmapMode to_vk_mip_map_mode(u32 pen_filter)
     {
         switch (pen_filter)
         {
@@ -150,7 +150,7 @@ namespace
         return VK_SAMPLER_MIPMAP_MODE_NEAREST;
     }
 
-    pen_inline VkSamplerAddressMode to_vk_sampler_address_mode(u32 pen_sampler_address_mode)
+    VkSamplerAddressMode to_vk_sampler_address_mode(u32 pen_sampler_address_mode)
     {
         switch (pen_sampler_address_mode)
         {
@@ -169,7 +169,7 @@ namespace
         return VK_SAMPLER_ADDRESS_MODE_REPEAT;
     }
 
-    pen_inline bool is_compressed_tex_format(u32 pen_format)
+    bool is_compressed_tex_format(u32 pen_format)
     {
         switch (pen_format)
         {
@@ -184,7 +184,7 @@ namespace
         return false;
     }
 
-    pen_inline VkImageUsageFlagBits to_vk_texture_usage(u32 pen_texture_usage, u32 pen_texture_format, bool has_data)
+    VkImageUsageFlagBits to_vk_texture_usage(u32 pen_texture_usage, u32 pen_texture_format, bool has_data)
     {
         u32 vf = VK_IMAGE_USAGE_SAMPLED_BIT;
         if (!is_compressed_tex_format(pen_texture_format))
@@ -199,7 +199,7 @@ namespace
         return (VkImageUsageFlagBits)vf;
     }
 
-    pen_inline VkShaderStageFlags to_vk_stage(u32 pen_bind_flags)
+    VkShaderStageFlags to_vk_stage(u32 pen_bind_flags)
     {
         u32 ss = 0;
         if (pen_bind_flags & pen::TEXTURE_BIND_VS || pen_bind_flags & pen::CBUFFER_BIND_VS)
@@ -211,7 +211,7 @@ namespace
         return (VkShaderStageFlags)ss;
     }
 
-    pen_inline VkBlendOp to_vk_blend_op(u32 pen_blend_op)
+    VkBlendOp to_vk_blend_op(u32 pen_blend_op)
     {
         switch (pen_blend_op)
         {
@@ -230,7 +230,7 @@ namespace
         return VK_BLEND_OP_ADD;
     }
 
-    pen_inline VkBlendFactor to_vk_blend_factor(u32 pen_blend_factor)
+    VkBlendFactor to_vk_blend_factor(u32 pen_blend_factor)
     {
         switch (pen_blend_factor)
         {
@@ -271,7 +271,7 @@ namespace
         return VK_BLEND_FACTOR_ZERO;
     }
 
-    pen_inline VkFormat to_vk_image_format(u32 pen_image_format)
+    VkFormat to_vk_image_format(u32 pen_image_format)
     {
         switch (pen_image_format)
         {
@@ -314,8 +314,8 @@ namespace
 
     enum e_submit_flags
     {
-        SUBMIT_GRAPHICS = 1<<0,
-        SUBMIT_COMPUTE  = 1<<1
+        SUBMIT_GRAPHICS = 1 << 0,
+        SUBMIT_COMPUTE = 1 << 1
     };
 
     // vulkan internals
@@ -336,7 +336,7 @@ namespace
         VkQueue                             compute_queue;
         VkDevice                            device;
         VkSurfaceKHR                        surface;
-        VkSwapchainKHR                      swap_chain;
+        VkSwapchainKHR                      swap_chain = VK_NULL_HANDLE;
         VkImage*                            swap_chain_images = nullptr;
         VkCommandPool                       cmd_pool;
         VkCommandBuffer*                    cmd_bufs = nullptr;
@@ -347,7 +347,7 @@ namespace
         VkSemaphore                         sem_render_finished[NBB];
         VkFence                             fences[NBB];
         VkFence                             compute_fences[NBB];
-        VkPhysicalDeviceMemoryProperties    mem_properties;        
+        VkPhysicalDeviceMemoryProperties    mem_properties;
         VkDescriptorPool                    descriptor_pool[NBB];
         u32                                 submit_flags = 0;
     };
@@ -379,17 +379,16 @@ namespace
     struct vk_pass_cache
     {
         VkRenderPassBeginInfo   begin_info;
-        VkRenderPass            pass;
+        VkRenderPass            pass = VK_NULL_HANDLE;
     };
     hash_id*        s_pass_cache_hash = nullptr;
     vk_pass_cache*  s_pass_cache = nullptr;
 
     struct vk_pipeline_cache
     {
-        VkPipeline              pipeline;
-        VkDescriptorSetLayout   descriptor_set_layout;
-        VkDescriptorSet*        descriptor_set[NBB] = { 0 }; // array of sets per pipeline, per in flight command buffer
-        VkPipelineLayout        pipeline_layout;
+        VkPipeline              pipeline = VK_NULL_HANDLE;
+        VkDescriptorSetLayout   descriptor_set_layout = VK_NULL_HANDLE;
+        VkPipelineLayout        pipeline_layout = VK_NULL_HANDLE;
     };
     hash_id*            s_pipeline_cache_hash = nullptr;
     vk_pipeline_cache*  s_pipeline_cache = nullptr;
@@ -529,6 +528,52 @@ namespace
         return hh.end();
     }
 
+    void destroy_caches()
+    {
+        // render passes
+        u32 pc = sb_count(s_pass_cache);
+        for (u32 i = 0; i < pc; ++i)
+        {
+            vkDestroyRenderPass(_ctx.device, s_pass_cache[i].pass, nullptr);
+            delete s_pass_cache[i].begin_info.pClearValues;
+        }
+
+        sb_free(s_pass_cache);
+        sb_free(s_pass_cache_hash);
+        s_pass_cache = nullptr;
+        s_pass_cache_hash = nullptr;
+
+        // pipelines
+        pc = sb_count(s_pipeline_cache);
+        for (u32 i = 0; i < pc; ++i)
+        {
+            vkDestroyPipeline(_ctx.device, s_pipeline_cache[i].pipeline, nullptr);
+            vkDestroyPipelineLayout(_ctx.device, s_pipeline_cache[i].pipeline_layout, nullptr);
+            vkDestroyDescriptorSetLayout(_ctx.device, s_pipeline_cache[i].descriptor_set_layout, nullptr);
+        }
+
+        sb_free(s_pipeline_cache);
+        sb_free(s_pipeline_cache_hash);
+        s_pipeline_cache = nullptr;
+        s_pipeline_cache_hash = nullptr;
+    }
+
+    void destory_swapchain()
+    {
+        if (_ctx.swap_chain)
+        {
+            vkDestroySwapchainKHR(_ctx.device, _ctx.swap_chain, nullptr);
+            _ctx.swap_chain = VK_NULL_HANDLE;
+        }
+
+        u32 st = sb_count(_ctx.swap_chain_images);
+        for (u32 i = 0; i < st; ++i)
+            vkDestroyImageView(_ctx.device, _res_pool.get(i).texture.image_view, nullptr);
+
+        sb_free(_ctx.swap_chain_images);
+        _ctx.swap_chain_images = nullptr;
+    }
+
     void enumerate_layers()
     {
         u32 num_layer_props;
@@ -564,25 +609,25 @@ namespace
     }
 
     VkResult CreateDebugUtilsMessengerEXT(
-        VkInstance instance, 
-        const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, 
+        VkInstance instance,
+        const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
         const VkAllocationCallbacks* pAllocator,
-        VkDebugUtilsMessengerEXT* pDebugMessenger) 
+        VkDebugUtilsMessengerEXT* pDebugMessenger)
     {
         auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-        if (func != nullptr) 
+        if (func != nullptr)
             return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
 
         return VK_ERROR_EXTENSION_NOT_PRESENT;
     }
 
     void DestroyDebugUtilsMessengerEXT(
-        VkInstance instance, 
-        VkDebugUtilsMessengerEXT debugMessenger, 
+        VkInstance instance,
+        VkDebugUtilsMessengerEXT debugMessenger,
         const VkAllocationCallbacks* pAllocator)
     {
         auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-        if (func != nullptr) 
+        if (func != nullptr)
             func(instance, debugMessenger, pAllocator);
     }
 
@@ -590,11 +635,11 @@ namespace
     {
         VkDebugUtilsMessengerCreateInfoEXT info = {};
         info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-        info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT 
-            | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT 
+        info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT
+            | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
             | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-        info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT 
-            | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT 
+        info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT
+            | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT
             | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
         info.pfnUserCallback = debug_callback;
         info.pUserData = nullptr;
@@ -626,10 +671,10 @@ namespace
         // get swapchain images
         u32 num_images = 0;
         vkGetSwapchainImagesKHR(_ctx.device, _ctx.swap_chain, &num_images, nullptr);
-        
+
         VkImage* images = new VkImage[num_images];
         vkGetSwapchainImagesKHR(_ctx.device, _ctx.swap_chain, &num_images, images);
-        
+
         for (u32 i = 0; i < num_images; ++i)
             sb_push(_ctx.swap_chain_images, images[i]);
 
@@ -733,12 +778,12 @@ namespace
         pool_info.pPoolSizes = &pool_sizes[0];
         pool_info.maxSets = max_sets;
 
-        for(u32 i = 0; i < NBB; ++i)
+        for (u32 i = 0; i < NBB; ++i)
             CHECK_CALL(vkCreateDescriptorPool(_ctx.device, &pool_info, nullptr, &_ctx.descriptor_pool[i]));
     }
 
     // quick dirty functions for testing, better having a pool of these to burn through
-    VkCommandBuffer begin_cmd_buffer() 
+    VkCommandBuffer begin_cmd_buffer()
     {
         VkCommandBufferAllocateInfo info = {};
         info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -773,7 +818,7 @@ namespace
         vkFreeCommandBuffers(_ctx.device, _ctx.cmd_pool, 1, &cmd_buf);
     }
 
-    void _transition_image_cs(VkCommandBuffer cmd_buf, VkImage image, VkFormat format, VkImageLayout old_layout, 
+    void _transition_image_cs(VkCommandBuffer cmd_buf, VkImage image, VkFormat format, VkImageLayout old_layout,
         VkImageLayout new_layout)
     {
         VkImageMemoryBarrier barrier = {};
@@ -874,6 +919,38 @@ namespace
             CHECK_CALL(vkCreateFence(_ctx.device, &fence_info, nullptr, &_ctx.fences[i]));
             CHECK_CALL(vkCreateFence(_ctx.device, &fence_info, nullptr, &_ctx.compute_fences[i]));
         }
+    }
+
+    void create_swapchain()
+    {
+        destroy_caches();
+        destory_swapchain();
+
+        VkSurfaceCapabilitiesKHR caps;
+        CHECK_CALL(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(_ctx.physical_device, _ctx.surface, &caps));
+
+        pen_window.width = caps.currentExtent.width;
+        pen_window.height = caps.currentExtent.height;
+
+        VkSwapchainCreateInfoKHR swap_chain_info = {};
+        swap_chain_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+        swap_chain_info.surface = _ctx.surface;
+        swap_chain_info.minImageCount = 3;
+        swap_chain_info.imageFormat = VK_FORMAT_B8G8R8A8_UNORM;
+        swap_chain_info.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+        swap_chain_info.imageExtent = { pen_window.width, caps.currentExtent.height };
+        swap_chain_info.imageArrayLayers = 1;
+        swap_chain_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        swap_chain_info.presentMode = VK_PRESENT_MODE_FIFO_KHR;
+        swap_chain_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+        swap_chain_info.oldSwapchain = _ctx.swap_chain;
+        swap_chain_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+        swap_chain_info.clipped = VK_TRUE;
+        swap_chain_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        CHECK_CALL(vkCreateSwapchainKHR(_ctx.device, &swap_chain_info, nullptr, &_ctx.swap_chain));
+
+        create_backbuffer_targets();
     }
 
     void create_device_surface_swapchain(void* params)
@@ -977,8 +1054,6 @@ namespace
         vkGetDeviceQueue(_ctx.device, _ctx.present_family_index, 0, &_ctx.present_queue);
         vkGetDeviceQueue(_ctx.device, _ctx.compute_family_index, 0, &_ctx.compute_queue);
 
-        // swap chain
-
         // store these?
         {
             u32 num_formats;
@@ -994,28 +1069,7 @@ namespace
             delete present_modes;
         }
 
-        VkSurfaceCapabilitiesKHR caps;
-        CHECK_CALL(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(_ctx.physical_device, _ctx.surface, &caps));
-
-        VkSwapchainCreateInfoKHR swap_chain_info = {};
-        swap_chain_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-        swap_chain_info.surface = _ctx.surface;
-        swap_chain_info.minImageCount = 3;
-        swap_chain_info.imageFormat = VK_FORMAT_B8G8R8A8_UNORM;
-        swap_chain_info.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-        swap_chain_info.imageExtent = { pen_window.width, pen_window.height };
-        swap_chain_info.imageArrayLayers = 1;
-        swap_chain_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-        swap_chain_info.presentMode = VK_PRESENT_MODE_FIFO_KHR;
-        swap_chain_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-        swap_chain_info.oldSwapchain = VK_NULL_HANDLE;
-        swap_chain_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-        swap_chain_info.clipped = VK_TRUE;
-        swap_chain_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-        CHECK_CALL(vkCreateSwapchainKHR(_ctx.device, &swap_chain_info, nullptr, &_ctx.swap_chain));
-
-        create_backbuffer_targets();
+        create_swapchain();
 
         create_command_buffers();
 
@@ -1068,6 +1122,28 @@ namespace
         _state.hpass = hash;
     }
 
+    void bind_dynamic_viewport()
+    {
+        // viewport / scissor
+        viewport& vp = _state.vp;
+        rect& sr = _state.sr;
+        VkViewport viewport = {};
+        viewport.x = vp.x;
+        viewport.y = vp.y;
+        viewport.width = vp.width;
+        viewport.height = vp.height;
+        viewport.minDepth = vp.min_depth;
+        viewport.maxDepth = vp.max_depth;
+
+        vkCmdSetViewport(_ctx.cmd_bufs[_ctx.ii], 0, 1, &viewport);
+
+        VkRect2D scissor = {};
+        scissor.offset = { (s32)sr.left, (s32)sr.top };
+        scissor.extent = { (u32)sr.right - (u32)sr.left, (u32)sr.bottom - (u32)sr.top };
+
+        vkCmdSetScissor(_ctx.cmd_bufs[_ctx.ii], 0, 1, &scissor);
+    }
+
     void bind_pipeline_from_cache(const vk_pipeline_cache& pc, VkPipelineBindPoint bind_point, hash_id hash, u32 index)
     {
         if(bind_point == VK_PIPELINE_BIND_POINT_COMPUTE)
@@ -1079,6 +1155,8 @@ namespace
         _state.pipeline_layout = pc.pipeline_layout;
         _state.hpipeline = hash;
         _state.pipeline_index = index;
+
+        bind_dynamic_viewport();
     }
 
     void begin_pass()
@@ -1288,10 +1366,23 @@ namespace
         }
 
         // create new pipeline
-
-        // raster
         VkGraphicsPipelineCreateInfo info = {};
         info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+
+        // dynamic states
+        VkDynamicState dynamic_states[] = { 
+            VK_DYNAMIC_STATE_VIEWPORT,
+            VK_DYNAMIC_STATE_SCISSOR
+        };
+
+        VkPipelineDynamicStateCreateInfo dynamic_info = {};
+        dynamic_info.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+        dynamic_info.pNext = nullptr;
+        dynamic_info.pDynamicStates = &dynamic_states[0];
+        dynamic_info.dynamicStateCount = PEN_ARRAY_SIZE(dynamic_states);
+        info.pDynamicState = &dynamic_info;
+
+        // raster
         info.pRasterizationState = &_res_pool.get(_state.raster).raster;
 
         // input assembly
@@ -1394,8 +1485,8 @@ namespace
         info.pMultisampleState = &multisampling;
 
         // layout
-        VkPipelineLayout pipeline_layout;
-        VkDescriptorSetLayout descriptor_set_layout;
+        VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
+        VkDescriptorSetLayout descriptor_set_layout = VK_NULL_HANDLE;
         create_pipeline_layout(pipeline_layout, descriptor_set_layout);
         info.layout = pipeline_layout;
 
@@ -1681,15 +1772,14 @@ namespace pen
             if (_ctx.enable_validation)
                 destroy_debug_messenger();
 
-            for (u32 i = 0; i < sb_count(_ctx.swap_chain_images); ++i)
-                vkDestroyImage(_ctx.device, _ctx.swap_chain_images[i], nullptr);
-
             for (u32 i = 0; i < NBB; ++i)
                 vkDestroyDescriptorPool(_ctx.device, _ctx.descriptor_pool[i], nullptr);
 
+            destroy_caches();
+            destory_swapchain();
+
             vkDestroyCommandPool(_ctx.device, _ctx.cmd_pool, nullptr);
             vkDestroySurfaceKHR(_ctx.instance, _ctx.surface, nullptr);
-            vkDestroySwapchainKHR(_ctx.device, _ctx.swap_chain, nullptr);
             vkDestroyInstance(_ctx.instance, nullptr);
         }
 
@@ -2307,9 +2397,21 @@ namespace pen
             present.waitSemaphoreCount = 1;
             present.pWaitSemaphores = sem_signal;
 
-            CHECK_CALL(vkQueuePresentKHR(_ctx.present_queue, &present));
-
+            // present and swap
+            VkResult result = vkQueuePresentKHR(_ctx.present_queue, &present);
             u32 next_frame = (_ctx.ii + 1) % NBB;
+
+            // handle swapchain re-creation / window resize
+            if (result == VK_ERROR_OUT_OF_DATE_KHR ||
+                result == VK_SUBOPTIMAL_KHR ||
+                g_window_resize)
+            {
+                g_window_resize = 0;
+                vkDeviceWaitIdle(_ctx.device);
+                create_swapchain();
+                next_frame = 0;
+            }
+
             new_frame(next_frame);
         }
 

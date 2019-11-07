@@ -12,6 +12,7 @@
 #include "pmfx.h"
 #include "renderer.h"
 #include "timer.h"
+#include "console.h"
 
 using namespace pen;
 using namespace put;

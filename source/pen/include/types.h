@@ -47,6 +47,7 @@ typedef std::atomic<size_t>   a_size_t;
 #define PEN_THREAD_OK 0
 
 // Use min max and swap everywhere and undef windows
+#define NOMINMAX
 #ifdef WIN32
 #undef min
 #undef max
