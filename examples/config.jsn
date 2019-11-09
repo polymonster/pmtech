@@ -63,7 +63,8 @@
             ["../assets/audio", "bin/osx/data/audio"],
             ["assets/configs", "bin/osx/data/configs"],
             ["../assets/configs", "bin/osx/data/configs"],
-            ["../assets/fonts", "bin/osx/data/fonts"]
+            ["../assets/fonts", "bin/osx/data/fonts"],
+            ["assets/scene", "bin/osx/data/scene"]
         ],
         
         data_dir: "bin/osx/data/"
@@ -157,7 +158,8 @@
             ["../assets/audio", "bin/win32/data/audio"],
             ["assets/configs", "bin/win32/data/configs"],
             ["../assets/configs", "bin/win32/data/configs"],
-            ["../assets/fonts", "bin/win32/data/fonts"]
+            ["../assets/fonts", "bin/win32/data/fonts"],
+            ["assets/scene", "bin/win32/data/scene"]
         ],
         
         data_dir: "bin/win32/data/"
@@ -254,7 +256,8 @@
             ["../assets/audio", "bin/linux/data/audio"],
             ["assets/configs", "bin/linux/data/configs"],
             ["../assets/configs", "bin/linux/data/configs"],
-            ["../assets/fonts", "bin/linux/data/fonts"]
+            ["../assets/fonts", "bin/linux/data/fonts"],
+            ["assets/scene", "bin/linux/data/scene"]
         ],
         
         data_dir: "bin/linux/data/"
