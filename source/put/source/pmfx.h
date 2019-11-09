@@ -2,17 +2,11 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#ifndef _pmfx_h
-#define _pmfx_h
+#pragma once
 
 #include "renderer.h"
 #include "str/Str.h"
 #include "types.h"
-
-namespace pen
-{
-    struct viewport;
-}
 
 namespace put
 {
@@ -298,5 +292,3 @@ namespace put
         void poll_for_changes();
     } // namespace pmfx
 } // namespace put
-
-#endif

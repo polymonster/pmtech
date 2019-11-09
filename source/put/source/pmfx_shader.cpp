@@ -41,7 +41,11 @@ namespace
 
     shader_program null_shader = {0};
 
-    hash_id id_widgets[] = {PEN_HASH("slider"), PEN_HASH("input"), PEN_HASH("colour")};
+    hash_id id_widgets[] = {
+        PEN_HASH("slider"),
+        PEN_HASH("input"),
+        PEN_HASH("colour")
+    };
     static_assert(PEN_ARRAY_SIZE(id_widgets) == CW_NUM, "mismatched array size");
 
     struct pmfx_shader
@@ -53,13 +57,12 @@ namespace
         u32             info_timestamp = 0;
         shader_program* techniques = nullptr;
     };
-    pmfx_shader* k_pmfx_list = nullptr;
-
-    const char**  k_shader_names = nullptr;
-    const char*** k_technique_names = nullptr;
+    
+    pmfx_shader*  s_pmfx_list = nullptr;
+    const char**  s_shader_names = nullptr;
+    const char*** s_technique_names = nullptr;
     hash_id**     s_technique_id_names = nullptr;
-
-    u32 k_num_shader_names = 0;
+    u32           s_num_shader_names = 0;
 } // namespace
 
 namespace put
@@ -68,47 +71,47 @@ namespace put
     {
         void generate_name_lists()
         {
-            pen::memory_free(k_shader_names);
+            pen::memory_free(s_shader_names);
 
-            for (u32 i = 0; i < k_num_shader_names; ++i)
-                sb_free(k_technique_names[i]);
+            for (u32 i = 0; i < s_num_shader_names; ++i)
+                sb_free(s_technique_names[i]);
 
-            pen::memory_free(k_technique_names);
+            pen::memory_free(s_technique_names);
             pen::memory_free(s_technique_id_names);
 
-            u32 num_pmfx = sb_count(k_pmfx_list);
-            k_technique_names = (const char***)pen::memory_calloc(num_pmfx, sizeof(k_technique_names));
-            k_shader_names = (const char**)pen::memory_calloc(num_pmfx, sizeof(k_shader_names));
+            u32 num_pmfx = sb_count(s_pmfx_list);
+            s_technique_names = (const char***)pen::memory_calloc(num_pmfx, sizeof(s_technique_names));
+            s_shader_names = (const char**)pen::memory_calloc(num_pmfx, sizeof(s_shader_names));
             s_technique_id_names = (hash_id**)pen::memory_calloc(num_pmfx, sizeof(s_technique_id_names));
 
             for (u32 i = 0; i < num_pmfx; ++i)
             {
-                k_shader_names[i] = k_pmfx_list[i].filename.c_str();
+                s_shader_names[i] = s_pmfx_list[i].filename.c_str();
 
-                u32 num_techniques = sb_count(k_pmfx_list[i].techniques);
+                u32 num_techniques = sb_count(s_pmfx_list[i].techniques);
                 for (u32 t = 0; t < num_techniques; ++t)
                 {
-                    if (k_pmfx_list[i].techniques[t].permutation_id != 0)
+                    if (s_pmfx_list[i].techniques[t].permutation_id != 0)
                         continue;
 
-                    sb_push(k_technique_names[i], k_pmfx_list[i].techniques[t].name.c_str());
-                    sb_push(s_technique_id_names[i], PEN_HASH(k_pmfx_list[i].techniques[t].name.c_str()));
+                    sb_push(s_technique_names[i], s_pmfx_list[i].techniques[t].name.c_str());
+                    sb_push(s_technique_id_names[i], PEN_HASH(s_pmfx_list[i].techniques[t].name.c_str()));
                 }
             }
 
-            k_num_shader_names = num_pmfx;
+            s_num_shader_names = num_pmfx;
         }
 
         const c8** get_shader_list(u32& count)
         {
-            count = k_num_shader_names;
-            return k_shader_names;
+            count = s_num_shader_names;
+            return s_shader_names;
         }
 
         const c8** get_technique_list(u32 shader, u32& count)
         {
-            count = sb_count(k_technique_names[shader]);
-            return k_technique_names[shader];
+            count = sb_count(s_technique_names[shader]);
+            return s_technique_names[shader];
         }
 
         u32 get_technique_list_index(u32 shader, hash_id id_technique)
@@ -127,35 +130,35 @@ namespace put
 
         const c8* get_shader_name(u32 shader)
         {
-            if (shader >= sb_count(k_pmfx_list))
+            if (shader >= sb_count(s_pmfx_list))
                 return nullptr;
 
-            return k_pmfx_list[shader].filename.c_str();
+            return s_pmfx_list[shader].filename.c_str();
         }
 
         const c8* get_technique_name(u32 shader, hash_id id_technique)
         {
-            if (shader >= sb_count(k_pmfx_list))
+            if (shader >= sb_count(s_pmfx_list))
                 return nullptr;
 
-            u32 nt = sb_count(k_pmfx_list[shader].techniques);
+            u32 nt = sb_count(s_pmfx_list[shader].techniques);
             for (u32 i = 0; i < nt; ++i)
-                if (k_pmfx_list[shader].techniques[i].id_name == id_technique)
-                    return k_pmfx_list[shader].techniques[i].name.c_str();
+                if (s_pmfx_list[shader].techniques[i].id_name == id_technique)
+                    return s_pmfx_list[shader].techniques[i].name.c_str();
 
             return nullptr;
         }
 
         hash_id get_technique_id(u32 shader, u32 technique_index)
         {
-            if (shader >= sb_count(k_pmfx_list))
+            if (shader >= sb_count(s_pmfx_list))
                 return 0;
 
-            u32 nt = sb_count(k_pmfx_list[shader].techniques);
+            u32 nt = sb_count(s_pmfx_list[shader].techniques);
             if (technique_index >= nt)
                 return 0;
 
-            return k_pmfx_list[shader].techniques[technique_index].id_name;
+            return s_pmfx_list[shader].techniques[technique_index].id_name;
         }
 
         void get_link_params_constants(pen::shader_link_params& link_params, const pen::json& j_info,
@@ -574,22 +577,22 @@ namespace put
 
         void initialise_constant_defaults(u32 shader, u32 technique_index, f32* data)
         {
-            if (shader >= sb_count(k_pmfx_list))
+            if (shader >= sb_count(s_pmfx_list))
                 return;
 
-            if (technique_index >= sb_count(k_pmfx_list[shader].techniques))
+            if (technique_index >= sb_count(s_pmfx_list[shader].techniques))
                 return;
 
-            memcpy(data, k_pmfx_list[shader].techniques[technique_index].constant_defaults,
-                   k_pmfx_list[shader].techniques[technique_index].technique_constant_size);
+            memcpy(data, s_pmfx_list[shader].techniques[technique_index].constant_defaults,
+                   s_pmfx_list[shader].techniques[technique_index].technique_constant_size);
         }
 
         void initialise_sampler_defaults(u32 shader, u32 technique_index, sampler_set& samplers)
         {
-            if (shader >= sb_count(k_pmfx_list))
+            if (shader >= sb_count(s_pmfx_list))
                 return;
 
-            if (technique_index >= sb_count(k_pmfx_list[shader].techniques))
+            if (technique_index >= sb_count(s_pmfx_list[shader].techniques))
                 return;
 
             if (pmfx::has_technique_samplers(shader, technique_index))
@@ -615,13 +618,13 @@ namespace put
 
         technique_constant* get_technique_constants(u32 shader, u32 technique_index)
         {
-            if (shader >= sb_count(k_pmfx_list))
+            if (shader >= sb_count(s_pmfx_list))
                 return nullptr;
 
-            if (technique_index >= sb_count(k_pmfx_list[shader].techniques))
+            if (technique_index >= sb_count(s_pmfx_list[shader].techniques))
                 return nullptr;
 
-            return k_pmfx_list[shader].techniques[technique_index].constants;
+            return s_pmfx_list[shader].techniques[technique_index].constants;
         }
 
         technique_constant* get_technique_constant(hash_id id_constant, u32 shader, u32 technique_index)
@@ -641,13 +644,13 @@ namespace put
 
         technique_sampler* get_technique_samplers(u32 shader, u32 technique_index)
         {
-            if (shader >= sb_count(k_pmfx_list))
+            if (shader >= sb_count(s_pmfx_list))
                 return nullptr;
 
-            if (technique_index >= sb_count(k_pmfx_list[shader].techniques))
+            if (technique_index >= sb_count(s_pmfx_list[shader].techniques))
                 return nullptr;
 
-            return k_pmfx_list[shader].techniques[technique_index].textures;
+            return s_pmfx_list[shader].techniques[technique_index].textures;
         }
 
         technique_sampler* get_technique_sampler(hash_id id_sampler, u32 shader, u32 technique_index)
@@ -667,32 +670,32 @@ namespace put
 
         technique_permutation* get_technique_permutations(u32 shader, u32 technique_index)
         {
-            if (shader >= sb_count(k_pmfx_list))
+            if (shader >= sb_count(s_pmfx_list))
                 return nullptr;
 
-            if (technique_index >= sb_count(k_pmfx_list[shader].techniques))
+            if (technique_index >= sb_count(s_pmfx_list[shader].techniques))
                 return nullptr;
 
-            return k_pmfx_list[shader].techniques[technique_index].permutations;
+            return s_pmfx_list[shader].techniques[technique_index].permutations;
         }
 
         u32 get_technique_cbuffer_size(u32 shader, u32 technique_index)
         {
-            if (shader >= sb_count(k_pmfx_list))
+            if (shader >= sb_count(s_pmfx_list))
                 return 0;
 
-            if (technique_index >= sb_count(k_pmfx_list[shader].techniques))
+            if (technique_index >= sb_count(s_pmfx_list[shader].techniques))
                 return 0;
 
-            return k_pmfx_list[shader].techniques[technique_index].technique_constant_size;
+            return s_pmfx_list[shader].techniques[technique_index].technique_constant_size;
         }
 
         void set_technique(u32 shader, u32 technique_index)
         {
-            if (technique_index >= sb_count(k_pmfx_list[shader].techniques))
+            if (technique_index >= sb_count(s_pmfx_list[shader].techniques))
                 return;
 
-            auto& t = k_pmfx_list[shader].techniques[technique_index];
+            auto& t = s_pmfx_list[shader].techniques[technique_index];
 
             if (t.stream_out_shader)
             {
@@ -728,10 +731,10 @@ namespace put
 
         u32 get_technique_index_perm(u32 shader, hash_id id_technique, u32 permutation)
         {
-            u32 num_techniques = sb_count(k_pmfx_list[shader].techniques);
+            u32 num_techniques = sb_count(s_pmfx_list[shader].techniques);
             for (u32 i = 0; i < num_techniques; ++i)
             {
-                auto& t = k_pmfx_list[shader].techniques[i];
+                auto& t = s_pmfx_list[shader].techniques[i];
 
                 if (t.id_name != id_technique)
                     continue;
@@ -755,24 +758,35 @@ namespace put
 
         void release_shader(u32 shader)
         {
-            k_pmfx_list[shader].filename = nullptr;
+            s_pmfx_list[shader].filename = nullptr;
 
-            u32 num_techniques = sb_count(k_pmfx_list[shader].techniques);
+            u32 num_techniques = sb_count(s_pmfx_list[shader].techniques);
 
             for (u32 i = 0; i < num_techniques; ++i)
             {
-                auto& t = k_pmfx_list[shader].techniques[i];
+                auto& t = s_pmfx_list[shader].techniques[i];
 
                 pen::renderer_release_shader(t.pixel_shader, PEN_SHADER_TYPE_PS);
                 pen::renderer_release_shader(t.vertex_shader, PEN_SHADER_TYPE_VS);
                 pen::renderer_release_input_layout(t.input_layout);
             }
         }
+        
+        bool pmfx_ready(const c8* filename)
+        {
+            static c8 info_file_buf[256];
+            get_pmfx_info_filename(info_file_buf, filename);
+            pen::json j = pen::json::load_from_file(info_file_buf);
+            if(j.is_null())
+                return false;
+                
+            return true;
+        }
 
         pmfx_shader load_internal(const c8* filename)
         {
             // load info file for description
-            c8 info_file_buf[256];
+            static c8 info_file_buf[256];
             get_pmfx_info_filename(info_file_buf, filename);
 
             // read shader info json
@@ -810,11 +824,11 @@ namespace put
             if (!pmfx_name)
                 return ph;
 
-            u32 num_pmfx = sb_count(k_pmfx_list);
+            u32 num_pmfx = sb_count(s_pmfx_list);
 
             ph = 0;
             for (u32 i = 0; i < num_pmfx; ++i)
-                if (k_pmfx_list[i].filename == pmfx_name)
+                if (s_pmfx_list[i].filename == pmfx_name)
                     return ph;
                 else
                     ph++;
@@ -828,7 +842,7 @@ namespace put
             ph = 0;
             for (u32 i = 0; i < num_pmfx; ++i)
             {
-                auto& p = k_pmfx_list[i];
+                auto& p = s_pmfx_list[i];
                 if (p.filename.length() == 0)
                 {
                     p = new_pmfx;
@@ -838,7 +852,7 @@ namespace put
                 ++ph;
             }
 
-            sb_push(k_pmfx_list, new_pmfx);
+            sb_push(s_pmfx_list, new_pmfx);
 
             generate_name_lists();
 
@@ -847,12 +861,12 @@ namespace put
 
         u32 get_shader_handle(hash_id id_filename)
         {
-            u32 num_pmfx = sb_count(k_pmfx_list);
+            u32 num_pmfx = sb_count(s_pmfx_list);
 
             u32 ph = 0;
             // for (auto& p : s_pmfx_list)
             for (u32 i = 0; i < num_pmfx; ++i)
-                if (k_pmfx_list[i].id_filename == id_filename)
+                if (s_pmfx_list[i].id_filename == id_filename)
                     return ph;
                 else
                     ph++;
@@ -862,50 +876,16 @@ namespace put
 
         void poll_for_changes()
         {
-            return;
-
-            static bool initialised = false;
-
-            static Str shader_compiler_str = "";
-            if (shader_compiler_str == "")
-            {
-                initialised = true;
-
-                pen::json j_build_config = pen::json::load_from_file("../../build_config.json");
-
-                if (j_build_config.type() != JSMN_UNDEFINED)
-                {
-                    Str pmtech_dir = "../../";
-                    pmtech_dir.append(j_build_config["pmtech_dir"].as_cstr());
-                    pmtech_dir.append(PEN_DIR);
-
-                    pmtech_dir = pen::str_replace_chars(pmtech_dir, '/', PEN_DIR);
-
-                    shader_compiler_str.append(PEN_PYTHON3);
-                    shader_compiler_str.append(pmtech_dir.c_str());
-                    shader_compiler_str.append(PEN_BUILD_CMD);
-                    shader_compiler_str.append(" -shaders ");
-                    const pen::renderer_info& ri = pen::renderer_get_info();
-                    shader_compiler_str.append(ri.renderer_cmd);
-
-                    dev_console_log_level(dev_ui::CONSOLE_MESSAGE, "[shader compiler cmd] %s", shader_compiler_str.c_str());
-                }
-                else
-                {
-                    dev_console_log_level(dev_ui::CONSOLE_ERROR, "%s", "[error] unable to find pmtech dir");
-                }
-            }
-
-            if (shader_compiler_str == "")
-                return;
-
+            Str shader_compiler_str = put::get_build_cmd();
+            shader_compiler_str.append("-pmfx");
+            
             u32 current_counter = 0;
 
-            u32 num_pmfx = sb_count(k_pmfx_list);
+            u32 num_pmfx = sb_count(s_pmfx_list);
 
             for (u32 i = 0; i < num_pmfx; ++i)
             {
-                auto& pmfx_set = k_pmfx_list[i];
+                auto& pmfx_set = s_pmfx_list[i];
 
                 if (pmfx_set.invalidated)
                 {
@@ -914,25 +894,29 @@ namespace put
 
                     u32       current_ts;
                     pen_error err = pen::filesystem_getmtime(info_file_buf, current_ts);
-
+                    
                     // wait until info is newer than the current info file,
                     // to know compilation is completed.
                     if (err == PEN_ERR_OK && current_ts > pmfx_set.info_timestamp)
                     {
-                        // load new one
-                        pmfx_shader pmfx_new = load_internal(pmfx_set.filename.c_str());
+                        bool complete = pmfx_ready(pmfx_set.filename.c_str());
+                        if(complete)
+                        {
+                            // load new one
+                            pmfx_shader pmfx_new = load_internal(pmfx_set.filename.c_str());
 
-                        // release existing
-                        release_shader(current_counter);
+                            // release existing
+                            release_shader(current_counter);
 
-                        // set exisiting to the new one
-                        pmfx_set = pmfx_new;
+                            // set exisiting to the new one
+                            pmfx_set = pmfx_new;
 
-                        // no longer invalidated
-                        pmfx_set.invalidated = false;
+                            // no longer invalidated
+                            pmfx_set.invalidated = false;
 
-                        ecs::bake_material_handles();
-                        generate_name_lists();
+                            ecs::bake_material_handles();
+                            generate_name_lists();
+                        }
                     }
                 }
                 else
@@ -951,7 +935,7 @@ namespace put
                         // trigger re-compile if files on disk are newer
                         if (err == PEN_ERR_OK && current_ts > shader_ts)
                         {
-                            PEN_SYSTEM(shader_compiler_str.c_str());
+                            put::trigger_hot_loader(shader_compiler_str);
                             pmfx_set.invalidated = true;
                         }
                     }

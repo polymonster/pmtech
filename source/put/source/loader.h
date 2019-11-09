@@ -2,17 +2,12 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#ifndef _loader_h
-#define _loader_h
+#pragma once
 
 #include "pen.h"
+#include "renderer.h"
 #include "str/Str.h"
 #include <vector>
-
-namespace pen
-{
-    struct texture_creation_params;
-}
 
 namespace put
 {
@@ -26,10 +21,11 @@ namespace put
     void texture_browser_ui();
 
     // Hot loading
+    void init_hot_loader();
+    void poll_hot_loader();
+    void trigger_hot_loader(const Str& cmd);
     Str  get_build_cmd();
     void add_file_watcher(const c8* filename, void (*build_callback)(),
                           void (*hotload_callback)(std::vector<hash_id>& dirty));
-    void poll_hot_loader();
 } // namespace put
 
-#endif

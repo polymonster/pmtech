@@ -269,7 +269,8 @@ PEN_TRV pen::user_entry(void* params)
     init_renderer();
 
     put::dev_ui::init();
-
+    put::init_hot_loader();
+    
     // load shaders now requiring dependency on put to make loading simpler.
     u32 shader_toy_pmfx = pmfx::load_shader("shader_toy");
 
@@ -351,6 +352,7 @@ PEN_TRV pen::user_entry(void* params)
         pen::renderer_consume_cmd_buffer();
 
         pmfx::poll_for_changes();
+        put::poll_hot_loader();
 
         // msg from the engine we want to terminate
         if (pen::semaphore_try_wait(p_thread_info->p_sem_exit))

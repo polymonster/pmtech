@@ -407,10 +407,8 @@ namespace
     void texture_build()
     {
         Str build_cmd = get_build_cmd();
-
-        build_cmd.append(" -actions textures");
-
-        PEN_SYSTEM(build_cmd.c_str());
+        build_cmd.append(" -textures");
+        put::trigger_hot_loader(build_cmd);
     }
 
     void texture_hotload(std::vector<hash_id>& dirty)
@@ -422,46 +420,104 @@ namespace
                 if (tr.id_name == d)
                 {
                     u32 new_handle = load_texture_internal(tr.filename.c_str(), tr.id_name, tr.tcp);
-
                     pen::renderer_replace_resource(tr.handle, new_handle, pen::RESOURCE_TEXTURE);
                 }
             }
         }
     }
+    
+    //
+    // Hot loading thread
+    //
+    
+    Str s_pmbuild_cmd = "";
+    
+    enum hot_loader_cmd_id
+    {
+        HOT_LOADER_CMD_CALL_SYSTEM
+    };
+
+    struct hot_loader_cmd
+    {
+        u32 cmd_index;
+
+        union {
+            struct
+            {
+                c8* cmdline;
+            };
+        };
+    };
+
+    pen::ring_buffer<hot_loader_cmd> s_hot_loader_cmd_buffer;
+    
+    PEN_TRV hot_loader_thread(void* params)
+    {
+        pen::job_thread_params* job_params = (pen::job_thread_params*)params;
+
+        pen::job* p_thread_info = job_params->job_info;
+        pen::semaphore_post(p_thread_info->p_sem_continue, 1);
+        
+        s_hot_loader_cmd_buffer.create(32);
+        
+        for(;;)
+        {
+            hot_loader_cmd* cmd = s_hot_loader_cmd_buffer.get();
+            while (cmd)
+            {
+                // process cmd
+                switch (cmd->cmd_index)
+                {
+                    case HOT_LOADER_CMD_CALL_SYSTEM:
+                    {
+                        PEN_SYSTEM(cmd->cmdline);
+                        pen::memory_free(cmd->cmdline);
+                    }
+                    break;
+                    default:
+                        break;
+                }
+
+                // get next
+                cmd = s_hot_loader_cmd_buffer.get();
+            }
+            
+            // plenty of sleep
+            pen::thread_sleep_ms(16);
+        }
+        
+        pen::semaphore_post(p_thread_info->p_sem_continue, 1);
+        pen::semaphore_post(p_thread_info->p_sem_terminated, 1);
+        return PEN_THREAD_OK;
+    }
 } // namespace
 
 namespace put
 {
+    void init_hot_loader()
+    {
+        pen::jobs_create_job(hot_loader_thread, 1024 * 1024, nullptr, pen::THREAD_START_DETACHED);
+        
+        pen::json pmbuild_config = pen::json::load_from_file("data/pmbuild_config.json");
+        s_pmbuild_cmd = pmbuild_config["pmbuild"].as_str();
+        
+        dev_console_log_level(dev_ui::CONSOLE_MESSAGE, "[pmbuild cmd] %s", s_pmbuild_cmd.c_str());
+    }
+    
+    void trigger_hot_loader(const Str& cmdline)
+    {
+        hot_loader_cmd cmd;
+        cmd.cmd_index = HOT_LOADER_CMD_CALL_SYSTEM;
+        u32 len = cmdline.length();
+        cmd.cmdline = (c8*)pen::memory_alloc(len+1);
+        memcpy(cmd.cmdline, cmdline.c_str(), len);
+        cmd.cmdline[len] = '\0';
+        s_hot_loader_cmd_buffer.put(cmd);
+    }
+    
     Str get_build_cmd()
     {
-        return "";
-
-        static Str build_tool_str = "";
-        if (build_tool_str == "")
-        {
-            pen::json j_build_config = pen::json::load_from_file("../../build_config.json");
-
-            if (j_build_config.type() != JSMN_UNDEFINED)
-            {
-                Str pmtech_dir = "../../";
-                pmtech_dir.append(j_build_config["pmtech_dir"].as_cstr());
-                pmtech_dir.append(PEN_DIR);
-
-                pmtech_dir = pen::str_replace_chars(pmtech_dir, '/', PEN_DIR);
-
-                build_tool_str.append(PEN_PYTHON3);
-                build_tool_str.append(pmtech_dir.c_str());
-                build_tool_str.append(PEN_BUILD_CMD);
-
-                dev_console_log_level(dev_ui::CONSOLE_MESSAGE, "[build tool cmd] %s", build_tool_str.c_str());
-            }
-            else
-            {
-                dev_console_log_level(dev_ui::CONSOLE_ERROR, "%s", "[error] unable to find pmtech dir");
-            }
-        }
-
-        return build_tool_str;
+        return s_pmbuild_cmd;
     }
 
     void save_texture(const c8* filename, const texture_info& info)
@@ -597,8 +653,6 @@ namespace put
 
     void poll_hot_loader()
     {
-        return;
-
         // print build cmd to console first time init
         get_build_cmd();
 
@@ -629,8 +683,6 @@ namespace put
 
                         u32       current_ts = 0;
                         pen_error err = pen::filesystem_getmtime(fn.c_str(), current_ts);
-
-                        // dev_console_log("%s: %i,%i", fn.c_str(), current_ts, built_ts);
 
                         if (current_ts > built_ts && err == PEN_ERR_OK)
                         {

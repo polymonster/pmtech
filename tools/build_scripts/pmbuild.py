@@ -331,6 +331,18 @@ def run_clean(config):
             shutil.rmtree(clean_task)
 
 
+# generates metadata json to put in data root dir, for doing hot loading and other re-build tasks
+def generate_pmbuild_config(config, profile):
+    wd = os.getcwd()
+    md = {
+        "profile": profile,
+        "pmtech_dir": config["env"]["pmtech_dir"],
+        "pmbuild": "cd " + wd + " && " + config["env"]["pmtech_dir"] + "pmbuild " + profile + " "
+    }
+    f = open(os.path.join(config["data_dir"], "pmbuild_config.json"), "w+")
+    f.write(json.dumps(md, indent=4))
+
+
 # top level help
 def pmbuild_help(config):
     print("pmbuild -help ------------------------------------------------------------------")
@@ -532,3 +544,6 @@ if __name__ == "__main__":
         elif len(sys.argv) == 2:
             tasks.get(key, lambda config: '')[call](config)
             print_duration(ts)
+
+    # finally metadata for rebuilding and hot reloading
+    generate_pmbuild_config(config, sys.argv[1])

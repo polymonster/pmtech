@@ -330,7 +330,15 @@ namespace
     bool as_value(json_value& jv, json_object* jo, PRIMITIVE_TYPE type)
     {
         if (jo->num_tokens <= 0 || jo->num_tokens > 1)
+        {
+            if(type == JSON_STR && jo->data)
+            {
+                jv.str = jo->data;
+                return true;
+            }
+            
             return false;
+        }
 
         return enumerate_primitve(jo->data, jo->tokens, jv, type);
     }

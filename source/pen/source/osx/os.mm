@@ -573,7 +573,7 @@ namespace
 }
 
 static u32 s_error_code = 0;
-int        main(int argc, char** argv)
+int main(int argc, char** argv)
 {
     // get working dir
     Str working_dir = argv[0];

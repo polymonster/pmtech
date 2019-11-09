@@ -64,7 +64,9 @@
             ["assets/configs", "bin/osx/data/configs"],
             ["../assets/configs", "bin/osx/data/configs"],
             ["../assets/fonts", "bin/osx/data/fonts"]
-        ]
+        ],
+        
+        data_dir: "bin/osx/data/"
     },
     
     mac-gl: {
@@ -156,7 +158,9 @@
             ["assets/configs", "bin/win32/data/configs"],
             ["../assets/configs", "bin/win32/data/configs"],
             ["../assets/fonts", "bin/win32/data/fonts"]
-        ]
+        ],
+        
+        data_dir: "bin/win32/data/"
     },
     
     win32-vulkan: {
@@ -251,7 +255,9 @@
             ["assets/configs", "bin/linux/data/configs"],
             ["../assets/configs", "bin/linux/data/configs"],
             ["../assets/fonts", "bin/linux/data/fonts"]
-        ]
+        ],
+        
+        data_dir: "bin/linux/data/"
     },
 
     linux-vulkan: {

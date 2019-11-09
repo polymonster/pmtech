@@ -62,19 +62,3 @@ inline void output_debug(const c8* format, ...)
     assert(A);                                                                                                               \
     output_debug(M)
 #define PEN_ERROR assert(0)
-
-// Some useful macros for calling the pmtech build script from system()
-// Directory to tools is configured in build_config.json
-// Make sure python3 is setup in path or bash_profile
-
-#ifdef _WIN32
-#define PEN_DIR '\\'
-#define PEN_PYTHON3 "py -3 "
-#define PEN_SHADER_COMPILE_CMD "tools\\build_scripts\\build_pmfx.py -root_dir ..\\..\\"
-#define PEN_BUILD_CMD "tools\\build.py -root_dir ..\\..\\"
-#else // Unix
-#define PEN_DIR '/'
-#define PEN_PYTHON3 ". ~/.bash_profile;  python3 "
-#define PEN_SHADER_COMPILE_CMD "tools/build_scripts/build_pmfx.py -root_dir ../../"
-#define PEN_BUILD_CMD "tools/build.py -root_dir ../../"
-#endif

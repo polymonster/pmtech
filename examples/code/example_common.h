@@ -47,6 +47,7 @@ PEN_TRV pen::user_entry(void* params)
 
     // init systems
     put::dev_ui::init();
+    put::init_hot_loader();
     put::dbg::init();
     put::ecs::editor_init(main_scene, &main_camera);
 
