@@ -662,7 +662,7 @@ namespace put
             {
                 fw->dependencies = pen::json::load_from_file(fw->filename.c_str());
             }
-
+            
             bool      invalidated = false;
             pen::json files = fw->dependencies["files"];
             s32       num_files = files.size();

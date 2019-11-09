@@ -339,6 +339,7 @@ def generate_pmbuild_config(config, profile):
         "pmtech_dir": config["env"]["pmtech_dir"],
         "pmbuild": "cd " + wd + " && " + config["env"]["pmtech_dir"] + "pmbuild " + profile + " "
     }
+    util.create_dir(config["data_dir"])
     f = open(os.path.join(config["data_dir"], "pmbuild_config.json"), "w+")
     f.write(json.dumps(md, indent=4))
 
