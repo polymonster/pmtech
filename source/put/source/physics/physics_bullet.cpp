@@ -1,8 +1,8 @@
-// physics_internal.cpp
+// physics_bullet.cpp
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#include "physics_internal.h"
+#include "physics_bullet.h"
 #include "console.h"
 #include "pen_string.h"
 #include "slot_resource.h"

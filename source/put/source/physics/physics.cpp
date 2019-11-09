@@ -4,9 +4,9 @@
 
 #include "pen.h"
 #include "pen_string.h"
-#include "physics_internal.h"
 #include "slot_resource.h"
 #include "timer.h"
+#include "physics_bullet.h"
 
 // for multi body bullet
 #include "BulletDynamics/Featherstone/btMultiBody.h"
