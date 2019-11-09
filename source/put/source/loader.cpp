@@ -403,28 +403,6 @@ namespace
 
         return texture_index;
     }
-
-    void texture_build()
-    {
-        Str build_cmd = get_build_cmd();
-        build_cmd.append(" -textures");
-        put::trigger_hot_loader(build_cmd);
-    }
-
-    void texture_hotload(std::vector<hash_id>& dirty)
-    {
-        for (auto& d : dirty)
-        {
-            for (auto& tr : k_texture_references)
-            {
-                if (tr.id_name == d)
-                {
-                    u32 new_handle = load_texture_internal(tr.filename.c_str(), tr.id_name, tr.tcp);
-                    pen::renderer_replace_resource(tr.handle, new_handle, pen::RESOURCE_TEXTURE);
-                }
-            }
-        }
-    }
     
     //
     // Hot loading thread
@@ -434,19 +412,14 @@ namespace
     
     enum hot_loader_cmd_id
     {
-        HOT_LOADER_CMD_CALL_SYSTEM
+        HOT_LOADER_CMD_CALL_SYSTEM,
+        HOT_LOADER_CMD_CALL_SYSTEM_WATCHER
     };
 
     struct hot_loader_cmd
     {
         u32 cmd_index;
-
-        union {
-            struct
-            {
-                c8* cmdline;
-            };
-        };
+        c8* cmdline = nullptr;
     };
 
     pen::ring_buffer<hot_loader_cmd> s_hot_loader_cmd_buffer;
@@ -489,6 +462,28 @@ namespace
         pen::semaphore_post(p_thread_info->p_sem_continue, 1);
         pen::semaphore_post(p_thread_info->p_sem_terminated, 1);
         return PEN_THREAD_OK;
+    }
+    
+    void texture_build()
+    {
+        Str build_cmd = get_build_cmd();
+        build_cmd.append(" -textures");
+        put::trigger_hot_loader(build_cmd);
+    }
+
+    void texture_hotload(std::vector<hash_id>& dirty)
+    {
+        for (auto& d : dirty)
+        {
+            for (auto& tr : k_texture_references)
+            {
+                if (tr.id_name == d)
+                {
+                    u32 new_handle = load_texture_internal(tr.filename.c_str(), tr.id_name, tr.tcp);
+                    pen::renderer_replace_resource(tr.handle, new_handle, pen::RESOURCE_TEXTURE);
+                }
+            }
+        }
     }
 } // namespace
 
@@ -623,13 +618,12 @@ namespace put
     void add_file_watcher(const c8* filename, void (*build_callback)(), void (*hotload_callback)(std::vector<hash_id>& dirty))
     {
         Str fn = filename;
-
-        // replace filename with dependencies.json
-        u32 loc = pen::str_find_reverse(fn, "/");
-
-        fn.appendf_from(loc + 1, "%s", "dependencies.json");
-
         hash_id id_name = PEN_HASH(fn.c_str());
+        
+        // replace filename with dependencies.json
+        u32 loc = pen::str_find_reverse(fn, ".");
+
+        fn.appendf_from(loc + 1, "%s", "json");
 
         // search for existing
         for (auto* fw : k_file_watches)
@@ -663,7 +657,9 @@ namespace put
                 fw->dependencies = pen::json::load_from_file(fw->filename.c_str());
             }
             
-            bool      invalidated = false;
+            bool invalidated = false;
+            bool complete = false;
+            
             pen::json files = fw->dependencies["files"];
             s32       num_files = files.size();
             for (s32 i = 0; i < num_files; ++i)
@@ -684,35 +680,56 @@ namespace put
                         u32       current_ts = 0;
                         pen_error err = pen::filesystem_getmtime(fn.c_str(), current_ts);
 
-                        if (current_ts > built_ts && err == PEN_ERR_OK)
+                        if (!fw->invalidated)
                         {
-                            invalidated = true;
-
-                            if (!fw->invalidated)
+                            if (current_ts > built_ts && err == PEN_ERR_OK)
                             {
+                                invalidated = true;
+
                                 dev_console_log("[file watcher] source file %s has changed", fn.c_str());
                                 dev_console_log("[file watcher] dest file is %s", outputs[j].name().c_str());
 
-                                fw->changes.push_back(PEN_HASH(outputs[j].name().c_str()));
+                                Str data_file = input["data_file"].as_str();
+                                fw->changes.push_back(PEN_HASH(data_file.c_str()));
+                            }
+                        }
+                        else
+                        {
+                            u32 dep_ts = 0;
+                            Str data_file = input["data_file"].as_str();
+                            data_file = pen::str_replace_string(data_file, ".dds", ".json");
+                            
+                            pen_error err = pen::filesystem_getmtime(data_file.c_str(), dep_ts);
+                            if(err == PEN_ERR_OK && dep_ts >= current_ts)
+                            {
+                                pen::json new_dependencies = pen::json::load_from_file(data_file.c_str());
+                                if(!new_dependencies.is_null())
+                                {
+                                    u32 ts = new_dependencies["files"][i][j][k]["timestamp"].as_u32();
+                                    if(ts >= built_ts)
+                                    {
+                                        fw->dependencies = new_dependencies;
+                                        complete = true;
+                                        goto done;
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
-
+            done:
+                        
             if (invalidated)
             {
                 if (!fw->invalidated)
-                {
-                    // trigger rebuild
                     fw->build_callback();
-                }
 
                 fw->invalidated = true;
             }
             else
             {
-                if (fw->invalidated)
+                if(fw->invalidated && complete)
                 {
                     // rebuild has succeeded
                     dev_console_log("[file watcher] rebuild for %s complete", fw->filename.c_str());

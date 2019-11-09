@@ -78,8 +78,8 @@ def sanitize_filename(filename):
 
 def create_info(file):
     file = sanitize_filename(file)
+    file = os.path.normpath(os.path.join(os.getcwd(), file))
     modified_time = os.path.getmtime(file)
-    file = unstrict_json_safe_filename(file)
     return {"name": file, "timestamp": float(modified_time)}
 
 
@@ -91,7 +91,9 @@ def create_dependency_info(inputs, outputs):
         for i in inputs:
             if not os.path.exists(i):
                 continue
-            info[o].append(create_info(i))
+            ii = create_info(i)
+            ii["data_file"] = o[o.find(os.sep + "data" + os.sep) + 1:]
+            info[o].append(ii)
     return info
 
 
