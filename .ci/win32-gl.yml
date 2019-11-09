@@ -5,5 +5,5 @@ init:
 environment:
   APPVEYOR_RDP_PASSWORD: PmtechSecret99*
 build_script:
-- cmd: "git submodule update --init --recursive\ncd third_party\nbuild_libs.bat\ncd .. \ncd examples\n..\\\\pmbuild win32-gl -premake -msbuild\ncd build\\win32\nmsbuild examples_win32.sln /p:Configuration=Debug\nmsbuild pmtech_examples_win32.sln /p:Configuration=Release"
+- cmd: "git submodule update --init --recursive\ncd third_party\nbuild_libs.bat\ncd .. \ncd examples\n..\\\\pmbuild win32-gl -premake -msbuild\ncd build\\win32\nmsbuild pmtech_examples_win32.sln /p:Configuration=Debug\nmsbuild pmtech_examples_win32.sln /p:Configuration=Release"
 test: off
