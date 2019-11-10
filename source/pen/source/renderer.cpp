@@ -20,7 +20,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb/stb_image_write.h"
 
-#define MAX_COMMANDS (1 << 21)
+#define MAX_COMMANDS (1 << 16)
 
 extern pen::window_creation_params pen_window;
 
@@ -626,7 +626,7 @@ namespace pen
 
         _cmd_buffer.create(MAX_COMMANDS);
         slot_resources_init(&s_renderer_slot_resources, 2048);
-
+        
         // initialise renderer
         u32 bb_res = slot_resources_get_next(&s_renderer_slot_resources);
         u32 bb_depth_res = slot_resources_get_next(&s_renderer_slot_resources);

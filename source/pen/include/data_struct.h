@@ -234,13 +234,14 @@ namespace pen
     }
 
     template <typename T>
-    pen_inline void ring_buffer<T>::create(u32 capacity)
+    inline void ring_buffer<T>::create(u32 capacity)
     {
         get_pos = 0;
         put_pos = 0;
         _capacity = capacity;
 
         data = (T*)pen::memory_alloc(sizeof(T) * _capacity.load());
+        memset(data, 0x0, sizeof(T) * _capacity.load());
     }
 
     template <typename T>

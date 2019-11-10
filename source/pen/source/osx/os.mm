@@ -89,6 +89,7 @@ id<CAMetalDrawable> g_current_drawable;
 namespace
 {
     MTKView* _metal_view;
+    id<MTLCommandQueue> command_queue;
 }
 
 @implementation metal_delegate
@@ -96,6 +97,9 @@ namespace
 - (nonnull instancetype)initWithMetalKitView:(nonnull MTKView*)mtkView
 {
     self = [super init];
+    
+    command_queue = [_metal_view.device newCommandQueue];
+    
     return self;
 }
 
@@ -108,10 +112,11 @@ namespace
 
 - (void)drawInMTKView:(nonnull MTKView*)view
 {
-    if (!pen::renderer_dispatch())
-        pen::thread_sleep_us(100);
-
-    g_frame_index++;
+    @autoreleasepool {
+        if (!pen::renderer_dispatch())
+            pen::thread_sleep_us(100);
+        g_frame_index++;
+    }
 }
 
 @end
@@ -147,9 +152,8 @@ void pen_window_resize()
 
 void run()
 {
-    // passes metal view to renderer, renderer dispatch and os update will be called from drawInMTKView
     pen::renderer_init(_metal_view, false);
-
+    
     for (;;)
     {
         if (!pen::os_update())
@@ -178,14 +182,12 @@ void create_gl_context()
         // gl 3.2
         NSOpenGLPFAOpenGLProfile,
         PEN_GL_PROFILE_VERSION,
-
         // msaa
         NSOpenGLPFAMultisample,
         NSOpenGLPFASampleBuffers,
         sample_buffers,
         NSOpenGLPFASamples,
         pen_window.sample_count,
-
         // RGBA D24S8
         NSOpenGLPFAColorSize,
         24,
@@ -195,7 +197,6 @@ void create_gl_context()
         24,
         NSOpenGLPFAStencilSize,
         8,
-
         // double buffered, HAL
         NSOpenGLPFADoubleBuffer,
         true,
@@ -205,7 +206,6 @@ void create_gl_context()
         false,
         NSOpenGLPFAAllowOfflineRenderers,
         true,
-
         // end
         0,
         0,
@@ -228,14 +228,6 @@ void create_gl_context()
     [glContext makeCurrentContext];
     GLint interval = 1;
     [glContext setValues:&interval forParameter:NSOpenGLCPSwapInterval];
-
-#if 0
-    const GLubyte* glsl_version = glGetString(GL_SHADING_LANGUAGE_VERSION);
-    const GLubyte* gl_version = glGetString(GL_VERSION);
-    const GLubyte* gl_renderer = glGetString(GL_RENDERER);
-    const GLubyte* gl_vendor = glGetString(GL_VENDOR);
-    PEN_LOG("gl: %s\nglsl: %s\nRenderer: %s\nVendor: %s\n", gl_version, glsl_version, gl_renderer, gl_vendor);
-#endif
 
     _gl_view = glView;
     _gl_context = glContext;
@@ -575,6 +567,8 @@ namespace
 static u32 s_error_code = 0;
 int main(int argc, char** argv)
 {
+    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+    
     // get working dir
     Str working_dir = argv[0];
     working_dir = pen::str_normalise_filepath(working_dir);
@@ -607,7 +601,6 @@ int main(int argc, char** argv)
     }
 
     // window creation
-    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
     [NSApplication sharedApplication];
 
     id dg = [app_delegate shared_delegate];
@@ -640,18 +633,18 @@ int main(int argc, char** argv)
     // creates an opengl or metal rendering context
     create_renderer_context();
 
-    [pool drain];
-
     // os stuff
     users();
 
     // init systems
     pen::timer_system_intialise();
     pen::input_gamepad_init();
+    
+    [pool drain];
 
     // invoke renderer specific update for main thread
     run();
-
+        
     return s_error_code;
 }
 
@@ -659,6 +652,8 @@ namespace pen
 {
     bool os_update()
     {
+        NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+        
         static bool thread_started = false;
         if (!thread_started)
         {
@@ -668,9 +663,6 @@ namespace pen
             pen::jobs_create_default(thread_info);
             thread_started = true;
         }
-
-        // Window / event loop
-        NSAutoreleasePool* _pool = [[NSAutoreleasePool alloc] init];
 
         [NSApp updateWindows];
 
@@ -690,8 +682,6 @@ namespace pen
             {
                 [NSApp sendEvent:peek_event];
             }
-
-            break;
         }
 
         // input update
@@ -708,14 +698,7 @@ namespace pen
 
         input_gamepad_update();
 
-        [_pool drain];
         g_rs--;
-
-        if (pen_terminate_app)
-        {
-            if (pen::jobs_terminate_all())
-                return false;
-        }
 
         os_cmd* cmd = s_cmd_buffer.get();
         while (cmd)
@@ -742,7 +725,15 @@ namespace pen
             // get next
             cmd = s_cmd_buffer.get();
         }
-
+        
+        [pool drain];
+        
+        if (pen_terminate_app)
+        {
+            if (pen::jobs_terminate_all())
+                return false;
+        }
+    
         return true;
     }
 

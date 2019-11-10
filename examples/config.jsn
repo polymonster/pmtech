@@ -83,7 +83,7 @@
             "-shader_platform glsl",
             "-shader_version 330",
             "-i assets/shaders ../assets/shaders",
-            "-o bin/osx/data/shaders",
+            "-o bin/osx/data/pmfx/glsl",
             "-h shader_structs",
             "-t temp/shaders",
             "-source"

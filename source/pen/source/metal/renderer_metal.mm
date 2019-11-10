@@ -27,6 +27,7 @@ namespace // internal structs and static vars
 {
     u32           _frame = 0;
     id<MTLDevice> _metal_device;
+    NSAutoreleasePool* _pool;
 
     struct clear_cmd
     {
@@ -67,7 +68,7 @@ namespace // internal structs and static vars
         id<MTLBlitCommandEncoder>    blit_encoder;
         id<MTLCommandBuffer>         cmd_buffer;
         id<CAMetalDrawable>          drawable;
-        MTLRenderPassDescriptor*     pass;
+        MTLRenderPassDescriptor*     pass = nil;
         dispatch_semaphore_t         completion;
         index_buffer_cmd             index_buffer;
         u32                          input_layout;
@@ -294,7 +295,7 @@ namespace // internal structs and static vars
 
 namespace // pen consts -> metal consts
 {
-    pen_inline MTLVertexFormat to_metal_vertex_format(u32 pen_vertex_format)
+    MTLVertexFormat to_metal_vertex_format(u32 pen_vertex_format)
     {
         switch (pen_vertex_format)
         {
@@ -318,7 +319,7 @@ namespace // pen consts -> metal consts
         PEN_ASSERT(0);
         return MTLVertexFormatInvalid;
     }
-
+    
     pen_inline MTLIndexType to_metal_index_format(u32 pen_index_format)
     {
         return pen_index_format == PEN_FORMAT_R16_UINT ? MTLIndexTypeUInt16 : MTLIndexTypeUInt32;
@@ -332,7 +333,7 @@ namespace // pen consts -> metal consts
         return 4;
     }
 
-    pen_inline MTLPixelFormat to_metal_pixel_format(u32 pen_pixel_format)
+    MTLPixelFormat to_metal_pixel_format(u32 pen_pixel_format)
     {
         switch (pen_pixel_format)
         {
@@ -374,7 +375,7 @@ namespace // pen consts -> metal consts
         return MTLPixelFormatInvalid;
     }
 
-    pen_inline MTLTextureUsage to_metal_texture_usage(u32 bind_flags)
+    MTLTextureUsage to_metal_texture_usage(u32 bind_flags)
     {
         MTLTextureUsage usage = 0;
         if (bind_flags & PEN_BIND_SHADER_RESOURCE)
@@ -392,7 +393,7 @@ namespace // pen consts -> metal consts
         return usage;
     }
 
-    pen_inline MTLStorageMode to_metal_storage_mode(const texture_creation_params& tcp)
+    MTLStorageMode to_metal_storage_mode(const texture_creation_params& tcp)
     {
         if (tcp.format == PEN_TEX_FORMAT_D24_UNORM_S8_UINT || tcp.sample_count > 1)
             return MTLStorageModePrivate;
@@ -400,7 +401,7 @@ namespace // pen consts -> metal consts
         return MTLStorageModeManaged;
     }
 
-    pen_inline MTLSamplerAddressMode to_metal_sampler_address_mode(u32 address_mode)
+    MTLSamplerAddressMode to_metal_sampler_address_mode(u32 address_mode)
     {
         switch (address_mode)
         {
@@ -419,7 +420,7 @@ namespace // pen consts -> metal consts
         return MTLSamplerAddressModeRepeat;
     }
 
-    pen_inline MTLSamplerMinMagFilter to_metal_min_mag_filter(u32 filter)
+    MTLSamplerMinMagFilter to_metal_min_mag_filter(u32 filter)
     {
         switch (filter)
         {
@@ -436,7 +437,7 @@ namespace // pen consts -> metal consts
         return MTLSamplerMinMagFilterLinear;
     }
 
-    pen_inline MTLSamplerMipFilter to_metal_mip_filter(u32 filter)
+    MTLSamplerMipFilter to_metal_mip_filter(u32 filter)
     {
         switch (filter)
         {
@@ -454,7 +455,7 @@ namespace // pen consts -> metal consts
         return MTLSamplerMipFilterNotMipmapped;
     }
 
-    pen_inline const char* get_metal_version_string()
+    const char* get_metal_version_string()
     {
         if ([_metal_device supportsFeatureSet:MTLFeatureSet_macOS_GPUFamily1_v2])
         {
@@ -468,7 +469,7 @@ namespace // pen consts -> metal consts
         return "";
     }
 
-    pen_inline MTLPrimitiveType to_metal_primitive_type(u32 pt)
+    MTLPrimitiveType to_metal_primitive_type(u32 pt)
     {
         switch (pt)
         {
@@ -488,7 +489,7 @@ namespace // pen consts -> metal consts
         return MTLPrimitiveTypeTriangle;
     }
 
-    pen_inline MTLBlendOperation to_metal_blend_op(u32 bo)
+    MTLBlendOperation to_metal_blend_op(u32 bo)
     {
         switch (bo)
         {
@@ -508,7 +509,7 @@ namespace // pen consts -> metal consts
         return MTLBlendOperationAdd;
     }
 
-    pen_inline MTLBlendFactor to_metal_blend_factor(u32 bf)
+    MTLBlendFactor to_metal_blend_factor(u32 bf)
     {
         switch (bf)
         {
@@ -552,7 +553,7 @@ namespace // pen consts -> metal consts
         return MTLBlendFactorZero;
     }
 
-    pen_inline MTLCompareFunction to_metal_compare_function(u32 cf)
+    MTLCompareFunction to_metal_compare_function(u32 cf)
     {
         switch (cf)
         {
@@ -578,7 +579,7 @@ namespace // pen consts -> metal consts
         return MTLCompareFunctionAlways;
     }
 
-    pen_inline MTLCullMode to_metal_cull_mode(u32 cull_mode)
+    MTLCullMode to_metal_cull_mode(u32 cull_mode)
     {
         switch (cull_mode)
         {
@@ -594,7 +595,7 @@ namespace // pen consts -> metal consts
         return MTLCullModeNone;
     }
 
-    pen_inline MTLTriangleFillMode to_metal_fill_mode(u32 fill_mode)
+    MTLTriangleFillMode to_metal_fill_mode(u32 fill_mode)
     {
         switch (fill_mode)
         {
@@ -616,7 +617,7 @@ namespace // pen consts -> metal consts
         return MTLWindingClockwise;
     }
 
-    pen_inline MTLStencilOperation to_metal_stencil_op(u32 stencil_op)
+    MTLStencilOperation to_metal_stencil_op(u32 stencil_op)
     {
         switch (stencil_op)
         {
@@ -717,6 +718,7 @@ namespace pen
 
             // vp
             [_state.render_encoder setViewport:_state.viewport];
+            
             // dss
             if (_state.depth_stencil && _state.formats.depth_attachment != MTLPixelFormatInvalid)
             {
@@ -725,6 +727,7 @@ namespace pen
                 [_state.render_encoder setStencilFrontReferenceValue:_state.stencil_ref
                                                   backReferenceValue:_state.stencil_ref];
             }
+            
             // raster
             metal_raster_state& rs = _res_pool.get(_state.raster_state).raster_state;
             [_state.render_encoder setCullMode:rs.cull_mode];
@@ -1094,6 +1097,10 @@ namespace pen
                                          const u32* offsets)
         {
             validate_render_encoder();
+            
+            static MTLVertexBufferLayoutDescriptor* s_layouts[4] = {
+                nil
+            };
 
             for (u32 i = 0; i < num_buffers; ++i)
             {
@@ -1111,6 +1118,15 @@ namespace pen
                 layout.stepRate = 1;
 
                 [_state.vertex_descriptor.layouts setObject:layout atIndexedSubscript:start_slot + i];
+                
+                u32 si = start_slot + i;
+                if(s_layouts[si])
+                {
+                    [s_layouts[si] release];
+                    s_layouts[si] = nil;
+                }
+                
+                s_layouts[si] = layout;
             }
         }
 
@@ -1588,11 +1604,11 @@ namespace pen
                 return;
              _state.target_hash = cur;
             */
-            
+             
             // create new cmd buffer
             if (_state.cmd_buffer == nil)
                 _state.cmd_buffer = [_state.command_queue commandBuffer];
-            
+                                
             // finish render encoding
             if (_state.render_encoder)
             {
@@ -1600,7 +1616,7 @@ namespace pen
                 _state.render_encoder = nil;
                 _state.pipeline_hash = 0;
             }
-            
+
             _state.pass = [MTLRenderPassDescriptor renderPassDescriptor];
 
             _state.formats.colour_attachments[0] = MTLPixelFormatInvalid;
@@ -2006,6 +2022,7 @@ namespace pen
 
         void renderer_release_shader(u32 shader_index, u32 shader_type)
         {
+            [_res_pool.get(shader_index).shader.lib release];
             _res_pool.get(shader_index).shader.lib = nil;
         }
 
@@ -2022,12 +2039,17 @@ namespace pen
 
         void renderer_release_texture(u32 texture_index)
         {
-            _res_pool.get(texture_index).texture.tex = nil;
+            auto tex = _res_pool.get(texture_index).texture.tex;
+            [tex setPurgeableState:MTLPurgeableStateEmpty];
+            [tex release];
+            tex = nil;
         }
 
         void renderer_release_sampler(u32 sampler)
         {
-            _res_pool.get(sampler).sampler = nil;
+            auto samp = _res_pool.get(sampler).sampler;
+            [samp release];
+            samp = nil;
         }
 
         void renderer_release_raster_state(u32 raster_state_index)
@@ -2040,12 +2062,14 @@ namespace pen
 
         void renderer_release_render_target(u32 render_target)
         {
-            _res_pool.get(render_target).texture.tex = nil;
+            renderer_release_texture(render_target);
         }
 
         void renderer_release_input_layout(u32 input_layout)
         {
-            _res_pool.get(input_layout).vertex_descriptor = nil;
+            auto vd = _res_pool.get(input_layout).vertex_descriptor;
+            [vd release];
+            vd = nil;
         }
 
         void renderer_release_depth_stencil_state(u32 depth_stencil_state)
