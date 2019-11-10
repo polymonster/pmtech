@@ -2,6 +2,8 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
+// This file contains gl and metal context creation, input handling and os events.
+
 #define GL_SILENCE_DEPRECATION
 
 #import <AppKit/NSPasteboard.h>
@@ -20,17 +22,16 @@
 
 #include <map>
 
-// This file contains gl and metal context creation, input handling and os events.
+// pen required externs
+pen::user_info                      pen_user_info;
+extern PEN_TRV                      pen::user_entry(void* params);
+extern pen::window_creation_params  pen_window;
 
-// global stuff for window graphics api sync
-extern pen::window_creation_params pen_window;
+// global and loose stuff.. not very nice
 extern a_u8                        g_window_resize;
 int                                g_rs = 0;
 a_u64                              g_frame_index;
-
-// pen required externs
-pen::user_info pen_user_info;
-extern PEN_TRV pen::user_entry(void* params);
+static u32                         s_error_code = 0;
 
 namespace pen
 {
@@ -39,8 +40,24 @@ namespace pen
 
 namespace
 {
+    struct os_context
+    {
+        pen::window_frame frame;
+    };
+    os_context s_ctx;
+    
     NSWindow* _window;
     bool      pen_terminate_app = false;
+    
+    void _update_window_frame()
+    {
+        NSRect rect = [_window frame];
+
+        s_ctx.frame.x = rect.origin.x;
+        s_ctx.frame.y = rect.origin.y;
+        s_ctx.frame.width = rect.size.width;
+        s_ctx.frame.height = rect.size.height;
+    }
 }
 
 @interface app_delegate : NSObject <NSApplicationDelegate>
@@ -74,7 +91,11 @@ namespace
 
 @end
 
-#ifdef PEN_RENDERER_METAL // Metal Context
+//
+// Metal Context
+//
+
+#ifdef PEN_RENDERER_METAL
 #import <MetalKit/MetalKit.h>
 #import <QuartzCore/CAMetalLayer.h>
 
@@ -106,6 +127,7 @@ namespace
     g_window_resize = 1;
     pen_window.width = size.width;
     pen_window.height = size.height;
+    _update_window_frame();
 }
 
 - (void)drawInMTKView:(nonnull MTKView*)view
@@ -146,6 +168,7 @@ void pen_window_resize()
 
     pen_window.width = view_rect.size.width;
     pen_window.height = view_rect.size.height;
+    _update_window_frame();
 }
 
 void run()
@@ -161,10 +184,15 @@ void run()
     }
 }
 
-#else // OpenGL Context
+//
+// OpenGL Context
+//
+
+#else
 #import <OpenGL/gl3.h>
 #define PEN_GL_PROFILE_VERSION NSOpenGLProfileVersion4_1Core
 #define create_renderer_context create_gl_context
+
 namespace
 {
     NSOpenGLView*        _gl_view;
@@ -363,14 +391,14 @@ namespace
         { 0x1B, PK_MINUS },
         { 0x18, PK_EQUAL },
         { 0x32, PK_TILDE },
-        
         { 0x36, PK_GRAVE }
     };
     
     enum os_cmd_id
     {
         OS_CMD_NULL = 0,
-        OS_CMD_SET_WINDOW_FRAME
+        OS_CMD_SET_WINDOW_FRAME,
+        OS_CMD_SET_WINDOW_SIZE
     };
 
     struct os_cmd
@@ -556,7 +584,6 @@ namespace
     }
 }
 
-static u32 s_error_code = 0;
 int main(int argc, char** argv)
 {
     NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
@@ -599,7 +626,6 @@ int main(int argc, char** argv)
     [NSApp finishLaunching];
 
     [[NSNotificationCenter defaultCenter] postNotificationName:NSApplicationWillFinishLaunchingNotification object:NSApp];
-
     [[NSNotificationCenter defaultCenter] postNotificationName:NSApplicationDidFinishLaunchingNotification object:NSApp];
 
     NSRect frame = NSMakeRect(0, 0, pen_window.width, pen_window.height);
@@ -618,6 +644,7 @@ int main(int argc, char** argv)
     [_window center];
 
     [_window registerForDraggedTypes:[NSArray arrayWithObjects:NSFilenamesPboardType, nil]];
+    _update_window_frame();
 
     // creates an opengl or metal rendering context
     create_renderer_context();
@@ -637,6 +664,10 @@ int main(int argc, char** argv)
     return s_error_code;
 }
 
+//
+// pen os api
+//
+
 namespace pen
 {
     bool os_update()
@@ -655,7 +686,7 @@ namespace pen
 
         [NSApp updateWindows];
         
-        while (1)
+        for(;;)
         {
             NSEvent* peek_event = [NSApp nextEventMatchingMask:NSEventMaskAny
                                                      untilDate:[NSDate distantPast] // do not wait for event
@@ -701,6 +732,14 @@ namespace pen
 
                     frame.origin.x = cmd->frame.x;
                     frame.origin.y = cmd->frame.y;
+                    frame.size.width = cmd->frame.width;
+                    frame.size.height = cmd->frame.height;
+
+                    [_window setFrame:frame display:YES animate:NO];
+                }
+                case OS_CMD_SET_WINDOW_SIZE:
+                {
+                    NSRect frame = [_window frame];
                     frame.size.width = cmd->frame.width;
                     frame.size.height = cmd->frame.height;
 
@@ -757,30 +796,23 @@ namespace pen
 
     void window_get_size(s32& width, s32& height)
     {
-        NSScreen* screen = [_window screen];
-        NSRect    rect = [screen frame];
-
-        width = rect.size.width;
-        height = rect.size.height;
+        width = s_ctx.frame.width;
+        height = s_ctx.frame.height;
     }
 
     void window_set_size(s32 width, s32 height)
     {
-        NSRect frame = [_window frame];
-        frame.size.width = width;
-        frame.size.height = height;
+        os_cmd cmd;
+        cmd.cmd_index = OS_CMD_SET_WINDOW_SIZE;
+        cmd.frame.width = width;
+        cmd.frame.height = height;
 
-        [_window setFrame:frame display:YES animate:NO];
+        s_cmd_buffer.put(cmd);
     }
 
     void window_get_frame(window_frame& f)
     {
-        NSRect rect = [_window frame];
-
-        f.x = rect.origin.x;
-        f.y = rect.origin.y;
-        f.width = rect.size.width;
-        f.height = rect.size.height;
+        f = s_ctx.frame;
     }
 
     void window_set_frame(const window_frame& f)
@@ -798,7 +830,9 @@ namespace pen
     }
 }
 
-// Objective C Stuff
+//
+// Objective-C
+//
 
 @implementation app_delegate
 
@@ -888,6 +922,7 @@ namespace pen
 {
     g_window_resize = true;
     pen_window_resize();
+    _update_window_frame();
 }
 
 - (void)windowDidBecomeKey:(NSNotification*)notification
@@ -921,5 +956,4 @@ namespace pen
 
     return NO;
 }
-
 @end
