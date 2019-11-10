@@ -24,7 +24,6 @@ namespace
     u8                  ascii_state[PK_ARRAY_SIZE];
     pen::mouse_state    mouse_state_ = {0};
     std::atomic<bool>   show_cursor = {true};
-    Str                 text_input;
     
     std::map<u16, const c8*> k_key_names = {
         { PK_0, "0" },
