@@ -8,22 +8,128 @@
 #include "os.h"
 #include "threads.h"
 #include "timer.h"
-#include <atomic>
+
 #include <math.h>
+
+#include <atomic>
+#include <map>
 
 // Keyboard and mouse
 #define KEY_PRESS 0x01
 #define KEY_HELD 0x02
 
+namespace
+{
+    u8                  keyboard_state[PK_ARRAY_SIZE];
+    u8                  ascii_state[PK_ARRAY_SIZE];
+    pen::mouse_state    mouse_state_ = {0};
+    std::atomic<bool>   show_cursor = {true};
+    Str                 text_input;
+    
+    std::map<u16, const c8*> k_key_names = {
+        { PK_0, "0" },
+        { PK_1, "1" },
+        { PK_2, "2" },
+        { PK_3, "3" },
+        { PK_4, "4" },
+        { PK_5, "5" },
+        { PK_6, "6" },
+        { PK_7, "7" },
+        { PK_8, "8" },
+        { PK_9, "9" },
+        { PK_A, "A" },
+        { PK_B, "B" },
+        { PK_C, "C" },
+        { PK_D, "D" },
+        { PK_E, "E" },
+        { PK_F, "F" },
+        { PK_G, "G" },
+        { PK_H, "H" },
+        { PK_I, "I" },
+        { PK_J, "J" },
+        { PK_K, "K" },
+        { PK_L, "L" },
+        { PK_M, "M" },
+        { PK_N, "N" },
+        { PK_O, "O" },
+        { PK_P, "P" },
+        { PK_Q, "Q" },
+        { PK_R, "R" },
+        { PK_S, "S" },
+        { PK_T, "T" },
+        { PK_U, "U" },
+        { PK_V, "V" },
+        { PK_W, "W" },
+        { PK_X, "X" },
+        { PK_Y, "Y" },
+        { PK_Z, "Z" },
+        { PK_NUMPAD0, "NUMPAD0" },
+        { PK_NUMPAD1, "NUMPAD1" },
+        { PK_NUMPAD2, "NUMPAD2" },
+        { PK_NUMPAD3, "NUMPAD3" },
+        { PK_NUMPAD4, "NUMPAD4" },
+        { PK_NUMPAD5, "NUMPAD5" },
+        { PK_NUMPAD6, "NUMPAD6" },
+        { PK_NUMPAD7, "NUMPAD7" },
+        { PK_NUMPAD8, "NUMPAD8" },
+        { PK_NUMPAD9, "NUMPAD9" },
+        { PK_MULTIPLY, "MULTIPLY" },
+        { PK_ADD, "ADD" },
+        { PK_SUBTRACT, "SUBTRACT" },
+        { PK_DECIMAL, "DECIMAL" },
+        { PK_DIVIDE, "DIVIDE" },
+        { PK_F1, "F1" },
+        { PK_F2, "F2" },
+        { PK_F3, "F3" },
+        { PK_F4, "F4" },
+        { PK_F5, "F5" },
+        { PK_F6, "F6" },
+        { PK_F7, "F7" },
+        { PK_F8, "F8" },
+        { PK_F9, "F9" },
+        { PK_F10, "F10" },
+        { PK_F11, "F11" },
+        { PK_F12, "F12" },
+        { PK_CANCEL, "CANCEL" },
+        { PK_BACK, "BACK" },
+        { PK_TAB, "TAB" },
+        { PK_CLEAR, "CLEAR" },
+        { PK_RETURN, "RETURN" },
+        { PK_SHIFT, "SHIFT" },
+        { PK_CONTROL, "CONTROL" },
+        { PK_MENU, "ALT" },
+        { PK_CAPITAL, "CAPITAL" },
+        { PK_ESCAPE, "ESCAPE" },
+        { PK_SPACE, "SPACE" },
+        { PK_PRIOR, "PAGE_DOWN" },
+        { PK_NEXT, "PAGE_UP" },
+        { PK_END, "END" },
+        { PK_HOME, "HOME" },
+        { PK_LEFT, "LEFT" },
+        { PK_UP, "UP" },
+        { PK_RIGHT, "RIGHT" },
+        { PK_DOWN, "DOWN" },
+        { PK_SELECT, "SELECT" },
+        { PK_INSERT, "INSERT" },
+        { PK_DELETE, "DELETE" },
+        { PK_COMMAND, "COMMAND" },
+        { PK_OPEN_BRACKET, "OPEN_BRACKET" },
+        { PK_CLOSE_BRACKET, "CLOSE_BRACKET" },
+        { PK_SEMICOLON, "SEMICOLON" },
+        { PK_APOSTRAPHE, "APOSTRAPHE" },
+        { PK_BACK_SLASH, "BACK_SLASH" },
+        { PK_FORWARD_SLASH, "FORWARD_SLASH" },
+        { PK_COMMA, "COMMA" },
+        { PK_PERIOD, "PERIOD" },
+        { PK_TILDE, "TILDE" },
+        { PK_MINUS, "MINUS" },
+        { PK_EQUAL, "EQUAL" },
+        { PK_NUMLOCK, "NUMLOCK" }
+    };
+}
+
 namespace pen
 {
-    u8 keyboard_state[PK_ARRAY_SIZE];
-    u8 ascii_state[PK_ARRAY_SIZE];
-
-    mouse_state mouse_state_ = {0};
-
-    std::atomic<bool> show_cursor = {true};
-
     void input_set_unicode_key_down(u32 key_index)
     {
         ascii_state[key_index] = 1;
@@ -117,111 +223,10 @@ namespace pen
 
     const c8* input_get_key_str(u32 key_index)
     {
-        switch (key_index)
-        {
-            case PK_LBUTTON:
-                return "L button";
-            case PK_RBUTTON:
-                return "R button";
-            case PK_CANCEL:
-                return "cancel";
-            case PK_MBUTTON:
-                return "M button";
-            case PK_BACK:
-                return "back";
-            case PK_TAB:
-                return "tab";
-            case PK_CLEAR:
-                return "clear";
-            case PK_RETURN:
-                return "return";
-            case PK_SHIFT:
-                return "shift";
-            case PK_CONTROL:
-                return "ctrl";
-            case PK_MENU:
-                return "menu";
-            case PK_PAUSE:
-                return "pause";
-            case PK_CAPITAL:
-                return "caps lock";
-            case PK_ESCAPE:
-                return "escape";
-            case PK_SPACE:
-                return "space";
-            case PK_PRIOR:
-                return "page down";
-            case PK_NEXT:
-                return "page up";
-            case PK_HOME:
-                return "home";
-            case PK_LEFT:
-                return "left";
-            case PK_UP:
-                return "up";
-            case PK_RIGHT:
-                return "right";
-            case PK_DOWN:
-                return "down";
-            case PK_SELECT:
-                return "select";
-            case PK_EXECUTE:
-                return "execute";
-            case PK_INSERT:
-                return "insert";
-            case PK_SNAPSHOT:
-                return "screen shot";
-            case PK_DELETE:
-                return "delete";
-            case PK_HELP:
-                return "help";
-            case PK_F1:
-                return "f1";
-            case PK_F2:
-                return "f2";
-            case PK_F3:
-                return "f3";
-            case PK_F4:
-                return "f4";
-            case PK_F5:
-                return "f5";
-            case PK_F6:
-                return "f6";
-            case PK_F7:
-                return "f7";
-            case PK_F8:
-                return "f8";
-            case PK_F9:
-                return "f9";
-            case PK_F10:
-                return "f10";
-            case PK_F11:
-                return "f11";
-            case PK_F12:
-                return "f12";
-            case PK_NUMLOCK:
-                return "num lock";
-            case PK_SCROLL:
-                return "scroll";
-            case PK_COMMAND:
-                return "command";
-        }
-
-        static c8 key_char[512] = {0};
-        if (key_char[2] == 0)
-        {
-            for (s32 i = 0; i < 256; ++i)
-            {
-                key_char[i * 2] = (c8)i;
-            }
-        }
-
-        if (key_index < 256)
-        {
-            return &key_char[key_index * 2];
-        }
-
-        return "unknown";
+        if(k_key_names.find(key_index) != k_key_names.end())
+            return k_key_names[key_index];
+        
+        return "UNKNOWN";
     }
 } // namespace pen
 

@@ -18,6 +18,8 @@
 #include "threads.h"
 #include "timer.h"
 
+#include <map>
+
 // This file contains gl and metal context creation, input handling and os events.
 
 // global stuff for window graphics api sync
@@ -89,7 +91,6 @@ id<CAMetalDrawable> g_current_drawable;
 namespace
 {
     MTKView* _metal_view;
-    id<MTLCommandQueue> command_queue;
 }
 
 @implementation metal_delegate
@@ -97,9 +98,6 @@ namespace
 - (nonnull instancetype)initWithMetalKitView:(nonnull MTKView*)mtkView
 {
     self = [super init];
-    
-    command_queue = [_metal_view.device newCommandQueue];
-    
     return self;
 }
 
@@ -268,6 +266,107 @@ void run()
 
 namespace
 {
+    std::map<u16, virtual_key> k_key_map = {
+        { 0x1D, PK_0 },
+        { 0x12, PK_1 },
+        { 0x13, PK_2 },
+        { 0x14, PK_3 },
+        { 0x15, PK_4 },
+        { 0x17, PK_5 },
+        { 0x16, PK_6 },
+        { 0x1A, PK_7 },
+        { 0x1C, PK_8 },
+        { 0x19, PK_9 },
+        { 0x00, PK_A },
+        { 0x0B, PK_B },
+        { 0x08, PK_C },
+        { 0x02, PK_D },
+        { 0x0E, PK_E },
+        { 0x03, PK_F },
+        { 0x05, PK_G },
+        { 0x04, PK_H },
+        { 0x22, PK_I },
+        { 0x26, PK_J },
+        { 0x28, PK_K },
+        { 0x25, PK_L },
+        { 0x2E, PK_M },
+        { 0x2D, PK_N },
+        { 0x1F, PK_O },
+        { 0x23, PK_P },
+        { 0x0C, PK_Q },
+        { 0x0F, PK_R },
+        { 0x01, PK_S },
+        { 0x11, PK_T },
+        { 0x20, PK_U },
+        { 0x09, PK_V },
+        { 0x0D, PK_W },
+        { 0x07, PK_X },
+        { 0x10, PK_Y },
+        { 0x06, PK_Z },
+        { 0x52, PK_NUMPAD0 },
+        { 0x53, PK_NUMPAD1 },
+        { 0x54, PK_NUMPAD2 },
+        { 0x55, PK_NUMPAD3 },
+        { 0x56, PK_NUMPAD4 },
+        { 0x57, PK_NUMPAD5 },
+        { 0x58, PK_NUMPAD6 },
+        { 0x59, PK_NUMPAD7 },
+        { 0x5B, PK_NUMPAD8 },
+        { 0x5C, PK_NUMPAD9 },
+        { 0x43, PK_MULTIPLY },
+        { 0x45, PK_ADD },
+        { 0x4E, PK_SUBTRACT },
+        { 0x41, PK_DECIMAL },
+        { 0x4B, PK_DIVIDE },
+        { 0x7A, PK_F1 },
+        { 0x78, PK_F2 },
+        { 0x63, PK_F3 },
+        { 0x76, PK_F4 },
+        { 0x60, PK_F5 },
+        { 0x61, PK_F6 },
+        { 0x62, PK_F7 },
+        { 0x64, PK_F8 },
+        { 0x65, PK_F9 },
+        { 0x6D, PK_F10 },
+        { 0x67, PK_F11 },
+        { 0x6F, PK_F12 },
+        { 0x03, PK_CANCEL },
+        { 0x33, PK_BACK },
+        { 0x30, PK_TAB },
+        { 0x0C, PK_CLEAR},
+        { 0x24, PK_RETURN },
+        { 0x10, PK_SHIFT },
+        { 0x11, PK_CONTROL },
+        { 0x6E, PK_MENU },
+        { 0x39, PK_CAPITAL },
+        { 0x35, PK_ESCAPE },
+        { 0x31, PK_SPACE },
+        { 0x79, PK_PRIOR },
+        { 0x79, PK_NEXT },
+        { 0x77, PK_END },
+        { 0x73, PK_HOME },
+        { 0x7B, PK_LEFT },
+        { 0x7E, PK_UP },
+        { 0x7C, PK_RIGHT },
+        { 0x7D, PK_DOWN },
+        { 0x72, PK_INSERT },
+        { 0x75, PK_DELETE },
+        { 0x36, PK_COMMAND },
+        { 0x21, PK_OPEN_BRACKET },
+        { 0x1E, PK_CLOSE_BRACKET },
+        { 0x29, PK_SEMICOLON },
+        { 0x27, PK_APOSTRAPHE },
+        { 0x2A, PK_BACK_SLASH },
+        { 0x2C, PK_FORWARD_SLASH },
+        { 0x2B, PK_COMMA },
+        { 0x2F, PK_PERIOD },
+        { 0x1B, PK_MINUS },
+        { 0x18, PK_EQUAL },
+        { 0x32, PK_TILDE },
+        
+        { 0x36, PK_GRAVE }
+    };
+    
     enum os_cmd_id
     {
         OS_CMD_NULL = 0,
@@ -346,6 +445,15 @@ namespace
         {
             pen::input_set_key_up(PK_COMMAND);
         }
+        
+        if (flags & NSEventModifierFlagCapsLock)
+        {
+            pen::input_set_key_down(PK_CAPITAL);
+        }
+        else
+        {
+            pen::input_set_key_up(PK_CAPITAL);
+        }
     }
 
     void handle_key_event(NSEvent* event, bool down)
@@ -354,139 +462,30 @@ namespace
 
         NSString* key = [event charactersIgnoringModifiers];
 
-        if ([key length] == 0)
+        // vks
+        u16 key_code = [event keyCode];
+        if(k_key_map.find(key_code) != k_key_map.end())
         {
-            return;
-        }
-
-        unichar key_char = [key characterAtIndex:0];
-
-        if (key_char < 256)
-        {
-            u32 mapped_key_char = key_char;
-
-            u32 vk = 511;
-
-            if (mapped_key_char >= 'a' && mapped_key_char <= 'z')
-            {
-                vk = PK_A + (mapped_key_char - 'a');
-            }
-
-            if (mapped_key_char >= '0' && mapped_key_char <= '9')
-            {
-                vk = PK_0 + (mapped_key_char - '0');
-            }
-
-            if (mapped_key_char == 127)
-            {
-                mapped_key_char = 8;
-                vk = PK_BACK;
-            }
-
-            if (mapped_key_char == 32)
-                vk = PK_SPACE;
-
             if (down)
             {
-                pen::input_set_unicode_key_down(mapped_key_char);
-
-                pen::input_set_key_down(vk);
+                pen::input_set_key_down(k_key_map[key_code]);
             }
             else
             {
-                pen::input_set_unicode_key_up(mapped_key_char);
-
-                pen::input_set_key_up(vk);
+                pen::input_set_key_up(k_key_map[key_code]);
             }
         }
-        else
+        
+        // text input
+        if(key_code != PK_BACK && [key length] > 0)
         {
-            u32 penk = 0;
-
-            switch (key_char)
+            if(down)
             {
-                case NSF1FunctionKey:
-                    penk = PK_F1;
-                    break;
-                case NSF2FunctionKey:
-                    penk = PK_F2;
-                    break;
-                case NSF3FunctionKey:
-                    penk = PK_F3;
-                    break;
-                case NSF4FunctionKey:
-                    penk = PK_F4;
-                    break;
-                case NSF5FunctionKey:
-                    penk = PK_F5;
-                    break;
-                case NSF6FunctionKey:
-                    penk = PK_F6;
-                    break;
-                case NSF7FunctionKey:
-                    penk = PK_F7;
-                    break;
-                case NSF8FunctionKey:
-                    penk = PK_F8;
-                    break;
-                case NSF9FunctionKey:
-                    penk = PK_F9;
-                    break;
-                case NSF10FunctionKey:
-                    penk = PK_F10;
-                    break;
-                case NSF11FunctionKey:
-                    penk = PK_F11;
-                    break;
-                case NSF12FunctionKey:
-                    penk = PK_F12;
-                    break;
-
-                case NSLeftArrowFunctionKey:
-                    penk = PK_LEFT;
-                    break;
-                case NSRightArrowFunctionKey:
-                    penk = PK_RIGHT;
-                    break;
-                case NSUpArrowFunctionKey:
-                    penk = PK_UP;
-                    break;
-                case NSDownArrowFunctionKey:
-                    penk = PK_DOWN;
-                    break;
-
-                case NSPageUpFunctionKey:
-                    penk = PK_NEXT;
-                    break;
-                case NSPageDownFunctionKey:
-                    penk = PK_PRIOR;
-                    break;
-                case NSHomeFunctionKey:
-                    penk = PK_HOME;
-                    break;
-                case NSEndFunctionKey:
-                    penk = PK_END;
-                    break;
-
-                case NSDeleteFunctionKey:
-                    penk = PK_BACK;
-                    break;
-                case NSDeleteCharFunctionKey:
-                    penk = PK_BACK;
-                    break;
-
-                case NSPrintScreenFunctionKey:
-                    penk = PK_SNAPSHOT;
-                    break;
-            }
-
-            if (down)
-            {
-                pen::input_set_key_down(penk);
+                pen::input_set_unicode_key_down([key UTF8String][0]);
             }
             else
             {
-                pen::input_set_key_up(penk);
+                pen::input_set_unicode_key_up([key UTF8String][0]);
             }
         }
     }
@@ -509,7 +508,6 @@ namespace
                     pen::input_set_mouse_pos(x, y);
                     return true;
                 }
-
                 case NSEventTypeLeftMouseDown:
                     pen::input_set_mouse_down(PEN_MOUSE_L);
                     break;
@@ -519,7 +517,6 @@ namespace
                 case NSEventTypeOtherMouseDown:
                     pen::input_set_mouse_down(PEN_MOUSE_M);
                     break;
-
                 case NSEventTypeLeftMouseUp:
                     pen::input_set_mouse_up(PEN_MOUSE_L);
                     break;
@@ -529,32 +526,27 @@ namespace
                 case NSEventTypeOtherMouseUp:
                     pen::input_set_mouse_up(PEN_MOUSE_M);
                     break;
-
                 case NSEventTypeScrollWheel:
                 {
                     f32 scroll_delta = [event deltaY];
                     pen::input_set_mouse_wheel(scroll_delta);
                     return true;
                 }
-
                 case NSEventTypeFlagsChanged:
                 {
                     handle_modifiers(event);
                     return true;
                 }
-
                 case NSEventTypeKeyDown:
                 {
                     handle_key_event(event, true);
                     return true;
                 }
-
                 case NSEventTypeKeyUp:
                 {
                     handle_key_event(event, false);
                     return true;
                 }
-
                 default:
                     return false;
             }
@@ -581,12 +573,9 @@ int main(int argc, char** argv)
     for (u32 i = 0, pos = 0; i < 4; ++i)
     {
         pos = pen::str_find_reverse(working_dir, "/", pos - 1);
-
         if (i == 3)
             working_dir = pen::str_substr(working_dir, 0, pos + 1);
     }
-
-    //todo find data and set working dir
 
     pen_user_info.working_directory = working_dir.c_str();
 
@@ -665,7 +654,7 @@ namespace pen
         }
 
         [NSApp updateWindows];
-
+        
         while (1)
         {
             NSEvent* peek_event = [NSApp nextEventMatchingMask:NSEventMaskAny

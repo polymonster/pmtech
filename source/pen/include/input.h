@@ -9,6 +9,7 @@
 // Implemented with win32, NS and xlib
 
 #include "pen.h"
+#include "Str/str.h"
 
 #define PK_ARRAY_SIZE 512
 #define PGP_MAX_BUTTONS 16 // max buttons in raw gamepad
@@ -77,7 +78,7 @@ namespace pen
         u8  button[PGP_BUTTON_NUM];
         f32 axis[PGP_AXIS_NUM];
     };
-
+    
     void input_set_unicode_key_down(u32 key_index);
     void input_set_unicode_key_up(u32 key_index);
     bool input_get_unicode_key(u32 key_index);
@@ -147,10 +148,7 @@ enum mouse_button
 
 enum virtual_key
 {
-    PK_LBUTTON = 0x01,
-    PK_RBUTTON = 0x02,
     PK_CANCEL = 0x03,
-    PK_MBUTTON = 0x04,
     PK_BACK = 0x08,
     PK_TAB = 0x09,
     PK_CLEAR = 0x0C,
@@ -242,5 +240,17 @@ enum virtual_key
     PK_F12 = 0x7B,
     PK_NUMLOCK = 0x90,
     PK_SCROLL = 0x91,
-    PK_COMMAND = 0x92
+    PK_COMMAND = 0x92,
+    PK_OPEN_BRACKET = 0xDB,
+    PK_CLOSE_BRACKET = 0xDD,
+    PK_SEMICOLON = 0xBA,
+    PK_APOSTRAPHE = 0xC0,
+    PK_BACK_SLASH = 0xDC,
+    PK_FORWARD_SLASH = 0xBF,
+    PK_COMMA = 0xBC,
+    PK_PERIOD = 0xBE,
+    PK_TILDE = 0xDE,
+    PK_MINUS = 0xBD,
+    PK_EQUAL = 0xBB,
+    PK_GRAVE = 0xDF
 };
