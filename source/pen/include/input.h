@@ -9,7 +9,6 @@
 // Implemented with win32, NS and xlib
 
 #include "pen.h"
-#include "Str/str.h"
 
 #define PK_ARRAY_SIZE 512
 #define PGP_MAX_BUTTONS 16 // max buttons in raw gamepad
