@@ -27,6 +27,7 @@ dofile "../source/put/project.lua"
 -- Example projects	
 -- ( project name, current script dir, )
 create_app_example( "empty_project", script_path() )
+create_app_example( "clear", script_path() )
 create_app_example( "basic_triangle", script_path() )
 create_app_example( "basic_texture", script_path() )
 create_app_example( "render_target", script_path() )
