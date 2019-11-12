@@ -662,6 +662,7 @@ namespace pen
     //-----------------------------------------------------------------------------------------------------------------------
     //  COMMAND BUFFER API
     //-----------------------------------------------------------------------------------------------------------------------
+
     void renderer_update_queries()
     {
         renderer_cmd cmd;
@@ -817,9 +818,7 @@ namespace pen
     void renderer_set_input_layout(u32 layout_index)
     {
         renderer_cmd cmd;
-
         cmd.command_index = CMD_SET_INPUT_LAYOUT;
-
         cmd.command_data_index = layout_index;
 
         _cmd_buffer.put(cmd);

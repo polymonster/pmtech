@@ -10,20 +10,22 @@
 #include "timer.h"
 
 #include <math.h>
-
 #include <atomic>
 #include <map>
 
-// Keyboard and mouse
-#define KEY_PRESS 0x01
-#define KEY_HELD 0x02
+//
+// Keyboard and Mouse
+//
+
+// need to handle unicode presses better
+#define PK_ARRAY_SIZE 512
 
 namespace
 {
-    u8                  keyboard_state[PK_ARRAY_SIZE];
-    u8                  ascii_state[PK_ARRAY_SIZE];
-    pen::mouse_state    mouse_state_ = {0};
-    std::atomic<bool>   show_cursor = {true};
+    u8                  s_keyboard_state[PK_ARRAY_SIZE];
+    u8                  s_unicode_state[PK_ARRAY_SIZE];
+    pen::mouse_state    s_mouse_state = {0};
+    std::atomic<bool>   s_show_cursor = {true};
     
     std::map<u16, const c8*> k_key_names = {
         { PK_0, "0" },
@@ -100,8 +102,8 @@ namespace
         { PK_CAPITAL, "CAPITAL" },
         { PK_ESCAPE, "ESCAPE" },
         { PK_SPACE, "SPACE" },
-        { PK_PRIOR, "PAGE_DOWN" },
-        { PK_NEXT, "PAGE_UP" },
+        { PK_PRIOR, "PAGE_UP" },
+        { PK_NEXT, "PAGE_DOWN" },
         { PK_END, "END" },
         { PK_HOME, "HOME" },
         { PK_LEFT, "LEFT" },
@@ -123,7 +125,9 @@ namespace
         { PK_TILDE, "TILDE" },
         { PK_MINUS, "MINUS" },
         { PK_EQUAL, "EQUAL" },
-        { PK_NUMLOCK, "NUMLOCK" }
+        { PK_NUMLOCK, "NUMLOCK" },
+        { PK_WINDOWS, "WINDOWS" },
+        { PK_GRAVE, "GRAVE" }
     };
 }
 
@@ -131,83 +135,63 @@ namespace pen
 {
     void input_set_unicode_key_down(u32 key_index)
     {
-        ascii_state[key_index] = 1;
+        s_unicode_state[key_index] = 1;
     }
 
     void input_set_unicode_key_up(u32 key_index)
     {
-        ascii_state[key_index] = 0;
+        s_unicode_state[key_index] = 0;
     }
 
     bool input_get_unicode_key(u32 key_index)
     {
-        return ascii_state[key_index] == 1;
+        return s_unicode_state[key_index] == 1;
     }
 
     void input_set_key_down(u32 key_index)
     {
-        keyboard_state[key_index]++;
+        s_keyboard_state[key_index]++;
     }
 
     void input_set_key_up(u32 key_index)
     {
-        keyboard_state[key_index] = 0;
-    }
-
-    bool input_is_key_pressed(u32 key_index)
-    {
-        return keyboard_state[key_index] == KEY_PRESS;
-    }
-
-    bool input_is_key_held(u32 key_index)
-    {
-        return keyboard_state[key_index] >= KEY_HELD;
+        s_keyboard_state[key_index] = 0;
     }
 
     void input_set_mouse_down(u32 button_index)
     {
-        mouse_state_.buttons[button_index]++;
+        s_mouse_state.buttons[button_index] = 1;
     }
 
     void input_set_mouse_up(u32 button_index)
     {
-        mouse_state_.buttons[button_index] = 0;
+        s_mouse_state.buttons[button_index] = 0;
     }
 
     const pen::mouse_state& input_get_mouse_state()
     {
-        return mouse_state_;
-    }
-
-    bool input_is_mouse_pressed(u32 button_index)
-    {
-        return mouse_state_.buttons[button_index] == KEY_PRESS;
-    }
-
-    bool input_is_mouse_held(u32 button_index)
-    {
-        return mouse_state_.buttons[button_index] == KEY_PRESS;
+        return s_mouse_state;
     }
 
     void input_set_mouse_pos(f32 x, f32 y)
     {
-        mouse_state_.x = x;
-        mouse_state_.y = y;
+        s_mouse_state.x = x;
+        s_mouse_state.y = y;
     }
 
     void input_set_mouse_wheel(f32 wheel)
     {
-        mouse_state_.wheel += wheel;
+        s_mouse_state.wheel += wheel;
     }
 
     bool input_is_key_down(u32 key_index)
     {
-        return (input_is_key_held(key_index) || input_is_key_pressed(key_index));
+        return s_keyboard_state[key_index];
     }
 
     bool input_is_mouse_down(u32 button_index)
     {
-        return (input_is_mouse_held(button_index) || input_is_mouse_pressed(button_index));
+        return s_mouse_state.buttons[button_index];
     }
 
     void input_set_cursor_pos(u32 client_x, u32 client_y)
@@ -217,7 +201,7 @@ namespace pen
 
     void input_show_cursor(bool show)
     {
-        show_cursor = show;
+        s_show_cursor = show;
     }
 
     const c8* input_get_key_str(u32 key_index)
@@ -225,11 +209,15 @@ namespace pen
         if(k_key_names.find(key_index) != k_key_names.end())
             return k_key_names[key_index];
         
-        return "UNKNOWN";
+        static c8 buf[32];
+        snprintf(buf, 32, "UNKNOWN %i", key_index);
+        return &buf[0];
     }
 } // namespace pen
 
-// Gamepad ------------------------------------------------------------------------------------------------------------------
+//
+// Gamepad
+//
 
 #define API_RAW_INPUT 0
 #define API_XINPUT 1
@@ -550,6 +538,7 @@ namespace
         }
     }
 } // namespace
+
 namespace pen
 {
     void gamepad_attach_func(struct Gamepad_device* device, void* context)

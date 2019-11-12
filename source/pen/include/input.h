@@ -4,13 +4,12 @@
 
 #pragma once
 
-// Simple input api for getting keyboard and mouse presses
-// and character keys for typing.
+// Simple input api for getting keyboard and mouse presses + unicode characters
 // Implemented with win32, NS and xlib
+// Gamepad api using libstemgamepad
 
 #include "pen.h"
 
-#define PK_ARRAY_SIZE 512
 #define PGP_MAX_BUTTONS 16 // max buttons in raw gamepad
 #define PGP_MAX_AXIS 64    // max axis in raw gamepad
 #define PGP_MAX_GAMEPADS 4
@@ -84,9 +83,6 @@ namespace pen
 
     void input_set_key_down(u32 key_index);
     void input_set_key_up(u32 key_index);
-
-    bool input_is_key_pressed(u32 key_index);
-    bool input_is_key_held(u32 key_index);
     bool input_is_key_down(u32 key_index);
 
     void input_set_mouse_down(u32 button_index);
@@ -102,8 +98,6 @@ namespace pen
     void input_get_raw_gamepad_state(u32 device_index, raw_gamepad_state& gs);
 
     const mouse_state& input_get_mouse_state();
-    bool               input_is_mouse_pressed(u32 button_index);
-    bool               input_is_mouse_held(u32 button_index);
     bool               input_is_mouse_down(u32 button_index);
 
     bool input_key(u32 key_index);
@@ -121,7 +115,6 @@ namespace pen
     bool input_undo_pressed();
     bool input_redo_pressed();
 
-    // inline
     inline bool mouse_coords_valid(u32 x, u32 y)
     {
         return x < pen_window.width && y < pen_window.height;
@@ -129,12 +122,12 @@ namespace pen
 
     inline bool input_key(u32 key_index)
     {
-        return (pen::input_is_key_pressed(key_index) || pen::input_is_key_held(key_index));
+        return pen::input_is_key_down(key_index);
     }
 
     inline bool input_mouse(u32 button_index)
     {
-        return (pen::input_is_mouse_pressed(button_index) || pen::input_is_mouse_held(button_index));
+        return pen::input_is_mouse_down(button_index);
     }
 } // namespace pen
 
@@ -251,5 +244,6 @@ enum virtual_key
     PK_TILDE = 0xDE,
     PK_MINUS = 0xBD,
     PK_EQUAL = 0xBB,
-    PK_GRAVE = 0xDF
+    PK_GRAVE = 223,
+    PK_WINDOWS = 91
 };

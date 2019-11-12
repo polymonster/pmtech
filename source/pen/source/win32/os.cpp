@@ -11,12 +11,12 @@
 #include "renderer.h"
 #include "threads.h"
 #include "timer.h"
-
 #include "data_struct.h"
 #include "str_utilities.h"
 
-extern a_u8    g_window_resize;
 pen::user_info pen_user_info;
+extern a_u8    g_window_resize;
+static u32     s_return_code = 0;
 
 namespace pen
 {
@@ -29,9 +29,9 @@ struct window_params
     int       cmdshow;
 };
 
-static u32 s_return_code = 0;
-
+//
 // OpenGL Render Context
+//
 
 #ifdef PEN_RENDERER_OPENGL
 #define GLEW_STATIC
@@ -263,12 +263,6 @@ namespace pen
         return true;
     }
 
-    struct window_params
-    {
-        HINSTANCE hinstance;
-        int       cmdshow;
-    };
-
     void os_terminate(u32 return_code)
     {
         s_return_code = return_code;
@@ -334,22 +328,28 @@ namespace pen
 
     void set_unicode_key(u32 key_index, bool down)
     {
-        wchar_t buff[10];
+        static wchar_t buf[32];
 
-        BYTE keyState[256] = {0};
+        // modifiers
+        BYTE key_state[256] = {0};
+        GetKeyboardState(key_state);
 
         int result =
-            ToUnicodeEx(key_index, MapVirtualKey(key_index, MAPVK_VK_TO_VSC), keyState, buff, _countof(buff), 0, NULL);
+            ToUnicodeEx(key_index, MapVirtualKey(key_index, MAPVK_VK_TO_VSC), key_state, buf, _countof(buf), 0, NULL);
 
-        u32 unicode = buff[0];
-
-        if (unicode > 511)
+        // not ideal.. need a better solution to track unicode text input.
+        u32 unicode = buf[0];
+        if (unicode > 511 || unicode == 0)
             return;
 
         if (down)
+        {
             pen::input_set_unicode_key_down(unicode);
+        }
         else
+        {
             pen::input_set_unicode_key_up(unicode);
+        }
     }
 
     LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)

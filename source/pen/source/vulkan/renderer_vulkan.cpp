@@ -1,10 +1,15 @@
+// renderer_vulkan.cpp
+// Copyright 2014 - 2019 Alex Dixon.
+// License: https://github.com/polymonster/pmtech/blob/master/license.md
+
 #include "renderer.h"
+#include "renderer_shared.h"
 #include "console.h"
 #include "data_struct.h"
 #include "hash.h"
 
-#include "vulkan/vulkan.h"
 
+#include "vulkan/vulkan.h"
 #ifdef _WIN32
 #include "vulkan/vulkan_win32.h"
 #endif
@@ -180,22 +185,46 @@ namespace
         case PEN_TEX_FORMAT_BC5_UNORM:
             return true;
         }
-
         return false;
     }
 
-    VkImageUsageFlagBits to_vk_texture_usage(u32 pen_texture_usage, u32 pen_texture_format, bool has_data)
+    bool is_depth_stencil_tex_format(u32 pen_format)
     {
-        u32 vf = VK_IMAGE_USAGE_SAMPLED_BIT;
-        if (!is_compressed_tex_format(pen_texture_format))
-            vf |= VK_IMAGE_USAGE_STORAGE_BIT;
+        switch (pen_format)
+        {
+        case PEN_TEX_FORMAT_D24_UNORM_S8_UINT:
+            return true;
+        }
+        return false;
+    }
 
-        if (pen_texture_usage & PEN_BIND_RENDER_TARGET)
-            vf |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    VkImageAspectFlags to_vk_image_aspect(u32 pen_texture_format)
+    {
+        if (pen_texture_format == PEN_TEX_FORMAT_D24_UNORM_S8_UINT)
+            return VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+        
+        return VK_IMAGE_ASPECT_COLOR_BIT;
+    }
+
+    VkImageUsageFlags to_vk_texture_usage(u32 pen_texture_usage, u32 pen_texture_format, bool has_data)
+    {
+        u32 vf = 0;
         if (pen_texture_usage & PEN_BIND_DEPTH_STENCIL)
+        {
             vf |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        }
+        else
+        {
+            vf |= VK_IMAGE_USAGE_SAMPLED_BIT;
+            if (!is_compressed_tex_format(pen_texture_format))
+                vf |= VK_IMAGE_USAGE_STORAGE_BIT;
+            if (pen_texture_usage & PEN_BIND_RENDER_TARGET)
+                vf |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        }
+
         if (has_data)
             vf |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
         return (VkImageUsageFlagBits)vf;
     }
 
@@ -712,6 +741,34 @@ namespace
             vt.tcp->height = pen_window.height;
         }
 
+        // depth images
+        for (u32 i = 0; i < num_images; ++i)
+        {
+            continue;
+
+            u32 j = i + num_images;
+
+            _res_pool.insert({}, j);
+            vulkan_texture& vt = _res_pool.get(j).texture;
+
+            pen::texture_creation_params tcp;
+            tcp.data = nullptr;
+            tcp.data_size = 0;
+            tcp.width = pen_window.width;
+            tcp.height = pen_window.height;
+            tcp.num_arrays = 1;
+            tcp.num_mips = 1;
+            tcp.sample_count = 1;
+            tcp.sample_quality = 1;
+            tcp.block_size = 1;
+            tcp.pixels_per_block = 1;
+            tcp.format = PEN_TEX_FORMAT_D24_UNORM_S8_UINT;
+            tcp.bind_flags = PEN_BIND_DEPTH_STENCIL;
+            tcp.collection_type = TEXTURE_COLLECTION_NONE;
+
+            direct::renderer_create_texture(tcp, j);
+        }
+
         delete images;
     }
 
@@ -727,7 +784,7 @@ namespace
         VkCommandBufferAllocateInfo buf_info = {};
         buf_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         buf_info.commandPool = _ctx.cmd_pool;
-        buf_info.commandBufferCount = sb_count(_ctx.swap_chain_images);
+        buf_info.commandBufferCount = NBB;
         buf_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
         // make enough size
@@ -935,7 +992,7 @@ namespace
         VkSwapchainCreateInfoKHR swap_chain_info = {};
         swap_chain_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
         swap_chain_info.surface = _ctx.surface;
-        swap_chain_info.minImageCount = 3;
+        swap_chain_info.minImageCount = NBB;
         swap_chain_info.imageFormat = VK_FORMAT_B8G8R8A8_UNORM;
         swap_chain_info.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
         swap_chain_info.imageExtent = { pen_window.width, caps.currentExtent.height };
@@ -1069,11 +1126,14 @@ namespace
             delete present_modes;
         }
 
-        create_swapchain();
+        // to query memory type
+        vkGetPhysicalDeviceMemoryProperties(_ctx.physical_device, &_ctx.mem_properties);
 
         create_command_buffers();
 
         create_sync_primitives();
+
+        create_swapchain();
 
         create_descriptor_set_pools(4096);
 
@@ -1759,9 +1819,6 @@ namespace pen
 
             create_device_surface_swapchain(params);
 
-            // to query memory type
-            vkGetPhysicalDeviceMemoryProperties(_ctx.physical_device, &_ctx.mem_properties);
-
             new_frame(0);
 
             return 0;
@@ -1996,25 +2053,25 @@ namespace pen
             _res_pool.insert({}, resource_slot);
             vulkan_texture& vt = _res_pool.get(resource_slot).texture;
 
-            // texture formats todo.
-            vt.format = to_vk_image_format(tcp.format);
-            vt.tcp = new texture_creation_params(tcp);
+            // take a cpy of tcp, we might need it later
+            vt.tcp = new texture_creation_params(renderer_tcp_resolve_ratio(tcp));
+            vt.format = to_vk_image_format(vt.tcp->format);
 
-            if (tcp.bind_flags & PEN_BIND_SHADER_WRITE)
+            if (vt.tcp->bind_flags & PEN_BIND_SHADER_WRITE)
                 vt.compute_shader_write = true;
 
             // image
             VkImageCreateInfo info = {};
             info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-            info.extent.width = tcp.width;
-            info.extent.height = tcp.height;
-            info.extent.depth = tcp.collection_type == TEXTURE_COLLECTION_VOLUME ? tcp.num_arrays : 1;
+            info.extent.width = vt.tcp->width;
+            info.extent.height = vt.tcp->height;
+            info.extent.depth = vt.tcp->collection_type == TEXTURE_COLLECTION_VOLUME ? vt.tcp->num_arrays : 1;
             info.arrayLayers = 1;
-            info.samples = (VkSampleCountFlagBits)tcp.sample_count;
-            info.mipLevels = tcp.num_mips;
+            info.samples = (VkSampleCountFlagBits)vt.tcp->sample_count;
+            info.mipLevels = vt.tcp->num_mips;
             info.imageType = VK_IMAGE_TYPE_2D;
             info.format = vt.format;
-            info.usage = to_vk_texture_usage(tcp.bind_flags, tcp.format, tcp.data);
+            info.usage = to_vk_texture_usage(vt.tcp->bind_flags, vt.tcp->format, vt.tcp->data);
             info.tiling = VK_IMAGE_TILING_OPTIMAL;
             info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
             info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -2043,7 +2100,7 @@ namespace pen
             view_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
             view_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
             view_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-            view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            view_info.subresourceRange.aspectMask = to_vk_image_aspect(vt.tcp->format);
             view_info.subresourceRange.baseMipLevel = 0;
             view_info.subresourceRange.levelCount = 1;
             view_info.subresourceRange.baseArrayLayer = 0;
@@ -2051,13 +2108,13 @@ namespace pen
 
             CHECK_CALL(vkCreateImageView(_ctx.device, &view_info, nullptr, &vt.image_view));
 
-            if (tcp.data)
+            if (vt.tcp->data)
             {
                 VkBuffer buf;
                 VkDeviceMemory mem;
                 _create_buffer_internal(VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                    tcp.data, tcp.data_size, buf, mem);
+                    vt.tcp->data, vt.tcp->data_size, buf, mem);
 
                 _transition_image(vt.image, 
                     vt.format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -2072,8 +2129,8 @@ namespace pen
                 region.imageSubresource.layerCount = 1;
                 region.imageOffset = { 0, 0, 0 };
                 region.imageExtent = {
-                    tcp.width,
-                    tcp.height,
+                    vt.tcp->width,
+                    vt.tcp->height,
                     1
                 };
 
