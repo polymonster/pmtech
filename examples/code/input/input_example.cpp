@@ -96,7 +96,7 @@ PEN_TRV pen::user_entry(void* params)
         // key down
         Str key_msg = "key down: ";
 
-        for (s32 key = 0; key < PK_ARRAY_SIZE; ++key)
+        for (s32 key = 0; key < PK_COUNT; ++key)
         {
             if (pen::input_key(key))
             {
@@ -110,7 +110,7 @@ PEN_TRV pen::user_entry(void* params)
         put::dbg::add_text_2f(10.0f, 30.0f, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "%s", key_msg.c_str());
 
         Str ascii_msg = "character down: ";
-        for (s32 key = 0; key < PK_ARRAY_SIZE; ++key)
+        for (s32 key = 0; key < PK_COUNT; ++key)
         {
             if (pen::input_get_unicode_key(key))
             {
@@ -185,9 +185,9 @@ PEN_TRV pen::user_entry(void* params)
                                                "L1",        "R1",         "BACK / SHARE", "START / OPTIONS",
                                                "L3",        "R3",         "DPAD LEFT",    "DPAD RIGHT",
                                                "DPAD UP",   "DPAD DOWN",  "TOUCH PAD",    "PLATFORM"};
-            static_assert(PEN_ARRAY_SIZE(button_names) == PGP_BUTTON_NUM, "mismatched array size");
+            static_assert(PEN_ARRAY_SIZE(button_names) == PGP_BUTTON_COUNT, "mismatched array size");
 
-            for (u32 b = 0; b < PGP_BUTTON_NUM; ++b)
+            for (u32 b = 0; b < PGP_BUTTON_COUNT; ++b)
             {
                 put::dbg::add_text_2f(10.0f, ypos, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "%s: %i", button_names[b],
                                       gs.button[b]);
@@ -196,11 +196,11 @@ PEN_TRV pen::user_entry(void* params)
 
             static const c8* axis_names[] = {"Left Stick X",  "Left Stick Y", "Right Stick X",
                                              "Right Stick Y", "L TRIGGER",    "R TRIGGER"};
-            static_assert(PEN_ARRAY_SIZE(axis_names) == PGP_AXIS_NUM, "mismatched array size");
+            static_assert(PEN_ARRAY_SIZE(axis_names) == PGP_AXIS_COUNT, "mismatched array size");
 
             ypos = start_y;
             f32 xpos = 150.0f;
-            for (u32 a = 0; a < PGP_AXIS_NUM; ++a)
+            for (u32 a = 0; a < PGP_BUTTON_COUNT; ++a)
             {
                 put::dbg::add_text_2f(xpos, ypos, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "%s: %f", axis_names[a], gs.axis[a]);
                 ypos += 10.0f;

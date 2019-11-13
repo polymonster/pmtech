@@ -628,8 +628,11 @@ namespace pen
         slot_resources_init(&s_renderer_slot_resources, 2048);
         
         // initialise renderer
+        // save the first 6 resources for swap chain colour and backbuffer
         u32 bb_res = slot_resources_get_next(&s_renderer_slot_resources);
         u32 bb_depth_res = slot_resources_get_next(&s_renderer_slot_resources);
+        for(s64 i = 0; i < 4; ++i)
+            slot_resources_get_next(&s_renderer_slot_resources);
 
         direct::renderer_initialise(user_data, bb_res, bb_depth_res);
 

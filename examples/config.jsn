@@ -155,11 +155,11 @@
         
         copy: [
             ["assets/audio", "bin/win32/data/audio"],
-            ["../assets/audio", "bin/win32/data/audio"],
             ["assets/configs", "bin/win32/data/configs"],
+            ["assets/scene", "bin/win32/data/scene"],
+            ["../third_party/shared_libs/win32", "bin/win32"],
             ["../assets/configs", "bin/win32/data/configs"],
-            ["../assets/fonts", "bin/win32/data/fonts"],
-            ["assets/scene", "bin/win32/data/scene"]
+            ["../assets/fonts", "bin/win32/data/fonts"]
         ],
         
         data_dir: "bin/win32/data/"

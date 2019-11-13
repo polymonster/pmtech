@@ -109,8 +109,6 @@ local function setup_win32()
 	
 	systemversion(windows_sdk_version())
 	disablewarnings { "4800", "4305", "4018", "4244", "4267", "4996" }
-
-	copy_shared_libs()
 end
 
 local function setup_ios()

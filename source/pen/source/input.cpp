@@ -17,13 +17,10 @@
 // Keyboard and Mouse
 //
 
-// need to handle unicode presses better
-#define PK_ARRAY_SIZE 512
-
 namespace
 {
-    u8                  s_keyboard_state[PK_ARRAY_SIZE];
-    u8                  s_unicode_state[PK_ARRAY_SIZE];
+    u8                  s_keyboard_state[PK_COUNT];
+    u8                  s_unicode_state[PK_COUNT];
     pen::mouse_state    s_mouse_state = {0};
     std::atomic<bool>   s_show_cursor = {true};
     
@@ -249,6 +246,10 @@ extern "C"
 #endif
 }
 
+#define PGP_MAX_BUTTONS 16 // max buttons in raw gamepad
+#define PGP_MAX_AXIS 64    // max axis in raw gamepad
+#define PGP_MAX_GAMEPADS 4
+
 namespace
 {
     struct device_mapping
@@ -279,10 +280,10 @@ namespace
 
     void init_gamepad_values(pen::gamepad_state& gs)
     {
-        for (u32 b = 0; b < PGP_BUTTON_NUM; ++b)
+        for (u32 b = 0; b < PGP_BUTTON_COUNT; ++b)
             gs.button[b] = 0;
 
-        for (u32 a = 0; a < PGP_AXIS_NUM; ++a)
+        for (u32 a = 0; a < PGP_AXIS_COUNT; ++a)
             gs.axis[a] = 0.0f;
 
         gs.axis[PGP_AXIS_LTRIGGER] = -1.0f;
@@ -296,10 +297,10 @@ namespace
         no.vendor_id = 0;
         no.product_id = 0;
         init_map(no);
-        for (u32 i = 0; i < PGP_BUTTON_NUM; ++i)
+        for (u32 i = 0; i < PGP_BUTTON_COUNT; ++i)
             no.button_map[i] = i;
 
-        for (u32 i = 0; i < PGP_AXIS_NUM; ++i)
+        for (u32 i = 0; i < PGP_AXIS_COUNT; ++i)
             no.axis_map[i] = i;
 
         sb_push(s_device_maps, no);

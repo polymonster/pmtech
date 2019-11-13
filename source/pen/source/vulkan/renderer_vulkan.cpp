@@ -744,8 +744,6 @@ namespace
         // depth images
         for (u32 i = 0; i < num_images; ++i)
         {
-            continue;
-
             u32 j = i + num_images;
 
             _res_pool.insert({}, j);
@@ -903,7 +901,8 @@ namespace
         vkCmdPipelineBarrier(cmd_buf, src_stage, dst_stage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
     }
 
-    void _transition_image(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout)
+    void _transition_image(VkImage image, VkFormat format, VkImageAspectFlags aspect, VkImageLayout old_layout, 
+        VkImageLayout new_layout)
     {
         VkCommandBuffer cmd_buf = begin_cmd_buffer();
 
@@ -914,7 +913,7 @@ namespace
         barrier.srcQueueFamilyIndex = _ctx.graphics_family_index;
         barrier.dstQueueFamilyIndex = _ctx.graphics_family_index;;
         barrier.image = image;
-        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        barrier.subresourceRange.aspectMask = aspect;
         barrier.subresourceRange.baseMipLevel = 0;
         barrier.subresourceRange.levelCount = 1;
         barrier.subresourceRange.baseArrayLayer = 0;
@@ -949,6 +948,14 @@ namespace
 
             src_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
             dst_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+        }
+        else if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+        {
+            barrier.srcAccessMask = 0;
+            barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+            src_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            dst_stage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
         }
         else
         {
@@ -1248,9 +1255,9 @@ namespace
         const clear_state& clear = _res_pool.get(_state.clear_state).clear;
 
         // attachments
-        VkAttachmentDescription* colour_attachments = nullptr;
-        VkAttachmentReference*   colour_refs = nullptr;
-        VkImageView*             colour_img_view = nullptr;
+        VkAttachmentDescription* attachments = nullptr;
+        VkAttachmentReference*   attachment_refs = nullptr;
+        VkImageView*             attachment_img_view = nullptr;
 
         size_t fbw, fbh;
         for (u32 i = 0; i < sb_count(_state.colour_attachments); ++i)
@@ -1284,16 +1291,43 @@ namespace
             ref.attachment = i;
             ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-            sb_push(colour_attachments, col);
-            sb_push(colour_refs, ref);
-            sb_push(colour_img_view, vt.image_view);
+            sb_push(attachments, col);
+            sb_push(attachment_refs, ref);
+            sb_push(attachment_img_view, vt.image_view);
         }
 
         // sub pass
         VkSubpassDescription subpass = {};
         subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpass.colorAttachmentCount = sb_count(colour_refs);
-        subpass.pColorAttachments = colour_refs;
+        subpass.colorAttachmentCount = sb_count(attachment_refs);
+        subpass.pColorAttachments = attachment_refs;
+
+        // depth attachment
+        //if (_state.depth_attachment != -1)
+        if(0)
+        {
+            const vulkan_texture& vt = _res_pool.get(_state.depth_attachment).texture;
+
+            VkAttachmentDescription depth_attachment = {};
+            depth_attachment.format = vt.format;
+            depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+            depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+            depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+            depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+            depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+            depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+            VkAttachmentReference depth_attachment_ref = {};
+            depth_attachment_ref.attachment = 1;
+            depth_attachment_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+            subpass.pDepthStencilAttachment = &depth_attachment_ref;
+
+            sb_push(attachments, depth_attachment);
+            sb_push(attachment_refs, depth_attachment_ref);
+            sb_push(attachment_img_view, vt.image_view);
+        }
 
         VkSubpassDependency dep = {};
         dep.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -1306,8 +1340,8 @@ namespace
         // pass
         VkRenderPassCreateInfo pass_info = {};
         pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        pass_info.attachmentCount = sb_count(colour_attachments);
-        pass_info.pAttachments = colour_attachments;
+        pass_info.attachmentCount = sb_count(attachments);
+        pass_info.pAttachments = attachments;
         pass_info.subpassCount = 1;
         pass_info.pSubpasses = &subpass;
         pass_info.dependencyCount = 1;
@@ -1320,8 +1354,8 @@ namespace
         VkFramebufferCreateInfo fb_info = {};
         fb_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         fb_info.renderPass = pass;
-        fb_info.attachmentCount = sb_count(colour_img_view);
-        fb_info.pAttachments = colour_img_view;
+        fb_info.attachmentCount = sb_count(attachment_img_view);
+        fb_info.pAttachments = attachment_img_view;
         fb_info.width = fbw;
         fb_info.height = fbh;
         fb_info.layers = 1;
@@ -1329,9 +1363,9 @@ namespace
         VkFramebuffer fb;
         CHECK_CALL(vkCreateFramebuffer(_ctx.device, &fb_info, nullptr, &fb));
 
-        sb_free(colour_attachments);
-        sb_free(colour_refs);
-        sb_free(colour_img_view);
+        sb_free(attachments);
+        sb_free(attachment_refs);
+        sb_free(attachment_img_view);
 
         // clear
         clear_state& cs = _res_pool.get(_state.clear_state).clear;
@@ -2108,6 +2142,12 @@ namespace pen
 
             CHECK_CALL(vkCreateImageView(_ctx.device, &view_info, nullptr, &vt.image_view));
 
+            VkImageLayout target_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            if (vt.tcp->bind_flags & PEN_BIND_DEPTH_STENCIL)
+                target_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+            VkImageAspectFlags aspect = to_vk_image_aspect(vt.tcp->format);
+
             if (vt.tcp->data)
             {
                 VkBuffer buf;
@@ -2117,13 +2157,13 @@ namespace pen
                     vt.tcp->data, vt.tcp->data_size, buf, mem);
 
                 _transition_image(vt.image, 
-                    vt.format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+                    vt.format, aspect, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
                 VkBufferImageCopy region = {};
                 region.bufferOffset = 0;
                 region.bufferRowLength = 0;
                 region.bufferImageHeight = 0;
-                region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                region.imageSubresource.aspectMask = aspect;
                 region.imageSubresource.mipLevel = 0;
                 region.imageSubresource.baseArrayLayer = 0;
                 region.imageSubresource.layerCount = 1;
@@ -2139,7 +2179,7 @@ namespace pen
                 end_cmd_buffer(cmd);
 
                 _transition_image(vt.image,
-                    vt.format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                    vt.format, aspect, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, target_layout);
 
                 vkDestroyBuffer(_ctx.device, buf, nullptr);
                 vkFreeMemory(_ctx.device, mem, nullptr);
@@ -2147,10 +2187,10 @@ namespace pen
             else
             {
                 _transition_image(vt.image,
-                    vt.format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                    vt.format, aspect, VK_IMAGE_LAYOUT_UNDEFINED, target_layout);
             }
 
-            vt.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            vt.layout = target_layout;
         }
 
         void renderer_create_sampler(const sampler_creation_params& scp, u32 resource_slot)
@@ -2381,6 +2421,11 @@ namespace pen
                 if (ct == 0)
                     ct += _ctx.ii;
                 sb_push(_state.colour_attachments, ct);
+            }
+
+            if (depth_target == 0)
+            {
+                depth_target = NBB + _ctx.ii;
             }
 
             _state.depth_attachment = depth_target;

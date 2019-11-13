@@ -10,10 +10,6 @@
 
 #include "pen.h"
 
-#define PGP_MAX_BUTTONS 16 // max buttons in raw gamepad
-#define PGP_MAX_AXIS 64    // max axis in raw gamepad
-#define PGP_MAX_GAMEPADS 4
-
 extern pen::window_creation_params pen_window;
 
 enum gamepad_button
@@ -34,8 +30,7 @@ enum gamepad_button
     PGP_BUTTON_DDOWN,
     PGP_BUTTON_TOUCH_PAD, // ds4 touch pad
     PGP_BUTTON_PLATFORM,  // ps button, xbox button etc
-
-    PGP_BUTTON_NUM
+    PGP_BUTTON_COUNT
 };
 
 enum gamepad_axis
@@ -46,8 +41,7 @@ enum gamepad_axis
     PGP_AXIS_RIGHT_STICK_Y,
     PGP_AXIS_LTRIGGER,
     PGP_AXIS_RTRIGGER,
-
-    PGP_AXIS_NUM
+    PGP_AXIS_COUNT
 };
 
 namespace pen
@@ -66,15 +60,15 @@ namespace pen
         u32 vendor_id = PEN_INVALID_HANDLE;
         u32 product_id = PEN_INVALID_HANDLE;
         u32 mapping = PEN_INVALID_HANDLE;
-        u8  button[PGP_MAX_BUTTONS] = {0};
-        f32 axis[PGP_MAX_AXIS] = {0};
+        u8  button[PGP_BUTTON_COUNT] = {0};
+        f32 axis[PGP_AXIS_COUNT] = {0};
     };
 
     struct gamepad_state
     {
         u32 device_index;
-        u8  button[PGP_BUTTON_NUM];
-        f32 axis[PGP_AXIS_NUM];
+        u8  button[PGP_BUTTON_COUNT];
+        f32 axis[PGP_AXIS_COUNT];
     };
     
     void input_set_unicode_key_down(u32 key_index);
@@ -245,5 +239,6 @@ enum virtual_key
     PK_MINUS = 0xBD,
     PK_EQUAL = 0xBB,
     PK_GRAVE = 223,
-    PK_WINDOWS = 91
+    PK_WINDOWS = 91,
+    PK_COUNT = 512
 };
