@@ -105,7 +105,7 @@ struct ps_output_multi
     float4 world_pos : SV_Target2;
 };
 
-declare_texture_samplers
+shader_resources
 {
     texture_2d( diffuse_texture, 0 );
     texture_2d( normal_texture, 1 );
