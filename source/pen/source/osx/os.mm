@@ -46,6 +46,7 @@ namespace
     };
     os_context s_ctx;
     
+    // todo.. move into context
     NSWindow* _window;
     bool      pen_terminate_app = false;
     

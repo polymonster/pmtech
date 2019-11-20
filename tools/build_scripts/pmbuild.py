@@ -158,7 +158,7 @@ def get_task_files(task):
 
 # get files for a task sorted by directory
 def get_task_files_containers(task):
-    container_ext = ".cube"
+    container_ext = ".cont"
     files = get_task_files(task)
     container_files = []
     skip = 0
@@ -172,10 +172,20 @@ def get_task_files_containers(task):
             export = export_config_for_directory(container_name, "osx")
             container_src = container_name + "/container.txt"
             container_dst = os.path.dirname(f[1])
+            container_dir = os.path.dirname(f[0])
             cf = (container_src, container_dst)
             file_list = ""
-            for xf in export["files"]:
-                file_list += os.path.join(container_name, xf) + "\n"
+            # list of files in json
+            if "files" in export:
+                for xf in export["files"]:
+                    file_list += os.path.join(container_name, xf) + "\n"
+            # otherwise take all files in the direxctory
+            else:
+                dir_files = sorted(os.listdir(container_dir))
+                for xf in dir_files:
+                    if xf.endswith(".jsn") or xf.endswith(".DS_Store") or xf.endswith(".txt"):
+                        continue
+                    file_list += os.path.join(container_name, xf) + "\n"
             update_container = False
             if os.path.exists(container_src):
                 cur_container = open(container_src, "r").read()

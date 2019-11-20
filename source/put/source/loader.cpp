@@ -322,12 +322,14 @@ namespace
         u32 format = dds_pixel_format_to_texture_format(ddsh, compressed, block_size, dx10_header_present);
 
         u8* top_image_start = (u8*)file_data + sizeof(dds_header);
+        u32 array_size = 1;
         if (dx10_header_present)
         {
             dx10_header* dxh = (dx10_header*)top_image_start;
 
             format = dxgi_format_to_texture_format(dxh, compressed, block_size);
 
+            array_size = dxh->array_size;
             top_image_start += sizeof(dx10_header);
         }
 
@@ -336,7 +338,7 @@ namespace
         tcp.height = ddsh->height;
         tcp.format = format;
         tcp.num_mips = std::max<u32>(ddsh->mip_map_count, 1);
-        tcp.num_arrays = 1;
+        tcp.num_arrays = array_size;
         tcp.sample_count = 1;
         tcp.sample_quality = 0;
         tcp.usage = PEN_USAGE_DEFAULT;
@@ -345,7 +347,7 @@ namespace
         tcp.flags = 0;
         tcp.block_size = block_size;
         tcp.pixels_per_block = compressed ? 4 : 1;
-        tcp.collection_type = pen::TEXTURE_COLLECTION_NONE;
+        tcp.collection_type = array_size > 1 ? pen::TEXTURE_COLLECTION_ARRAY : pen::TEXTURE_COLLECTION_NONE;
 
         if (ddsh->caps & DDSCAPS_COMPLEX)
         {
@@ -596,8 +598,14 @@ namespace put
         for (auto& t : k_texture_references)
         {
             if (t.handle == handle)
+            {
                 info = t.tcp;
+                return;
+            }
         }
+        
+        // not found, not a texture handle.
+        PEN_ASSERT(0);
     }
 
     void texture_browser_ui()

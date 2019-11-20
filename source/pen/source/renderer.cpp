@@ -959,6 +959,7 @@ namespace pen
             case TEXTURE_COLLECTION_NONE:
             case TEXTURE_COLLECTION_CUBE:
             case TEXTURE_COLLECTION_VOLUME:
+            case TEXTURE_COLLECTION_ARRAY:
                 break;
             default:
                 PEN_ASSERT_MSG(0, "inavlid collection type");
