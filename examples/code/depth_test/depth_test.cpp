@@ -113,11 +113,11 @@ PEN_TRV pen::user_entry(void* params)
     // gold trialngle
     vertex vertices_gold[] = {
         0.0f, 0.3f, 0.5f, 1.0f,
-        0.5f, 0.4f, 0.07f, 1.0f,
+        0.8f, 0.7f, 0.07f, 1.0f,
         0.3f, -0.3f, 0.5f, 1.0f,
-        0.5f, 0.4f, 0.07f, 1.0f,
+        0.8f, 0.7f, 0.07f, 1.0f,
         -0.3f, -0.3f, 0.5f, 1.0f,
-        0.5f, 0.4f, 0.07f, 1.0f
+        0.8f, 0.7f, 0.07f, 1.0f
     };
 
     bcp.buffer_size = sizeof(vertex) * 3;
@@ -142,6 +142,15 @@ PEN_TRV pen::user_entry(void* params)
 
     u32 stride = sizeof(vertex);
 
+    // create a depth stencil state
+    pen::depth_stencil_creation_params dsscp;
+    dsscp.depth_enable = 1;
+    dsscp.depth_func = PEN_COMPARISON_LESS;
+    dsscp.depth_write_mask = 1;
+    dsscp.stencil_enable = 0;
+
+    u32 depth_stencil_state = pen::renderer_create_depth_stencil_state(dsscp);
+
     while (1)
     {
         // set render targets to backbuffer
@@ -157,6 +166,9 @@ PEN_TRV pen::user_entry(void* params)
 
         // bind vertex layout
         pen::renderer_set_input_layout(input_layout);
+
+        // bind depth stencil state
+        pen::renderer_set_depth_stencil_state(depth_stencil_state);
 
         // bind shaders
         pen::renderer_set_shader(vertex_shader, PEN_SHADER_TYPE_VS);

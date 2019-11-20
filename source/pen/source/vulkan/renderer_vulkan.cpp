@@ -300,6 +300,32 @@ namespace
         return VK_BLEND_FACTOR_ZERO;
     }
 
+    VkCompareOp to_vk_compare_op(u32 pen_comparison)
+    {
+        switch (pen_comparison)
+        {
+        case PEN_COMPARISON_NEVER:
+            return VK_COMPARE_OP_NEVER;
+        case PEN_COMPARISON_LESS:
+            return VK_COMPARE_OP_LESS;
+        case PEN_COMPARISON_EQUAL:
+            return VK_COMPARE_OP_EQUAL;
+        case PEN_COMPARISON_LESS_EQUAL:
+            return VK_COMPARE_OP_LESS_OR_EQUAL;
+        case PEN_COMPARISON_GREATER:
+            return VK_COMPARE_OP_GREATER;
+        case PEN_COMPARISON_NOT_EQUAL:
+            return VK_COMPARE_OP_NOT_EQUAL;
+        case PEN_COMPARISON_GREATER_EQUAL:
+            return VK_COMPARE_OP_GREATER_OR_EQUAL;
+        case PEN_COMPARISON_ALWAYS:
+            return VK_COMPARE_OP_ALWAYS;
+        }
+
+        PEN_ASSERT(0);
+        return VK_COMPARE_OP_ALWAYS;
+    }
+
     VkFormat to_vk_image_format(u32 pen_image_format)
     {
         switch (pen_image_format)
@@ -409,6 +435,8 @@ namespace
     {
         VkRenderPassBeginInfo   begin_info;
         VkRenderPass            pass = VK_NULL_HANDLE;
+        VkAttachmentReference*  colour_attachments = nullptr;
+        VkAttachmentReference*  depth_attachments = nullptr;
     };
     hash_id*        s_pass_cache_hash = nullptr;
     vk_pass_cache*  s_pass_cache = nullptr;
@@ -445,6 +473,7 @@ namespace
         u32                                 colour_slice;
         u32                                 depth_slice;
         u32                                 clear_state;
+        u32                                 depth_stencil_state;
         // hash for pipeline
         u32                                 shader[e_shd::count]; // vs, fs, gs, so, cs
         viewport                            vp;
@@ -541,6 +570,7 @@ namespace
             VkVertexInputAttributeDescription*      vertex_attributes;
             VkSampler                               sampler;
             vulkan_blend_state                      blend;
+            VkPipelineDepthStencilStateCreateInfo   depth_stencil;
         };
     };
     res_pool<resource_allocation> _res_pool;
@@ -564,7 +594,14 @@ namespace
         for (u32 i = 0; i < pc; ++i)
         {
             vkDestroyRenderPass(_ctx.device, s_pass_cache[i].pass, nullptr);
-            delete s_pass_cache[i].begin_info.pClearValues;
+            sb_free(s_pass_cache[i].begin_info.pClearValues);
+            s_pass_cache[i].begin_info.pClearValues = nullptr;
+
+            sb_free(s_pass_cache[i].colour_attachments);
+            s_pass_cache[i].colour_attachments = nullptr;
+
+            sb_free(s_pass_cache[i].depth_attachments);
+            s_pass_cache[i].depth_attachments = nullptr;
         }
 
         sb_free(s_pass_cache);
@@ -1257,6 +1294,7 @@ namespace
         // attachments
         VkAttachmentDescription* attachments = nullptr;
         VkAttachmentReference*   attachment_refs = nullptr;
+        VkAttachmentReference*   depth_attachment_refs = nullptr;
         VkImageView*             attachment_img_view = nullptr;
 
         size_t fbw, fbh;
@@ -1303,8 +1341,7 @@ namespace
         subpass.pColorAttachments = attachment_refs;
 
         // depth attachment
-        //if (_state.depth_attachment != -1)
-        if(0)
+        if (_state.depth_attachment != -1)
         {
             const vulkan_texture& vt = _res_pool.get(_state.depth_attachment).texture;
 
@@ -1322,12 +1359,12 @@ namespace
             depth_attachment_ref.attachment = 1;
             depth_attachment_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-            subpass.pDepthStencilAttachment = &depth_attachment_ref;
-
             sb_push(attachments, depth_attachment);
-            sb_push(attachment_refs, depth_attachment_ref);
             sb_push(attachment_img_view, vt.image_view);
+            sb_push(depth_attachment_refs, depth_attachment_ref);
         }
+
+        subpass.pDepthStencilAttachment = depth_attachment_refs;
 
         VkSubpassDependency dep = {};
         dep.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -1364,12 +1401,7 @@ namespace
         CHECK_CALL(vkCreateFramebuffer(_ctx.device, &fb_info, nullptr, &fb));
 
         sb_free(attachments);
-        sb_free(attachment_refs);
         sb_free(attachment_img_view);
-
-        // clear
-        clear_state& cs = _res_pool.get(_state.clear_state).clear;
-        VkClearColorValue clear_colour = { cs.r, cs.g, cs.b, cs.a };
 
         // add new pass into pass cache
         u32 pc_idx = sb_count(s_pass_cache);
@@ -1378,8 +1410,20 @@ namespace
         vk_pass_cache& vk_pc = s_pass_cache[pc_idx];
         vk_pc.pass = pass;
 
-        VkClearValue* clear_value = new VkClearValue();
-        clear_value->color = clear_colour;
+        // clear
+        clear_state& cs = _res_pool.get(_state.clear_state).clear;
+
+        VkClearValue clear_colour; 
+        clear_colour.color = { cs.r, cs.g, cs.b, cs.a };
+
+        VkClearValue clear_depth_stencil;
+        clear_depth_stencil.depthStencil = { cs.depth, 0 };
+
+        VkClearValue* clear_values = nullptr;
+        sb_push(clear_values, clear_colour);
+
+        if (_state.depth_attachment != -1)
+            sb_push(clear_values, clear_depth_stencil);
 
         vk_pc.begin_info = {};
         vk_pc.begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -1387,8 +1431,10 @@ namespace
         vk_pc.begin_info.framebuffer = fb;
         vk_pc.begin_info.renderArea.offset = { 0, 0 };
         vk_pc.begin_info.renderArea.extent = { (u32)fbw, (u32)fbh };
-        vk_pc.begin_info.clearValueCount = 1;
-        vk_pc.begin_info.pClearValues = clear_value;
+        vk_pc.begin_info.clearValueCount = sb_count(clear_values);
+        vk_pc.begin_info.pClearValues = clear_values;
+        vk_pc.colour_attachments = attachment_refs;
+        vk_pc.depth_attachments = depth_attachment_refs;
 
         begin_pass_from_cache(vk_pc, ph);
     }
@@ -1569,6 +1615,19 @@ namespace
             colour_blend.blendConstants[3] = 0.0f;
 
             info.pColorBlendState = &colour_blend;
+        }
+
+        // depth stencil
+        if (_state.depth_stencil_state)
+        {
+            info.pDepthStencilState = &_res_pool.get(_state.depth_stencil_state).depth_stencil;
+        }
+        else
+        {
+            static VkPipelineDepthStencilStateCreateInfo null_depth_stencil;
+            null_depth_stencil.depthTestEnable = VK_FALSE;
+            null_depth_stencil.stencilTestEnable = VK_FALSE;
+            info.pDepthStencilState = &null_depth_stencil;
         }
 
         // multisample
@@ -2332,12 +2391,28 @@ namespace pen
 
         void renderer_create_depth_stencil_state(const depth_stencil_creation_params& dscp, u32 resource_slot)
         {
+            _res_pool.insert({}, resource_slot);
+            VkPipelineDepthStencilStateCreateInfo& info = _res_pool.get(resource_slot).depth_stencil;
 
+            info.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+            info.depthTestEnable = dscp.depth_enable;
+            info.depthWriteEnable = dscp.depth_write_mask;
+            info.depthCompareOp = to_vk_compare_op(dscp.depth_func);
+
+            // todo stencil
+            info.stencilTestEnable = VK_FALSE;
+            info.front = {};
+            info.back = {};
+
+            // not exposed in pen yet
+            info.depthBoundsTestEnable = VK_FALSE;
+            info.minDepthBounds = 0.0f;
+            info.maxDepthBounds = 1.0f;
         }
 
         void renderer_set_depth_stencil_state(u32 depth_stencil_state)
         {
-
+            _state.depth_stencil_state = depth_stencil_state;
         }
 
         void renderer_set_stencil_ref(u8 ref)
