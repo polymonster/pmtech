@@ -691,8 +691,16 @@ namespace put
                 rtb.blend_op_alpha =
                     mode_from_string(k_blend_op_mode_map, state["alpha_blend_op"].as_cstr(), PEN_BLEND_OP_ADD);
 
-                /// make partial blend states for per rt blending
-                s_partial_blend_states.push_back({PEN_HASH(state.name().c_str()), rtb});
+                // make partial blend states for per rt blending
+                hash_id id_blend = PEN_HASH(state.name().c_str());
+
+                // avoid name collisions..
+                bool exists = false;
+                for (auto& p : s_partial_blend_states)
+                    if (p.id_name == id_blend)
+                        return;
+
+                s_partial_blend_states.push_back({ id_blend, rtb });
 
                 // create a generic single blend for code use
                 pen::blend_creation_params bcp;

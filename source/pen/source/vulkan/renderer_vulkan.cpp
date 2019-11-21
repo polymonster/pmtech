@@ -22,6 +22,7 @@ a_u8                               g_window_resize(0);
 using namespace pen;
 
 #define NBB 3 // num "back buffers" / swap chains / inflight command buffers
+#define GLSL_TEXTURE_BINDING_OFFSET 32 // set in pmfx shader, d3d style register(t0) binds to 32+ 
 
 namespace
 {
@@ -2098,7 +2099,7 @@ namespace pen
             u32 num = sb_count(_state.bindings);
             for (u32 i = 0; i < num; ++i)
             {
-                if (_state.bindings[i].slot == b.slot)
+                if (_state.bindings[i].slot == b.slot && _state.bindings[i].descriptor_type == b.descriptor_type)
                 {
                     _state.bindings[i] = b;
                     return;
@@ -2299,7 +2300,7 @@ namespace pen
                 b.descriptor_type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
             b.index = texture_index;
             b.sampler_index = sampler_index;
-            b.slot = resource_slot;
+            b.slot = resource_slot + GLSL_TEXTURE_BINDING_OFFSET;
             b.bind_flags = bind_flags;
 
             _set_binding(b);
