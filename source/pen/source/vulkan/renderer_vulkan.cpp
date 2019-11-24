@@ -1126,6 +1126,8 @@ namespace
 
         // device
         VkPhysicalDeviceFeatures features = {};
+        features.fillModeNonSolid = true;
+
         VkDeviceCreateInfo info = {};
         info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
         info.pQueueCreateInfos = queues;
@@ -1290,7 +1292,11 @@ namespace
         }
 
         // begin building a new pipeline
-        const clear_state& clear = _res_pool.get(_state.clear_state).clear;
+        static clear_state null_clear = { 0 };
+        clear_state* clear = &null_clear;
+
+        if(_state.clear_state != PEN_INVALID_HANDLE)
+            clear = &_res_pool.get(_state.clear_state).clear;
 
         // attachments
         VkAttachmentDescription* attachments = nullptr;
@@ -1311,13 +1317,11 @@ namespace
             VkAttachmentDescription col = {};
             col.format = vt.format;
             col.samples = VK_SAMPLE_COUNT_1_BIT;
+            col.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 
-            if (clear.flags & PEN_CLEAR_COLOUR_BUFFER)
-                col.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-            else
-                col.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+            if (clear->flags & PEN_CLEAR_COLOUR_BUFFER)
+                col.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;              
 
-            col.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
             col.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
             col.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
@@ -1349,7 +1353,11 @@ namespace
             VkAttachmentDescription depth_attachment = {};
             depth_attachment.format = vt.format;
             depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-            depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+            depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+
+            if (clear->flags & PEN_CLEAR_DEPTH_BUFFER)
+                depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+
             depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
             depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
             depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -1412,7 +1420,7 @@ namespace
         vk_pc.pass = pass;
 
         // clear
-        clear_state& cs = _res_pool.get(_state.clear_state).clear;
+        clear_state& cs = *clear;
 
         VkClearValue clear_colour; 
         clear_colour.color = { cs.r, cs.g, cs.b, cs.a };
@@ -1488,6 +1496,8 @@ namespace
         hh.add(&_state.shader[0], e_shd::count * sizeof(u32));
         hh.add(_state.blend);
         hh.add(_state.input_layout);
+        hh.add(_state.raster);
+        hh.add(_state.depth_stencil_state);
         hash_id ph = hh.end();
 
         // already bound
@@ -2293,6 +2303,10 @@ namespace pen
 
             vulkan_texture& vt = _res_pool.get(texture_index).texture;
 
+            // todo.. depth / stencil image view
+            if (resource_slot == 15)
+                return;
+
             pen_binding b;
             b.descriptor_type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
             b.stage = to_vk_stage(bind_flags);
@@ -2507,6 +2521,7 @@ namespace pen
             _state.depth_attachment = depth_target;
             _state.depth_slice = depth_face;
             _state.colour_slice = colour_face;
+            _state.clear_state = PEN_INVALID_HANDLE;
         }
 
         void renderer_set_resolve_targets(u32 colour_target, u32 depth_target)

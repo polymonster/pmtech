@@ -592,8 +592,22 @@ ps_output ps_skinning_debug( vs_output_debug input )
     return output;
 }
 
+ps_output ps_fixed_light( vs_output input )
+{
+    ps_output output;
+    float dp = max(dot(input.normal.xyz, normalize(float3(-1.0, -1.0, 1.0))), 0.5);
+    output.colour = float4(dp, dp, dp, 1.0);
+    return output;
+}
+
 pmfx:
 {    
+    "fixed_light":
+    {
+        "vs": "vs_main",
+        "ps": "ps_fixed_light"
+    },
+    
     "constant_colour":
     {
         "vs": "vs_main",
