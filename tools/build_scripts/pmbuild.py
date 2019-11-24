@@ -343,6 +343,8 @@ def run_clean(config):
 
 # generates metadata json to put in data root dir, for doing hot loading and other re-build tasks
 def generate_pmbuild_config(config, profile):
+    if "data_dir" not in config:
+        return
     wd = os.getcwd()
     md = {
         "profile": profile,

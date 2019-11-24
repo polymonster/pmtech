@@ -120,8 +120,19 @@ PEN_TRV pen::user_entry(void* params)
             }
         }
         ascii_msg.append("\n");
-
-        put::dbg::add_text_2f(10.0f, 40.0f, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "%s", ascii_msg.c_str());
+        
+        const Str& unicode = pen::input_get_unicode_input();
+        static Str text_buffer;
+        
+        text_buffer.append(unicode.c_str());
+        
+        if(pen::input_is_key_down(PK_BACK))
+            text_buffer[text_buffer.length()-1] = '\0';
+        
+        put::dbg::add_text_2f(10.0f, 40.0f, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "input text: %s", text_buffer.c_str());
+        
+        
+        pen::input_clear_unicode_input();
 
         // raw gamepad
         u32 num_gamepads = input_get_num_gamepads();

@@ -23,6 +23,7 @@ namespace
     u8                  s_unicode_state[PK_COUNT];
     pen::mouse_state    s_mouse_state = {0};
     std::atomic<bool>   s_show_cursor = {true};
+    Str                 s_unicode_text_input;
     
     std::map<u16, const c8*> k_key_names = {
         { PK_0, "0" },
@@ -130,6 +131,21 @@ namespace
 
 namespace pen
 {
+    void input_add_unicode_input(const c8* utf8)
+    {
+        s_unicode_text_input.append(utf8);
+    }
+    
+    const Str& input_get_unicode_input()
+    {
+        return s_unicode_text_input;
+    }
+    
+    void input_clear_unicode_input()
+    {
+        s_unicode_text_input.clear();
+    }
+    
     void input_set_unicode_key_down(u32 key_index)
     {
         s_unicode_state[key_index] = 1;

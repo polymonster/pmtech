@@ -491,23 +491,13 @@ namespace
 
         NSString* key = [event charactersIgnoringModifiers];
 
-        // vks
         u16 key_code = [event keyCode];
-        if(k_key_map.find(key_code) != k_key_map.end())
-        {
-            if (down)
-            {
-                pen::input_set_key_down(k_key_map[key_code]);
-            }
-            else
-            {
-                pen::input_set_key_up(k_key_map[key_code]);
-            }
-        }
+        u32 pen_key_code = k_key_map[key_code];
         
         // text input
-        if(key_code != PK_BACK && [key length] > 0)
+        if(key_code != PK_BACK && [key length] > 0 && !pen::input_is_key_down(pen_key_code))
         {
+            /*
             if(down)
             {
                 pen::input_set_unicode_key_down([key UTF8String][0]);
@@ -516,7 +506,25 @@ namespace
             {
                 pen::input_set_unicode_key_up([key UTF8String][0]);
             }
+            */
+            
+            if(down)
+                pen::input_add_unicode_input([key UTF8String]);
         }
+        
+        // vks
+        if(k_key_map.find(key_code) != k_key_map.end())
+        {
+            if (down)
+            {
+                pen::input_set_key_down(pen_key_code);
+            }
+            else
+            {
+                pen::input_set_key_up(pen_key_code);
+            }
+        }
+        
     }
 
     bool handle_event(NSEvent* event)
