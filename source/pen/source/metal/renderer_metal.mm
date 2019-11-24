@@ -1197,7 +1197,7 @@ namespace pen
                 // track rt
                 if (track)
                 {
-                    managed_rt manrt = {_tcp, resource_slot};
+                    managed_rt manrt = {tcp, resource_slot};
                     sb_push(_managed_rts, manrt);
                 }
             }

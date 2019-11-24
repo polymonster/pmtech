@@ -179,7 +179,7 @@ def get_task_files_containers(task):
             if "files" in export:
                 for xf in export["files"]:
                     file_list += os.path.join(container_name, xf) + "\n"
-            # otherwise take all files in the direxctory
+            # otherwise take all files in the directory
             else:
                 dir_files = sorted(os.listdir(container_dir))
                 for xf in dir_files:
