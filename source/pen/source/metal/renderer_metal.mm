@@ -15,19 +15,18 @@
 
 using namespace pen;
 
-// globals / externs
+// globals / externs.. I want to get rid of
 a_u8                          g_window_resize;
 extern a_u64                  g_frame_index;
 extern window_creation_params pen_window;
 
-#define NBB 3           // buffers to prevent locking gpu / cpu on dynamic buffers.
-#define CBUF_OFFSET 4
+#define NBB 3                 // buffers to prevent locking gpu / cpu on dynamic buffers.
+#define CBUF_OFFSET 4         // from pmfx.. offset of cbuffers to prevent collisions with vertex buffers
 
 namespace // internal structs and static vars
 {
     u32           _frame = 0;
     id<MTLDevice> _metal_device;
-    NSAutoreleasePool* _pool;
 
     struct clear_cmd
     {
