@@ -1,0 +1,29 @@
+struct vs_input
+{
+    float4 position : POSITION;
+};
+
+struct vs_output
+{
+    float4 position : SV_POSITION0;
+};
+
+struct ps_output
+{
+    float depth : SV_Depth;
+};
+
+vs_output vs_main( vs_input input )
+{
+    vs_output output;
+    
+    output.position = input.position;
+    
+    return output;
+}
+
+void ps_main( vs_output input )
+{
+    // we dont modify depth
+    return;
+}

@@ -1251,7 +1251,7 @@ namespace pen
         renderer_cmd cmd;
 
         cmd.command_index = CMD_SET_TARGETS;
-        cmd.set_targets.num_colour = 1;
+        cmd.set_targets.num_colour = is_valid(colour_target) ? 1 : 0;
         cmd.set_targets.colour[0] = colour_target;
         cmd.set_targets.depth = depth_target;
         cmd.set_targets.array_index = 0;
