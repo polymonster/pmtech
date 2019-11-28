@@ -14,9 +14,11 @@
 #include "data_struct.h"
 #include "str_utilities.h"
 
-pen::user_info pen_user_info;
-extern a_u8    g_window_resize;
-static u32     s_return_code = 0;
+// one day I will remove this junk and make a nice api.
+pen::user_info                      pen_user_info;
+extern a_u8                         g_window_resize;
+static u32                          s_return_code = 0;
+extern pen::window_creation_params  pen_window;
 
 namespace pen
 {
@@ -170,8 +172,6 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     return s_return_code;
 }
 
-extern pen::window_creation_params pen_window;
-
 namespace
 {
     enum os_cmd_id
@@ -259,6 +259,8 @@ namespace pen
                 return false;
         }
 
+        pen::input_unicode_swap_buffers();
+
         // continue updating
         return true;
     }
@@ -328,14 +330,20 @@ namespace pen
 
     void set_unicode_key(u32 key_index, bool down)
     {
-        static wchar_t buf[32];
+        static wchar_t  buf[32];
+        static char     utf8[32];
 
         // modifiers
         BYTE key_state[256] = {0};
         GetKeyboardState(key_state);
 
         int result =
-            ToUnicodeEx(key_index, MapVirtualKey(key_index, MAPVK_VK_TO_VSC), key_state, buf, _countof(buf), 0, NULL);
+            ToUnicodeEx(key_index, MapVirtualKey(key_index, MAPVK_VK_TO_VSC), key_state, buf, _countof(buf), 0, nullptr);
+
+        int num = WideCharToMultiByte(CP_UTF8, 0, buf, -1, utf8, 32, nullptr, nullptr);
+
+        if(down)
+            pen::input_add_unicode_input(utf8);
 
         // not ideal.. need a better solution to track unicode text input.
         u32 unicode = buf[0];
@@ -370,14 +378,14 @@ namespace pen
 
             case WM_KEYDOWN:
             case WM_SYSKEYDOWN:
-                pen::input_set_key_down((u32)wParam);
                 set_unicode_key((u32)wParam, true);
+                pen::input_set_key_down((u32)wParam);
                 break;
 
             case WM_KEYUP:
             case WM_SYSKEYUP:
-                pen::input_set_key_up((u32)wParam);
                 set_unicode_key((u32)wParam, false);
+                pen::input_set_key_up((u32)wParam);
                 break;
 
             case WM_LBUTTONDOWN:

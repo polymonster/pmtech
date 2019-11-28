@@ -19,11 +19,12 @@
 
 namespace
 {
-    u8                  s_keyboard_state[PK_COUNT];
-    u8                  s_unicode_state[PK_COUNT];
-    pen::mouse_state    s_mouse_state = {0};
-    std::atomic<bool>   s_show_cursor = {true};
-    Str                 s_unicode_text_input;
+    u8                          s_keyboard_state[PK_COUNT];
+    u8                          s_unicode_state[PK_COUNT];
+    pen::mouse_state            s_mouse_state = {0};
+    std::atomic<bool>           s_show_cursor = {true};
+    Str                         s_unicode_text_input;
+    pen::ring_buffer<Str>       s_unicode_ring;
     
     std::map<u16, const c8*> k_key_names = {
         { PK_0, "0" },
@@ -133,17 +134,35 @@ namespace pen
 {
     void input_add_unicode_input(const c8* utf8)
     {
-        s_unicode_text_input.append(utf8);
+        if (s_unicode_ring.data == nullptr)
+            s_unicode_ring.create(128);
+
+        s_unicode_ring.put(Str(utf8));
     }
     
-    const Str& input_get_unicode_input()
+    Str input_get_unicode_input()
     {
-        return s_unicode_text_input;
+        Str inputs = "";
+        for (;;)
+        {
+            Str* s = s_unicode_ring.get();
+            if (!s)
+                break;
+
+            inputs.append(s->c_str());
+        }
+
+        return inputs;
     }
     
     void input_clear_unicode_input()
     {
-        s_unicode_text_input.clear();
+
+    }
+
+    void input_unicode_swap_buffers()
+    {
+
     }
     
     void input_set_unicode_key_down(u32 key_index)

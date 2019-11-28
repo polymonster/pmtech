@@ -121,7 +121,7 @@ PEN_TRV pen::user_entry(void* params)
         }
         ascii_msg.append("\n");
         
-        const Str& unicode = pen::input_get_unicode_input();
+        Str unicode = pen::input_get_unicode_input();
         static Str text_buffer;
         
         text_buffer.append(unicode.c_str());

@@ -76,9 +76,10 @@ namespace pen
     void input_set_unicode_key_up(u32 key_index);
     bool input_get_unicode_key(u32 key_index);
     
-    void        input_add_unicode_input(const c8* utf8);
-    const Str&  input_get_unicode_input();
-    void        input_clear_unicode_input();
+    void input_add_unicode_input(const c8* utf8);
+    Str  input_get_unicode_input();
+    void input_clear_unicode_input();
+    void input_unicode_swap_buffers();
 
     void input_set_key_down(u32 key_index);
     void input_set_key_up(u32 key_index);

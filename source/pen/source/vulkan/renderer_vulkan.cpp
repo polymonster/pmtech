@@ -202,7 +202,7 @@ namespace
     VkImageAspectFlags to_vk_image_aspect(u32 pen_texture_format)
     {
         if (pen_texture_format == PEN_TEX_FORMAT_D24_UNORM_S8_UINT)
-            return VK_IMAGE_ASPECT_DEPTH_BIT; // | VK_IMAGE_ASPECT_STENCIL_BIT;
+            return VK_IMAGE_ASPECT_DEPTH_BIT;
         
         return VK_IMAGE_ASPECT_COLOR_BIT;
     }
@@ -361,7 +361,7 @@ namespace
         case PEN_TEX_FORMAT_BC5_UNORM:
             return VK_FORMAT_BC5_UNORM_BLOCK;
         case PEN_TEX_FORMAT_D24_UNORM_S8_UINT:
-            return VK_FORMAT_D32_SFLOAT;
+            return VK_FORMAT_D24_UNORM_S8_UINT;
             break;
         }
         // unhandled
@@ -1618,7 +1618,12 @@ namespace
         {
             // make default
             VkPipelineColorBlendAttachmentState colour_blend_attachment = {};
-            colour_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+            colour_blend_attachment.colorWriteMask = 
+                VK_COLOR_COMPONENT_R_BIT | 
+                VK_COLOR_COMPONENT_G_BIT | 
+                VK_COLOR_COMPONENT_B_BIT | 
+                VK_COLOR_COMPONENT_A_BIT;
+
             colour_blend_attachment.blendEnable = VK_FALSE;
 
             VkPipelineColorBlendStateCreateInfo colour_blend = {};
@@ -2262,8 +2267,11 @@ namespace pen
                 vkDestroyBuffer(_ctx.device, buf, nullptr);
                 vkFreeMemory(_ctx.device, mem, nullptr);
             }
-            else
+            else if(!(vt.tcp->bind_flags & PEN_BIND_RENDER_TARGET) && !(vt.tcp->bind_flags & PEN_BIND_DEPTH_STENCIL))
             {
+                // if we are not a render target we need to transition image layout, if we are rt or ds then render pass
+                // will do it for us.
+
                 _transition_image(vt.image,
                     vt.format, aspect, VK_IMAGE_LAYOUT_UNDEFINED, target_layout);
             }
