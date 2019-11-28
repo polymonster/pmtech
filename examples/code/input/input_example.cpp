@@ -124,10 +124,14 @@ PEN_TRV pen::user_entry(void* params)
         Str unicode = pen::input_get_unicode_input();
         static Str text_buffer;
         
-        text_buffer.append(unicode.c_str());
-        
-        if(pen::input_is_key_down(PK_BACK))
-            text_buffer[text_buffer.length()-1] = '\0';
+        if (unicode[0] == 8)
+        {
+            text_buffer[text_buffer.length() - 1] = '\0';
+        }
+        else
+        {
+            text_buffer.append(unicode.c_str());
+        }
         
         put::dbg::add_text_2f(10.0f, 40.0f, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "input text: %s", text_buffer.c_str());
         
