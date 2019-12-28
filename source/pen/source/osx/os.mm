@@ -495,19 +495,8 @@ namespace
         u32 pen_key_code = k_key_map[key_code];
         
         // text input
-        if(key_code != PK_BACK && [key length] > 0 && !pen::input_is_key_down(pen_key_code))
+        if([key length] > 0)
         {
-            /*
-            if(down)
-            {
-                pen::input_set_unicode_key_down([key UTF8String][0]);
-            }
-            else
-            {
-                pen::input_set_unicode_key_up([key UTF8String][0]);
-            }
-            */
-            
             if(down)
                 pen::input_add_unicode_input([key UTF8String]);
         }

@@ -24,11 +24,6 @@ extern pen::user_info pen_user_info;
 
 namespace put
 {
-    namespace dev_ui
-    {
-        extern bool k_console_open;
-    }
-
     namespace ecs
     {
         static const hash_id k_primitives[] = {PEN_HASH("quad"),   PEN_HASH("cube"),    PEN_HASH("cylinder"),
@@ -1184,15 +1179,18 @@ namespace put
                     open_save_as = false;
                 }
 
-                if (ImGui::MenuItem("Save As", NULL, &open_save))
+                if (ImGui::MenuItem("Save As", nullptr, &open_save))
                 {
                     open_save_as = true;
                 }
 
-                ImGui::MenuItem("Console", NULL, &put::dev_ui::k_console_open);
-                ImGui::MenuItem("Settings", NULL, &settings_open);
-                ImGui::MenuItem("Dev", NULL, &dev_open);
-
+                bool co = dev_ui::is_console_open();
+                ImGui::MenuItem("Console", nullptr, &co);
+                dev_ui::show_console(co);
+                
+                ImGui::MenuItem("Settings", nullptr, &settings_open);
+                ImGui::MenuItem("Dev", nullptr, &dev_open);
+                
                 ImGui::EndMenu();
             }
 

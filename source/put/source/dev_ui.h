@@ -61,6 +61,7 @@ namespace put
         void update();
 
         // console
+        bool is_console_open();
         void show_console(bool val);
         void log(const c8* fmt, ...);
         void log_level(u32 level, const c8* fmt, ...);
