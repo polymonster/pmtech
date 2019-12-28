@@ -105,6 +105,11 @@ struct ps_output_multi
     float4 world_pos : SV_Target2;
 };
 
+struct ps_output_depth
+{
+    float depth : SV_Depth;
+};
+
 shader_resources
 {
     texture_2d( diffuse_texture, 0 );
@@ -114,6 +119,7 @@ shader_resources
     texture_2d( ltc_mat, 13 );
     texture_2d( ltc_mag, 12 );
     
+    texture_cube( omni_shadow_texture, 14);
     texture_2d_array( shadowmap_texture, 15 );
     texture_2d_array( area_light_textures, 11 );
 };
@@ -152,10 +158,9 @@ vs_output_zonly vs_main_zonly( vs_input_multi input, vs_instance_input instance_
         output.position = mul( input.position, wvp );
     }
       
-    // for d3d 0 - 1 clip space
+    // for d3d 0 - 1 clip space    
     output.position /= output.position.w;
     remap_z_clip_space(output.position.z);
-    
     return output;
 }
 
@@ -679,6 +684,84 @@ ps_output ps_dbg( vs_output input )
     return output;
 }
 
+ps_output ps_point_light_shadow( vs_output input )
+{
+    ps_output output;
+    
+    float4 albedo = sample_texture( diffuse_texture, input.texcoord.xy );
+    float3 normal_sample = sample_texture( normal_texture, input.texcoord.xy ).rgb;
+    float4 ro_sample = sample_texture( specular_texture, input.texcoord.xy );
+    float4 specular_sample = float4(1.0, 1.0, 1.0, 1.0);
+    
+    normal_sample = normal_sample * 2.0 - 1.0;
+
+    float3 n = transform_ts_normal( 
+        input.tangent, 
+        input.bitangent, 
+        input.normal, 
+        normal_sample );
+        
+    albedo *= input.colour;
+    
+    float3 lit_colour = float3( 0.0, 0.0, 0.0 );
+    
+    float reflectivity = saturate(user_data.z);
+    float roughness = saturate(user_data.y); 
+    
+    //for point lights
+    int point_start = int(light_info.x);
+    int point_end =  int(light_info.x) + int(light_info.y);
+    for( int i = point_start; i < point_end; ++i )
+    {
+        float3 light_col = float3( 0.0, 0.0, 0.0 );
+        
+        light_col += cook_torrence( 
+            lights[i].pos_radius, 
+            lights[i].colour.rgb,
+            n,
+            input.world_pos.xyz,
+            camera_view_pos.xyz,
+            albedo.rgb,
+            specular_sample.rgb,
+            roughness,
+            reflectivity
+        );    
+        
+        light_col += oren_nayar( 
+            lights[i].pos_radius, 
+            lights[i].colour.rgb,
+            n,
+            input.world_pos.xyz,
+            camera_view_pos.xyz,
+            roughness,
+            albedo.rgb
+        );     
+            
+        float a = point_light_attenuation_cutoff( lights[i].pos_radius, input.world_pos.xyz );    
+        light_col *= a;
+        
+        // cube map shadow
+        float3 to_light = (input.world_pos.xyz - lights[i].pos_radius.xyz);
+        float d = length(to_light);
+        float cube_d = sample_texture(omni_shadow_texture, normalize(to_light) * float3(1.0, 1.0, -1.0)).r;
+        
+        lit_colour = d < cube_d * 100.0 ? light_col : 0.0;
+    }
+    
+    output.colour.rgb = lit_colour;
+    output.colour.a = 1.0;
+    
+    return output;
+}
+
+ps_output_depth ps_omni_shadow( vs_output input )
+{
+	ps_output_depth output;
+	float d = length(input.world_pos.xyz - lights[0].pos_radius.xyz) / 100.0;
+	output.depth = d;
+	return output;
+}
+
 pmfx:
 {    
     "single_light_directional":
@@ -687,6 +770,32 @@ pmfx:
         "ps": "ps_single_light",
                 
         "constants":
+        {
+            "albedo"      : { "type": "float4", "widget": "colour", "default": [1.0, 1.0, 1.0, 1.0] },
+            "roughness"   : { "type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 },
+            "reflectivity": { "type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.3 }
+        }
+    },
+    
+	"point_light_shadow":
+    {
+        "vs": "vs_main",
+        "ps": "ps_point_light_shadow",
+        
+        "constants":
+        {
+            "albedo"      : { "type": "float4", "widget": "colour", "default": [1.0, 1.0, 1.0, 1.0] },
+            "roughness"   : { "type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 },
+            "reflectivity": { "type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.3 }
+        }
+    },
+    
+    "omni_shadow":
+    {
+    	"vs": "vs_main",
+    	"ps": "ps_omni_shadow",
+    	
+    	"constants":
         {
             "albedo"      : { "type": "float4", "widget": "colour", "default": [1.0, 1.0, 1.0, 1.0] },
             "roughness"   : { "type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 },
