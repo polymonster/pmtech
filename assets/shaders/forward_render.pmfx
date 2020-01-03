@@ -119,7 +119,7 @@ shader_resources
     texture_2d( ltc_mat, 13 );
     texture_2d( ltc_mag, 12 );
     
-    texture_cube( omni_shadow_texture, 14);
+    texture_cube( omni_shadow_texture, 10 );
     texture_2d_array( shadowmap_texture, 15 );
     texture_2d_array( area_light_textures, 11 );
 };
@@ -529,7 +529,19 @@ ps_output ps_forward_lit( vs_output input )
             light_col *= smoothstep( 0.0, 0.1, s);
         }
         
-        lit_colour += light_col;
+        if( lights[i].colour.a == 0.0 )
+        {
+            lit_colour += light_col;
+            continue;
+        }
+        else
+        {
+        	// omni directional shadow
+			float3 to_light = (input.world_pos.xyz - lights[i].pos_radius.xyz);
+			float d = length(to_light);
+			float cube_d = sample_texture(omni_shadow_texture, normalize(to_light) * float3(1.0, 1.0, -1.0)).r;
+			lit_colour += d < cube_d * lights[i].pos_radius.w ? light_col : 0.0;
+        }   
     }
     
     //for spot lights
@@ -757,7 +769,7 @@ ps_output ps_point_light_shadow( vs_output input )
 ps_output_depth ps_omni_shadow( vs_output input )
 {
 	ps_output_depth output;
-	float d = length(input.world_pos.xyz - lights[0].pos_radius.xyz) / 100.0;
+	float d = length(input.world_pos.xyz - lights[1].pos_radius.xyz) / lights[1].pos_radius.w;
 	output.depth = d;
 	return output;
 }

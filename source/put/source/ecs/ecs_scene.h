@@ -498,6 +498,7 @@ namespace put
         void render_scene_view(const scene_view& view);
         void render_light_volumes(const scene_view& view);
         void render_shadow_views(const scene_view& view);
+        void render_omni_shadow_views(const scene_view& view);
         void render_area_light_textures(const scene_view& view);
 
         void clear_scene(ecs_scene* scene);

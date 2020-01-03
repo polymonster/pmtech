@@ -429,7 +429,7 @@ namespace put
                 if (!(scene->entities[n] & CMP_LIGHT))
                     continue;
 
-                if (!scene->lights[n].shadow_map)
+                if (!scene->lights[n].shadow_map || scene->lights[n].type == LIGHT_TYPE_POINT)
                     continue;
 
                 if (shadow_index++ != view.array_index)
@@ -457,6 +457,41 @@ namespace put
             if (is_valid(scene->shadow_map_buffer))
             {
                 pen::renderer_update_buffer(scene->shadow_map_buffer, &shadow_matrices[0], sizeof(mat4) * MAX_SHADOW_MAPS);
+            }
+        }
+        
+        void render_omni_shadow_views(const scene_view& view)
+        {
+            ecs_scene* scene = view.scene;
+                        
+            static camera cam_omni_shadow;
+            static bool init = true;
+            if(init)
+            {
+                put::camera_create_cubemap(&cam_omni_shadow, 0.0001f, 100.0f);
+                cam_omni_shadow.pos = vec3f(0.0f, 0.0f, 0.0f);
+                init = false;
+            }
+            
+            u32 array_face = view.array_index % 6;
+            
+            for (u32 n = 0; n < scene->num_entities; ++n)
+            {
+                if (!(scene->entities[n] & CMP_LIGHT))
+                    continue;
+
+                if (!scene->lights[n].shadow_map || scene->lights[n].type != LIGHT_TYPE_POINT)
+                    continue;
+                    
+                cam_omni_shadow.pos = scene->transforms[n].translation;
+                put::camera_set_cubemap_face(&cam_omni_shadow, array_face);
+                put::camera_update_shader_constants(&cam_omni_shadow);
+                
+                scene_view vv = view;
+                vv.camera = &cam_omni_shadow;
+                vv.cb_view = cam_omni_shadow.cbuffer;
+                
+                render_scene_view(vv);
             }
         }
 
@@ -1462,7 +1497,10 @@ namespace put
             }
 
             // Shadow maps
+            
+            // directional
             u32 num_shadow_maps = 0;
+            u32 num_omni_shadow_maps = 0;
             for (s32 n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & CMP_LIGHT))
@@ -1472,7 +1510,10 @@ namespace put
                 if (!l.shadow_map)
                     continue;
 
-                ++num_shadow_maps;
+                if(l.type == LIGHT_TYPE_POINT)
+                    ++num_shadow_maps;
+                else
+                    ++num_omni_shadow_maps;
             }
 
             const pmfx::render_target* sm = pmfx::get_render_target(PEN_HASH("shadow_map"));
@@ -1487,6 +1528,14 @@ namespace put
                 rrp.num_mips = 1;
                 rrp.collection = pen::TEXTURE_COLLECTION_ARRAY;
                 pmfx::resize_render_target(PEN_HASH("shadow_map"), rrp);
+            }
+            
+            // omni directional
+            const pmfx::render_target* osm = pmfx::get_render_target(PEN_HASH("omni_shadow_map"));
+            
+            if (osm->num_arrays < num_omni_shadow_maps)
+            {
+                u32 a = 0;
             }
 
             // Update pre skinned vertex buffers

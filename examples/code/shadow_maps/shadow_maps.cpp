@@ -26,6 +26,7 @@ void example_setup(ecs_scene* scene, camera& cam)
 
     // add light
     u32 light = get_new_entity(scene);
+    instantiate_light(scene, light);
     scene->names[light] = "front_light";
     scene->id_name[light] = PEN_HASH("front_light");
     scene->lights[light].colour = vec3f::one();
@@ -37,7 +38,21 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->transforms[light].scale = vec3f::one();
     scene->entities[light] |= CMP_LIGHT;
     scene->entities[light] |= CMP_TRANSFORM;
-
+    
+    light = get_new_entity(scene);
+    instantiate_light(scene, light);
+    scene->names[light] = "point_light";
+    scene->id_name[light] = PEN_HASH("front_light");
+    scene->lights[light].colour = vec3f::one();
+    scene->lights[light].radius = 10.0f;
+    scene->lights[light].type = LIGHT_TYPE_POINT;
+    scene->lights[light].shadow_map = true;
+    scene->transforms[light].translation = vec3f(4.0f, 4.0f, 4.0f);
+    scene->transforms[light].rotation = quat();
+    scene->transforms[light].scale = vec3f::one();
+    scene->entities[light] |= CMP_LIGHT;
+    scene->entities[light] |= CMP_TRANSFORM;
+    
     // add ground
     f32 ground_size = 100.0f;
     u32 ground = get_new_entity(scene);
