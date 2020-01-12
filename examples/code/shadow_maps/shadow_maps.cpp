@@ -25,7 +25,9 @@ void example_setup(ecs_scene* scene, camera& cam)
     geometry_resource* box_resource = get_geometry_resource(PEN_HASH("cube"));
 
     // add light
-    u32 light = get_new_entity(scene);
+    u32 light;
+    
+    light = get_new_entity(scene);
     instantiate_light(scene, light);
     scene->names[light] = "front_light";
     scene->id_name[light] = PEN_HASH("front_light");
@@ -44,7 +46,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->names[light] = "point_light";
     scene->id_name[light] = PEN_HASH("front_light");
     scene->lights[light].colour = vec3f::one();
-    scene->lights[light].radius = 10.0f;
+    scene->lights[light].radius = 100.0f;
     scene->lights[light].type = LIGHT_TYPE_POINT;
     scene->lights[light].shadow_map = true;
     scene->transforms[light].translation = vec3f(4.0f, 4.0f, 4.0f);

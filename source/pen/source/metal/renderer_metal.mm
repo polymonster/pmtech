@@ -1257,7 +1257,7 @@ namespace pen
             }
             else if (tcp.collection_type == TEXTURE_COLLECTION_VOLUME)
             {
-                td = [MTLTextureDescriptor alloc];
+                td = [[MTLTextureDescriptor alloc] init];
 
                 td.pixelFormat = fmt;
                 td.width = _tcp.width;
@@ -1270,6 +1270,21 @@ namespace pen
 
                 // arrays become slices
                 num_slices = td.depth;
+            }
+            else if (tcp.collection_type == TEXTURE_COLLECTION_CUBE_ARRAY)
+            {
+                td = [[MTLTextureDescriptor alloc] init];
+
+                td.pixelFormat = fmt;
+                td.width = _tcp.width;
+                td.height = _tcp.height;
+                td.depth = 1;
+                td.textureType = MTLTextureTypeCubeArray;
+                td.mipmapLevelCount = _tcp.num_mips;
+                td.arrayLength = _tcp.num_arrays;
+                td.sampleCount = _tcp.sample_count;
+
+                num_slices = _tcp.num_arrays;
             }
 
             if (msaa)

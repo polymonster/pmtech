@@ -494,6 +494,7 @@ ps_output ps_forward_lit( vs_output input )
     //for point lights
     int point_start = int(light_info.x);
     int point_end =  int(light_info.x) + int(light_info.y);
+    int omni_shadow_index = 0;
     for( int i = point_start; i < point_end; ++i )
     {
         float3 light_col = float3( 0.0, 0.0, 0.0 );
@@ -769,7 +770,7 @@ ps_output ps_point_light_shadow( vs_output input )
 ps_output_depth ps_omni_shadow( vs_output input )
 {
 	ps_output_depth output;
-	float d = length(input.world_pos.xyz - lights[1].pos_radius.xyz) / lights[1].pos_radius.w;
+	float d = length(input.world_pos.xyz - lights[0].pos_radius.xyz) / lights[0].pos_radius.w;
 	output.depth = d;
 	return output;
 }

@@ -187,7 +187,8 @@ namespace pen
         TEXTURE_COLLECTION_NONE = 0,
         TEXTURE_COLLECTION_CUBE = 1,
         TEXTURE_COLLECTION_VOLUME = 2,
-        TEXTURE_COLLECTION_ARRAY = 3
+        TEXTURE_COLLECTION_ARRAY = 3,
+        TEXTURE_COLLECTION_CUBE_ARRAY = 4
     };
 
     struct texture_creation_params

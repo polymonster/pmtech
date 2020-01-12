@@ -1511,9 +1511,9 @@ namespace put
                     continue;
 
                 if(l.type == LIGHT_TYPE_POINT)
-                    ++num_shadow_maps;
-                else
                     ++num_omni_shadow_maps;
+                else
+                    ++num_shadow_maps;
             }
 
             const pmfx::render_target* sm = pmfx::get_render_target(PEN_HASH("shadow_map"));
@@ -1533,9 +1533,17 @@ namespace put
             // omni directional
             const pmfx::render_target* osm = pmfx::get_render_target(PEN_HASH("omni_shadow_map"));
             
-            if (osm->num_arrays < num_omni_shadow_maps)
+            if (osm->num_arrays < num_omni_shadow_maps*6)
             {
-                u32 a = 0;
+                //todo: omni
+                pmfx::rt_resize_params rrp;
+                rrp.width = 256;
+                rrp.height = 256;
+                rrp.format = nullptr;
+                rrp.num_arrays = num_omni_shadow_maps*6;
+                rrp.num_mips = 1;
+                rrp.collection = pen::TEXTURE_COLLECTION_CUBE_ARRAY;
+                pmfx::resize_render_target(PEN_HASH("omni_shadow_map"), rrp);
             }
 
             // Update pre skinned vertex buffers
