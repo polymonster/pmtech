@@ -1114,18 +1114,22 @@ namespace put
                         {
                             if (type == "cube")
                             {
-                                new_info.collection = pen::TEXTURE_COLLECTION_CUBE;
                                 tcp.collection_type = pen::TEXTURE_COLLECTION_CUBE;
                                 tcp.flags |= PEN_RESOURCE_MISC_TEXTURECUBE;
                                 tcp.num_arrays = 6;
                             }
                             else if (type == "array")
                             {
-                                new_info.collection = pen::TEXTURE_COLLECTION_ARRAY;
                                 tcp.collection_type = pen::TEXTURE_COLLECTION_ARRAY;
                                 tcp.num_arrays = r["num_arrays"].as_u32(1);
                             }
+                            else if (type == "cube_array")
+                            {
+                                tcp.collection_type = pen::TEXTURE_COLLECTION_CUBE_ARRAY;
+                                tcp.num_arrays = r["num_arrays"].as_u32(6);
+                            }
                         }
+                        new_info.collection = tcp.collection_type;
                         new_info.num_arrays = tcp.num_arrays;
 
                         // flags
@@ -1540,6 +1544,11 @@ namespace put
                             {
                                 new_view.num_arrays = 6;
                                 new_view.view_flags |= VF_CUBEMAP;
+                            }
+                            
+                            if (r.collection == pen::TEXTURE_COLLECTION_CUBE_ARRAY)
+                            {
+                                new_view.num_arrays = r.num_arrays;
                             }
 
                             if (cur_rt == 0)

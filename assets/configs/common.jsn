@@ -153,16 +153,16 @@
     {                
         shadow_map:
         {
-            size  : [2048, 2048],
+            size: [2048, 2048],
             format: d24s8,
             type: array
         },
         
 		omni_shadow_map:
         {
-            size  : [256, 256],
+            size: [256, 256],
             format: d24s8,
-            type: cube
+            type: cube_array
         },
         
         area_light_textures:

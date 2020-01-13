@@ -460,17 +460,53 @@ namespace put
             }
         }
         
+        void single_light_from_entity(light_data& ld, const ecs_scene* scene, u32 n)
+        {
+            cmp_draw_call dc;
+            dc.world_matrix = scene->world_matrices[n];
+            vec3f pos = scene->world_matrices[n].get_translation();
+            switch (scene->lights[n].type)
+            {
+                case LIGHT_TYPE_DIR:
+                    ld.pos_radius = vec4f(scene->lights[n].direction * 10000.0f, 0.0f);
+                    ld.dir_cutoff = vec4f(scene->lights[n].direction, 0.0f);
+                    ld.colour = vec4f(scene->lights[n].colour, 0.0f);
+                    break;
+                case LIGHT_TYPE_POINT:
+                    ld.pos_radius = vec4f(pos, scene->lights[n].radius);
+                    ld.dir_cutoff = vec4f(scene->lights[n].direction, 0.0f);
+                    ld.colour = vec4f(scene->lights[n].colour, 0.0f);
+                    break;
+                case LIGHT_TYPE_SPOT:
+                    ld.pos_radius = vec4f(pos, scene->lights[n].radius);
+                    ld.dir_cutoff = vec4f(-dc.world_matrix.get_column(1).xyz, scene->lights[n].cos_cutoff);
+                    ld.colour = vec4f(scene->lights[n].colour, 0.0f);
+                    ld.data = vec4f(scene->lights[n].spot_falloff, 0.0f, 0.0f, 0.0f);
+                    break;
+                default:
+                    break;
+            }
+        }
+        
         void render_omni_shadow_views(const scene_view& view)
         {
             ecs_scene* scene = view.scene;
                         
             static camera cam_omni_shadow;
-            static bool init = true;
-            if(init)
+            static u32 cb_light = -1;
+            if(!is_valid(cb_light))
             {
                 put::camera_create_cubemap(&cam_omni_shadow, 0.0001f, 100.0f);
                 cam_omni_shadow.pos = vec3f(0.0f, 0.0f, 0.0f);
-                init = false;
+                
+                pen::buffer_creation_params bcp;
+                bcp.usage_flags = PEN_USAGE_DYNAMIC;
+                bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+                bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+                bcp.buffer_size = sizeof(light_data);
+                bcp.data = nullptr;
+
+                cb_light = pen::renderer_create_buffer(bcp);
             }
             
             u32 array_face = view.array_index % 6;
@@ -487,6 +523,11 @@ namespace put
                 put::camera_set_cubemap_face(&cam_omni_shadow, array_face);
                 put::camera_update_shader_constants(&cam_omni_shadow);
                 
+                light_data ld;
+                single_light_from_entity(ld, scene, n);
+                pen::renderer_update_buffer(cb_light, &ld, sizeof(light_data));
+                pen::renderer_set_constant_buffer(cb_light, 10, pen::CBUFFER_BIND_PS);
+                
                 scene_view vv = view;
                 vv.camera = &cam_omni_shadow;
                 vv.cb_view = cam_omni_shadow.cbuffer;
@@ -494,7 +535,7 @@ namespace put
                 render_scene_view(vv);
             }
         }
-
+        
         void render_light_volumes(const scene_view& view)
         {
             ecs_scene* scene = view.scene;
