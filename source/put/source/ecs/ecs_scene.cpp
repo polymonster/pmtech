@@ -509,14 +509,18 @@ namespace put
                 cb_light = pen::renderer_create_buffer(bcp);
             }
             
+            u32 target_omni_light_index = view.array_index / 6;
             u32 array_face = view.array_index % 6;
-            
+            u32 omni_light_index = 0;
             for (u32 n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & CMP_LIGHT))
                     continue;
 
                 if (!scene->lights[n].shadow_map || scene->lights[n].type != LIGHT_TYPE_POINT)
+                    continue;
+                    
+                if(omni_light_index++ != target_omni_light_index)
                     continue;
                     
                 cam_omni_shadow.pos = scene->transforms[n].translation;

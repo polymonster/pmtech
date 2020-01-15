@@ -531,7 +531,7 @@ ps_output ps_forward_lit( vs_output input )
             light_col *= smoothstep( 0.0, 0.1, s);
         }
         
-        if( lights[i].colour.a == 0.0 )
+        if( lights[i].colour.a == 0.0)
         {
             lit_colour += light_col;
             continue;

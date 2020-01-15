@@ -2802,7 +2802,7 @@ namespace put
             {
                 sv.array_index = a;
                 sv.num_arrays = v.num_arrays;
-
+                
                 // generate 3d view proj matrix
                 if (v.camera)
                 {

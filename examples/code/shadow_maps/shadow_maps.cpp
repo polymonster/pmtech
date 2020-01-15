@@ -26,12 +26,12 @@ void example_setup(ecs_scene* scene, camera& cam)
 
     // add light
     u32 light;
-    
+
     light = get_new_entity(scene);
     instantiate_light(scene, light);
     scene->names[light] = "front_light";
     scene->id_name[light] = PEN_HASH("front_light");
-    scene->lights[light].colour = vec3f::one();
+    scene->lights[light].colour = vec3f::one() * 0.3f;
     scene->lights[light].direction = vec3f::one();
     scene->lights[light].type = LIGHT_TYPE_DIR;
     scene->lights[light].shadow_map = true;
@@ -45,7 +45,21 @@ void example_setup(ecs_scene* scene, camera& cam)
     instantiate_light(scene, light);
     scene->names[light] = "point_light";
     scene->id_name[light] = PEN_HASH("front_light");
-    scene->lights[light].colour = vec3f::one();
+    scene->lights[light].colour = vec3f(1.0f, 0.0f, 0.0f);
+    scene->lights[light].radius = 100.0f;
+    scene->lights[light].type = LIGHT_TYPE_POINT;
+    scene->lights[light].shadow_map = true;
+    scene->transforms[light].translation = vec3f(-4.0f, 4.0f, -4.0f);
+    scene->transforms[light].rotation = quat();
+    scene->transforms[light].scale = vec3f::one();
+    scene->entities[light] |= CMP_LIGHT;
+    scene->entities[light] |= CMP_TRANSFORM;
+    
+    light = get_new_entity(scene);
+    instantiate_light(scene, light);
+    scene->names[light] = "point_light";
+    scene->id_name[light] = PEN_HASH("front_light");
+    scene->lights[light].colour = vec3f(0.0f, 0.0f, 1.0f);
     scene->lights[light].radius = 100.0f;
     scene->lights[light].type = LIGHT_TYPE_POINT;
     scene->lights[light].shadow_map = true;
