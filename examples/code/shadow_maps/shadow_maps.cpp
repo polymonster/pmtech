@@ -24,9 +24,10 @@ void example_setup(ecs_scene* scene, camera& cam)
     material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
     geometry_resource* box_resource = get_geometry_resource(PEN_HASH("cube"));
 
-    // add light
+    // add lights
     u32 light;
 
+    // directional
     light = get_new_entity(scene);
     instantiate_light(scene, light);
     scene->names[light] = "front_light";
@@ -41,15 +42,16 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->entities[light] |= CMP_LIGHT;
     scene->entities[light] |= CMP_TRANSFORM;
     
+    // point
     light = get_new_entity(scene);
     instantiate_light(scene, light);
-    scene->names[light] = "point_light";
-    scene->id_name[light] = PEN_HASH("front_light");
+    scene->names[light] = "point_light1";
+    scene->id_name[light] = PEN_HASH("point_light1");
     scene->lights[light].colour = vec3f(1.0f, 0.0f, 0.0f);
     scene->lights[light].radius = 100.0f;
     scene->lights[light].type = LIGHT_TYPE_POINT;
     scene->lights[light].shadow_map = true;
-    scene->transforms[light].translation = vec3f(-4.0f, 4.0f, -4.0f);
+    scene->transforms[light].translation = vec3f(-16.0f, 16.0f, -16.0f);
     scene->transforms[light].rotation = quat();
     scene->transforms[light].scale = vec3f::one();
     scene->entities[light] |= CMP_LIGHT;
@@ -57,14 +59,31 @@ void example_setup(ecs_scene* scene, camera& cam)
     
     light = get_new_entity(scene);
     instantiate_light(scene, light);
-    scene->names[light] = "point_light";
-    scene->id_name[light] = PEN_HASH("front_light");
+    scene->names[light] = "point_light2";
+    scene->id_name[light] = PEN_HASH("point_light2");
     scene->lights[light].colour = vec3f(0.0f, 0.0f, 1.0f);
     scene->lights[light].radius = 100.0f;
     scene->lights[light].type = LIGHT_TYPE_POINT;
     scene->lights[light].shadow_map = true;
-    scene->transforms[light].translation = vec3f(4.0f, 4.0f, 4.0f);
+    scene->transforms[light].translation = vec3f(16.0f, 16.0f, 16.0f);
     scene->transforms[light].rotation = quat();
+    scene->transforms[light].scale = vec3f::one();
+    scene->entities[light] |= CMP_LIGHT;
+    scene->entities[light] |= CMP_TRANSFORM;
+    
+    // spot light
+    light = get_new_entity(scene);
+    instantiate_light(scene, light);
+    scene->names[light] = "spot_light";
+    scene->id_name[light] = PEN_HASH("front_light");
+    scene->lights[light].colour = vec3f(0.0f, 1.0f, 0.0f);
+    scene->lights[light].cos_cutoff = 0.3f;
+    scene->lights[light].radius = 30.0f; // range
+    scene->lights[light].spot_falloff = 0.2f;
+    scene->lights[light].type = LIGHT_TYPE_SPOT;
+    scene->lights[light].shadow_map = true;
+    scene->transforms[light].translation = vec3f(75.0f, 50.0f, 0.0f);
+    scene->transforms[light].rotation = quat(-45.0f, 0.0f, 0.0f);
     scene->transforms[light].scale = vec3f::one();
     scene->entities[light] |= CMP_LIGHT;
     scene->entities[light] |= CMP_TRANSFORM;

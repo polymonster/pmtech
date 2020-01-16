@@ -550,7 +550,7 @@ ps_output ps_forward_lit( vs_output input )
     
     //for spot lights
     int spot_start = point_end;
-    int spot_end =  int(light_info.y) + int(light_info.z);
+    int spot_end =  spot_start + int(light_info.z);
     for(int i = spot_start; i < spot_end; ++i )
     {
         float3 light_col = float3( 0.0, 0.0, 0.0 );
@@ -589,8 +589,32 @@ ps_output ps_forward_lit( vs_output input )
             light_col *= smoothstep( 0.0, 0.1, s);
         }
         
-        
-        lit_colour += light_col;
+        if( lights[i].colour.a == 0.0 )
+        {
+            lit_colour += light_col;
+            continue;
+        }
+        else
+        {            
+            float shadow = 1.0;
+            float d = 1.0;
+            
+            // shadow map
+            float4 offset_pos = float4(input.world_pos.xyz + n.xyz * 0.01, 1.0);
+            float4 sp = mul( offset_pos, shadow_matrix[shadow_map_index] );
+            sp.xyz /= sp.w;
+            sp.y *= -1.0;
+            sp.xyz = sp.xyz * 0.5 + 0.5;
+
+            float4 sm = sample_texture_array_level( shadowmap_texture, sp.xy, float(shadow_map_index), 0 );
+            d = sm.r;
+            
+            shadow = sp.z < d ? 1.0 : 0.0;
+
+            lit_colour += light_col * shadow;
+            
+            ++shadow_map_index;
+        }
     }
     
     // area lights constant colour

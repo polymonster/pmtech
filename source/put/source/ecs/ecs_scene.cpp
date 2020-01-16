@@ -435,21 +435,37 @@ namespace put
                 if (shadow_index++ != view.array_index)
                     continue;
 
+                // create a shadow camera
                 camera cam;
-                vec3f  light_dir = normalised(-scene->lights[n].direction);
-                camera_update_shadow_frustum(&cam, light_dir, scene->renderable_extents.min - vec3f(0.1f),
-                                             scene->renderable_extents.max + vec3f(0.1f));
+                if(scene->lights[n].type == LIGHT_TYPE_DIR)
+                {
+                    vec3f  light_dir = normalised(-scene->lights[n].direction);
+                    camera_update_shadow_frustum(&cam, light_dir, scene->renderable_extents.min - vec3f(0.1f),
+                                                scene->renderable_extents.max + vec3f(0.1f));
+                }
+                else
+                {
+                    // spot
+                    camera_create_perspective(&cam, 100.0f, 1.0f, 0.01f, 500.0f);
+                    
+                    cam.view.set_row(0, vec4f(normalised(scene->world_matrices[n].get_column(2).xyz), 0.0f));
+                    cam.view.set_row(1, vec4f(normalised(scene->world_matrices[n].get_column(0).xyz), 0.0f));
+                    cam.view.set_row(2, vec4f(normalised(scene->world_matrices[n].get_column(1).xyz), 0.0f));
+                    cam.view.set_row(3, vec4f(0.0f, 0.0f, 0.0f, 1.0f));
 
+                    mat4 translate = mat::create_translation(-scene->world_matrices[n].get_translation());
+
+                    cam.view = cam.view * translate;
+                }
+
+                // update view and camera
                 scene_view vv = view;
                 vv.camera = &cam;
-
                 mat4 shadow_vp = cam.proj * cam.view;
                 pen::renderer_update_buffer(cb_view, &shadow_vp, sizeof(mat4));
-
                 shadow_matrices[shadow_index - 1] = shadow_vp;
-
                 vv.cb_view = cb_view;
-
+                
                 render_scene_view(vv);
             }
 
@@ -1580,7 +1596,6 @@ namespace put
             
             if (osm->num_arrays < num_omni_shadow_maps*6)
             {
-                //todo: omni
                 pmfx::rt_resize_params rrp;
                 rrp.width = 256;
                 rrp.height = 256;
