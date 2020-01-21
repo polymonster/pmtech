@@ -13,6 +13,8 @@
 #import <MetalKit/MetalKit.h>
 #import <Availability.h>
 
+#define PEN_PLATFORM_IOS 0
+
 using namespace pen;
 
 // globals / externs.. I want to get rid of
@@ -354,6 +356,7 @@ namespace // pen consts -> metal consts
                 return MTLPixelFormatR32Uint;
             case PEN_TEX_FORMAT_R8_UNORM:
                 return MTLPixelFormatR8Unorm;
+#if !PEN_PLATFORM_IOS
             case PEN_TEX_FORMAT_BC1_UNORM:
                 return MTLPixelFormatBC1_RGBA;
             case PEN_TEX_FORMAT_BC2_UNORM:
@@ -367,6 +370,7 @@ namespace // pen consts -> metal consts
             case PEN_TEX_FORMAT_D24_UNORM_S8_UINT:
                 return MTLPixelFormatDepth24Unorm_Stencil8;
                 break;
+#endif
         }
 
         // unhandled
@@ -396,8 +400,11 @@ namespace // pen consts -> metal consts
     {
         if (tcp.format == PEN_TEX_FORMAT_D24_UNORM_S8_UINT || tcp.sample_count > 1)
             return MTLStorageModePrivate;
-
+#if !PEN_PLATFORM_IOS
         return MTLStorageModeManaged;
+#else
+        return MTLStorageModeShared;
+#endif
     }
 
     MTLSamplerAddressMode to_metal_sampler_address_mode(u32 address_mode)
@@ -410,8 +417,10 @@ namespace // pen consts -> metal consts
                 return MTLSamplerAddressModeMirrorRepeat;
             case PEN_TEXTURE_ADDRESS_CLAMP:
                 return MTLSamplerAddressModeClampToEdge;
+#if !PEN_PLATFORM_IOS
             case PEN_TEXTURE_ADDRESS_MIRROR_ONCE:
                 return MTLSamplerAddressModeMirrorClampToEdge;
+#endif
         }
 
         // unhandled
@@ -456,6 +465,7 @@ namespace // pen consts -> metal consts
 
     const char* get_metal_version_string()
     {
+#if !PEN_PLATFORM_IOS
         if ([_metal_device supportsFeatureSet:MTLFeatureSet_macOS_GPUFamily1_v2])
         {
             return "Metal MacOS 2.0";
@@ -464,7 +474,9 @@ namespace // pen consts -> metal consts
         {
             return "Metal MacOS 1.0";
         }
+#else
 
+#endif
         return "";
     }
 

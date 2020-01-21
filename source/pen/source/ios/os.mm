@@ -27,6 +27,9 @@ namespace pen
     bool renderer_dispatch();
 }
 
+#ifdef PEN_RENDERER_METAL
+
+#else
 void pen_gl_swap_buffers()
 {
     [_gl_context presentRenderbuffer:GL_RENDERBUFFER];
@@ -139,13 +142,15 @@ extern PEN_TRV                     pen::user_entry(void* params);
 }
 
 @end
+#endif
 
 int main(int argc, char* argv[])
 {
-    NSString* str = NSStringFromClass([gl_app_delegate class]);
-
-    @autoreleasepool
-    {
+    // NSString* str = NSStringFromClass([gl_app_delegate class]);
+    
+    NSString* str = nil;
+    
+    @autoreleasepool {
         return UIApplicationMain(argc, argv, nil, str);
     }
 }

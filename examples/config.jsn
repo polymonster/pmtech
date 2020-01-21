@@ -111,6 +111,50 @@
     },
     
     //
+    // iOS
+    //
+    
+    ios: {
+        jsn_inherit: ["base"],
+        
+        clean: [
+            "build/ios",
+            "bin/ios",
+            "temp"
+        ],
+        
+        libs: [
+            "cd ../third_party && ./build_libs.sh ios",
+        ],
+        
+        premake: [
+            "xcode4",
+            "--renderer=metal", 
+            "--platform_dir=ios",
+            "--xcode_target=ios"
+        ],
+        
+        pmfx: [
+            "-shader_platform metal",
+            "-shader_version macosx",
+            "-i assets/shaders ../assets/shaders",
+            "-o bin/osx/data/pmfx/metal",
+            "-h shader_structs",
+            "-t temp/shaders",
+            "-source"
+        ],
+        
+        copy: [
+            ["assets/audio", "bin/ios/data/audio"],
+            ["../assets/audio", "bin/ios/data/audio"],
+            ["assets/configs", "bin/ios/data/configs"],
+            ["../assets/configs", "bin/ios/data/configs"],
+            ["../assets/fonts", "bin/ios/data/fonts"],
+            ["assets/scene", "bin/ios/data/scene"]
+        ]
+    },
+    
+    //
     // win32
     //
     

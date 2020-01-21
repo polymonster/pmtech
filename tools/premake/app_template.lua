@@ -66,7 +66,6 @@ local function setup_linux()
 end
 
 local function setup_win32()
-
     if renderer_dir == "vulkan" then
         libdirs
         {
@@ -114,12 +113,24 @@ end
 local function setup_ios()
 	links 
 	{ 
-		"OpenGLES.framework",
 		"Foundation.framework",
 		"UIKit.framework",
-		"GLKit.framework",
 		"QuartzCore.framework",
 	}
+	
+	if renderer_dir == "metal" then
+		links 
+		{ 
+			"MetalKit.framework",
+			"Metal.framework"
+		}
+	elseif renderer_dir == "opengl" then
+		links 
+		{ 
+			"OpenGLES.framework",
+			"GLKit.framework",
+		}
+	end
 	
 	files 
 	{ 
