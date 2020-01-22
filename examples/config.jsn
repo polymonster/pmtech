@@ -136,9 +136,9 @@
         
         pmfx: [
             "-shader_platform metal",
-            "-shader_version macosx",
+            "-shader_version ios",
             "-i assets/shaders ../assets/shaders",
-            "-o bin/osx/data/pmfx/metal",
+            "-o bin/ios/data/pmfx/metal",
             "-h shader_structs",
             "-t temp/shaders",
             "-source"

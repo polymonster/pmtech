@@ -61,6 +61,7 @@ end
 
 -- Project    
 project "pen"
+	setup_platform_defines()
     location ("build/" .. platform_dir)
     kind "StaticLib"
     language "C++"

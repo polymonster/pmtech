@@ -116,5 +116,13 @@ function setup_env()
     end
 end
 
+-- inserts platform defines
+function setup_platform_defines()
+	defines
+	{
+		("PEN_PLATFORM_" .. string.upper(platform))
+	}
+end
+
 setup_from_options()
 setup_from_action()

@@ -8,7 +8,8 @@
 // Generic rendering api wrapper, with a dedicated dispatch thread.
 // Currently implementations are in:
 //      Direct3D11 (win32)
-//      OpenGL3.1+ (osx, linux) and OpenGLES3.1+ (ios, android)
+//      OpenGL3.1+ (osx, linux, win32)
+//      OpenGLES3.1+ (android) (ios now depracated in favour of metal)
 //      Metal (osx, ios)
 //      Vulkan (win32) [wip]
 
