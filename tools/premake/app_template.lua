@@ -179,7 +179,7 @@ end
 local function setup_bullet()
 	bullet_lib = "bullet_monolithic"
 	bullet_lib_debug = "bullet_monolithic_d"
-	bullet_lib_dir = bullet_lib_dir
+	bullet_lib_dir = platform_dir
 
 	if _ACTION == "vs2017" or _ACTION == "vs2015" then
 		bullet_lib_dir = _ACTION

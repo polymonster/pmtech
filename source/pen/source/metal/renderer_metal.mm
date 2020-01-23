@@ -368,6 +368,10 @@ namespace // pen consts -> metal consts
             case PEN_TEX_FORMAT_D24_UNORM_S8_UINT:
                 return MTLPixelFormatDepth24Unorm_Stencil8;
                 break;
+#else
+            case PEN_TEX_FORMAT_D24_UNORM_S8_UINT:
+                return MTLPixelFormatDepth32Float_Stencil8;
+                break;
 #endif
         }
 
