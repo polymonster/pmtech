@@ -16,6 +16,7 @@ solution "bullet_build"
 	
 -- Project	
 project "bullet_monolithic"
+	setup_env()
 	location ("build\\" .. platform_dir)
 	kind "StaticLib"
 	language "C++"

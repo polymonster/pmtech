@@ -22,6 +22,7 @@
 // global externs
 pen::user_info pen_user_info;
 a_u64          g_frame_index = { 0 };
+extern         pen::window_creation_params pen_window;
 
 // objc interfaces
 @interface pen_mtk_renderer : NSObject<MTKViewDelegate>
@@ -45,10 +46,18 @@ namespace
     struct os_context
     {
         CGRect              wframe;
+        CGSize              wsize;
         f32                 wscale;
         pen_app_delegate*   app_delegate;
     };
     os_context s_context;
+    
+    void update_pen_window()
+    {
+        // updates pen window size
+        pen_window.width = s_context.wsize.width;
+        pen_window.height = s_context.wsize.height;
+    }
 }
 
 namespace pen
@@ -64,6 +73,11 @@ namespace pen
         s_context.app_delegate = self;
         s_context.wframe = [[UIScreen mainScreen] bounds]; // size in "points"
         s_context.wscale = [[UIScreen mainScreen] nativeScale]; // scale for retina dimensions
+        
+        s_context.wsize.width = s_context.wframe.size.width * s_context.wscale;
+        s_context.wsize.height = s_context.wframe.size.height * s_context.wscale;
+        
+        update_pen_window();
 
         self.window = [[UIWindow alloc] initWithFrame:s_context.wframe];
         [self.window setBackgroundColor:[UIColor blackColor]];
@@ -103,7 +117,8 @@ namespace pen
 }
 - (void)mtkView:(nonnull MTKView *)view drawableSizeWillChange:(CGSize)size
 {
-
+    s_context.wsize = size;
+    update_pen_window();
 }
 - (void)drawInMTKView:(nonnull MTKView *)view
 {

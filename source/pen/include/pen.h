@@ -15,10 +15,10 @@ namespace pen
 
     struct window_creation_params
     {
-        u32       width;
-        u32       height;
-        u32       sample_count;
-        const c8* window_title;
+        volatile u32    width;
+        volatile u32    height;
+        u32             sample_count;
+        const c8*       window_title;
     };
 
     struct user_info

@@ -251,6 +251,8 @@ namespace pen
 // Gamepad
 //
 
+#if !PEN_PLATFORM_IOS
+
 #define API_RAW_INPUT 0
 #define API_XINPUT 1
 #define TRIGGER_X360 1024
@@ -694,3 +696,21 @@ namespace pen
         gs = s_raw_gamepads[device_index];
     }
 } // namespace pen
+#else
+namespace pen
+{
+    // stub api
+    void gamepad_attach_func(struct Gamepad_device* device, void* context) {};
+    void gamepad_remove_func(struct Gamepad_device* device, void* context) {};
+    void gamepad_button_down_func(struct Gamepad_device* device, u32 button_id, f64 timestamp, void* context) {};
+    void gamepad_button_up_func(struct Gamepad_device* device, u32 button_id, f64 timestamp, void* context) {}
+    void gamepad_axis_move_func(struct Gamepad_device* device, u32 axis_id, f32 value, f32 last_value, f64 timestamp,
+                                void* context) {}
+    void input_gamepad_shutdown()  {}
+    void input_gamepad_update() {}
+    u32  input_get_num_gamepads() { return 0; }
+    void input_gamepad_init() {}
+    void input_get_gamepad_state(u32 device_index, gamepad_state& gs) {}
+    void input_get_raw_gamepad_state(u32 device_index, raw_gamepad_state& gs) {}
+} // namespace pen
+#endif
