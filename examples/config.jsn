@@ -114,8 +114,8 @@
     // iOS
     //
     
-    ios: {
-        jsn_inherit: ["base"],
+    ios(base): {
+        require_teamid: true,
         
         clean: [
             "build/ios",
@@ -156,6 +156,10 @@
         textures: [
             ["assets/textures", "bin/ios/data/textures"],
             ["../assets/textures", "bin/ios/data/textures"]
+        ],
+        
+        models: [
+            ["assets/mesh", "bin/ios/data/models"]
         ],
     },
     

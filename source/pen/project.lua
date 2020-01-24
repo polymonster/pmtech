@@ -61,13 +61,12 @@ end
 
 -- Project    
 project "pen"
+	setup_env()
 	setup_platform_defines()
+	setup_platform() 
     location ("build/" .. platform_dir)
     kind "StaticLib"
     language "C++"
-    
-    setup_env()
-    setup_platform() 
     
     files 
     {
@@ -103,7 +102,6 @@ project "pen"
         optimize "Speed"
         targetdir ("lib/" .. platform_dir .. "/release")
         targetname "pen"
-        architecture "x64"
         
     configuration "Debug"
         defines { "DEBUG" }
@@ -111,4 +109,3 @@ project "pen"
         symbols "On"
         targetdir ("lib/" .. platform_dir .. "/debug")
         targetname "pen"
-        architecture "x64"

@@ -58,9 +58,6 @@ PEN_TRV pen::user_entry(void* params)
 
     u32 raster_state = pen::renderer_create_rasterizer_state(rcp);
 
-    // viewport
-    pen::viewport vp = {0.0f, 0.0f, 1280.0f, 720.0f, 0.0f, 1.0f};
-
     // viewport for render target
     pen::viewport vp_rt = {0.0f, 0.0f, 1024.0f, 512.0f, 0.0f, 1.0f};
 
@@ -183,6 +180,9 @@ PEN_TRV pen::user_entry(void* params)
         }
 
         // bind back buffer and clear
+        // viewport
+        pen::viewport vp = {0.0f, 0.0f, (f32)pen_window.width, (f32)pen_window.height, 0.0f, 1.0f};
+        
         pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
         pen::renderer_set_viewport(vp);
         pen::renderer_set_scissor_rect(rect{vp.x, vp.y, vp.width, vp.height});

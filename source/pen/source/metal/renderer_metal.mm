@@ -1619,8 +1619,8 @@ namespace pen
         void renderer_set_targets(const u32* const colour_targets, u32 num_colour_targets, u32 depth_target, u32 colour_face,
                                   u32 depth_face)
         {
+#if PEN_PLATFORM_IOS
             // hash it
-            /*
             HashMurmur2A hh;
             hh.begin();
             hh.add(&num_colour_targets, sizeof(u32));
@@ -1632,7 +1632,7 @@ namespace pen
             if (cur == _state.target_hash)
                 return;
              _state.target_hash = cur;
-            */
+#endif
              
             // create new cmd buffer
             if (_state.cmd_buffer == nil)

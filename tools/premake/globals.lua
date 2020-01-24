@@ -98,6 +98,11 @@ function setup_env_ios()
 		["SDKROOT"] = "iphoneos",
 		["PRODUCT_BUNDLE_IDENTIFIER"] = "com.pmtech"
 	}
+	if _OPTIONS["teamid"] then
+		xcodebuildsettings {
+			["DEVELOPMENT_TEAM"] = _OPTIONS["teamid"]
+		}
+	end
 end
 
 function setup_env_osx()

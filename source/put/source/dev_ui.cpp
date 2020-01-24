@@ -436,9 +436,9 @@ namespace put
             pen::viewport vp = {0.0f, 0.0f, (f32)ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y, 0.0f, 1.0};
 
             pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
+            
             pen::renderer_set_viewport(vp);
             pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
-
             pen::renderer_set_rasterizer_state(s_imgui_rs.raster_state);
             pen::renderer_set_blend_state(s_imgui_rs.blend_state);
             pen::renderer_set_depth_stencil_state(s_imgui_rs.depth_stencil_state);
