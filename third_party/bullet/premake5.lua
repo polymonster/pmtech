@@ -58,7 +58,6 @@ project "bullet_monolithic"
 		symbols "On"
 		targetdir ("lib/" .. platform_dir)
 		targetname "bullet_monolithic_d"
-		architecture "x64"
  
 	configuration "Release"
 		defines { "NDEBUG" }
@@ -66,4 +65,3 @@ project "bullet_monolithic"
 		linkoptions { link_cmd }
 		targetdir ("lib/" .. platform_dir)
 		targetname "bullet_monolithic"
-		architecture "x64"

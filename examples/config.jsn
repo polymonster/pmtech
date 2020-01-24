@@ -151,7 +151,12 @@
             ["../assets/configs", "bin/ios/data/configs"],
             ["../assets/fonts", "bin/ios/data/fonts"],
             ["assets/scene", "bin/ios/data/scene"]
-        ]
+        ],
+        
+        textures: [
+            ["assets/textures", "bin/ios/data/textures"],
+            ["../assets/textures", "bin/ios/data/textures"]
+        ],
     },
     
     //

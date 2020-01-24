@@ -13,7 +13,8 @@ cd ../../..
 elif [ "$1" = "ios" ]; then
     ../../tools/premake/premake5 xcode4 --xcode_target=ios --platform_dir=$1
     cd build/$1
-    xcodebuild -scheme bullet_monolithic -workspace bullet_build.xcworkspace
+    xcodebuild -scheme bullet_monolithic -destination generic/platform=iOS -workspace bullet_build.xcworkspace -configuration Debug
+    xcodebuild -scheme bullet_monolithic -destination generic/platform=iOS -workspace bullet_build.xcworkspace -configuration Release
 cd ../../..
 else
     ../../tools/premake/premake5 gmake --platform_dir=$1
