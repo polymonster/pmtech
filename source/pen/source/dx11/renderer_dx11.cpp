@@ -491,7 +491,7 @@ namespace pen
         // unused for d3d, required to sync for metal
     }
     
-    bool renderer_frame_valid()
+    bool direct::renderer_frame_valid()
     {
         return true;
     }
