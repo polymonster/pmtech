@@ -93,7 +93,7 @@ end
 
 -- setup product
 function setup_product_ios(name)
-	bundle_name = ("com.pmtech." ..name) 
+	bundle_name = ("com.pmtech") 
 	xcodebuildsettings {
 		["PRODUCT_BUNDLE_IDENTIFIER"] = bundle_name
 	}

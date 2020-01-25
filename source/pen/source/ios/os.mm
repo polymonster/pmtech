@@ -7,6 +7,7 @@
 #include "renderer.h"
 #include "threads.h"
 #include "timer.h"
+#include "console.h"
 
 #ifdef PEN_RENDERER_METAL
 #import <MetalKit/MetalKit.h>
@@ -151,12 +152,14 @@ namespace pen
 
 - (void)didReceiveMemoryWarning
 {
+    PEN_LOG("[warning] ios received memory warning.");
 }
 
 - (int)getTouchId:(UITouch*) touch
 {
-
+    return 0;
 }
+
 - (void)handleTouch:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
 {
 

@@ -40,6 +40,18 @@ def is_excluded(file):
     return False
 
 
+# writes a required value input by the user, into config.user.jsn
+def update_user_config(k, v, config):
+    config[k] = v
+    user = dict()
+    if os.path.exists("config.user.jsn"):
+        user = jsn.loads(open("config.user.jsn", "r").read())
+    user[k] = v
+    bj = open("config.user.jsn", "w+")
+    bj.write(json.dumps(user, indent=4))
+    bj.close()
+
+
 # windows only, prompt user to supply their windows sdk version
 def configure_windows_sdk(config):
     if "sdk_version" in config.keys():
@@ -49,10 +61,7 @@ def configure_windows_sdk(config):
     print("You can find available sdk versions in:")
     print("Visual Studio > Project Properties > General > Windows SDK Version.")
     input_sdk = str(input())
-    config["sdk_version"] = input_sdk
-    bj = open("config.user.jsn", "w+")
-    bj.write(json.dumps(config, indent=4))
-    bj.close()
+    update_user_config("sdk_version", input_sdk, config)
     return
 
 
@@ -70,10 +79,7 @@ def configure_vc_vars_all(config):
         if os.path.isfile(input_dir):
             input_dir = os.path.dirname(input_dir)
         if os.path.exists(input_dir):
-            config["vcvarsall_dir"] = input_dir
-            bj = open("config.user.jsn", "w+")
-            bj.write(json.dumps(config, indent=4))
-            bj.close()
+            update_user_config("vcvarsall_dir", input_dir, config)
             return
         else:
             time.sleep(1)
@@ -89,10 +95,7 @@ def configure_teamid(config):
     print("Optionally leave this blank and you select a team later in xcode:")
     print("  Project > Signing & Capabilities > Team")
     input_sdk = str(input())
-    config["teamid"] = input_sdk
-    bj = open("config.user.jsn", "w+")
-    bj.write(json.dumps(config, indent=4))
-    bj.close()
+    update_user_config("teamid", input_sdk, config)
     return
 
 
