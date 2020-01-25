@@ -21,11 +21,6 @@ project "bullet_monolithic"
 	kind "StaticLib"
 	language "C++"
 	
-	libdirs
-	{ 
-
-	}
-	
 	includedirs
 	{ 
 		"src\\", 

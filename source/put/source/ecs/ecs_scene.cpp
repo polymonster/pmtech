@@ -15,6 +15,7 @@
 #include "str/Str.h"
 #include "str_utilities.h"
 #include "timer.h"
+#include "os.h"
 
 #include "ecs/ecs_resources.h"
 #include "ecs/ecs_scene.h"
@@ -2036,7 +2037,7 @@ namespace put
             bool error = false;
             Str  project_dir = dev_ui::get_program_preference_filename("project_dir", pen_user_info.working_directory);
 
-            std::ifstream ifs(filename, std::ofstream::binary);
+            std::ifstream ifs(pen::os_path_for_resource(filename), std::ofstream::binary);
 
             // header
             scene_header sh;

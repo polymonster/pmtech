@@ -609,6 +609,7 @@ namespace pen
     //--------------------------------------------------------------------------------------
     //  DIRECT API
     //--------------------------------------------------------------------------------------
+    
     void direct::renderer_make_context_current()
     {
         pen_make_gl_context_current();
@@ -617,6 +618,11 @@ namespace pen
     void direct::renderer_sync()
     {
         // unused for opengl, required to sync for metal
+    }
+    
+    bool direct::renderer_frame_valid()
+    {
+        return true;
     }
 
     void direct::renderer_clear(u32 clear_state_index, u32 colour_face, u32 depth_face)

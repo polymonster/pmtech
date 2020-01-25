@@ -100,21 +100,23 @@
     view_sets: 
     {
         editor_d: [
-            main_view
+            main_view,
+            editor_view
         ],
         
         editor: [
             multiple_shadow_views,
             multiple_area_light_views,
+            multiple_omni_shadow_views,
+            picking_view,
             main_view,
-            editor_view, 
-            picking_view
+            editor_view
         ],
         
         editor_post_processed: [
+        	picking_view,
             main_view_post_processed,
-            editor_view, 
-            picking_view, 
+            editor_view,  
             volume_rasteriser
         ],
     },

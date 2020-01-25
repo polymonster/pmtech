@@ -919,12 +919,12 @@ namespace put
             // splat
             size_t rtb_start = rtb.size();
             rtb.resize(num_rt);
-            for (s32 i = rtb_start; i < num_rt; ++i)
+            for (size_t i = rtb_start; i < num_rt; ++i)
                 rtb[i] = rtb[i - 1];
 
             size_t mask_start = masks.size();
             masks.resize(num_rt);
-            for (s32 i = mask_start; i < num_rt; ++i)
+            for (size_t i = mask_start; i < num_rt; ++i)
                 masks[i] = masks[i - 1];
 
             pen::blend_creation_params bcp;

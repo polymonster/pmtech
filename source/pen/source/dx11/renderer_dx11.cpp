@@ -490,6 +490,11 @@ namespace pen
     {
         // unused for d3d, required to sync for metal
     }
+    
+    bool renderer_frame_valid()
+    {
+        return true;
+    }
 
     void direct::renderer_clear(u32 clear_state_index, u32 colour_face, u32 depth_face)
     {

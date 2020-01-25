@@ -876,6 +876,8 @@ namespace put
 
         void poll_for_changes()
         {
+            PEN_HOTLOADING_ENABLED;
+            
             Str shader_compiler_str = put::get_build_cmd();
             shader_compiler_str.append("-pmfx");
             

@@ -22,6 +22,7 @@
 // global externs
 pen::user_info pen_user_info;
 a_u64          g_frame_index = { 0 };
+a_u64          g_resize_index = { 0 };
 extern         pen::window_creation_params pen_window;
 
 // objc interfaces
@@ -57,6 +58,7 @@ namespace
         // updates pen window size
         pen_window.width = s_context.wsize.width;
         pen_window.height = s_context.wsize.height;
+        g_resize_index++;
     }
 }
 
@@ -69,6 +71,9 @@ namespace pen
 @implementation pen_app_delegate
 - (BOOL)application:(UIApplication*)application didFinishLaunchingWithOptions:(NSDictionary*)launchOptions
 {
+    // setup base systems
+    pen::timer_system_intialise();
+    
     @autoreleasepool {
         s_context.app_delegate = self;
         s_context.wframe = [[UIScreen mainScreen] bounds]; // size in "points"

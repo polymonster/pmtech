@@ -18,6 +18,7 @@ using namespace pen;
 // globals / externs.. I want to get rid of
 a_u8                          g_window_resize;
 extern a_u64                  g_frame_index;
+extern a_u64                  g_resize_index;
 extern window_creation_params pen_window;
 
 #define NBB 3                 // buffers to prevent locking gpu / cpu on dynamic buffers.
@@ -289,6 +290,7 @@ namespace // internal structs and static vars
     MTKView*           _metal_view;
     current_state      _state;
     a_u64              _frame_sync;
+    a_u64              _resize_sync;
     managed_rt*        _managed_rts = nullptr;
 }
 
@@ -748,7 +750,7 @@ namespace pen
             [_state.render_encoder setFrontFacingWinding:rs.winding];
             
             // scissor
-            if (!g_window_resize && rs.scissor_enabled)
+            if (rs.scissor_enabled)
                 [_state.render_encoder setScissorRect:_state.scissor];
         }
 
@@ -861,6 +863,7 @@ namespace pen
             //reserve space for some resources
             _res_pool.init(1);
             _frame_sync = 0;
+            _resize_sync = 1;
 
             // frame completion sem
             _state.completion = dispatch_semaphore_create(NBB);
@@ -883,6 +886,13 @@ namespace pen
         {
             while (_frame_sync == g_frame_index.load())
                 thread_sleep_us(100);
+                
+            _resize_sync = g_resize_index.load();
+        }
+        
+        bool renderer_frame_valid()
+        {
+            return _resize_sync.load() == g_resize_index.load();
         }
 
         void renderer_create_clear_state(const clear_state& cs, u32 resource_slot)
@@ -1891,9 +1901,6 @@ namespace pen
 
         void renderer_read_back_resource(const resource_read_back_params& rrbp)
         {
-            if (g_window_resize)
-                return;
-
             if (_state.cmd_buffer == nil)
                 _state.cmd_buffer = [_state.command_queue commandBuffer];
 
@@ -1945,24 +1952,7 @@ namespace pen
 
         static void resize_managed_targets()
         {
-            static u32  count = 0;
-            static bool need_resize = false;
-            if (g_window_resize > 0)
-            {
-                need_resize = true;
-            }
-
-            if (need_resize)
-            {
-                count++;
-            }
-            else
-            {
-                count = 0;
-                return;
-            }
-
-            if (count < 5)
+            if (g_window_resize == 0)
                 return;
 
             u32 num_man_rt = sb_count(_managed_rts);
@@ -1977,7 +1967,6 @@ namespace pen
             }
 
             g_window_resize = 0;
-            need_resize = false;
         }
 
         void renderer_present()

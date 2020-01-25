@@ -31,6 +31,7 @@ extern pen::window_creation_params  pen_window;
 extern a_u8                        g_window_resize;
 int                                g_rs = 0;
 a_u64                              g_frame_index;
+a_u64                              g_resize_index;
 static u32                         s_error_code = 0;
 
 namespace pen
@@ -58,6 +59,9 @@ namespace
         s_ctx.frame.y = rect.origin.y;
         s_ctx.frame.width = rect.size.width;
         s_ctx.frame.height = rect.size.height;
+        
+        g_resize_index++;
+        g_window_resize = 1;
     }
 }
 
@@ -125,9 +129,9 @@ namespace
 
 - (void)mtkView:(nonnull MTKView*)view drawableSizeWillChange:(CGSize)size
 {
-    g_window_resize = 1;
     pen_window.width = size.width;
     pen_window.height = size.height;
+    
     _update_window_frame();
 }
 
@@ -158,8 +162,6 @@ void create_metal_context()
 
 void pen_window_resize()
 {
-    g_rs = 10;
-
     NSRect view_rect = [[_window contentView] bounds];
 
     if (_metal_view.frame.size.width == view_rect.size.width && _metal_view.frame.size.height == view_rect.size.height)
@@ -918,9 +920,7 @@ namespace pen
 
 - (void)windowDidResize:(NSNotification*)notification
 {
-    g_window_resize = true;
     pen_window_resize();
-    _update_window_frame();
 }
 
 - (void)windowDidBecomeKey:(NSNotification*)notification

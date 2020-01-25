@@ -91,12 +91,24 @@ function setup_from_action()
     
 end
 
--- setup env - inserts architecture and platform 
+-- setup product
+function setup_product_ios(name)
+	bundle_name = ("com.pmtech." ..name) 
+	xcodebuildsettings {
+		["PRODUCT_BUNDLE_IDENTIFIER"] = bundle_name
+	}
+end
+
+function setup_product(name)
+    if platform == "ios" then setup_product_ios(name)
+    end
+end
+
+-- setup env - inserts architecture, platform and sdk settings
 function setup_env_ios()
 	xcodebuildsettings {
 		["ARCHS"] = "$(ARCHS_STANDARD)",
-		["SDKROOT"] = "iphoneos",
-		["PRODUCT_BUNDLE_IDENTIFIER"] = "com.pmtech"
+		["SDKROOT"] = "iphoneos"
 	}
 	if _OPTIONS["teamid"] then
 		xcodebuildsettings {

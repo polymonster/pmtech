@@ -215,6 +215,7 @@ end
 
 function create_app(project_name, source_directory, root_directory)
 	project ( project_name )
+		setup_product( project_name )
 		kind "WindowedApp"
 		language "C++"
 		dependson{ "pen", "put" }

@@ -468,6 +468,7 @@ namespace pen
         void renderer_shutdown();
         void renderer_make_context_current();
         void renderer_sync();
+        bool renderer_frame_valid();
 
         // clears
         void renderer_create_clear_state(const clear_state& cs, u32 resource_slot);

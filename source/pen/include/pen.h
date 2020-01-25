@@ -42,4 +42,10 @@ namespace pen
 #define pen_debug_break __builtin_trap()
 #endif
 
+#ifdef PEN_PLATFORM_IOS
+#define PEN_HOTLOADING_ENABLED return
+#else
+#define PEN_HOTLOADING_ENABLED
+#endif
+
 #endif

@@ -654,7 +654,9 @@ namespace put
     }
 
     void poll_hot_loader()
-    {        
+    {
+        PEN_HOTLOADING_ENABLED;
+        
         // print build cmd to console first time init
         get_build_cmd();
 

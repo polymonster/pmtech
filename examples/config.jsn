@@ -20,9 +20,8 @@
     // mac
     //
     
-    mac: {
-        jsn_inherit: ["base"],
-        
+    mac(base): {
+
         clean: [
             "build/osx",
             "bin/osx",
@@ -70,9 +69,8 @@
         data_dir: "bin/osx/data/"
     },
     
-    mac-gl: {
-        jsn_inherit: ["mac"],
-        
+    mac-gl(mac): {
+
         premake: [
             "xcode4",
             "--renderer=opengl", 
@@ -90,9 +88,8 @@
         ]
     },
 
-    mac-gl-ci: {
-        jsn_inherit: ["mac"],
-        
+    mac-gl-ci(mac): {
+
         premake: [
             "gmake",
             "--renderer=opengl", 
@@ -100,9 +97,8 @@
         ]
     },
 
-    mac-metal-ci: {
-        jsn_inherit: ["mac"],
-        
+    mac-metal-ci(mac): {
+
         premake: [
             "gmake",
             "--renderer=metal", 

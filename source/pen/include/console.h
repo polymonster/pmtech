@@ -51,7 +51,7 @@ inline void output_debug(const c8* format, ...)
 }
 
 #if TARGET_OS_IPHONE
-#define PEN_SYSTEM
+#define PEN_SYSTEM(c) (void)c
 #else
 #define PEN_SYSTEM system
 #endif
