@@ -35,5 +35,5 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
     cam.view.set_row(0, vec4f(1.0f, 0.0f, 0.0f, cam.pos.z));
     cam.view.set_row(3, vec4f(0.0f, 0.0f, 0.0f, 1.0f));
 
-    cam.flags |= CF_INVALIDATED;
+    cam.flags |= e_camera_flags::invalidated;
 }

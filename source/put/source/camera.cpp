@@ -28,7 +28,7 @@ namespace put
         if (aspect_ratio == -1)
         {
             f32 window_aspect = (f32)pen_window.width / (f32)pen_window.height;
-            p_camera->flags |= CF_WINDOW_ASPECT;
+            p_camera->flags |= e_camera_flags::window_aspect;
             p_camera->aspect = window_aspect;
         }
         else
@@ -42,15 +42,15 @@ namespace put
         p_camera->proj = mat::create_perspective_projection(-near_size.x * 0.5f, near_size.x * 0.5f, -near_size.y * 0.5f,
                                                             near_size.y * 0.5f, near_plane, far_plane);
 
-        p_camera->flags |= CF_INVALIDATED;
+        p_camera->flags |= e_camera_flags::invalidated;
     }
 
     void camera_create_orthographic(camera* p_camera, f32 left, f32 right, f32 bottom, f32 top, f32 znear, f32 zfar)
     {
         p_camera->proj = mat::create_orthographic_projection(left, right, bottom, top, znear, zfar);
 
-        p_camera->flags |= CF_INVALIDATED;
-        p_camera->flags |= CF_ORTHO;
+        p_camera->flags |= e_camera_flags::invalidated;
+        p_camera->flags |= e_camera_flags::orthographic;
     }
 
     void camera_update_fly(camera* p_camera, bool has_focus, camera_settings settings)
@@ -122,7 +122,7 @@ namespace put
         mat4 view_rotation = rx * ry;
         p_camera->view = view_rotation * t;
 
-        p_camera->flags |= CF_INVALIDATED;
+        p_camera->flags |= e_camera_flags::invalidated;
     }
 
     void camera_update_frustum(camera* p_camera)
@@ -228,7 +228,7 @@ namespace put
 
         p_camera->view = mat::inverse3x4(p_camera->view);
 
-        p_camera->flags |= CF_INVALIDATED;
+        p_camera->flags |= e_camera_flags::invalidated;
     }
 
     void camera_update_look_at(camera* p_camera)
@@ -244,7 +244,7 @@ namespace put
 
         p_camera->view = mat::inverse3x4(p_camera->view);
 
-        p_camera->flags |= CF_INVALIDATED;
+        p_camera->flags |= e_camera_flags::invalidated;
     }
 
     void camera_update_projection_matrix(camera* p_camera)
@@ -268,7 +268,7 @@ namespace put
         }
 
         // auto detect window aspect
-        if (p_camera->flags & CF_WINDOW_ASPECT)
+        if (p_camera->flags & e_camera_flags::window_aspect)
         {
             f32 cur_aspect = (f32)pen_window.width / (f32)pen_window.height;
             if (cur_aspect != p_camera->aspect)
@@ -293,7 +293,7 @@ namespace put
 
         pen::renderer_update_buffer(p_camera->cbuffer, &wvp, sizeof(camera_cbuffer));
 
-        p_camera->flags &= ~CF_INVALIDATED;
+        p_camera->flags &= ~e_camera_flags::invalidated;
     }
 
     void camera_create_cubemap(camera* p_camera, f32 near_plane, f32 far_plane)
@@ -377,7 +377,7 @@ namespace put
         // create ortho mat and set view matrix
         p_camera->view = shadow_view;
         p_camera->proj = mat::create_orthographic_projection(cmin.x, cmax.x, cmin.y, cmax.y, cmin.z, cmax.z);
-        p_camera->flags |= CF_INVALIDATED | CF_ORTHO;
+        p_camera->flags |= e_camera_flags::invalidated | e_camera_flags::orthographic;
 
         camera_update_frustum(p_camera);
     }

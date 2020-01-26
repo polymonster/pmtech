@@ -15,12 +15,16 @@ namespace put
 {
     static const f32 k_use_window_aspect = -1;
 
-    enum camera_flags : u32
+    namespace e_camera_flags
     {
-        CF_INVALIDATED = 1 << 1,
-        CF_ORTHO = 1 << 3,
-        CF_WINDOW_ASPECT = 1 << 4
-    };
+        enum camera_flags_t
+        {
+            invalidated = 1<<1,
+            orthographic = 1<<3,
+            window_aspect = 1<<4
+        };
+    }
+    typedef u32 camera_flags;
 
     struct camera_cbuffer
     {
@@ -48,25 +52,20 @@ namespace put
 
     struct camera
     {
-        vec3f pos = vec3f::zero();
-        vec3f focus = vec3f::zero();
-        vec2f rot = vec2f(-0.5f, 0.5f);
-
-        f32 fov = 0.0f;
-        f32 aspect;
-        f32 near_plane;
-        f32 far_plane;
-        f32 zoom = 60.0f;
-
-        mat4 view;
-        mat4 proj;
-
-        u32 cbuffer = (u32)-1;
-        u8  flags = 0;
-
-        frustum camera_frustum;
-
-        Str name;
+        vec3f           pos = vec3f::zero();
+        vec3f           focus = vec3f::zero();
+        vec2f           rot = vec2f(-0.5f, 0.5f);
+        mat4            view;
+        mat4            proj;
+        f32             fov = 0.0f;
+        f32             aspect;
+        f32             near_plane;
+        f32             far_plane;
+        f32             zoom = 60.0f;
+        u32             cbuffer = (u32)-1;
+        camera_flags    flags = 0;
+        frustum         camera_frustum;
+        Str             name;
     };
 
     void camera_create_perspective(camera* p_camera, f32 fov_degrees, f32 aspect_ratio, f32 near_plane, f32 far_plane);

@@ -74,7 +74,7 @@ void example_setup(ecs_scene* scene, camera& cam)
 
     cam.focus = vec3f(0.0, 10.0, 0.0);
     cam.zoom = 27.0f;
-    cam.flags |= CF_INVALIDATED;
+    cam.flags |= e_camera_flags::invalidated;
 }
 
 void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
