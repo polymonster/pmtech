@@ -247,7 +247,7 @@ void show_ui()
 
     if (browser_open)
     {
-        const char* fn = put::dev_ui::file_browser(browser_open, put::dev_ui::FB_OPEN);
+        const char* fn = put::dev_ui::file_browser(browser_open, dev_ui::e_file_browser_flags::open);
 
         if (fn && browser_slot >= 0)
         {

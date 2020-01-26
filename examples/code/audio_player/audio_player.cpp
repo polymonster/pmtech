@@ -25,6 +25,8 @@ pen::viewport vp = {0.0f, 0.0f, 1280.0f, 720.0f, 0.0f, 1.0f};
 
 u32 default_depth_stencil_state;
 
+using namespace put;
+
 void renderer_state_init()
 {
     // create 2 clear states one for the render target and one for the main screen, so we can see the difference
@@ -657,7 +659,7 @@ class playback_deck
 
         if (open_file)
         {
-            const c8* file = put::dev_ui::file_browser(open_file, put::dev_ui::FB_OPEN, 2, "**.mp3", "**.wav");
+            const c8* file = put::dev_ui::file_browser(open_file, dev_ui::e_file_browser_flags::open, 2, "**.mp3", "**.wav");
 
             if (file != nullptr)
             {
