@@ -21,7 +21,7 @@ vec3f random_vel(f32 min, f32 max)
 
 void animate_lights(ecs_scene* scene, f32 dt)
 {
-    if (scene->flags & PAUSE_UPDATE)
+    if (scene->flags & e_scene_flags::pause_update)
         return;
 
     extents e = scene->renderable_extents;

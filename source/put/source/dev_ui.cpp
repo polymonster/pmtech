@@ -490,8 +490,13 @@ namespace put
             custom_draw_call cd = *(custom_draw_call*)cmd->UserCallbackData;
             delete (custom_draw_call*)cmd->UserCallbackData;
 
-            static hash_id ids[] = {PEN_HASH("tex_2d"), PEN_HASH("tex_cube"), PEN_HASH("tex_volume"),
-                                    PEN_HASH("tex_2d_array")};
+            static hash_id ids[] = {
+                PEN_HASH("tex_2d"),
+                PEN_HASH("tex_cube"),
+                PEN_HASH("tex_volume"),
+                PEN_HASH("tex_2d_array"),
+                PEN_HASH("tex_cube_array")
+            };
 
             if (cd.shader == e_ui_shader::imgui)
             {
@@ -1561,7 +1566,8 @@ namespace put
                 cb.params.x++;
 
             // arrays
-            if (shader == e_ui_shader::texture_array)
+            if (shader == e_ui_shader::texture_array ||
+                shader == e_ui_shader::texture_cube_array)
             {
                 ImGui::SameLine();
                 ImGui::PushID("Array");

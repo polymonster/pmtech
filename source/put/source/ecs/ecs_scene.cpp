@@ -513,7 +513,6 @@ namespace put
             static u32 cb_light = -1;
             if(!is_valid(cb_light))
             {
-                put::camera_create_cubemap(&cam_omni_shadow, 0.0001f, 100.0f);
                 cam_omni_shadow.pos = vec3f(0.0f, 0.0f, 0.0f);
                 
                 pen::buffer_creation_params bcp;
@@ -541,6 +540,7 @@ namespace put
                     continue;
                     
                 cam_omni_shadow.pos = scene->transforms[n].translation;
+                put::camera_create_cubemap(&cam_omni_shadow, 0.1f, scene->lights[n].radius * 2.0);
                 put::camera_set_cubemap_face(&cam_omni_shadow, array_face);
                 put::camera_update_shader_constants(&cam_omni_shadow);
                 

@@ -540,10 +540,11 @@ ps_output ps_forward_lit( vs_output input )
         {
         	// omni directional shadow
 			float3 to_light = (input.world_pos.xyz - lights[i].pos_radius.xyz);
-			float d = length(to_light);
+			float d = length(to_light) / 2.0; // omni shadow space far plane is radius * 2.0
 			float3 cv = normalize(to_light) * float3(1.0, 1.0, -1.0);
 			float cube_d = sample_texture_array_level(omni_shadow_texture, cv, float(omni_shadow_index), 0).r;
 			lit_colour += d < cube_d * lights[i].pos_radius.w ? light_col : 0.0;
+			
 			++omni_shadow_index;
         }   
     }
@@ -798,7 +799,7 @@ ps_output_depth ps_omni_shadow( vs_output input )
 {
 	ps_output_depth output;
 	float d = length(input.world_pos.xyz - single_light.pos_radius.xyz) / single_light.pos_radius.w;
-	output.depth = d;
+	output.depth = d / 2.0; // divide by 2 because the ortho far plane is light radius * 2.0
 	return output;
 }
 

@@ -1009,7 +1009,7 @@ void maths_test_ui(ecs_scene* scene)
     
     if(gen_tests)
     {
-        scene->view_flags |= SV_HIDE;
+        scene->view_flags |= e_scene_view_flags::hide;
         initialise = true;
         
         if(test_variant_index >= 10)
@@ -1036,6 +1036,9 @@ void maths_test_ui(ecs_scene* scene)
 
 void example_setup(ecs::ecs_scene* scene, camera& cam)
 {
+    dev_ui::enable(true);
+    scene->view_flags &= ~e_scene_view_flags::hide_debug;
+    
     // create constant col material
     constant_colour_material->material_name = "constant_colour";
     constant_colour_material->shader_name = "pmfx_utility";
