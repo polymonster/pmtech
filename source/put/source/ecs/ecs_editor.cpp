@@ -80,26 +80,21 @@ namespace put
             Str                  current_working_scene = "";
         };
         static model_view_controller s_model_view_controller;
-
-        enum transform_mode : u32
+        
+        static transform_mode s_transform_mode = e_transform_mode::none;
+        void editor_set_transform_mode(transform_mode mode)
         {
-            TRANSFORM_NONE = 0,
-            TRANSFORM_SELECT = 1,
-            TRANSFORM_TRANSLATE = 2,
-            TRANSFORM_ROTATE = 3,
-            TRANSFORM_SCALE = 4,
-            TRANSFORM_PHYSICS = 5
-        };
-        static transform_mode s_transform_mode = TRANSFORM_NONE;
-
+            s_transform_mode = mode;
+        }
+        
         bool shortcut_key(u32 key)
         {
             u32 flags = dev_ui::want_capture();
 
-            if (flags & dev_ui::KEYBOARD)
+            if (flags & dev_ui::e_io_capture::keyboard)
                 return false;
 
-            if (flags & dev_ui::TEXT)
+            if (flags & dev_ui::e_io_capture::text)
                 return false;
 
             return pen::input_key(key);
@@ -116,7 +111,7 @@ namespace put
                 s_model_view_controller.invalidated = false;
             }
 
-            bool has_focus = dev_ui::want_capture() == dev_ui::NO_INPUT;
+            bool has_focus = dev_ui::want_capture() == dev_ui::e_io_capture::none;
 
             switch (s_model_view_controller.camera_mode)
             {
@@ -131,92 +126,32 @@ namespace put
             }
         }
 
-        // clang-format off
-        enum e_debug_draw_flags
-        {
-            DD_HIDE              = SV_HIDE,
-            DD_NODE              = 1 << (SV_BITS_END + 1),
-            DD_GRID              = 1 << (SV_BITS_END + 2),
-            DD_MATRIX            = 1 << (SV_BITS_END + 3),
-            DD_BONES             = 1 << (SV_BITS_END + 4),
-            DD_AABB              = 1 << (SV_BITS_END + 5),
-            DD_LIGHTS            = 1 << (SV_BITS_END + 6),
-            DD_PHYSICS           = 1 << (SV_BITS_END + 7),
-            DD_SELECTED_CHILDREN = 1 << (SV_BITS_END + 8),
-            DD_GEOMETRY          = 1 << (SV_BITS_END + 9),
-            DD_CAMERA            = 1 << (SV_BITS_END + 10),
-
-            DD_NUM_FLAGS         = 11
-        };
-
-        const c8* dd_names[] ={
-            "Hide Scene",
-            "Selected Node",
-            "Grid",
-            "Matrices",
-            "Bones",
-            "AABB",
-            "Lights",
-            "Physics",
-            "Selected Children",
-            "Debug Geometry",
-            "Camera / Frustum"
-        };
-        // clang-format on
-
-        static_assert(sizeof(dd_names) / sizeof(dd_names[0]) == DD_NUM_FLAGS, "mismatched");
-        static bool* s_dd_bools = nullptr;
-
         void undo(ecs_scene* scene);
         void redo(ecs_scene* scene);
         void update_undo_stack(ecs_scene* scene, f32 dt);
 
-        void update_view_flags_ui(ecs_scene* scene)
-        {
-            if (!s_dd_bools)
-            {
-                s_dd_bools = new bool[DD_NUM_FLAGS];
-                memset(s_dd_bools, 0x0, sizeof(bool) * DD_NUM_FLAGS);
-
-                // set defaults
-                static u32 defaults[] = {DD_NODE, DD_GRID, DD_LIGHTS};
-                for (s32 i = 1; i < sizeof(defaults) / sizeof(defaults[0]); ++i)
-                    s_dd_bools[i] = true;
-            }
-
-            for (s32 i = 0; i < DD_NUM_FLAGS; ++i)
-            {
-                u32 mask = 1 << i;
-
-                if (s_dd_bools[i])
-                    scene->view_flags |= mask;
-                else
-                    scene->view_flags &= ~(mask);
-            }
-        }
-
-        void update_view_flags(ecs_scene* scene, bool error)
-        {
-            if (error)
-                scene->view_flags |= (DD_MATRIX | DD_BONES);
-
-            for (s32 i = 0; i < DD_NUM_FLAGS; ++i)
-            {
-                s_dd_bools[i] = false;
-
-                if (scene->view_flags & (1 << i))
-                    s_dd_bools[i] = true;
-            }
-        }
-
         void view_ui(ecs_scene* scene, bool* opened)
         {
+            static const c8* dd_names[] ={
+                "Hide Scene",
+                "Hide Debug",
+                "Selected Node",
+                "Grid",
+                "Matrices",
+                "Bones",
+                "AABB",
+                "Lights",
+                "Physics",
+                "Selected Children",
+                "Debug Geometry",
+                "Camera / Frustum"
+            };
+            static_assert(sizeof(dd_names) / sizeof(dd_names[0]) == e_scene_view_flags::COUNT, "mismatched");
+            
             if (ImGui::Begin("View", opened, ImGuiWindowFlags_AlwaysAutoResize))
             {
-                for (s32 i = 0; i < DD_NUM_FLAGS; ++i)
-                {
-                    ImGui::Checkbox(dd_names[i], &s_dd_bools[i]);
-                }
+                for (s32 i = 0; i < e_scene_view_flags::COUNT; ++i)
+                    ImGui::CheckboxFlags(dd_names[i], &scene->view_flags, 1<<i);
 
                 if (ImGui::CollapsingHeader("Grid Options"))
                 {
@@ -229,17 +164,12 @@ namespace put
 
                 ImGui::End();
             }
-
-            update_view_flags_ui(scene);
         }
 
         void default_scene(ecs_scene* scene)
         {
-            // add default view flags
-            scene->view_flags = 0;
-            delete[] s_dd_bools;
-            s_dd_bools = nullptr;
-            update_view_flags_ui(scene);
+            // default view flags
+            scene->view_flags |= e_scene_view_flags::defaults;
 
             // add light
             u32 light = get_new_entity(scene);
@@ -260,8 +190,6 @@ namespace put
 
         void editor_init(ecs_scene* scene, camera* cam)
         {
-            update_view_flags_ui(scene);
-
             create_geometry_primitives();
 
             bool auto_load_last_scene = dev_ui::get_program_preference("load_last_scene").as_bool();
@@ -317,7 +245,7 @@ namespace put
 
         void editor_shutdown()
         {
-            delete[] s_dd_bools;
+            // lol
         }
 
         void instance_selection(ecs_scene* scene)
@@ -399,7 +327,7 @@ namespace put
                     clone_entity(scene, scene->selection_list[i], nn++, start, CLONE_MOVE, vec3f::zero(), "");
             }
 
-            scene->flags |= INVALIDATE_SCENE_TREE;
+            scene->flags |= e_scene_flags::invalidate_scene_tree;
         }
 
         void clear_selection(ecs_scene* scene)
@@ -413,21 +341,21 @@ namespace put
             }
 
             sb_clear(scene->selection_list);
-            scene->flags |= INVALIDATE_SCENE_TREE;
+            scene->flags |= e_scene_flags::invalidate_scene_tree;
         }
 
         void add_selection(ecs_scene* scene, u32 index, u32 select_mode)
         {
             if (pen::input_is_key_down(PK_CONTROL))
-                select_mode = SELECT_REMOVE;
+                select_mode = e_select_mode::remove;
             else if (pen::input_is_key_down(PK_SHIFT))
-                select_mode = SELECT_ADD;
+                select_mode = e_select_mode::add;
 
             bool valid = index < scene->num_entities;
 
             u32 sel_count = sb_count(scene->selection_list);
 
-            if (select_mode == SELECT_NORMAL)
+            if (select_mode == e_select_mode::normal)
             {
                 clear_selection(scene);
 
@@ -442,7 +370,7 @@ namespace put
                         existing = i;
 
                 u32* new_list = nullptr;
-                if (existing != -1 && select_mode == SELECT_REMOVE)
+                if (existing != -1 && select_mode == e_select_mode::remove)
                 {
                     for (u32 i = 0; i < sel_count; ++i)
                         if (i != existing)
@@ -452,14 +380,14 @@ namespace put
                     scene->selection_list = new_list;
                 }
 
-                if (existing == -1 && select_mode == SELECT_ADD)
+                if (existing == -1 && select_mode == e_select_mode::add)
                     sb_push(scene->selection_list, index);
             }
 
             if (!valid)
                 return;
 
-            if (select_mode == SELECT_REMOVE)
+            if (select_mode == e_select_mode::remove)
                 scene->state_flags[index] &= ~SF_SELECTED;
             else
                 scene->state_flags[index] |= SF_SELECTED;
@@ -483,7 +411,7 @@ namespace put
 
             initialise_free_list(scene);
 
-            scene->flags |= put::ecs::INVALIDATE_SCENE_TREE;
+            scene->flags |= e_scene_flags::invalidate_scene_tree;
         }
 
         void enumerate_selection_ui(const ecs_scene* scene, bool* opened)
@@ -516,7 +444,7 @@ namespace put
             static u32 picking_state = PICKING_READY;
             static u32 picking_result = (-1);
 
-            if (dev_ui::want_capture() & dev_ui::MOUSE)
+            if (dev_ui::want_capture() & dev_ui::e_io_capture::mouse)
                 return;
 
             if (picking_state == PICKING_SINGLE)
@@ -570,7 +498,7 @@ namespace put
             {
                 if (picking_state == PICKING_MULTI)
                 {
-                    u32 pm = SELECT_NORMAL;
+                    u32 pm = e_select_mode::normal;
                     if (!pen::input_is_key_down(PK_CONTROL) && !pen::input_is_key_down(PK_SHIFT))
                     {
                         // unflag current selected
@@ -580,7 +508,7 @@ namespace put
 
                         sb_clear(scene->selection_list);
 
-                        pm = SELECT_ADD;
+                        pm = e_select_mode::add;
                     }
 
                     for (s32 node = 0; node < scene->num_entities; ++node)
@@ -607,7 +535,7 @@ namespace put
 
                         if (selected)
                         {
-                            add_selection(scene, node, SELECT_ADD_MULTI);
+                            add_selection(scene, node, e_select_mode::add_multi);
                         }
                     }
 
@@ -1044,7 +972,7 @@ namespace put
 
             if (set_project_dir)
             {
-                const c8* set_proj = put::dev_ui::file_browser(set_project_dir, dev_ui::FB_OPEN, 1, "**.");
+                const c8* set_proj = put::dev_ui::file_browser(set_project_dir, dev_ui::e_file_browser_flags::open, 1, "**.");
 
                 if (set_proj)
                 {
@@ -1195,7 +1123,7 @@ namespace put
             }
 
             // play pause
-            if (scene->flags & PAUSE_UPDATE)
+            if (scene->flags & e_scene_flags::pause_update)
             {
                 if (ImGui::Button(ICON_FA_PLAY))
                     scene->flags &= (~scene->flags);
@@ -1203,7 +1131,7 @@ namespace put
             else
             {
                 if (ImGui::Button(ICON_FA_PAUSE))
-                    scene->flags |= PAUSE_UPDATE;
+                    scene->flags |= e_scene_flags::pause_update;
             }
 
             static bool debounce_pause = false;
@@ -1211,10 +1139,10 @@ namespace put
             {
                 if (!debounce_pause)
                 {
-                    if (!(scene->flags & PAUSE_UPDATE))
-                        scene->flags |= PAUSE_UPDATE;
+                    if (!(scene->flags & e_scene_flags::pause_update))
+                        scene->flags |= e_scene_flags::pause_update;
                     else
-                        scene->flags &= ~PAUSE_UPDATE;
+                        scene->flags &= ~e_scene_flags::pause_update;
 
                     debounce_pause = true;
                 }
@@ -1349,14 +1277,14 @@ namespace put
 
             for (s32 i = 0; i < num_transform_icons; ++i)
             {
-                u32 mode = TRANSFORM_SELECT + i;
+                u32 mode = e_transform_mode::select + i;
                 if (shortcut_key(widget_shortcut_key[i]))
                     s_transform_mode = (transform_mode)mode;
 
                 if (put::dev_ui::state_button(transform_icons[i], s_transform_mode == mode))
                 {
                     if (s_transform_mode == mode)
-                        s_transform_mode = TRANSFORM_NONE;
+                        s_transform_mode = e_transform_mode::none;
                     else
                         s_transform_mode = (transform_mode)mode;
                 }
@@ -1380,7 +1308,7 @@ namespace put
 
             if (open_open)
             {
-                const c8* import = put::dev_ui::file_browser(open_open, dev_ui::FB_OPEN, 3, "**.pmm", "**.pms", "**.pmv");
+                const c8* import = put::dev_ui::file_browser(open_open, dev_ui::e_file_browser_flags::open, 3, "**.pmm", "**.pms", "**.pmv");
 
                 if (import)
                 {
@@ -1453,7 +1381,7 @@ namespace put
                 const c8* save_file = nullptr;
                 if (open_save_as || s_model_view_controller.current_working_scene.length() == 0)
                 {
-                    save_file = put::dev_ui::file_browser(open_save, dev_ui::FB_SAVE, 1, "**.pms");
+                    save_file = put::dev_ui::file_browser(open_save, dev_ui::e_file_browser_flags::save, 1, "**.pms");
                 }
                 else
                 {
@@ -1489,7 +1417,7 @@ namespace put
             // disable selection when we are doing something else
             static bool disable_picking = false;
             if (pen::input_key(PK_MENU) || pen::input_key(PK_COMMAND) || (s_select_flags & WIDGET_SELECTED) ||
-                (s_transform_mode == TRANSFORM_PHYSICS))
+                (s_transform_mode == e_transform_mode::physics))
             {
                 disable_picking = true;
             }
@@ -2201,7 +2129,7 @@ namespace put
 
                     if (open_anim_import)
                     {
-                        const c8* anim_import = put::dev_ui::file_browser(open_anim_import, dev_ui::FB_OPEN, 1, "**.pma");
+                        const c8* anim_import = put::dev_ui::file_browser(open_anim_import, dev_ui::e_file_browser_flags::open, 1, "**.pma");
 
                         if (anim_import)
                         {
@@ -2396,7 +2324,7 @@ namespace put
 
                     if (s_file_browser_open)
                     {
-                        const c8* file = dev_ui::file_browser(s_file_browser_open, dev_ui::FB_OPEN, 1, "**.pmv");
+                        const c8* file = dev_ui::file_browser(s_file_browser_open, dev_ui::e_file_browser_flags::open, 1, "**.pmv");
 
                         if (file)
                             instantiate_sdf_shadow(file, scene, si);
@@ -2530,12 +2458,12 @@ namespace put
                     else
                     {
                         static scene_tree tree;
-                        if (scene->flags & INVALIDATE_SCENE_TREE)
+                        if (scene->flags & e_scene_flags::invalidate_scene_tree)
                         {
                             tree = scene_tree();
                             build_scene_tree(scene, -1, tree);
 
-                            scene->flags &= ~INVALIDATE_SCENE_TREE;
+                            scene->flags &= ~e_scene_flags::invalidate_scene_tree;
                         }
 
                         s32 pre_selected = selected_index;
@@ -2648,15 +2576,15 @@ namespace put
 
                 cmp_transform& t = scene->transforms[i];
 
-                if (s_transform_mode == TRANSFORM_TRANSLATE)
+                if (s_transform_mode == e_transform_mode::translate)
                 {
                     t.translation += move_axis;
                 }
-                else if (s_transform_mode == TRANSFORM_SCALE)
+                else if (s_transform_mode == e_transform_mode::scale)
                 {
                     t.scale += move_axis * 0.1f;
                 }
-                else if (s_transform_mode == TRANSFORM_ROTATE)
+                else if (s_transform_mode == e_transform_mode::rotate)
                 {
                     quat q;
                     q.euler_angles(move_axis.z, move_axis.y, move_axis.x);
@@ -2710,7 +2638,7 @@ namespace put
             vec3f r1 = maths::unproject_sc(vec3f(mousev3.x, mousev3.y, 1.0f), view_proj, vpi);
             vec3f vr = normalised(r1 - r0);
 
-            if (s_transform_mode == TRANSFORM_PHYSICS)
+            if (s_transform_mode == e_transform_mode::physics)
             {
                 if (!s_physics_pick_info.grabbed && s_physics_pick_info.constraint == -1)
                 {
@@ -2811,7 +2739,7 @@ namespace put
             if (screen_pos.z < -0.0)
                 return;
 
-            if (s_transform_mode == TRANSFORM_ROTATE)
+            if (s_transform_mode == e_transform_mode::rotate)
             {
                 float rd = d * 0.75;
 
@@ -2879,7 +2807,7 @@ namespace put
                 return;
             }
 
-            if (s_transform_mode == TRANSFORM_TRANSLATE || s_transform_mode == TRANSFORM_SCALE)
+            if (s_transform_mode == e_transform_mode::translate || s_transform_mode == e_transform_mode::scale)
             {
                 static vec3f unit_axis[] = {
                     vec3f::zero(),
@@ -2957,7 +2885,7 @@ namespace put
 
                     put::dbg::add_line_2f(pp[0].xy, pp[i].xy, col);
 
-                    if (s_transform_mode == TRANSFORM_TRANSLATE)
+                    if (s_transform_mode == e_transform_mode::translate)
                     {
                         vec2f v = normalised(pp[i].xy - pp[0].xy);
                         vec2f px = perp(v) * 5.0f;
@@ -2967,7 +2895,7 @@ namespace put
                         put::dbg::add_line_2f(pp[i].xy, base + px, col);
                         put::dbg::add_line_2f(pp[i].xy, base - px, col);
                     }
-                    else if (s_transform_mode == TRANSFORM_SCALE)
+                    else if (s_transform_mode == e_transform_mode::scale)
                     {
                         put::dbg::add_quad_2f(pp[i].xy, vec2f(3.0f, 3.0f), col);
                     }
@@ -3082,14 +3010,14 @@ namespace put
 
         void render_light_debug(const scene_view& view)
         {
-            bool selected_only = !(view.scene->view_flags & DD_LIGHTS);
+            bool selected_only = !(view.scene->view_flags & e_scene_view_flags::lights);
 
             vec2i vpi = vec2i(view.viewport->width, view.viewport->height);
             mat4  view_proj = view.camera->proj * view.camera->view;
 
             ecs_scene* scene = view.scene;
 
-            if (scene->view_flags & SV_HIDE)
+            if (scene->view_flags & e_scene_view_flags::hide_debug)
                 return;
 
             pen::renderer_set_constant_buffer(view.cb_view, 0, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
@@ -3170,7 +3098,7 @@ namespace put
 
             for (u32 n = 0; n < scene->num_entities; ++n)
             {
-                if (!(scene->state_flags[n] & SF_SELECTED) && !(scene->view_flags & DD_PHYSICS))
+                if (!(scene->state_flags[n] & SF_SELECTED) && !(scene->view_flags & e_scene_view_flags::physics))
                     continue;
 
                 bool preview_rb = s_physics_preview.active && s_physics_preview.params.type == PHYSICS_TYPE_RIGID_BODY;
@@ -3244,10 +3172,12 @@ namespace put
         void render_scene_editor(const scene_view& view)
         {
             ecs_scene* scene = view.scene;
+            if(scene->view_flags & e_scene_view_flags::hide_debug)
+                return;
 
             render_physics_debug(view);
 
-            if (scene->view_flags & DD_MATRIX)
+            if (scene->view_flags & e_scene_view_flags::matrix)
             {
                 for (u32 n = 0; n < scene->num_entities; ++n)
                 {
@@ -3255,7 +3185,7 @@ namespace put
                 }
             }
 
-            if (scene->view_flags & DD_AABB)
+            if (scene->view_flags & e_scene_view_flags::aabb)
             {
                 for (u32 n = 0; n < scene->num_entities; ++n)
                 {
@@ -3270,7 +3200,7 @@ namespace put
             // Selected Node
             u32 sel_num = sb_count(scene->selection_list);
 
-            if (scene->view_flags & DD_NODE)
+            if (scene->view_flags & e_scene_view_flags::node)
             {
                 for (u32 i = 0; i < sel_num; ++i)
                 {
@@ -3283,7 +3213,7 @@ namespace put
 
             // Detach frustum and camera data to debug
             static bool detach_cam = true;
-            if (scene->view_flags & DD_CAMERA)
+            if (scene->view_flags & e_scene_view_flags::camera)
             {
                 static camera dc;
 
@@ -3308,7 +3238,7 @@ namespace put
             }
 
             // Debug triangles and vertices
-            if (scene->view_flags & DD_GEOMETRY && sel_num > 0)
+            if (scene->view_flags & e_scene_view_flags::geometry && sel_num > 0)
             {
                 ImGui::Begin("Debug Geometry");
 
@@ -3372,7 +3302,7 @@ namespace put
                 ImGui::End();
             }
 
-            if (scene->view_flags & DD_SELECTED_CHILDREN)
+            if (scene->view_flags & e_scene_view_flags::selected_children)
             {
                 for (u32 n = 0; n < scene->num_entities; ++n)
                 {
@@ -3402,7 +3332,7 @@ namespace put
                 }
             }
 
-            if (scene->view_flags & DD_BONES)
+            if (scene->view_flags & e_scene_view_flags::bones)
             {
                 for (u32 n = 0; n < scene->num_entities; ++n)
                 {
@@ -3430,7 +3360,7 @@ namespace put
                 }
             }
 
-            if (scene->view_flags & DD_GRID)
+            if (scene->view_flags & e_scene_view_flags::grid)
             {
                 f32 divisions = s_model_view_controller.grid_size / s_model_view_controller.grid_cell_size;
                 put::dbg::add_grid(vec3f::zero(), vec3f(s_model_view_controller.grid_size), vec3f(divisions));

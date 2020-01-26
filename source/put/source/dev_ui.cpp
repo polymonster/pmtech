@@ -55,6 +55,7 @@ namespace
     s32             s_program_prefs_save_timer = 0;
     bool            s_save_program_prefs = false;
     const u32       s_program_prefs_save_timeout = 60; //frames
+    bool            s_enable_rendering = true;
     
     void create_texture_atlas()
     {
@@ -480,8 +481,8 @@ namespace put
 
         struct custom_draw_call
         {
-            e_shader shader;
-            u32      cbuffer;
+            ui_shader shader;
+            u32       cbuffer;
         };
 
         void _set_shader_cb(const ImDrawList* parent_list, const ImDrawCmd* cmd)
@@ -492,7 +493,7 @@ namespace put
             static hash_id ids[] = {PEN_HASH("tex_2d"), PEN_HASH("tex_cube"), PEN_HASH("tex_volume"),
                                     PEN_HASH("tex_2d_array")};
 
-            if (cd.shader == SHADER_DEFAULT)
+            if (cd.shader == e_ui_shader::imgui)
             {
                 pmfx::set_technique(s_imgui_rs.imgui_shader, 0);
                 return;
@@ -503,7 +504,7 @@ namespace put
             pen::renderer_set_constant_buffer(cd.cbuffer, 7, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
         }
 
-        void set_shader(e_shader shader, u32 cbuffer)
+        void set_shader(ui_shader shader, u32 cbuffer)
         {
             custom_draw_call* cd = new custom_draw_call();
             cd->shader = shader;
@@ -515,6 +516,11 @@ namespace put
         void new_frame()
         {
             process_input();
+            
+            // toggle enable disable
+            static bool _db = false;
+            if ((pen::input_key(PK_CONTROL) || pen::input_key(PK_COMMAND)) && pen::press_debounce(PK_X, _db))
+                s_enable_rendering = !s_enable_rendering;
 
             ImGuiIO& io = ImGui::GetIO();
 
@@ -542,36 +548,20 @@ namespace put
             u32 flags = 0;
 
             if (io.WantCaptureMouse)
-                flags |= dev_ui::MOUSE;
+                flags |= dev_ui::e_io_capture::mouse;
 
             if (io.WantCaptureKeyboard)
-                flags |= dev_ui::KEYBOARD;
+                flags |= dev_ui::e_io_capture::keyboard;
 
             if (io.WantTextInput)
-                flags |= dev_ui::TEXT;
+                flags |= dev_ui::e_io_capture::text;
 
             return flags;
         }
 
         void render()
         {
-            static bool enable_rendering = true;
-            static bool debounce = false;
-
-            if ((pen::input_key(PK_CONTROL) || pen::input_key(PK_COMMAND)) && pen::input_key(PK_X))
-            {
-                if (!debounce)
-                {
-                    enable_rendering = !enable_rendering;
-                    debounce = true;
-                }
-            }
-            else
-            {
-                debounce = false;
-            }
-
-            if (enable_rendering)
+            if (s_enable_rendering)
                 ImGui::Render();
         }
 
@@ -754,7 +744,7 @@ namespace put
             return default_dir;
         }
 
-        const c8* file_browser(bool& dialog_open, u32 flags, s32 num_filetypes, ...)
+        const c8* file_browser(bool& dialog_open, file_browser_flags flags, s32 num_filetypes, ...)
         {
             static bool initialise = true;
             static s32  current_depth = 1;
@@ -825,7 +815,7 @@ namespace put
                     button_flags |= ImGuiButtonFlags_Disabled;
                 }
 
-                if (flags & FB_SAVE)
+                if (flags & e_file_browser_flags::save)
                 {
                     user_filename_buf[0] = '/';
                     ImGui::InputText("", &user_filename_buf[1], 1023);
@@ -843,7 +833,7 @@ namespace put
                     if (pen::string_length(user_filename_buf) > 1)
                         selected_path_and_file.append(user_filename_buf);
 
-                    if (num_filetypes == 1 && flags & FB_SAVE)
+                    if (num_filetypes == 1 && flags & e_file_browser_flags::save)
                     {
                         // auto add extension
                         va_list wildcards;
@@ -1445,6 +1435,11 @@ namespace put
             load_program_preferences();
             sp_dev_console = new app_console();
         }
+        
+        void enable(bool enabled)
+        {
+            s_enable_rendering = enabled;
+        }
 
         void update()
         {
@@ -1510,7 +1505,7 @@ namespace put
             u32           cbuffer_handle;
         };
 
-        void image_ex(u32 handle, vec2f size, e_shader shader)
+        void image_ex(u32 handle, vec2f size, ui_shader shader)
         {
             ImVec2 canvas_size = ImVec2(size.x, size.y);
 
@@ -1566,7 +1561,7 @@ namespace put
                 cb.params.x++;
 
             // arrays
-            if (shader == SHADER_TEXTURE_ARRAY)
+            if (shader == e_ui_shader::texture_array)
             {
                 ImGui::SameLine();
                 ImGui::PushID("Array");
@@ -1652,7 +1647,7 @@ namespace put
 
             draw_list->AddImage(IMG(handle), canvas_pos, bb_max, uv0, uv1, ImGui::GetColorU32(tint_col));
 
-            dev_ui::set_shader(dev_ui::SHADER_DEFAULT, 0);
+            dev_ui::set_shader(dev_ui::e_ui_shader::imgui, 0);
         }
     } // namespace dev_ui
 } // namespace put

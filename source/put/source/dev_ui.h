@@ -2,8 +2,7 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#ifndef _DEV_UI_H
-#define _DEV_UI_H
+#pragma once
 
 #include "dev_ui_icons.h"
 #include "imgui/imgui.h"
@@ -19,73 +18,87 @@ namespace put
 {
     namespace dev_ui
     {
-        enum io_capture : u32
+        namespace e_io_capture
         {
-            NO_INPUT = 0,
-            MOUSE = 1 << 0,
-            KEYBOARD = 1 << 1,
-            TEXT = 1 << 2
-        };
-
-        enum e_file_browser_flags : u32
+            enum io_capture_t
+            {
+                none,
+                mouse = 1<<0,
+                keyboard = 1<<1,
+                text = 1<<2
+            };
+        }
+        typedef u32 io_capture;
+        
+        namespace e_file_browser_flags
         {
-            FB_OPEN = 0,
-            FB_SAVE = 1,
-        };
-
-        enum e_console_log_level : u32
+            enum file_browser_flags_t
+            {
+                open,
+                save
+            };
+        }
+        typedef u32 file_browser_flags;
+        
+        namespace e_console_level
         {
-            CONSOLE_MESSAGE = 0,
-            CONSOLE_WARNING = 1,
-            CONSOLE_ERROR = 2
-        };
-
-        enum e_shader : s32
+            enum console_level_t
+            {
+                message,
+                warning,
+                error
+            };
+        }
+        typedef e_console_level::console_level_t console_level;
+        
+        namespace e_ui_shader
         {
-            SHADER_DEFAULT = -1,
-            SHADER_TEXTURE_2D = pen::TEXTURE_COLLECTION_NONE,
-            SHADER_CUBEMAP = pen::TEXTURE_COLLECTION_CUBE,
-            SHADER_VOLUME_TEXTURE = pen::TEXTURE_COLLECTION_VOLUME,
-            SHADER_TEXTURE_ARRAY = pen::TEXTURE_COLLECTION_ARRAY
-        };
+            enum ui_shader_t
+            {
+                imgui = -1,
+                texture_2d = pen::TEXTURE_COLLECTION_NONE,
+                cubemap = pen::TEXTURE_COLLECTION_CUBE,
+                volume_texture = pen::TEXTURE_COLLECTION_VOLUME,
+                texture_array = pen::TEXTURE_COLLECTION_ARRAY,
+                texture_cube_array = pen::TEXTURE_COLLECTION_CUBE_ARRAY
+            };
+        }
+        typedef e_ui_shader::ui_shader_t ui_shader;
 
-        // imgui_renderer
-        bool init();
-        void shutdown();
-        void new_frame();
-        void render();
-        u32  want_capture();
-        void set_shader(e_shader shader, u32 cbuffer);
-
-        void util_init();
-        void update();
+        bool        init();
+        void        shutdown();
+        void        render();
+        void        update();
+        void        new_frame();
+        io_capture  want_capture();
+        void        set_shader(ui_shader shader, u32 cbuffer);
+        void        util_init();
+        void        enable(bool enabled);
 
         // console
-        bool is_console_open();
-        void show_console(bool val);
-        void log(const c8* fmt, ...);
-        void log_level(u32 level, const c8* fmt, ...);
-        void console();
+        bool        is_console_open();
+        void        show_console(bool val);
+        void        log(const c8* fmt, ...);
+        void        log_level(u32 level, const c8* fmt, ...);
+        void        console();
 
         // imgui extensions
-        bool      state_button(const c8* text, bool state_active);
-        void      set_tooltip(const c8* fmt, ...);
-        const c8* file_browser(bool& dialog_open, u32 flags, s32 num_filetypes = 0, ...);
-        void      show_platform_info();
-        void      image_ex(u32 handle, vec2f size, e_shader shader);
+        bool        state_button(const c8* text, bool state_active);
+        void        set_tooltip(const c8* fmt, ...);
+        const c8*   file_browser(bool& dialog_open, file_browser_flags flags, s32 num_filetypes = 0, ...);
+        void        show_platform_info();
+        void        image_ex(u32 handle, vec2f size, ui_shader shader);
 
         // generic program preferences
-        void      set_program_preference(const c8* name, f32 val);
-        void      set_program_preference(const c8* name, s32 val);
-        void      set_program_preference(const c8* name, bool val);
-        void      set_program_preference(const c8* name, Str val);
-        pen::json get_program_preference(const c8* name);
-        Str       get_program_preference_filename(const c8* name, const c8* default_value = nullptr);
-        void      set_program_preference_filename(const c8* name, Str val);
+        void        set_program_preference(const c8* name, f32 val);
+        void        set_program_preference(const c8* name, s32 val);
+        void        set_program_preference(const c8* name, bool val);
+        void        set_program_preference(const c8* name, Str val);
+        pen::json   get_program_preference(const c8* name);
+        Str         get_program_preference_filename(const c8* name, const c8* default_value = nullptr);
+        void        set_program_preference_filename(const c8* name, Str val);
     } // namespace dev_ui
 } // namespace put
 
 #define dev_console_log_level(level, fmt, ...) put::dev_ui::log_level(level, fmt, ##__VA_ARGS__)
 #define dev_console_log(fmt, ...) put::dev_ui::log(fmt, ##__VA_ARGS__)
-
-#endif

@@ -307,7 +307,7 @@ namespace
 
         if (pen_err != PEN_ERR_OK)
         {
-            dev_console_log_level(dev_ui::CONSOLE_ERROR, "[error] texture - unabled to find file: %s", filename);
+            dev_console_log_level(dev_ui::console_level::error, "[error] texture - unabled to find file: %s", filename);
             pen::memory_free(file_data);
             return 0;
         }
@@ -498,7 +498,7 @@ namespace put
         pen::json pmbuild_config = pen::json::load_from_file("data/pmbuild_config.json");
         s_pmbuild_cmd = pmbuild_config["pmbuild"].as_str();
         
-        dev_console_log_level(dev_ui::CONSOLE_MESSAGE, "[pmbuild cmd] %s", s_pmbuild_cmd.c_str());
+        dev_console_log_level(dev_ui::console_level::message, "[pmbuild cmd] %s", s_pmbuild_cmd.c_str());
     }
     
     void trigger_hot_loader(const Str& cmdline)
@@ -615,7 +615,7 @@ namespace put
         for (auto& t : k_texture_references)
         {
             ImGui::PushID(t.filename.c_str());
-            image_ex(t.handle, vec2f(256.0f, 256.0f), (dev_ui::e_shader)t.tcp.collection_type);
+            dev_ui::image_ex(t.handle, vec2f(256.0f, 256.0f), (dev_ui::ui_shader)t.tcp.collection_type);
             ImGui::NextColumn();
             ImGui::PopID();
         }

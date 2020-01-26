@@ -1146,7 +1146,7 @@ namespace put
 
             if (open_fb)
             {
-                const c8* fn = dev_ui::file_browser(open_fb, dev_ui::FB_OPEN);
+                const c8* fn = dev_ui::file_browser(open_fb, dev_ui::e_file_browser_flags::open);
                 if (fn)
                 {
                     samplers.sb[select_index].handle = put::load_texture(fn);

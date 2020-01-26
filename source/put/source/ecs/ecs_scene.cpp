@@ -561,7 +561,7 @@ namespace put
         {
             ecs_scene* scene = view.scene;
 
-            if (scene->view_flags & SV_HIDE)
+            if (scene->view_flags & e_scene_view_flags::hide)
                 return;
 
             pen::renderer_set_constant_buffer(view.cb_view, 0, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
@@ -662,7 +662,7 @@ namespace put
         {
             ecs_scene* scene = view.scene;
 
-            if (scene->view_flags & SV_HIDE)
+            if (scene->view_flags & e_scene_view_flags::hide)
                 return;
 
             s32 draw_count = 0;
@@ -1186,7 +1186,7 @@ namespace put
                 if (scene->controllers[c].update_func)
                     scene->controllers[c].update_func(scene->controllers[c], scene, dt);
 
-            if (scene->flags & PAUSE_UPDATE)
+            if (scene->flags & e_scene_flags::pause_update)
             {
                 physics::set_paused(1);
             }
@@ -2033,7 +2033,7 @@ namespace put
 
         void load_scene(const c8* filename, ecs_scene* scene, bool merge)
         {
-            scene->flags |= INVALIDATE_SCENE_TREE;
+            scene->flags |= e_scene_flags::invalidate_scene_tree;
             bool error = false;
             Str  project_dir = dev_ui::get_program_preference_filename("project_dir", pen_user_info.working_directory);
 
@@ -2275,7 +2275,7 @@ namespace put
                     }
                     else
                     {
-                        dev_ui::log_level(dev_ui::CONSOLE_ERROR, "[error] geometry - cannot find pmm file: %s",
+                        dev_ui::log_level(dev_ui::console_level::error, "[error] geometry - cannot find pmm file: %s",
                                           filename.c_str());
 
                         scene->entities[n] &= ~CMP_GEOMETRY;
@@ -2309,7 +2309,7 @@ namespace put
 
                     if (!is_valid(h))
                     {
-                        dev_ui::log_level(dev_ui::CONSOLE_ERROR, "[error] animation - cannot find pma file: %s",
+                        dev_ui::log_level(dev_ui::console_level::error, "[error] animation - cannot find pma file: %s",
                                           anim_name.c_str());
                         error = true;
                     }
@@ -2412,7 +2412,10 @@ namespace put
             if (!merge)
             {
                 scene->view_flags = scene_view_flags;
-                update_view_flags(scene, error);
+                
+                // show bones and mats if we have an error, to aid deugging
+                if(error)
+                    scene->view_flags |= (e_scene_view_flags::matrix | e_scene_view_flags::bones);
             }
 
             ifs.close();

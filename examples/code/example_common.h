@@ -94,10 +94,15 @@ PEN_TRV pen::user_entry(void* params)
 
     pmfx::init("data/configs/editor_renderer.jsn");
 
+    // for most demos we want to start with no debug / dev stuff so they look nice, but for others we can enable to flags
+    main_scene->view_flags |= e_scene_view_flags::hide_debug;
+    put::dev_ui::enable(false);
+
+
     example_setup(main_scene, main_camera);
 
     f32 frame_time = 0.0f;
-
+    
     while (1)
     {
         static pen::timer* frame_timer = pen::timer_create();

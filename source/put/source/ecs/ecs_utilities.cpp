@@ -172,7 +172,7 @@ namespace put
 
             u32 i = ii;
 
-            scene->flags |= INVALIDATE_SCENE_TREE;
+            scene->flags |= e_scene_flags::invalidate_scene_tree;
 
             scene->num_entities = std::max<u32>(i + 1, scene->num_entities);
 
@@ -410,7 +410,7 @@ namespace put
                 pen::renderer_consume_cmd_buffer();
             }
 
-            scene->flags |= INVALIDATE_SCENE_TREE;
+            scene->flags |= e_scene_flags::invalidate_scene_tree;
         }
 
         void instance_entity_range(ecs_scene* scene, u32 master_node, u32 num_nodes)

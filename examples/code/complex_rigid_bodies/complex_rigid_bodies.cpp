@@ -133,6 +133,10 @@ void gen_concave_shape(physics::collision_mesh_data& cmd)
 
 void example_setup(ecs_scene* scene, camera& cam)
 {
+    scene->view_flags &= ~e_scene_view_flags::hide_debug;
+    scene->view_flags |= e_scene_view_flags::physics;
+    editor_set_transform_mode(e_transform_mode::physics);
+    
     clear_scene(scene);
 
     material_resource* default_material = get_material_resource(PEN_HASH("default_material"));

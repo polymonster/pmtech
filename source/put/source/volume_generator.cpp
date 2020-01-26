@@ -1149,7 +1149,7 @@ namespace put
 
                     if (!gr->cpu_index_buffer || !vertex_positions)
                     {
-                        dev_console_log_level(dev_ui::CONSOLE_ERROR,
+                        dev_console_log_level(dev_ui::console_level::error,
                                               "[error] mesh %s does not have cpu vertex / triangle data",
                                               sdf_job->scene->names[n].c_str());
 
@@ -1247,7 +1247,7 @@ namespace put
             }
             else
             {
-                dev_console_log_level(dev_ui::CONSOLE_ERROR, "%s", "[error] no triangles in scene to generate sdf");
+                dev_console_log_level(dev_ui::console_level::error, "%s", "[error] no triangles in scene to generate sdf");
             }
 
             // create texture
@@ -1625,7 +1625,7 @@ namespace put
                         if (ImGui::Button("Delete"))
                         {
                             ecs::delete_entity(s_main_scene, n);
-                            ecs::add_selection(s_main_scene, n, ecs::SELECT_REMOVE);
+                            ecs::add_selection(s_main_scene, n, ecs::e_select_mode::remove);
                         }
 
                         ImGui::NextColumn();
@@ -1637,7 +1637,7 @@ namespace put
 
                     if (save_dialog_open && save_index != -1)
                     {
-                        save_location = dev_ui::file_browser(save_dialog_open, dev_ui::FB_SAVE);
+                        save_location = dev_ui::file_browser(save_dialog_open, dev_ui::e_file_browser_flags::save);
                         if (save_location)
                         {
                             for (u32 i = 0; i < sb_count(s_generated_volumes); ++i)

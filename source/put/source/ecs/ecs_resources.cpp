@@ -402,7 +402,7 @@ namespace put
             static hash_id id_cl = PEN_HASH("clamp_linear");
             if (id_type != id_sdf)
             {
-                dev_console_log_level(dev_ui::CONSOLE_ERROR, "[shadow] %s is not a signed distance field texture",
+                dev_console_log_level(dev_ui::console_level::error, "[shadow] %s is not a signed distance field texture",
                                       volume_texture_filename.c_str());
                 return;
             }
@@ -620,7 +620,7 @@ namespace put
                     for (u32 v = 0; v < num_pos_verts; ++v)
                     {
                         vertex_position vp = ((vertex_position*)p_geometry->cpu_position_buffer)[v];
-                        dev_console_log_level(dev_ui::CONSOLE_MESSAGE, "Pos: %f, %f, %f", vp.x, vp.y, vp.z);
+                        dev_console_log_level(dev_ui::console_level::message, "Pos: %f, %f, %f", vp.x, vp.y, vp.z);
                     }
                 }
 
@@ -1201,7 +1201,7 @@ namespace put
         s32 load_pmm(const c8* filename, ecs_scene* scene, u32 load_flags)
         {
             if (scene)
-                scene->flags |= INVALIDATE_SCENE_TREE;
+                scene->flags |= e_scene_flags::invalidate_scene_tree;
 
             void* model_file;
             u32   model_file_size;
@@ -1210,7 +1210,7 @@ namespace put
 
             if (err != PEN_ERR_OK || model_file_size == 0)
             {
-                dev_ui::log_level(dev_ui::CONSOLE_ERROR, "[error] load pmm - failed to find file: %s", filename);
+                dev_ui::log_level(dev_ui::console_level::error, "[error] load pmm - failed to find file: %s", filename);
                 return PEN_INVALID_HANDLE;
             }
 
@@ -1542,7 +1542,7 @@ namespace put
                         }
                         else
                         {
-                            put::dev_ui::log_level(dev_ui::CONSOLE_ERROR, "[error] geometry - missing file : %s",
+                            put::dev_ui::log_level(dev_ui::console_level::error, "[error] geometry - missing file : %s",
                                                    geometry_name.c_str());
                         }
                     }

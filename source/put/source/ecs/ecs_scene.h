@@ -25,20 +25,41 @@ namespace put
     {
         struct anim_instance;
         struct ecs_scene;
-
-        enum e_scene_view_flags : u32
+                
+        namespace e_scene_view_flags
         {
-            SV_NONE = 0,
-            SV_HIDE = (1 << 0),
-            SV_BITS_END = 0
-        };
-
-        enum e_scene_flags : u32
+            enum sv_flags_t
+            {
+                none = 0,
+                hide = 1<<0,
+                hide_debug = 1<<1,
+                node = 1<<2,
+                grid = 1<<3,
+                matrix = 1<<4,
+                bones = 1<<5,
+                aabb = 1<<6,
+                lights = 1<<7,
+                physics = 1<<8,
+                selected_children = 1<<8,
+                camera = 1<<9,
+                geometry = 1<<10,
+                COUNT = 12,
+                
+                defaults = (node | grid)
+            };
+        }
+        typedef u32 scene_view_flags;
+        
+        namespace e_scene_flags
         {
-            INVALIDATE_NONE = 0,
-            INVALIDATE_SCENE_TREE = 1 << 1,
-            PAUSE_UPDATE = 1 << 2
-        };
+            enum s_flags_t
+            {
+                none = 0,
+                invalidate_scene_tree = 1<<1,
+                pause_update = 1<<2
+            };
+        }
+        typedef u32 scene_flags;
 
         enum e_component_flags : u32
         {
@@ -462,20 +483,20 @@ namespace put
             ecs_controller* controllers = nullptr;
 
             // Scene Data
-            u32             num_entities = 0;
-            u32             soa_size = 0;
-            free_node_list* free_list_head = nullptr;
-            u32             forward_light_buffer = PEN_INVALID_HANDLE;
-            u32             sdf_shadow_buffer = PEN_INVALID_HANDLE;
-            u32             area_light_buffer = PEN_INVALID_HANDLE;
-            u32             shadow_map_buffer = PEN_INVALID_HANDLE;
-            s32             selected_index = -1;
-            u32             flags = 0;
-            u32             view_flags = 0;
-            extents         renderable_extents;
-            u32*            selection_list = nullptr;
-            u32             version = k_version;
-            Str             filename = "";
+            u32                 num_entities = 0;
+            u32                 soa_size = 0;
+            free_node_list*     free_list_head = nullptr;
+            u32                 forward_light_buffer = PEN_INVALID_HANDLE;
+            u32                 sdf_shadow_buffer = PEN_INVALID_HANDLE;
+            u32                 area_light_buffer = PEN_INVALID_HANDLE;
+            u32                 shadow_map_buffer = PEN_INVALID_HANDLE;
+            s32                 selected_index = -1;
+            scene_flags         flags = 0;
+            scene_view_flags    view_flags = 0;
+            extents             renderable_extents;
+            u32*                selection_list = nullptr;
+            u32                 version = k_version;
+            Str                 filename = "";
 
             generic_cmp_array& get_component_array(u32 index);
         };
@@ -510,8 +531,6 @@ namespace put
         void delete_entity(ecs_scene* scene, u32 node_index);
         void delete_entity_first_pass(ecs_scene* scene, u32 node_index);
         void delete_entity_second_pass(ecs_scene* scene, u32 node_index);
-
-        void update_view_flags(ecs_scene* scene, bool error);
 
         void initialise_free_list(ecs_scene* scene);
 

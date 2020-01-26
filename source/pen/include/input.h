@@ -129,6 +129,25 @@ namespace pen
     {
         return pen::input_is_mouse_down(button_index);
     }
+    
+    inline bool press_debounce(u32 key, bool& db)
+    {
+        if(pen::input_key(key))
+        {
+            if(!db)
+            {
+                db = true;
+                return true;
+            }
+        }
+        else
+        {
+            db = false;
+        }
+        
+        return false;
+    }
+
 } // namespace pen
 
 enum mouse_button

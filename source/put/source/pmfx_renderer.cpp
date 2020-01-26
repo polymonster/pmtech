@@ -529,7 +529,7 @@ namespace put
 
                 if (!rt)
                 {
-                    dev_console_log_level(dev_ui::CONSOLE_WARNING,
+                    dev_console_log_level(dev_ui::console_level::warning,
                                           "[warning] pmfx: view '%s' expects sampler '%s' but it does not exist",
                                           vp.name.c_str(), binding["texture"].as_cstr());
 
@@ -1344,7 +1344,7 @@ namespace put
 
                         if (!valid)
                         {
-                            dev_console_log_level(dev_ui::CONSOLE_ERROR,
+                            dev_console_log_level(dev_ui::console_level::error,
                                                   "[error] render controller: render target %s is incorrect dimension",
                                                   rt->name.c_str());
                         }
@@ -1562,7 +1562,7 @@ namespace put
                                 if (new_view.rt_width != w || new_view.rt_height != h || new_view.rt_ratio != rr)
                                 {
                                     dev_console_log_level(
-                                        dev_ui::CONSOLE_ERROR,
+                                        dev_ui::console_level::error,
                                         "[error] render controller: render target %s is incorrect dimension",
                                         target_str.c_str());
 
@@ -1590,7 +1590,7 @@ namespace put
 
                     if (!found)
                     {
-                        dev_console_log_level(dev_ui::CONSOLE_ERROR, "[error] render controller: missing render target - %s",
+                        dev_console_log_level(dev_ui::console_level::error, "[error] render controller: missing render target - %s",
                                               target_str.c_str());
                         valid = false;
                     }
@@ -1618,7 +1618,7 @@ namespace put
 
                     if (num_resolve != num_targets)
                         dev_console_log_level(
-                            dev_ui::CONSOLE_ERROR,
+                            dev_ui::console_level::error,
                             "[error] pmfx - view %s number of resolves %i do not match number of targets %i'",
                             new_view.name.c_str(), num_resolve, num_targets);
                 }
@@ -1693,7 +1693,7 @@ namespace put
 
                     if (!found_scene)
                     {
-                        dev_console_log_level(dev_ui::CONSOLE_ERROR, "[error] render controller: missing scene - %s",
+                        dev_console_log_level(dev_ui::console_level::error, "[error] render controller: missing scene - %s",
                                               scene_str.c_str());
                         valid = false;
                     }
@@ -1724,7 +1724,7 @@ namespace put
 
                     if (!found_camera)
                     {
-                        dev_console_log_level(dev_ui::CONSOLE_ERROR, "[error] render controller: missing camera - %s",
+                        dev_console_log_level(dev_ui::console_level::error, "[error] render controller: missing camera - %s",
                                               camera_str.c_str());
                         valid = false;
                     }
@@ -1740,7 +1740,7 @@ namespace put
 
                 if (view["pmfx_shader"].as_cstr() && !is_valid(new_view.pmfx_shader))
                 {
-                    dev_console_log_level(dev_ui::CONSOLE_ERROR, "[error] render controller: missing shader %s",
+                    dev_console_log_level(dev_ui::console_level::error, "[error] render controller: missing shader %s",
                                           view["pmfx_shader"].as_cstr());
                     valid = false;
                 }
@@ -1770,7 +1770,7 @@ namespace put
 
                     if (!found)
                     {
-                        dev_console_log_level(dev_ui::CONSOLE_ERROR,
+                        dev_console_log_level(dev_ui::console_level::error,
                                               "[error] render controller: missing scene view - '%s' required by view: '%s'",
                                               scene_views[ii].as_cstr(), new_view.name.c_str());
                     }
@@ -1932,7 +1932,7 @@ namespace put
 
                 if (rt_index == -1)
                 {
-                    dev_console_log_level(dev_ui::CONSOLE_ERROR, "%s",
+                    dev_console_log_level(dev_ui::console_level::error, "%s",
                                           "[error] missing render target when baking post processes");
 
                     return PEN_INVALID_HANDLE;
@@ -2218,7 +2218,7 @@ namespace put
 
             if (pp_set.is_null())
             {
-                dev_console_log_level(dev_ui::CONSOLE_ERROR, "[error] pmfx - missing post process set %s'",
+                dev_console_log_level(dev_ui::console_level::error, "[error] pmfx - missing post process set %s'",
                                       v.post_process_name.c_str());
                 return;
             }
@@ -2319,7 +2319,7 @@ namespace put
             {
                 // failed load file
                 pen::memory_free(config_data);
-                dev_console_log_level(dev_ui::CONSOLE_ERROR, "[error] pmfx - failed to open %s'", filename);
+                dev_console_log_level(dev_ui::console_level::error, "[error] pmfx - failed to open %s'", filename);
                 return;
             }
 
@@ -2394,7 +2394,7 @@ namespace put
 
                     if (v.type() == JSMN_UNDEFINED)
                     {
-                        dev_console_log_level(dev_ui::CONSOLE_ERROR, "[error] pmfx - view '%s' not found", vs.c_str());
+                        dev_console_log_level(dev_ui::console_level::error, "[error] pmfx - view '%s' not found", vs.c_str());
                         return;
                     }
 
@@ -2430,7 +2430,7 @@ namespace put
             }
             else
             {
-                dev_console_log_level(dev_ui::CONSOLE_ERROR, "[error] pmfx - no views in view set");
+                dev_console_log_level(dev_ui::console_level::error, "[error] pmfx - no views in view set");
             }
 
             pen::renderer_consume_cmd_buffer();
@@ -3113,7 +3113,7 @@ namespace put
                         f32 aspect = w / h;
 
                         dev_ui::image_ex(rt.handle, vec2f(1024 / display_ratio * aspect, 1024 / display_ratio),
-                                         (dev_ui::e_shader)rt.collection);
+                                         (dev_ui::ui_shader)rt.collection);
                     }
 
                     render_target_info_ui(rt);
@@ -3238,7 +3238,7 @@ namespace put
 
                     if (s_save_dialog_open)
                     {
-                        const c8* res = dev_ui::file_browser(s_save_dialog_open, dev_ui::FB_SAVE);
+                        const c8* res = dev_ui::file_browser(s_save_dialog_open, dev_ui::e_file_browser_flags::save);
                         if (res)
                         {
                             json j_pp;
@@ -3255,7 +3255,7 @@ namespace put
 
                     if (s_load_dialog_open)
                     {
-                        const c8* res = dev_ui::file_browser(s_load_dialog_open, dev_ui::FB_OPEN);
+                        const c8* res = dev_ui::file_browser(s_load_dialog_open, dev_ui::e_file_browser_flags::open);
                         if (res)
                         {
                             // perform load: todo
