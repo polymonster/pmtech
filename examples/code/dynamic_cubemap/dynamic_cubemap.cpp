@@ -96,7 +96,7 @@ void example_setup(ecs_scene* scene, camera& cam)
 
     scene->samplers[ground].sb[0].handle = put::load_texture("data/textures/BlueChecker01.dds");
     scene->samplers[ground].sb[0].sampler_unit = 0;
-    scene->samplers[ground].sb[0].sampler_state = pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::RS_SAMPLER);
+    scene->samplers[ground].sb[0].sampler_state = pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::e_render_state::sampler);
     bake_material_handles(scene, ground);
 
     f32 ramp1_angle[] = {(f32)M_PI * 0.125f, (f32)M_PI * -0.125f};
@@ -210,12 +210,12 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->state_flags[chorme_ball] &= ~SF_SAMPLERS_INITIALISED;
     bake_material_handles(scene, chorme_ball);
 
-    for (u32 s = 1; s < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++s)
+    for (u32 s = 1; s < e_pmfx_constants::max_technique_sampler_bindings; ++s)
         scene->samplers[chorme_ball].sb[s].handle = 0;
 
     scene->samplers[chorme_ball].sb[0].handle = chrome_cubemap_handle;
     scene->samplers[chorme_ball].sb[0].sampler_unit = 3;
-    scene->samplers[chorme_ball].sb[0].sampler_state = pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::RS_SAMPLER);
+    scene->samplers[chorme_ball].sb[0].sampler_state = pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::e_render_state::sampler);
 
     // add physics
     scene->physics_data[chorme_ball].rigid_body.shape = physics::SPHERE;
@@ -247,9 +247,9 @@ void example_setup(ecs_scene* scene, camera& cam)
 
     scene->samplers[chrome2_ball].sb[0].handle = chrome2_cubemap_handle;
     scene->samplers[chrome2_ball].sb[0].sampler_unit = 3;
-    scene->samplers[chrome2_ball].sb[0].sampler_state = pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::RS_SAMPLER);
+    scene->samplers[chrome2_ball].sb[0].sampler_state = pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::e_render_state::sampler);
 
-    for (u32 s = 1; s < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++s)
+    for (u32 s = 1; s < e_pmfx_constants::max_technique_sampler_bindings; ++s)
         scene->samplers[chrome2_ball].sb[s].handle = 0;
 
     // add physics

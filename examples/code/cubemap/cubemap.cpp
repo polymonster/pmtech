@@ -38,7 +38,7 @@ void example_setup(ecs_scene* scene, camera& cam)
 
     scene->samplers[new_prim].sb[0].handle = put::load_texture("data/textures/cubemap.dds");
     scene->samplers[new_prim].sb[0].sampler_unit = 3;
-    scene->samplers[new_prim].sb[0].sampler_state = pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::RS_SAMPLER);
+    scene->samplers[new_prim].sb[0].sampler_state = pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::e_render_state::sampler);
 }
 
 void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)

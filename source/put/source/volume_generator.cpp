@@ -975,7 +975,7 @@ namespace put
             scene->samplers[new_prim].sb[0].handle = gv.texture;
             scene->samplers[new_prim].sb[0].sampler_unit = SN_VOLUME_TEXTURE;
             scene->samplers[new_prim].sb[0].sampler_state =
-                pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::RS_SAMPLER);
+                pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::e_render_state::sampler);
 
             instantiate_geometry(cube, scene, new_prim);
             instantiate_material(volume_material, scene, new_prim);
@@ -1467,7 +1467,7 @@ namespace put
 
                     geometry_resource* cube = get_geometry_resource(PEN_HASH("cube"));
 
-                    u32 ss = pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::RS_SAMPLER);
+                    u32 ss = pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::e_render_state::sampler);
 
                     // create material for volume sdf sphere trace
                     material_resource* sdf_material = new material_resource;

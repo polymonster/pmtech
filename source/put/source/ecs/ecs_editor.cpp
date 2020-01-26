@@ -3372,8 +3372,8 @@ namespace put
             static hash_id id_disabled = PEN_HASH("disabled");
             static hash_id id_default = PEN_HASH("default");
 
-            u32 depth_disabled = pmfx::get_render_state(id_disabled, pmfx::RS_DEPTH_STENCIL);
-            u32 fill = pmfx::get_render_state(id_default, pmfx::RS_RASTERIZER);
+            u32 depth_disabled = pmfx::get_render_state(id_disabled, pmfx::e_render_state::depth_stencil);
+            u32 fill = pmfx::get_render_state(id_default, pmfx::e_render_state::rasterizer);
 
             pen::renderer_set_depth_stencil_state(depth_disabled);
             pen::renderer_set_rasterizer_state(fill);

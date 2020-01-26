@@ -409,7 +409,7 @@ namespace put
 
             scene->transforms[node_index].scale = scale;
             scene->shadows[node_index].texture_handle = volume_texture;
-            scene->shadows[node_index].sampler_state = pmfx::get_render_state(id_cl, pmfx::RS_SAMPLER);
+            scene->shadows[node_index].sampler_state = pmfx::get_render_state(id_cl, pmfx::e_render_state::sampler);
             scene->entities[node_index] |= CMP_SDF_SHADOW;
         }
 
@@ -758,7 +758,7 @@ namespace put
                 {
                     if (resource->texture_handles[t] != 0 && is_valid(resource->texture_handles[t]))
                     {
-                        for (u32 s = 0; s < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++s)
+                        for (u32 s = 0; s < e_pmfx_constants::max_technique_sampler_bindings; ++s)
                         {
                             if (samplers.sb[s].sampler_unit == t)
                             {
@@ -775,9 +775,9 @@ namespace put
             }
 
             // bake ss handles
-            for (u32 s = 0; s < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++s)
+            for (u32 s = 0; s < e_pmfx_constants::max_technique_sampler_bindings; ++s)
                 if (samplers.sb[s].id_sampler_state != 0)
-                    samplers.sb[s].sampler_state = pmfx::get_render_state(samplers.sb[s].id_sampler_state, pmfx::RS_SAMPLER);
+                    samplers.sb[s].sampler_state = pmfx::get_render_state(samplers.sb[s].id_sampler_state, pmfx::e_render_state::sampler);
         }
 
         void bake_material_handles()
@@ -1627,7 +1627,7 @@ namespace put
 
             scene->samplers[v].sb[0].sampler_unit = SN_VOLUME_TEXTURE;
             scene->samplers[v].sb[0].handle = volume_texture;
-            scene->samplers[v].sb[0].sampler_state = pmfx::get_render_state(vi[i].id_sampler_state, pmfx::RS_SAMPLER);
+            scene->samplers[v].sb[0].sampler_state = pmfx::get_render_state(vi[i].id_sampler_state, pmfx::e_render_state::sampler);
 
             instantiate_geometry(cube, scene, v);
             instantiate_material(material, scene, v);

@@ -38,7 +38,7 @@ void render_raster_states(const scene_view& view)
 
         // set textures
         cmp_samplers& samplers = scene->samplers[ci];
-        for (u32 s = 0; s < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++s)
+        for (u32 s = 0; s < e_pmfx_constants::max_technique_sampler_bindings; ++s)
         {
             if (!samplers.sb[s].handle)
                 continue;
@@ -52,7 +52,7 @@ void render_raster_states(const scene_view& view)
         pen::renderer_set_index_buffer(geom.index_buffer, geom.index_type, 0);
 
         // set rs
-        u32 rs = pmfx::get_render_state(raster_states[i], pmfx::RS_RASTERIZER);
+        u32 rs = pmfx::get_render_state(raster_states[i], pmfx::e_render_state::rasterizer);
         pen::renderer_set_rasterizer_state(rs);
 
         pen::renderer_draw_indexed(geom.num_indices, 0, 0, PEN_PT_TRIANGLELIST);

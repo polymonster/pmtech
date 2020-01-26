@@ -2,8 +2,7 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#ifndef debug_render_h__
-#define debug_render_h__
+#pragma once
 
 // Minimalist c-style api for rendering debug primitives.
 // Adding primitives will push verts into a buffer which will grow to accomodate space as required.
@@ -54,4 +53,3 @@ namespace put
         void render_3d(u32 cb_3d_view);
     } // namespace dbg
 } // namespace put
-#endif // dbg_h_

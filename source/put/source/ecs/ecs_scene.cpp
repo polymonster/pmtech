@@ -577,10 +577,10 @@ namespace put
                 volume[i] = get_geometry_resource(id_volume[i]);
 
             static hash_id id_cull_front = PEN_HASH("front_face_cull");
-            u32            cull_front = pmfx::get_render_state(id_cull_front, pmfx::RS_SAMPLER);
+            u32            cull_front = pmfx::get_render_state(id_cull_front, pmfx::e_render_state::sampler);
 
             static hash_id id_disable_depth = PEN_HASH("disabled");
-            u32            depth_disabled = pmfx::get_render_state(id_disable_depth, pmfx::RS_DEPTH_STENCIL);
+            u32            depth_disabled = pmfx::get_render_state(id_disable_depth, pmfx::e_render_state::depth_stencil);
 
             for (u32 n = 0; n < scene->num_entities; ++n)
             {
@@ -786,7 +786,7 @@ namespace put
                 if (p_mat)
                 {
                     cmp_samplers& samplers = scene->samplers[n];
-                    for (u32 s = 0; s < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++s)
+                    for (u32 s = 0; s < e_pmfx_constants::max_technique_sampler_bindings; ++s)
                     {
                         if (!samplers.sb[s].handle)
                             continue;
@@ -811,7 +811,7 @@ namespace put
                     static u32 ltc_mag = put::load_texture("data/textures/ltc/ltc_amp.dds");
 
 					static hash_id id_clamp_linear = PEN_HASH("clamp_linear");
-                    u32 clamp_linear = pmfx::get_render_state(id_clamp_linear, pmfx::RS_SAMPLER);
+                    u32 clamp_linear = pmfx::get_render_state(id_clamp_linear, pmfx::e_render_state::sampler);
 
                     pen::renderer_set_texture(ltc_mat, clamp_linear, 13, pen::TEXTURE_BIND_PS);
                     pen::renderer_set_texture(ltc_mag, clamp_linear, 12, pen::TEXTURE_BIND_PS);
@@ -1938,7 +1938,7 @@ namespace put
 
                 cmp_samplers& samplers = scene->samplers[n];
 
-                for (u32 i = 0; i < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++i)
+                for (u32 i = 0; i < e_pmfx_constants::max_technique_sampler_bindings; ++i)
                 {
                     write_lookup_string(put::get_texture_filename(samplers.sb[i].handle).c_str(), ofs, project_dir.c_str());
                     write_lookup_string(pmfx::get_render_state_name(samplers.sb[i].sampler_state).c_str(), ofs,
@@ -2366,21 +2366,21 @@ namespace put
 
                 cmp_samplers& samplers = scene->samplers[n];
 
-                for (u32 i = 0; i < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++i)
+                for (u32 i = 0; i < e_pmfx_constants::max_technique_sampler_bindings; ++i)
                 {
                     Str texture_name = read_lookup_string(ifs);
 
                     if (!texture_name.empty())
                     {
                         samplers.sb[i].handle = put::load_texture(texture_name.c_str());
-                        samplers.sb[i].sampler_state = pmfx::get_render_state(PEN_HASH("wrap_linear"), pmfx::RS_SAMPLER);
+                        samplers.sb[i].sampler_state = pmfx::get_render_state(PEN_HASH("wrap_linear"), pmfx::e_render_state::sampler);
                     }
 
                     Str sampler_state_name = read_lookup_string(ifs);
 
                     if (!sampler_state_name.empty())
                     {
-                        samplers.sb[i].sampler_state = pmfx::get_render_state(PEN_HASH(sampler_state_name), pmfx::RS_SAMPLER);
+                        samplers.sb[i].sampler_state = pmfx::get_render_state(PEN_HASH(sampler_state_name), pmfx::e_render_state::sampler);
                     }
                 }
             }

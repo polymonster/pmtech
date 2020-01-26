@@ -102,7 +102,7 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     scene->parents[new_prim] = new_prim;
     scene->samplers[new_prim].sb[0].handle = volume_texture;
     scene->samplers[new_prim].sb[0].sampler_unit = SN_VOLUME_TEXTURE;
-    scene->samplers[new_prim].sb[0].sampler_state = pmfx::get_render_state(PEN_HASH("clamp_point"), pmfx::RS_SAMPLER);
+    scene->samplers[new_prim].sb[0].sampler_state = pmfx::get_render_state(PEN_HASH("clamp_point"), pmfx::e_render_state::sampler);
 
     instantiate_geometry(cube, scene, new_prim);
     instantiate_material(volume_material, scene, new_prim);

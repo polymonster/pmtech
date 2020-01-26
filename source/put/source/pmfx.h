@@ -20,20 +20,26 @@ namespace put
 
 namespace put
 {
-    enum e_update_order
+    namespace e_update_order
     {
-        PRE_UPDATE = 0,
-        MAIN_UPDATE,
-        POST_UPDATE,
-
-        UPDATES_NUM
-    };
-
-    enum e_render_constants
+        enum update_order_t
+        {
+            pre_update = 0,
+            main_update,
+            post_update,
+            COUNT
+        };
+    }
+    typedef e_update_order::update_order_t update_order;
+    
+    namespace e_pmfx_constants
     {
-        MAX_TECHNIQUE_SAMPLER_BINDINGS = 8, // 8 samplers possibly set from shader / technique
-        MAX_SAMPLER_BINDINGS = 16           // +8 samplers for gloabl stuff ie. shadow maps.
-    };
+        enum pmfx_constants_t
+        {
+            max_technique_sampler_bindings = 8,
+            max_sampler_bindings = 16
+        };
+    }
 
     struct scene_view
     {
@@ -81,7 +87,7 @@ namespace put
     {
         // 8 generic samplers for draw calls, can bind to any slots.. if more are required use a second set.
         // global samplers (shadow map, render targets etc, will still be bound in addition to these)
-        sampler_binding sb[MAX_TECHNIQUE_SAMPLER_BINDINGS];
+        sampler_binding sb[e_pmfx_constants::max_technique_sampler_bindings];
     };
 
 } // namespace put
@@ -90,48 +96,83 @@ namespace put
 {
     namespace pmfx
     {
-        enum e_constant_widget
+        namespace e_constant_widget
         {
-            CW_SLIDER,
-            CW_INPUT,
-            CW_COLOUR,
-            CW_NUM
-        };
-
-        enum e_permutation_widget
+            enum constant_widget_t
+            {
+                slider,
+                input,
+                colour,
+                COUNT
+            };
+        }
+        
+        namespace e_permutation_widget
         {
-            PW_CHECKBOX,
-            PW_INPUT,
-            PW_NUM
-        };
-
-        enum e_constant_buffer_locations
+            enum permutation_widget_t
+            {
+                checkbox,
+                input,
+                COUNT
+            };
+        }
+        
+        namespace e_cbuffer_location
         {
-            CB_PER_PASS_VIEW = 0,
-            CB_PER_DRAW_CALL = 1,
-            CB_FILTER_KERNEL = 2,
-            CB_PER_PASS_LIGHTS = 3,
-            CB_PER_PASS_SHADOW = 4,
-            CB_PER_PASS_SDF_SHADOW = 5,
-            CB_PER_PASS_AREA_LIGHTS = 6,
-            CB_MATERIAL_CONSTANTS = 7,
-            CB_SAMPLER_INFO = 10,
-            CB_POST_PROCESS_INFO = 3
-        };
-
-        enum e_render_state_type : u32
+            enum cbuffer_location_t
+            {
+                per_pass_view = 0,
+                per_draw_call = 1,
+                filter_kernel = 2,
+                per_pass_lights = 3,
+                per_pass_shadow = 4,
+                per_pass_sdf_shadow = 5,
+                per_pass_area_lights = 6,
+                material_constants = 7,
+                sampler_info = 10,
+                post_process_info = 3
+            };
+        }
+        
+        namespace e_render_state
         {
-            RS_RASTERIZER = 0,
-            RS_SAMPLER,
-            RS_BLEND,
-            RS_DEPTH_STENCIL
-        };
+            enum render_state_t
+            {
+                rasterizer,
+                sampler,
+                blend,
+                depth_stencil
+            };
+        }
+        typedef e_render_state::render_state_t render_state_t;
+        
+        namespace e_rt_flags
+        {
+            enum rt_flags_t
+            {
+                aux = 1<<1,
+                aux_used = 1<<2,
+                write_only = 1<<3,
+                resolve = 1<<4
+            };
+        }
+        
+        namespace e_vrt_mode
+        {
+            enum vrt_mode_t
+            {
+                read,
+                write,
+                COUNT
+            };
+        }
+        typedef e_vrt_mode::vrt_mode_t vrt_mode;
 
         struct technique_constant
         {
             Str     name;
             hash_id id_name;
-            u32     widget = CW_SLIDER;
+            u32     widget = e_constant_widget::slider;
             f32     min = 0.0f;
             f32     max = 1.0f;
             f32     step = 0.01f;
@@ -157,7 +198,7 @@ namespace put
         {
             Str name = "";
             u32 val = 0;
-            u32 widget = PW_CHECKBOX;
+            u32 widget = e_permutation_widget::checkbox;
         };
 
         struct shader_program
@@ -182,21 +223,6 @@ namespace put
             technique_permutation* permutations;
         };
 
-        enum rt_flags
-        {
-            RT_AUX = 1 << 1,
-            RT_AUX_USED = 1 << 2,
-            RT_WRITE_ONLY = 1 << 3,
-            RT_RESOLVE = 1 << 4
-        };
-
-        enum e_rt_mode
-        {
-            VRT_READ,
-            VRT_WRITE,
-            VRT_NUM
-        };
-
         struct render_target
         {
             hash_id id_name;
@@ -212,7 +238,7 @@ namespace put
             u32 samples = 1;
             Str name = "";
             u32 flags = 0;
-            u32 pp = VRT_READ;
+            u32 pp = e_vrt_mode::read;
             u32 pp_read = PEN_INVALID_HANDLE;
             u32 collection = pen::TEXTURE_COLLECTION_NONE;
         };

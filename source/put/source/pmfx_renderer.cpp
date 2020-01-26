@@ -251,15 +251,12 @@ namespace
 
     struct render_state
     {
-        Str     name;
-        hash_id id_name;
-
-        hash_id hash;
-        u32     handle;
-
-		bool	copy;
-
-        e_render_state_type type;
+        Str             name;
+        hash_id         id_name;
+        hash_id         hash;
+        u32             handle;
+        render_state_t  type;
+        bool            copy;
     };
 
     struct filter_kernel
@@ -540,7 +537,7 @@ namespace put
 
                 // sampler state from name
                 Str ss = binding["state"].as_str();
-                sb.sampler_state = get_render_state(PEN_HASH(ss.c_str()), RS_SAMPLER);
+                sb.sampler_state = get_render_state(PEN_HASH(ss.c_str()), e_render_state::sampler);
 
                 // unit
                 sb.sampler_unit = binding["unit"].as_u32();
@@ -600,10 +597,10 @@ namespace put
                 rs.hash = hh;
                 rs.name = state.name();
                 rs.id_name = PEN_HASH(rs.name);
-                rs.type = RS_SAMPLER;
+                rs.type = e_render_state::sampler;
 				rs.copy = false;
 
-                render_state* existing_state = get_state_by_hash(hh, RS_SAMPLER);
+                render_state* existing_state = get_state_by_hash(hh, e_render_state::sampler);
 				if (existing_state)
 				{
 					rs.handle = existing_state->handle;
@@ -645,10 +642,10 @@ namespace put
                 rs.hash = hh;
                 rs.name = state.name();
                 rs.id_name = PEN_HASH(rs.name);
-                rs.type = RS_RASTERIZER;
+                rs.type = e_render_state::rasterizer;
 				rs.copy = false;
 
-                render_state* existing_state = get_state_by_hash(hh, RS_RASTERIZER);
+                render_state* existing_state = get_state_by_hash(hh, e_render_state::rasterizer);
 				if (existing_state)
 				{
 					rs.handle = existing_state->handle;
@@ -713,7 +710,7 @@ namespace put
                 render_state rs;
                 rs.name = state.name();
                 rs.id_name = PEN_HASH(state.name().c_str());
-                rs.type = RS_BLEND;
+                rs.type = e_render_state::blend;
                 rs.handle = pen::renderer_create_blend_state(bcp);
 				rs.copy = false;
 
@@ -782,10 +779,10 @@ namespace put
                 rs.hash = hh;
                 rs.name = state.name();
                 rs.id_name = PEN_HASH(rs.name);
-                rs.type = RS_DEPTH_STENCIL;
+                rs.type = e_render_state::depth_stencil;
 				rs.copy = false;
 
-                render_state* existing_state = get_state_by_hash(hh, RS_DEPTH_STENCIL);
+                render_state* existing_state = get_state_by_hash(hh, e_render_state::depth_stencil);
 				if (existing_state)
 				{
 					rs.handle = existing_state->handle;
@@ -953,10 +950,10 @@ namespace put
             rs.hash = hh;
             rs.name = view_name;
             rs.id_name = PEN_HASH(view_name);
-            rs.type = RS_BLEND;
+            rs.type = e_render_state::blend;
 			rs.copy = false;
 
-            render_state* existing_state = get_state_by_hash(hh, RS_BLEND);
+            render_state* existing_state = get_state_by_hash(hh, e_render_state::blend);
 			if (existing_state)
 			{
 				rs.handle = existing_state->handle;
@@ -983,8 +980,8 @@ namespace put
             main_colour.handle = PEN_BACK_BUFFER_COLOUR;
             main_colour.num_mips = 1;
             main_colour.num_arrays = 1;
-            main_colour.pp = VRT_WRITE;
-            main_colour.flags = RT_WRITE_ONLY;
+            main_colour.pp = e_vrt_mode::write;
+            main_colour.flags = e_rt_flags::write_only;
 
             s_render_targets.push_back(main_colour);
             s_render_target_tcp.push_back(texture_creation_params());
@@ -997,8 +994,8 @@ namespace put
             main_depth.handle = PEN_BACK_BUFFER_DEPTH;
             main_depth.num_mips = 1;
             main_colour.num_arrays = 1;
-            main_depth.pp = VRT_WRITE;
-            main_depth.flags = RT_WRITE_ONLY;
+            main_depth.pp = e_vrt_mode::write;
+            main_depth.flags = e_rt_flags::write_only;
 
             s_render_targets.push_back(main_depth);
             s_render_target_tcp.push_back(texture_creation_params());
@@ -1144,8 +1141,8 @@ namespace put
                         static hash_id id_write = PEN_HASH("write");
                         if (r["pp"].as_hash_id() == id_write)
                         {
-                            new_info.pp = VRT_WRITE;
-                            new_info.flags |= RT_AUX;
+                            new_info.pp = e_vrt_mode::write;
+                            new_info.flags |= e_rt_flags::aux;
                         }
 
                         hash_id idr = r["init_read"].as_hash_id();
@@ -1647,13 +1644,13 @@ namespace put
 
                 // raster
                 Str raster_state = view["raster_state"].as_cstr("default");
-                state = _get_render_state(PEN_HASH(raster_state.c_str()), RS_RASTERIZER);
+                state = _get_render_state(PEN_HASH(raster_state.c_str()), e_render_state::rasterizer);
                 if (state)
                     new_view.raster_state = state->handle;
 
                 // depth stencil
                 Str depth_stencil_state = view["depth_stencil_state"].as_cstr("default");
-                state = _get_render_state(PEN_HASH(depth_stencil_state.c_str()), RS_DEPTH_STENCIL);
+                state = _get_render_state(PEN_HASH(depth_stencil_state.c_str()), e_render_state::depth_stencil);
                 if (state)
                     new_view.depth_stencil_state = state->handle;
 
@@ -1869,7 +1866,7 @@ namespace put
             struct virtual_rt
             {
                 hash_id id = 0;
-                u32     rt_index[VRT_NUM] = {PEN_INVALID_HANDLE, PEN_INVALID_HANDLE};
+                u32     rt_index[e_vrt_mode::COUNT] = {PEN_INVALID_HANDLE, PEN_INVALID_HANDLE};
                 u32     rt_read = PEN_INVALID_HANDLE;
                 bool    swap;
             };
@@ -1896,23 +1893,23 @@ namespace put
                 // add new
                 virtual_rt vrt;
                 vrt.id = id;
-                vrt.rt_index[VRT_READ] = PEN_INVALID_HANDLE;
-                vrt.rt_index[VRT_WRITE] = PEN_INVALID_HANDLE;
+                vrt.rt_index[e_vrt_mode::read] = PEN_INVALID_HANDLE;
+                vrt.rt_index[e_vrt_mode::write] = PEN_INVALID_HANDLE;
                 vrt.swap = false;
 
                 u32 pp = s_render_targets[rt_index].pp;
 
                 // flag aux in use
-                if (s_render_targets[rt_index].flags & RT_AUX)
-                    s_render_targets[rt_index].flags |= RT_AUX_USED;
+                if (s_render_targets[rt_index].flags & e_rt_flags::aux)
+                    s_render_targets[rt_index].flags |= e_rt_flags::aux_used;
 
                 vrt.rt_index[pp] = rt_index;
 
                 // first read from a scene view render target
                 u32 ppr = s_render_targets[rt_index].pp_read;
-                if (is_valid(ppr) && pp == VRT_WRITE)
+                if (is_valid(ppr) && pp == e_vrt_mode::write)
                 {
-                    vrt.rt_index[VRT_READ] = ppr;
+                    vrt.rt_index[e_vrt_mode::read] = ppr;
                 }
 
                 s_virtual_rt.push_back(vrt);
@@ -1943,10 +1940,10 @@ namespace put
                 // find a suitable size / format aux buffer
                 for (u32 i = 0; i < s_render_targets.size(); ++i)
                 {
-                    if (!(s_render_targets[i].flags & RT_AUX))
+                    if (!(s_render_targets[i].flags & e_rt_flags::aux))
                         continue;
 
-                    if (s_render_targets[i].flags & RT_AUX_USED)
+                    if (s_render_targets[i].flags & e_rt_flags::aux_used)
                         continue;
 
                     bool match = true;
@@ -1960,15 +1957,15 @@ namespace put
 
                     if (match)
                     {
-                        s_render_targets[i].flags |= RT_AUX_USED;
+                        s_render_targets[i].flags |= e_rt_flags::aux_used;
                         return i;
                     }
                 }
 
                 // create an aux copy from the original rt
                 render_target aux_rt = *rt;
-                aux_rt.flags |= RT_AUX;
-                aux_rt.flags |= RT_AUX_USED;
+                aux_rt.flags |= e_rt_flags::aux;
+                aux_rt.flags |= e_rt_flags::aux_used;
                 aux_rt.handle = pen::renderer_create_render_target(s_render_target_tcp[rt_index]);
                 aux_rt.name = rt->name;
                 aux_rt.name.append("_aux");
@@ -1976,7 +1973,7 @@ namespace put
                 return s_render_targets.size() - 1;
             }
 
-            u32 get_virtual_target(hash_id id, e_rt_mode mode, bool non_aux)
+            u32 get_virtual_target(hash_id id, vrt_mode mode, bool non_aux)
             {
                 u32 result = PEN_INVALID_HANDLE;
 
@@ -1990,7 +1987,7 @@ namespace put
                         {
                             result = s_render_targets[rt_index].handle;
                         }
-                        else if (mode == VRT_WRITE)
+                        else if (mode == e_vrt_mode::write)
                         {
                             if (non_aux)
                             {
@@ -2007,7 +2004,7 @@ namespace put
                             }
                         }
 
-                        if (mode == VRT_WRITE)
+                        if (mode == e_vrt_mode::write)
                             vrt.swap = true;
 
                         break;
@@ -2025,24 +2022,24 @@ namespace put
                 {
                     if (vrt.swap)
                     {
-                        u32 wrt = vrt.rt_index[VRT_WRITE];
+                        u32 wrt = vrt.rt_index[e_vrt_mode::write];
                         if (is_valid(wrt))
                         {
-                            if (s_render_targets[wrt].flags & RT_WRITE_ONLY)
+                            if (s_render_targets[wrt].flags & e_rt_flags::write_only)
                                 continue;
                         }
 
-                        std::swap(vrt.rt_index[VRT_WRITE], vrt.rt_index[VRT_READ]);
+                        std::swap(vrt.rt_index[e_vrt_mode::write], vrt.rt_index[e_vrt_mode::read]);
 
                         // remark aux buffer usable or remove a read only rt from the write slot
-                        wrt = vrt.rt_index[VRT_WRITE];
+                        wrt = vrt.rt_index[e_vrt_mode::write];
 
                         if (is_valid(wrt))
                         {
                             render_target& rt = s_render_targets[wrt];
 
-                            rt.flags &= ~RT_AUX_USED;
-                            vrt.rt_index[VRT_WRITE] = PEN_INVALID_HANDLE;
+                            rt.flags &= ~e_rt_flags::aux_used;
+                            vrt.rt_index[e_vrt_mode::write] = PEN_INVALID_HANDLE;
                         }
 
                         vrt.swap = false;
@@ -2054,7 +2051,7 @@ namespace put
             {
                 // start any virtual rt with appropriate read only buffers in the read slot
                 for (auto& vrt : s_virtual_rt)
-                    vrt.rt_index[VRT_READ] = vrt.rt_read;
+                    vrt.rt_index[e_vrt_mode::read] = vrt.rt_read;
             }
 
             void bake_post_process_targets(std::vector<view_params>& pp_views)
@@ -2079,15 +2076,15 @@ namespace put
                 {
                     bool non_aux = p.post_process_flags & PP_WRITE_NON_AUX;
                     for (u32 i = 0; i < p.num_colour_targets; ++i)
-                        p.render_targets[i] = get_virtual_target(p.id_render_target[i], VRT_WRITE, non_aux);
+                        p.render_targets[i] = get_virtual_target(p.id_render_target[i], e_vrt_mode::write, non_aux);
 
                     if (is_valid(p.depth_target))
-                        p.depth_target = get_virtual_target(p.id_depth_target, VRT_WRITE, non_aux);
+                        p.depth_target = get_virtual_target(p.id_depth_target, e_vrt_mode::write, non_aux);
                     else
                         p.depth_target = PEN_NULL_DEPTH_BUFFER;
 
                     for (auto& sb : p.sampler_bindings)
-                        sb.handle = get_virtual_target(sb.id_texture, VRT_READ, false);
+                        sb.handle = get_virtual_target(sb.id_texture, e_vrt_mode::read, false);
 
                     // material for pass
                     pmfx::initialise_constant_defaults(p.pmfx_shader, p.id_technique, p.technique_constants.data);
@@ -2114,7 +2111,7 @@ namespace put
                             sb.handle = ts[i].handle;
                             sb.sampler_unit = ts[i].unit;
                             sb.bind_flags = PEN_SHADER_TYPE_PS;
-                            sb.sampler_state = get_render_state(k_id_wrap_linear, RS_SAMPLER);
+                            sb.sampler_state = get_render_state(k_id_wrap_linear, e_render_state::sampler);
 
                             p.technique_samplers.sb[i] = sb;
                         }
@@ -2507,16 +2504,16 @@ namespace put
 
                 switch (rs.type)
                 {
-                    case RS_RASTERIZER:
+                    case e_render_state::rasterizer:
                         pen::renderer_release_raster_state(rs.handle);
                         break;
-                    case RS_SAMPLER:
+                    case e_render_state::sampler:
                         pen::renderer_release_sampler(rs.handle);
                         break;
-                    case RS_BLEND:
+                    case e_render_state::blend:
                         pen::renderer_release_blend_state(rs.handle);
                         break;
-                    case RS_DEPTH_STENCIL:
+                    case e_render_state::depth_stencil:
                         pen::renderer_release_depth_stencil_state(rs.handle);
                         break;
                 }
@@ -2570,7 +2567,7 @@ namespace put
             if (!pmfx::set_technique_perm(sv.pmfx_shader, sv.technique))
                 return;
 
-            pen::renderer_set_constant_buffer(sv.cb_view, CB_PER_PASS_VIEW, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
+            pen::renderer_set_constant_buffer(sv.cb_view, e_cbuffer_location::per_pass_view, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
 
             pen::renderer_set_index_buffer(quad->index_buffer, quad->index_type, 0);
             pen::renderer_set_vertex_buffer(quad->vertex_buffer, 0, quad->vertex_size, 0);
@@ -2641,7 +2638,7 @@ namespace put
             pen::renderer_set_viewport(vp);
             pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
 
-            u32 wlss = get_render_state(k_id_wrap_linear, RS_SAMPLER);
+            u32 wlss = get_render_state(k_id_wrap_linear, e_render_state::sampler);
 
             pen::renderer_set_texture(v.render_targets[0], wlss, 0, pen::TEXTURE_BIND_PS);
 
@@ -2677,13 +2674,13 @@ namespace put
             pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
 
             // rt texture may still be bound on input
-            for (s32 i = 0; i < MAX_SAMPLER_BINDINGS; ++i)
+            for (s32 i = 0; i < e_pmfx_constants::max_sampler_bindings; ++i)
                 pen::renderer_set_texture(0, 0, i, pen::TEXTURE_BIND_PS | pen::TEXTURE_BIND_VS);
             
             // disable state
-            pen::renderer_set_depth_stencil_state(get_render_state(k_id_disabled, RS_DEPTH_STENCIL));
-            pen::renderer_set_blend_state(get_render_state(k_id_disabled, RS_BLEND));
-            pen::renderer_set_rasterizer_state(get_render_state(k_id_disabled, RS_RASTERIZER));
+            pen::renderer_set_depth_stencil_state(get_render_state(k_id_disabled, e_render_state::depth_stencil));
+            pen::renderer_set_blend_state(get_render_state(k_id_disabled, e_render_state::blend));
+            pen::renderer_set_rasterizer_state(get_render_state(k_id_disabled, e_render_state::rasterizer));
 
             // resolve colour
             if(v.view_flags & VF_RESOLVE)
@@ -2717,7 +2714,7 @@ namespace put
             
             // set textures and buffers back to prevent d3d validation layer complaining
             pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
-            for (s32 i = 0; i < MAX_SAMPLER_BINDINGS; ++i)
+            for (s32 i = 0; i < e_pmfx_constants::max_sampler_bindings; ++i)
                 pen::renderer_set_texture(0, 0, i, pen::TEXTURE_BIND_PS | pen::TEXTURE_BIND_VS);
         }
 
@@ -2764,7 +2761,7 @@ namespace put
             }
 
             // unbind samplers to stop validation layers complaining, render targets may still be bound on output.
-            for (s32 i = 0; i < MAX_SAMPLER_BINDINGS; ++i)
+            for (s32 i = 0; i < e_pmfx_constants::max_sampler_bindings; ++i)
                 pen::renderer_set_texture(0, 0, i, pen::TEXTURE_BIND_PS | pen::TEXTURE_BIND_VS);
 
             // render state
@@ -2833,7 +2830,7 @@ namespace put
                 }
 
                 // bind technique samplers
-                for (u32 i = 0; i < MAX_TECHNIQUE_SAMPLER_BINDINGS; ++i)
+                for (u32 i = 0; i < e_pmfx_constants::max_technique_sampler_bindings; ++i)
                 {
                     auto& sb = v.technique_samplers.sb[i];
                     if (sb.handle == 0)
@@ -2847,19 +2844,19 @@ namespace put
                 if (num_samplers > 0)
                 {
                     pen::renderer_update_buffer(cb_sampler_info, v.sampler_info, num_samplers * sizeof(vec4f));
-                    pen::renderer_set_constant_buffer(cb_sampler_info, CB_SAMPLER_INFO, pen::CBUFFER_BIND_PS);
+                    pen::renderer_set_constant_buffer(cb_sampler_info, e_cbuffer_location::sampler_info, pen::CBUFFER_BIND_PS);
                 }
 
                 // filters
                 if (is_valid(v.cbuffer_filter))
-                    pen::renderer_set_constant_buffer(v.cbuffer_filter, CB_FILTER_KERNEL, pen::CBUFFER_BIND_PS);
+                    pen::renderer_set_constant_buffer(v.cbuffer_filter, e_cbuffer_location::filter_kernel, pen::CBUFFER_BIND_PS);
 
                 // technique cbuffer
                 if (is_valid(v.cbuffer_technique))
                 {
                     pen::renderer_update_buffer(v.cbuffer_technique, v.technique_constants.data,
                                                 sizeof(technique_constant_data));
-                    pen::renderer_set_constant_buffer(v.cbuffer_technique, CB_MATERIAL_CONSTANTS, pen::CBUFFER_BIND_PS);
+                    pen::renderer_set_constant_buffer(v.cbuffer_technique, e_cbuffer_location::material_constants, pen::CBUFFER_BIND_PS);
                 }
 
                 // call render functions and make draw calls
