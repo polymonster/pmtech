@@ -13,4 +13,7 @@ namespace pen
 {
     texture_creation_params renderer_tcp_resolve_ratio(const texture_creation_params& tcp);
     void                    renderer_track_managed_render_target(const texture_creation_params& tcp, u32 texture_handle);
+    
+    // void renderer_create_resolve_resources();
+    // dynamic buffer
 }

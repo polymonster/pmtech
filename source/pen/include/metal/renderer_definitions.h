@@ -38,8 +38,8 @@ enum cull_mode : s32
 
 enum default_targets : s32
 {
-    PEN_BACK_BUFFER_COLOUR = 0,
-    PEN_BACK_BUFFER_DEPTH = 0
+    PEN_BACK_BUFFER_COLOUR = 1,
+    PEN_BACK_BUFFER_DEPTH = 2
 };
 
 enum clear_bits : s32

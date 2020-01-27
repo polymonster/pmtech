@@ -98,7 +98,6 @@ PEN_TRV pen::user_entry(void* params)
     main_scene->view_flags |= e_scene_view_flags::hide_debug;
     put::dev_ui::enable(false);
 
-
     example_setup(main_scene, main_camera);
 
     f32 frame_time = 0.0f;

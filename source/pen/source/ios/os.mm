@@ -96,10 +96,12 @@ namespace pen
         [self.mtk_view setColorPixelFormat:MTLPixelFormatBGRA8Unorm];
         [self.mtk_view setDepthStencilPixelFormat:MTLPixelFormatDepth32Float_Stencil8];
         [self.mtk_view setUserInteractionEnabled:YES];
+        //[self.mtk_view setSampleCount:pen_window.sample_count];
 
         // create metal delegate
         self.mtk_renderer = [[pen_mtk_renderer alloc] initWithView:self.mtk_view];
         [self.mtk_view setDelegate:self.mtk_renderer];
+        [self.mtk_view setFramebufferOnly:NO];
         
         // create view controller
         self.view_controller = [[pen_view_controller alloc] initWithNibName:nil bundle:nil];

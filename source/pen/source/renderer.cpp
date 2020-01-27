@@ -23,6 +23,7 @@
 #define MAX_COMMANDS (1 << 16)
 
 extern pen::window_creation_params pen_window;
+pen::resolve_resources g_resolve_resources;
 
 using namespace pen;
 
@@ -751,6 +752,7 @@ namespace pen
         bcp.data = nullptr;
 
         _resolve_resources.constant_buffer = renderer_create_buffer(bcp);
+        g_resolve_resources = _resolve_resources;
     }
 
     void renderer_init(void* user_data, bool wait_for_jobs)
@@ -765,10 +767,12 @@ namespace pen
         slot_resources_init(&s_renderer_slot_resources, 2048);
         
         // initialise renderer
-        // save the first 6 resources for swap chain colour and backbuffer
+        // bb is backbuffer depth and colour
         u32 bb_res = slot_resources_get_next(&s_renderer_slot_resources);
         u32 bb_depth_res = slot_resources_get_next(&s_renderer_slot_resources);
-        for(s64 i = 0; i < 4; ++i)
+        
+        // reserve a bunch more slots for interal renderer implementations
+        for(s64 i = 0; i < 10; ++i)
             slot_resources_get_next(&s_renderer_slot_resources);
 
         direct::renderer_initialise(user_data, bb_res, bb_depth_res);
