@@ -1653,8 +1653,7 @@ namespace pen
         void renderer_set_targets(const u32* const colour_targets, u32 num_colour_targets, u32 depth_target, u32 colour_face,
                                   u32 depth_face)
         {
-#if 0 //PEN_PLATFORM_IOS
-            // This doesnt quite work, stencil shadows sample exhitbits issues.
+#if 0
             HashMurmur2A hh;
             hh.begin();
             hh.add(&num_colour_targets, sizeof(u32));
