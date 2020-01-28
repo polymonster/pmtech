@@ -73,22 +73,29 @@ namespace // internal structs and static vars
         dispatch_semaphore_t         completion;
         index_buffer_cmd             index_buffer;
         u32                          input_layout;
+        
+        // hashable for pass
+        u32*                         colour_targets = nullptr;
+        u32                          depth_target;
+        u32                          colour_slice;
+        u32                          depth_slice;
+        u32                          clear_state;
 
         // hashable to set on command encoder
-        MTLViewport              viewport;
-        MTLScissorRect           scissor;
-        id<MTLDepthStencilState> depth_stencil;
-        u32                      raster_state;
-        u8                       stencil_ref;
+        MTLViewport                 viewport;
+        MTLScissorRect              scissor;
+        id<MTLDepthStencilState>    depth_stencil;
+        u32                         raster_state;
+        u8                          stencil_ref;
 
         // hashable to rebuild pipe
-        pixel_formats        formats;
-        MTLVertexDescriptor* vertex_descriptor;
-        id<MTLFunction>      vertex_shader;
-        id<MTLFunction>      fragment_shader;
-        id<MTLFunction>      compute_shader;
-        u32                  blend_state;
-        bool                 stream_out;
+        pixel_formats               formats;
+        MTLVertexDescriptor*        vertex_descriptor;
+        id<MTLFunction>             vertex_shader;
+        id<MTLFunction>             fragment_shader;
+        id<MTLFunction>             compute_shader;
+        u32                         blend_state;
+        bool                        stream_out;
 
         // cache
         hash_id pipeline_hash = 0;
@@ -658,6 +665,323 @@ namespace // pen consts -> metal consts
         PEN_ASSERT(0);
         return MTLStencilOperationKeep;
     }
+    
+    void bind_render_pass()
+    {
+        u32 num_colour_targets = sb_count(_state.colour_targets);
+        
+        if(num_colour_targets == 0 && _state.depth_target == PEN_INVALID_HANDLE)
+            return;
+        
+        HashMurmur2A hh;
+        hh.begin();
+        hh.add(num_colour_targets);
+        hh.add(_state.depth_target);
+        hh.add(_state.colour_slice);
+        hh.add(_state.depth_slice);
+        hh.add(&_state.colour_targets[0], sizeof(u32)*num_colour_targets);
+        hh.add(_state.clear_state);
+        hash_id cur = hh.end();
+        if (cur == _state.target_hash)
+            return;
+        _state.target_hash = cur;
+        
+        // create new cmd buffer
+        if (_state.cmd_buffer == nil)
+            _state.cmd_buffer = [_state.command_queue commandBuffer];
+                            
+        // finish render encoding
+        if (_state.render_encoder)
+        {
+            [_state.render_encoder endEncoding];
+            _state.render_encoder = nil;
+            _state.pipeline_hash = 0;
+        }
+
+        // create new cmd buffer
+        if (_state.cmd_buffer == nil)
+            _state.cmd_buffer = [_state.command_queue commandBuffer];
+                            
+        // finish render encoding
+        if (_state.render_encoder)
+        {
+            [_state.render_encoder endEncoding];
+            _state.render_encoder = nil;
+            _state.pipeline_hash = 0;
+        }
+        
+        u32* colour_targets = _state.colour_targets;
+        u32 colour_slice = _state.colour_slice;
+        u32 depth_target = _state.depth_target;
+        u32 depth_slice = _state.depth_slice;
+
+        _state.pass = [MTLRenderPassDescriptor renderPassDescriptor];
+
+        _state.formats.colour_attachments[0] = MTLPixelFormatInvalid;
+        _state.formats.depth_attachment = MTLPixelFormatInvalid;
+        _state.formats.sample_count = 1;
+        _state.formats.num_targets = num_colour_targets;
+        
+        bool backbuffer = ((num_colour_targets == 1 && colour_targets[0] == PEN_BACK_BUFFER_COLOUR)
+                           || depth_target == PEN_BACK_BUFFER_DEPTH);
+
+        if (backbuffer)
+        {
+            _state.drawable = _metal_view.currentDrawable;
+            _state.formats.sample_count = (u32)_metal_view.sampleCount;
+            
+            if((num_colour_targets == 1 && colour_targets[0] == PEN_BACK_BUFFER_COLOUR))
+            {
+                if (_state.formats.sample_count > 1)
+                {
+                    // msaa
+                    _state.pass.colorAttachments[0].texture = _metal_view.multisampleColorTexture;
+                    _state.pass.colorAttachments[0].storeAction = MTLStoreActionStoreAndMultisampleResolve;
+                    _state.pass.colorAttachments[0].resolveTexture = _state.drawable.texture;
+                }
+                else
+                {
+                    // non msaa
+                    _state.pass.colorAttachments[0].texture = _state.drawable.texture;
+                    _state.pass.colorAttachments[0].storeAction = MTLStoreActionStore;
+                }
+                
+                _state.formats.colour_attachments[0] = _metal_view.colorPixelFormat;
+            }
+
+            if(depth_target == PEN_BACK_BUFFER_DEPTH)
+            {
+                _state.formats.depth_attachment = _metal_view.depthStencilPixelFormat;
+                
+                _state.pass.depthAttachment.texture = _metal_view.depthStencilTexture;
+                _state.pass.depthAttachment.loadAction = MTLLoadActionLoad;
+                _state.pass.depthAttachment.storeAction = MTLStoreActionStore;
+                
+                _state.pass.stencilAttachment.texture = _metal_view.depthStencilTexture;
+                _state.pass.stencilAttachment.loadAction = MTLLoadActionLoad;
+                _state.pass.stencilAttachment.storeAction = MTLStoreActionStore;
+            }
+        }
+        else
+        {
+            // multiple render targets
+            for (u32 i = 0; i < num_colour_targets; ++i)
+            {
+                resource& r = _res_pool.get(colour_targets[i]);
+                if (r.texture.num_mips > 1)
+                    r.texture.invalidate = 1;
+                
+                id<MTLTexture> texture = r.texture.tex;
+                if (r.texture.samples > 1)
+                    texture = r.texture.tex_msaa;
+                
+                _state.formats.sample_count = r.texture.samples;
+                
+                _state.pass.colorAttachments[i].slice = colour_slice;
+                _state.pass.colorAttachments[i].texture = texture;
+                _state.pass.colorAttachments[i].loadAction = MTLLoadActionLoad;
+                _state.pass.colorAttachments[i].storeAction = MTLStoreActionStore;
+                
+                _state.formats.colour_attachments[i] = r.texture.fmt;
+            }
+            _state.formats.num_targets = num_colour_targets;
+            
+            if (is_valid(depth_target))
+            {
+                resource&      r = _res_pool.get(depth_target);
+                id<MTLTexture> texture = r.texture.tex;
+                if (r.texture.samples > 1)
+                    texture = r.texture.tex_msaa;
+
+                if (r.texture.num_mips > 1)
+                    r.texture.invalidate = 1;
+
+                _state.formats.sample_count = r.texture.samples;
+
+                _state.pass.depthAttachment.slice = depth_slice;
+                _state.pass.depthAttachment.texture = texture;
+                _state.pass.depthAttachment.loadAction = MTLLoadActionLoad;
+                _state.pass.depthAttachment.storeAction = MTLStoreActionStore;
+
+                _state.pass.stencilAttachment.slice = depth_slice;
+                _state.pass.stencilAttachment.texture = texture;
+                _state.pass.stencilAttachment.loadAction = MTLLoadActionLoad;
+                _state.pass.stencilAttachment.storeAction = MTLStoreActionStore;
+
+                _state.formats.depth_attachment = r.texture.fmt;
+            }
+        }
+        
+        // clear
+        metal_clear_state& clear = _res_pool.get(_state.clear_state).clear;
+        
+        for (u32 c = 0; c < clear.num_colour_targets; ++c)
+        {
+            _state.pass.colorAttachments[c].loadAction = clear.colour_load_action[c];
+            _state.pass.colorAttachments[c].clearColor = clear.colour[c];
+        }
+
+        if (_state.pass.depthAttachment)
+        {
+            _state.pass.depthAttachment.loadAction = clear.depth_load_action;
+            _state.pass.depthAttachment.clearDepth = clear.depth_clear;
+            _state.pass.stencilAttachment.loadAction = clear.stencil_load_action;
+            _state.pass.stencilAttachment.clearStencil = clear.stencil_clear;
+        }
+    }
+    
+    void validate_blit_encoder()
+    {
+        if (_state.cmd_buffer == nil)
+            _state.cmd_buffer = [_state.command_queue commandBuffer];
+
+        if (!_state.blit_encoder)
+        {
+            _state.blit_encoder = [_state.cmd_buffer blitCommandEncoder];
+        }
+    }
+
+    void validate_render_encoder()
+    {
+        bind_render_pass();
+        
+        if (!_state.render_encoder)
+        {
+            _state.render_encoder = [_state.cmd_buffer renderCommandEncoderWithDescriptor:_state.pass];
+            _state.encoder_hash = 0;
+        }
+
+        // only set if we need to: dss, vp, raster and scissor..
+        HashMurmur2A hh;
+        hh.begin();
+        static const size_t off = (u8*)&_state.formats - (u8*)&_state.viewport;
+        hh.add(&_state.viewport, off);
+
+        hash_id cur = hh.end();
+        if (cur == _state.encoder_hash)
+            return;
+
+        _state.encoder_hash = cur;
+
+        // vp
+        [_state.render_encoder setViewport:_state.viewport];
+        
+        // dss
+        if (_state.depth_stencil && _state.formats.depth_attachment != MTLPixelFormatInvalid)
+        {
+            [_state.render_encoder setDepthStencilState:_state.depth_stencil];
+            [_state.render_encoder setStencilReferenceValue:_state.stencil_ref];
+            [_state.render_encoder setStencilFrontReferenceValue:_state.stencil_ref
+                                              backReferenceValue:_state.stencil_ref];
+        }
+        
+        // raster
+        metal_raster_state& rs = _res_pool.get(_state.raster_state).raster_state;
+        [_state.render_encoder setCullMode:rs.cull_mode];
+        [_state.render_encoder setTriangleFillMode:rs.fill_mode];
+        [_state.render_encoder setFrontFacingWinding:rs.winding];
+        
+        // scissor
+        if (rs.scissor_enabled)
+            [_state.render_encoder setScissorRect:_state.scissor];
+    }
+
+    void validate_compute_encoder()
+    {
+        if (_state.cmd_buffer == nil)
+            _state.cmd_buffer = [_state.command_queue commandBuffer];
+
+        if (!_state.compute_encoder)
+            _state.compute_encoder = [_state.cmd_buffer computeCommandEncoder];
+    }
+
+    void bind_render_pipeline()
+    {
+        // pipeline hash
+        HashMurmur2A hh;
+        hh.begin();
+        static const size_t off = (u8*)&_state.pipeline_hash - (u8*)&_state.formats;
+        hh.add(&_state.formats, off);
+
+        hash_id cur = hh.end();
+        if (cur == _state.pipeline_hash)
+            return;
+        
+        // set current hash
+        _state.pipeline_hash = cur;
+        
+        // look for exisiting
+        u32 num_chached = sb_count(_state.cached_pipelines);
+        for(u32 i = 0; i < num_chached; ++i)
+        {
+            if(_state.cached_pipelines[i].hash == cur)
+            {
+                [_state.render_encoder setRenderPipelineState:_state.cached_pipelines[i].pipeline];
+                return;
+            }
+        }
+
+        // create a new pipeline
+        MTLRenderPipelineDescriptor* pipeline_desc = [MTLRenderPipelineDescriptor new];
+
+        pipeline_desc.vertexFunction = _state.vertex_shader;
+        pipeline_desc.fragmentFunction = _state.fragment_shader;
+        pipeline_desc.sampleCount = _state.formats.sample_count;
+
+        for (u32 i = 0; i < _state.formats.num_targets; ++i)
+            pipeline_desc.colorAttachments[i].pixelFormat = _state.formats.colour_attachments[i];
+
+        pipeline_desc.depthAttachmentPixelFormat = _state.formats.depth_attachment;
+        pipeline_desc.stencilAttachmentPixelFormat = _state.formats.depth_attachment;
+
+        // apply blend state
+        metal_blend_state& blend = _res_pool.get(_state.blend_state).blend;
+        for (u32 i = 0; i < blend.num_render_targets; ++i)
+        {
+            if (i >= _state.formats.num_targets)
+                continue;
+
+            MTLRenderPipelineColorAttachmentDescriptor* ca = pipeline_desc.colorAttachments[i];
+            metal_target_blend&                         tb = blend.attachment[i];
+
+            ca.blendingEnabled = tb.enabled;
+            ca.rgbBlendOperation = tb.rgb_op;
+            ca.alphaBlendOperation = tb.alpha_op;
+            ca.sourceRGBBlendFactor = tb.src_rgb_factor;
+            ca.destinationRGBBlendFactor = tb.dst_rgb_factor;
+            ca.sourceAlphaBlendFactor = tb.src_rgb_factor;
+            ca.destinationAlphaBlendFactor = tb.dst_alpha_factor;
+            ca.writeMask = tb.write_mask;
+        }
+
+        if (_state.stream_out)
+        {
+            pipeline_desc.rasterizationEnabled = NO;
+        }
+
+        pipeline_desc.vertexDescriptor = _state.vertex_descriptor;
+
+        NSError*                   error = nil;
+        id<MTLRenderPipelineState> pipeline =
+            [_metal_device newRenderPipelineStateWithDescriptor:pipeline_desc error:&error];
+        
+        //add to cache
+        cached_pipeline cp;
+        cp.hash = cur;
+        cp.pipeline = pipeline;
+        sb_push(_state.cached_pipelines, cp);
+
+        [_state.render_encoder setRenderPipelineState:pipeline];
+    }
+
+    void bind_compute_pipeline()
+    {
+        NSError*                    error = nil;
+        id<MTLComputePipelineState> pipeline =
+            [_metal_device newComputePipelineStateWithFunction:_state.compute_shader error:&error];
+
+        [_state.compute_encoder setComputePipelineState:pipeline];
+    }
 }
 
 namespace pen
@@ -701,157 +1025,6 @@ namespace pen
 
     namespace direct
     {
-        void validate_blit_encoder()
-        {
-            if (_state.cmd_buffer == nil)
-                _state.cmd_buffer = [_state.command_queue commandBuffer];
-
-            if (!_state.blit_encoder)
-            {
-                _state.blit_encoder = [_state.cmd_buffer blitCommandEncoder];
-            }
-        }
-
-        void validate_render_encoder()
-        {
-            if (!_state.render_encoder)
-            {
-                _state.render_encoder = [_state.cmd_buffer renderCommandEncoderWithDescriptor:_state.pass];
-                _state.encoder_hash = 0;
-            }
-
-            // only set if we need to: dss, vp, raster and scissor..
-            HashMurmur2A hh;
-            hh.begin();
-            static const size_t off = (u8*)&_state.formats - (u8*)&_state.viewport;
-            hh.add(&_state.viewport, off);
-
-            hash_id cur = hh.end();
-            if (cur == _state.encoder_hash)
-                return;
-
-            _state.encoder_hash = cur;
-
-            // vp
-            [_state.render_encoder setViewport:_state.viewport];
-            
-            // dss
-            if (_state.depth_stencil && _state.formats.depth_attachment != MTLPixelFormatInvalid)
-            {
-                [_state.render_encoder setDepthStencilState:_state.depth_stencil];
-                [_state.render_encoder setStencilReferenceValue:_state.stencil_ref];
-                [_state.render_encoder setStencilFrontReferenceValue:_state.stencil_ref
-                                                  backReferenceValue:_state.stencil_ref];
-            }
-            
-            // raster
-            metal_raster_state& rs = _res_pool.get(_state.raster_state).raster_state;
-            [_state.render_encoder setCullMode:rs.cull_mode];
-            [_state.render_encoder setTriangleFillMode:rs.fill_mode];
-            [_state.render_encoder setFrontFacingWinding:rs.winding];
-            
-            // scissor
-            if (rs.scissor_enabled)
-                [_state.render_encoder setScissorRect:_state.scissor];
-        }
-
-        void validate_compute_encoder()
-        {
-            if (_state.cmd_buffer == nil)
-                _state.cmd_buffer = [_state.command_queue commandBuffer];
-
-            if (!_state.compute_encoder)
-                _state.compute_encoder = [_state.cmd_buffer computeCommandEncoder];
-        }
-
-        void bind_render_pipeline()
-        {
-            // pipeline hash
-            HashMurmur2A hh;
-            hh.begin();
-            static const size_t off = (u8*)&_state.pipeline_hash - (u8*)&_state.formats;
-            hh.add(&_state.formats, off);
-
-            hash_id cur = hh.end();
-            if (cur == _state.pipeline_hash)
-                return;
-            
-            // set current hash
-            _state.pipeline_hash = cur;
-            
-            // look for exisiting
-            u32 num_chached = sb_count(_state.cached_pipelines);
-            for(u32 i = 0; i < num_chached; ++i)
-            {
-                if(_state.cached_pipelines[i].hash == cur)
-                {
-                    [_state.render_encoder setRenderPipelineState:_state.cached_pipelines[i].pipeline];
-                    return;
-                }
-            }
-
-            // create a new pipeline
-            MTLRenderPipelineDescriptor* pipeline_desc = [MTLRenderPipelineDescriptor new];
-
-            pipeline_desc.vertexFunction = _state.vertex_shader;
-            pipeline_desc.fragmentFunction = _state.fragment_shader;
-            pipeline_desc.sampleCount = _state.formats.sample_count;
-
-            for (u32 i = 0; i < _state.formats.num_targets; ++i)
-                pipeline_desc.colorAttachments[i].pixelFormat = _state.formats.colour_attachments[i];
-
-            pipeline_desc.depthAttachmentPixelFormat = _state.formats.depth_attachment;
-            pipeline_desc.stencilAttachmentPixelFormat = _state.formats.depth_attachment;
-
-            // apply blend state
-            metal_blend_state& blend = _res_pool.get(_state.blend_state).blend;
-            for (u32 i = 0; i < blend.num_render_targets; ++i)
-            {
-                if (i >= _state.formats.num_targets)
-                    continue;
-
-                MTLRenderPipelineColorAttachmentDescriptor* ca = pipeline_desc.colorAttachments[i];
-                metal_target_blend&                         tb = blend.attachment[i];
-
-                ca.blendingEnabled = tb.enabled;
-                ca.rgbBlendOperation = tb.rgb_op;
-                ca.alphaBlendOperation = tb.alpha_op;
-                ca.sourceRGBBlendFactor = tb.src_rgb_factor;
-                ca.destinationRGBBlendFactor = tb.dst_rgb_factor;
-                ca.sourceAlphaBlendFactor = tb.src_rgb_factor;
-                ca.destinationAlphaBlendFactor = tb.dst_alpha_factor;
-                ca.writeMask = tb.write_mask;
-            }
-
-            if (_state.stream_out)
-            {
-                pipeline_desc.rasterizationEnabled = NO;
-            }
-
-            pipeline_desc.vertexDescriptor = _state.vertex_descriptor;
-
-            NSError*                   error = nil;
-            id<MTLRenderPipelineState> pipeline =
-                [_metal_device newRenderPipelineStateWithDescriptor:pipeline_desc error:&error];
-            
-            //add to cache
-            cached_pipeline cp;
-            cp.hash = cur;
-            cp.pipeline = pipeline;
-            sb_push(_state.cached_pipelines, cp);
-
-            [_state.render_encoder setRenderPipelineState:pipeline];
-        }
-
-        void bind_compute_pipeline()
-        {
-            NSError*                    error = nil;
-            id<MTLComputePipelineState> pipeline =
-                [_metal_device newComputePipelineStateWithFunction:_state.compute_shader error:&error];
-
-            [_state.compute_encoder setComputePipelineState:pipeline];
-        }
-
         u32 renderer_initialise(void* params, u32 bb_res, u32 bb_depth_res)
         {
             PEN_ASSERT(params); // params must be a pointer to MTKView
@@ -973,22 +1146,7 @@ namespace pen
 
         void renderer_clear(u32 clear_state_index, u32 colour_face, u32 depth_face)
         {
-            metal_clear_state& clear = _res_pool.get(clear_state_index).clear;
-
-            for (u32 c = 0; c < clear.num_colour_targets; ++c)
-            {
-                _state.pass.colorAttachments[c].loadAction = clear.colour_load_action[c];
-                _state.pass.colorAttachments[c].clearColor = clear.colour[c];
-            }
-
-            if (_state.pass.depthAttachment)
-            {
-                _state.pass.depthAttachment.loadAction = clear.depth_load_action;
-                _state.pass.depthAttachment.clearDepth = clear.depth_clear;
-                _state.pass.stencilAttachment.loadAction = clear.stencil_load_action;
-                _state.pass.stencilAttachment.clearStencil = clear.stencil_clear;
-            }
-
+            _state.clear_state = clear_state_index;
             validate_render_encoder();
         }
 
@@ -1650,131 +1808,21 @@ namespace pen
             _res_pool[resource_slot].type = RESOURCE_RENDER_TARGET;
         }
 
-        void renderer_set_targets(const u32* const colour_targets, u32 num_colour_targets, u32 depth_target, u32 colour_face,
-                                  u32 depth_face)
+        void renderer_set_targets(const u32* const colour_targets, u32 num_colour_targets, u32 depth_target, u32 colour_slice,
+                                  u32 depth_slice)
         {
-#if 0
-            HashMurmur2A hh;
-            hh.begin();
-            hh.add(&num_colour_targets, sizeof(u32));
-            hh.add(&depth_target, sizeof(u32));
-            hh.add(&colour_face, sizeof(u32));
-            hh.add(&depth_face, sizeof(u32));
-            hh.add(colour_targets, sizeof(u32)*num_colour_targets);
-            hash_id cur = hh.end();
-            if (cur == _state.target_hash)
-                return;
-             _state.target_hash = cur;
-#endif
-             
-            // create new cmd buffer
-            if (_state.cmd_buffer == nil)
-                _state.cmd_buffer = [_state.command_queue commandBuffer];
-                                
-            // finish render encoding
-            if (_state.render_encoder)
+            if(_state.colour_targets)
             {
-                [_state.render_encoder endEncoding];
-                _state.render_encoder = nil;
-                _state.pipeline_hash = 0;
+                sb_free(_state.colour_targets);
+                _state.colour_targets = nullptr;
             }
-
-            _state.pass = [MTLRenderPassDescriptor renderPassDescriptor];
-
-            _state.formats.colour_attachments[0] = MTLPixelFormatInvalid;
-            _state.formats.depth_attachment = MTLPixelFormatInvalid;
-            _state.formats.sample_count = 1;
-            _state.formats.num_targets = num_colour_targets;
-            
-            bool backbuffer = ((num_colour_targets == 1 && colour_targets[0] == PEN_BACK_BUFFER_COLOUR)
-                               || depth_target == PEN_BACK_BUFFER_DEPTH);
-
-            if (backbuffer)
-            {
-                _state.drawable = _metal_view.currentDrawable;
-                _state.formats.sample_count = (u32)_metal_view.sampleCount;
                 
-                if((num_colour_targets == 1 && colour_targets[0] == PEN_BACK_BUFFER_COLOUR))
-                {
-                    if (_state.formats.sample_count > 1)
-                    {
-                        // msaa
-                        _state.pass.colorAttachments[0].texture = _metal_view.multisampleColorTexture;
-                        _state.pass.colorAttachments[0].storeAction = MTLStoreActionStoreAndMultisampleResolve;
-                        _state.pass.colorAttachments[0].resolveTexture = _state.drawable.texture;
-                    }
-                    else
-                    {
-                        // non msaa
-                        _state.pass.colorAttachments[0].texture = _state.drawable.texture;
-                        _state.pass.colorAttachments[0].storeAction = MTLStoreActionStore;
-                    }
-                    
-                    _state.formats.colour_attachments[0] = _metal_view.colorPixelFormat;
-                }
-
-                if(depth_target == PEN_BACK_BUFFER_DEPTH)
-                {
-                    _state.formats.depth_attachment = _metal_view.depthStencilPixelFormat;
-                    
-                    _state.pass.depthAttachment.texture = _metal_view.depthStencilTexture;
-                    _state.pass.depthAttachment.loadAction = MTLLoadActionLoad;
-                    _state.pass.depthAttachment.storeAction = MTLStoreActionStore;
-                    
-                    _state.pass.stencilAttachment.texture = _metal_view.depthStencilTexture;
-                    _state.pass.stencilAttachment.loadAction = MTLLoadActionLoad;
-                    _state.pass.stencilAttachment.storeAction = MTLStoreActionStore;
-                }
-
-                return;
-            }
-            
-            // multiple render targets
-            for (u32 i = 0; i < num_colour_targets; ++i)
-            {
-                resource& r = _res_pool.get(colour_targets[i]);
-                if (r.texture.num_mips > 1)
-                    r.texture.invalidate = 1;
+            for(u32 i = 0; i < num_colour_targets; ++i)
+                sb_push(_state.colour_targets, colour_targets[i]);
                 
-                id<MTLTexture> texture = r.texture.tex;
-                if (r.texture.samples > 1)
-                    texture = r.texture.tex_msaa;
-                
-                _state.formats.sample_count = r.texture.samples;
-                
-                _state.pass.colorAttachments[i].slice = colour_face;
-                _state.pass.colorAttachments[i].texture = texture;
-                _state.pass.colorAttachments[i].loadAction = MTLLoadActionLoad;
-                _state.pass.colorAttachments[i].storeAction = MTLStoreActionStore;
-                
-                _state.formats.colour_attachments[i] = r.texture.fmt;
-            }
-            _state.formats.num_targets = num_colour_targets;
-            
-            if (is_valid(depth_target))
-            {
-                resource&      r = _res_pool.get(depth_target);
-                id<MTLTexture> texture = r.texture.tex;
-                if (r.texture.samples > 1)
-                    texture = r.texture.tex_msaa;
-
-                if (r.texture.num_mips > 1)
-                    r.texture.invalidate = 1;
-
-                _state.formats.sample_count = r.texture.samples;
-
-                _state.pass.depthAttachment.slice = depth_face;
-                _state.pass.depthAttachment.texture = texture;
-                _state.pass.depthAttachment.loadAction = MTLLoadActionLoad;
-                _state.pass.depthAttachment.storeAction = MTLStoreActionStore;
-
-                _state.pass.stencilAttachment.slice = depth_face;
-                _state.pass.stencilAttachment.texture = texture;
-                _state.pass.stencilAttachment.loadAction = MTLLoadActionLoad;
-                _state.pass.stencilAttachment.storeAction = MTLStoreActionStore;
-
-                _state.formats.depth_attachment = r.texture.fmt;
-            }
+            _state.depth_target = depth_target;
+            _state.colour_slice = colour_slice;
+            _state.depth_slice =  depth_slice;
         }
 
         void renderer_set_resolve_targets(u32 colour_target, u32 depth_target)
@@ -1804,6 +1852,10 @@ namespace pen
             _state.pass.colorAttachments[0].storeAction = MTLStoreActionStore;
             _state.formats.colour_attachments[0] = r.texture.resolve_fmt;
             _state.formats.depth_attachment = MTLPixelFormatInvalid;
+            
+            sb_free(_state.colour_targets);
+            _state.colour_targets = nullptr;
+            _state.depth_target = -1;
         }
 
         void renderer_resolve_target(u32 target, e_msaa_resolve_type type, resolve_resources res)
