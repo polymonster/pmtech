@@ -472,7 +472,7 @@ namespace pen
 
         // clears
         void renderer_create_clear_state(const clear_state& cs, u32 resource_slot);
-        void renderer_clear(u32 clear_state_index, u32 colour_face = 0, u32 depth_face = 0);
+        void renderer_clear(u32 clear_state_index, u32 colour_slice = 0, u32 depth_slice = 0);
 
         // shaders
         void renderer_load_shader(const pen::shader_load_params& params, u32 resource_slot);

@@ -18,12 +18,14 @@
 #endif
 
 #import <QuartzCore/QuartzCore.h>
-#import <UIKit/UIKit.h>
+#import <UIKit/UIKit.h>å
 
 // global externs
 pen::user_info pen_user_info;
 a_u64          g_frame_index = { 0 };
 a_u64          g_resize_index = { 0 };
+extern a_u8    g_window_resize;
+
 extern         pen::window_creation_params pen_window;
 
 // objc interfaces
@@ -60,6 +62,7 @@ namespace
         pen_window.width = s_context.wsize.width;
         pen_window.height = s_context.wsize.height;
         g_resize_index++;
+        g_window_resize = 1;
     }
 }
 

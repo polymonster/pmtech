@@ -2775,9 +2775,9 @@ namespace put
             pen::renderer_set_blend_state(v.blend_state);
 
             // create 2d view proj matrix
-            float W = 2.0f / vp.width;
-            float H = 2.0f / vp.height;
-            float mvp[4][4] = {{W, 0.0, 0.0, 0.0}, {0.0, H, 0.0, 0.0}, {0.0, 0.0, 1.0, 0.0}, {-1.0, -1.0, 0.0, 1.0}};
+            f32 W = 2.0f / vp.width;
+            f32 H = 2.0f / vp.height;
+            f32 mvp[4][4] = {{W, 0.0, 0.0, 0.0}, {0.0, H, 0.0, 0.0}, {0.0, 0.0, 1.0, 0.0}, {-1.0, -1.0, 0.0, 1.0}};
             pen::renderer_update_buffer(cb_2d, mvp, sizeof(mvp), 0);
 
             // build scene view info
