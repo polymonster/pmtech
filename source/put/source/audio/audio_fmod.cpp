@@ -110,15 +110,15 @@ namespace put
 
         if (!playing)
         {
-            state->play_state = NOT_PLAYING;
+            state->play_state = e_audio_play_state::not_playing;
         }
         else
         {
-            state->play_state = PLAYING;
+            state->play_state = e_audio_play_state::playing;
 
             if (paused)
             {
-                state->play_state = PAUSED;
+                state->play_state = e_audio_play_state::paused;
             }
         }
     }
@@ -147,15 +147,15 @@ namespace put
 
         if (!playing)
         {
-            state->play_state = NOT_PLAYING;
+            state->play_state = e_audio_play_state::not_playing;
         }
         else
         {
-            state->play_state = PLAYING;
+            state->play_state = e_audio_play_state::playing;
 
             if (paused)
             {
-                state->play_state = PAUSED;
+                state->play_state = e_audio_play_state::paused;
             }
         }
     }
@@ -442,13 +442,13 @@ namespace put
 
         switch (type)
         {
-            case DSP_FFT:
+            case e_dsp::fft:
                 resource_type = AUDIO_RESOURCE_DSP_FFT;
                 return FMOD_DSP_TYPE_FFT;
-            case DSP_THREE_BAND_EQ:
+            case e_dsp::three_band_eq:
                 resource_type = AUDIO_RESOURCE_DSP_EQ;
                 return FMOD_DSP_TYPE_THREE_EQ;
-            case DSP_GAIN:
+            case e_dsp::gain:
                 resource_type = AUDIO_RESOURCE_DSP_GAIN;
                 return FMOD_DSP_TYPE_CHANNELMIX;
             default:

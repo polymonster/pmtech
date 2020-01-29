@@ -16,19 +16,45 @@ namespace put
     // Dedicated thread will wait on a semaphore until audio_consume_command_buffer is called
     // command buffer will be consumed passing arguments to the direct:: functions.
 
+    /*
     enum audio_play_state : s32
     {
         NOT_PLAYING = 0,
         PLAYING = 2,
         PAUSED = 3
     };
+    */
 
+    /*
     enum dsp_type : s32
     {
         DSP_FFT,
         DSP_THREE_BAND_EQ,
         DSP_GAIN
     };
+    */
+    
+    namespace e_audio_play_state
+    {
+        enum audio_play_state_t
+        {
+            not_playing,
+            playing,
+            paused
+        };
+    }
+    typedef e_audio_play_state::audio_play_state_t audio_play_state;
+    
+    namespace e_dsp
+    {
+        enum dsp_t
+        {
+            fft,
+            three_band_eq,
+            gain
+        };
+    }
+    typedef e_dsp::dsp_t dsp_type;
 
     struct audio_eq_state
     {

@@ -436,6 +436,13 @@ class spectrum_analyser
             ++frame_counter;
         }
     }
+    
+    void show_panel()
+    {
+        u32 display_analysis_loc = new_anlysis_loc;
+        ImGui::PlotLines("Per Sample Differentiation", &raw_diff[display_analysis_loc][0], current_display_samples, 0,
+                     NULL, -1.0f, 1.0f, ImVec2(530, 100));
+    }
 
     void show_window()
     {
@@ -649,6 +656,8 @@ class playback_deck
         timestamp = pen::get_time_ms();
 
         fame_time = timestamp - prev_time;
+        
+        sa.show_panel();
 
         // file info
         ImGui::PushID(this);
@@ -708,7 +717,7 @@ class playback_deck
         }
 
         // transport controls
-        if (channel_state.play_state == put::NOT_PLAYING || channel_index == 0)
+        if (channel_state.play_state == e_audio_play_state::not_playing || channel_index == 0)
         {
             if (ImGui::Button("Play"))
             {
@@ -717,7 +726,7 @@ class playback_deck
                 flags &= ~(PAUSE_FFT_UPDATE | CUE);
             }
         }
-        else if (group_state.play_state == put::PLAYING)
+        else if (group_state.play_state == e_audio_play_state::playing)
         {
             if (ImGui::Button("Pause"))
             {
@@ -725,7 +734,7 @@ class playback_deck
                 flags |= PAUSE_FFT_UPDATE;
             }
         }
-        else if (group_state.play_state == put::PAUSED)
+        else if (group_state.play_state == e_audio_play_state::paused)
         {
             if (ImGui::Button("Play"))
             {
@@ -789,30 +798,30 @@ class playback_deck
 
         switch (group_state.play_state)
         {
-            case put::PLAYING:
+            case e_audio_play_state::playing:
                 ImGui::Text("%s", "Playing");
                 break;
 
-            case put::NOT_PLAYING:
+            case e_audio_play_state::not_playing:
                 ImGui::Text("%s", "Not Playing");
                 break;
 
-            case put::PAUSED:
+            case e_audio_play_state::paused:
                 ImGui::Text("%s", "Paused");
                 break;
         }
 
         switch (channel_state.play_state)
         {
-            case put::PLAYING:
+            case e_audio_play_state::playing:
                 ImGui::Text("%s", "Channel Playing");
                 break;
 
-            case put::NOT_PLAYING:
+            case e_audio_play_state::not_playing:
                 ImGui::Text("%s", "Channel Not Playing");
                 break;
 
-            case put::PAUSED:
+            case e_audio_play_state::paused:
                 ImGui::Text("%s", "Channel Paused");
                 break;
         }
@@ -906,15 +915,16 @@ void audio_player_update()
             mixer_channels[i].group_index = decks[i].group_index;
 
             // create sound spectrum dsp
-            decks[i].spectrum_dsp = put::audio_add_dsp_to_group(decks[i].group_index, put::DSP_FFT);
-            mixer_channels[i].three_band_eq_dsp = put::audio_add_dsp_to_group(decks[i].group_index, put::DSP_THREE_BAND_EQ);
-            mixer_channels[i].gain_dsp = put::audio_add_dsp_to_group(decks[i].group_index, put::DSP_GAIN);
+            decks[i].spectrum_dsp = put::audio_add_dsp_to_group(decks[i].group_index, e_dsp::fft);
+            mixer_channels[i].three_band_eq_dsp = put::audio_add_dsp_to_group(decks[i].group_index, e_dsp::three_band_eq);
+            mixer_channels[i].gain_dsp = put::audio_add_dsp_to_group(decks[i].group_index, e_dsp::gain);
         }
 
         initialised = true;
     }
 
     bool open = true;
+    ImGui::SetNextWindowSize(ImVec2(1000, 400), ImGuiSetCond_FirstUseEver);
     ImGui::Begin("Player", &open);
 
     ImGui::Columns(num_decks + 1, "decks");
