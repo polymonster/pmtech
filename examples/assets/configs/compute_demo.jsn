@@ -43,8 +43,8 @@
               
     view_sets: 
     {
-		boids: [
-		    update_boids,
+        boids: [
+            update_boids,
             view_boids,
             editor_view
         ]

@@ -158,7 +158,7 @@
             type: array
         },
         
-		omni_shadow_map:
+        omni_shadow_map:
         {
             size: [256, 256],
             format: d24s8,

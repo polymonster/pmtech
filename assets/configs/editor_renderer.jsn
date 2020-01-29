@@ -114,7 +114,7 @@
         ],
         
         editor_post_processed: [
-        	picking_view,
+            picking_view,
             main_view_post_processed,
             editor_view,  
             volume_rasteriser

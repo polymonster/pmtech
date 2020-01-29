@@ -7,8 +7,8 @@ if _ACTION == "vs2017" or _ACTION == "vs2015" then
 end
 -- Project    
 project "put"
-	setup_env()
-	setup_platform_defines()
+    setup_env()
+    setup_platform_defines()
     location ("build/" .. platform_dir)
     kind "StaticLib"
     language "C++"

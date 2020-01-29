@@ -16,7 +16,7 @@
         
         shadow_cube_depth:
         {
-			size: [256,256],
+            size: [256,256],
             format: d24s8,
             type: cube
         }

@@ -332,7 +332,7 @@ ps_output ps_single_light( vs_output input )
     ps_output output;
     output.colour.rgb = lit_colour;
     output.colour.a = albedo.a;
-	
+    
     return output;
 }
 
@@ -538,14 +538,14 @@ ps_output ps_forward_lit( vs_output input )
         }
         else
         {
-        	// omni directional shadow
-			float3 to_light = (input.world_pos.xyz - lights[i].pos_radius.xyz);
-			float d = length(to_light) / 2.0; // omni shadow space far plane is radius * 2.0
-			float3 cv = normalize(to_light) * float3(1.0, 1.0, -1.0);
-			float cube_d = sample_texture_array_level(omni_shadow_texture, cv, float(omni_shadow_index), 0).r;
-			lit_colour += d < cube_d * lights[i].pos_radius.w ? light_col : 0.0;
-			
-			++omni_shadow_index;
+            // omni directional shadow
+            float3 to_light = (input.world_pos.xyz - lights[i].pos_radius.xyz);
+            float d = length(to_light) / 2.0; // omni shadow space far plane is radius * 2.0
+            float3 cv = normalize(to_light) * float3(1.0, 1.0, -1.0);
+            float cube_d = sample_texture_array_level(omni_shadow_texture, cv, float(omni_shadow_index), 0).r;
+            lit_colour += d < cube_d * lights[i].pos_radius.w ? light_col : 0.0;
+            
+            ++omni_shadow_index;
         }   
     }
     
@@ -797,10 +797,10 @@ ps_output ps_point_light_shadow( vs_output input )
 
 ps_output_depth ps_omni_shadow( vs_output input )
 {
-	ps_output_depth output;
-	float d = length(input.world_pos.xyz - single_light.pos_radius.xyz) / single_light.pos_radius.w;
-	output.depth = d / 2.0; // divide by 2 because the ortho far plane is light radius * 2.0
-	return output;
+    ps_output_depth output;
+    float d = length(input.world_pos.xyz - single_light.pos_radius.xyz) / single_light.pos_radius.w;
+    output.depth = d / 2.0; // divide by 2 because the ortho far plane is light radius * 2.0
+    return output;
 }
 
 pmfx:
@@ -818,7 +818,7 @@ pmfx:
         }
     },
     
-	"point_light_shadow":
+    "point_light_shadow":
     {
         "vs": "vs_main",
         "ps": "ps_point_light_shadow",
@@ -833,10 +833,10 @@ pmfx:
     
     "omni_shadow":
     {
-    	"vs": "vs_main",
-    	"ps": "ps_omni_shadow",
-    	
-    	"constants":
+        "vs": "vs_main",
+        "ps": "ps_omni_shadow",
+        
+        "constants":
         {
             "albedo"      : { "type": "float4", "widget": "colour", "default": [1.0, 1.0, 1.0, 1.0] },
             "roughness"   : { "type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 },
