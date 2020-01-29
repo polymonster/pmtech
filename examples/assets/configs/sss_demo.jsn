@@ -33,6 +33,8 @@
             sampler_bindings:
             [
                 { texture: shadow_map, unit: 15, state: wrap_linear, shader: ps },
+                { texture: area_light_textures, unit: 11, state: clamp_linear, shader: ps },
+                { texture: omni_shadow_map, unit: 10, state: clamp_linear, shader: ps }
             ],
         }
     },
