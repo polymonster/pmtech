@@ -1440,12 +1440,13 @@ namespace pen
                     num_arrays = _tcp.num_arrays;
                     td.arrayLength = num_arrays;
 
-#if 0 // disabled for travis ci
+#if 0 //enable if you want MTLTextureType2DMultisampleArray disabled for travis ci in a rush!
                     if (msaa)
                         td.textureType = MTLTextureType2DMultisampleArray;
 #else
                     if (msaa)
                     {
+                        PEN_ASSERT(0);
                         _tcp.sample_count = 1;
                     }
 #endif
