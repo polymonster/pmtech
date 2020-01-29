@@ -276,6 +276,8 @@ void generate_edge_mesh(geometry_resource* gr, shadow_volume_edge** sve_out, geo
 
 void example_setup(ecs::ecs_scene* scene, camera& cam)
 {
+    editor_set_transform_mode(e_transform_mode::physics);
+    
     put::scene_view_renderer svr_stencil_shadow_volumes;
     svr_stencil_shadow_volumes.name = "stencil_shadow_volumes";
     svr_stencil_shadow_volumes.id_name = PEN_HASH(svr_stencil_shadow_volumes.name.c_str());

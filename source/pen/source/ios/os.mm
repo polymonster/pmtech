@@ -8,6 +8,7 @@
 #include "threads.h"
 #include "timer.h"
 #include "console.h"
+#include "input.h"
 
 #ifdef PEN_RENDERER_METAL
 #import <MetalKit/MetalKit.h>
@@ -18,7 +19,7 @@
 #endif
 
 #import <QuartzCore/QuartzCore.h>
-#import <UIKit/UIKit.h>å
+#import <UIKit/UIKit.h>
 
 // global externs
 pen::user_info pen_user_info;
@@ -167,7 +168,40 @@ namespace pen
 
 - (void)handleTouch:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
 {
-
+    for(UITouch* t in touches)
+    {
+        CGPoint touch_point = [t locationInView:t.view];
+        
+        pen::input_set_mouse_pos(touch_point.x * s_context.wscale, touch_point.y * s_context.wscale);
+        
+        switch(t.phase)
+        {
+            case UITouchPhaseBegan:
+            {
+                pen::input_set_mouse_down(PEN_MOUSE_L);
+                break;
+            }
+            case UITouchPhaseMoved:
+            {
+                pen::input_set_mouse_down(PEN_MOUSE_L);
+                break;
+            }
+            case UITouchPhaseEnded:
+            {
+                pen::input_set_mouse_up(PEN_MOUSE_L);
+                break;
+            }
+            case UITouchPhaseCancelled:
+            {
+                pen::input_set_mouse_up(PEN_MOUSE_L);
+                break;
+            }
+            case UITouchPhaseStationary:
+                break;
+            default:
+                break;
+        }
+    }
 }
 - (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
 {

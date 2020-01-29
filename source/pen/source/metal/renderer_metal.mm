@@ -669,7 +669,6 @@ namespace // pen consts -> metal consts
     void bind_render_pass()
     {
         u32 num_colour_targets = sb_count(_state.colour_targets);
-        
         if(num_colour_targets == 0 && _state.depth_target == PEN_INVALID_HANDLE)
             return;
         
@@ -735,6 +734,7 @@ namespace // pen consts -> metal consts
                 if (_state.formats.sample_count > 1)
                 {
                     // msaa
+                    _state.pass.colorAttachments[0].loadAction = MTLLoadActionLoad;
                     _state.pass.colorAttachments[0].texture = _metal_view.multisampleColorTexture;
                     _state.pass.colorAttachments[0].storeAction = MTLStoreActionStoreAndMultisampleResolve;
                     _state.pass.colorAttachments[0].resolveTexture = _state.drawable.texture;
@@ -742,6 +742,7 @@ namespace // pen consts -> metal consts
                 else
                 {
                     // non msaa
+                    _state.pass.colorAttachments[0].loadAction = MTLLoadActionLoad;
                     _state.pass.colorAttachments[0].texture = _state.drawable.texture;
                     _state.pass.colorAttachments[0].storeAction = MTLStoreActionStore;
                 }
