@@ -66,13 +66,6 @@ namespace forward_render
         float m_reflectivity;
         float2 m_padding;
     };
-    struct point_light_shadow
-    {
-        float4 m_albedo;
-        float m_roughness;
-        float m_reflectivity;
-        float2 m_padding;
-    };
     struct omni_shadow
     {
         float4 m_albedo;
