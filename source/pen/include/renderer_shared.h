@@ -11,8 +11,13 @@
 
 namespace pen
 {
-    texture_creation_params renderer_tcp_resolve_ratio(const texture_creation_params& tcp);
-    void                    renderer_track_managed_render_target(const texture_creation_params& tcp, u32 texture_handle);
+    void                    _renderer_new_frame();
+    texture_creation_params _renderer_tcp_resolve_ratio(const texture_creation_params& tcp);
+    void                    _renderer_track_managed_render_target(const texture_creation_params& tcp, u32 texture_handle);
+    void                    _renderer_resize_backbuffer(u32 width, u32 height);
+    void                    _renderer_resize_managed_targets();
+    u64                     _renderer_frame_index();
+    u64                     _renderer_resize_index();
     
     // void renderer_create_resolve_resources();
     // dynamic buffer

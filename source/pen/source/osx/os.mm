@@ -9,6 +9,7 @@
 #import <AppKit/NSPasteboard.h>
 #import <Cocoa/Cocoa.h>
 
+#include "renderer_shared.h"
 #include "console.h"
 #include "data_struct.h"
 #include "input.h"
@@ -22,17 +23,12 @@
 
 #include <map>
 
-// pen required externs
+// pen required externs / globals.. trying to remove these
 pen::user_info                      pen_user_info;
 extern PEN_TRV                      pen::user_entry(void* params);
 extern pen::window_creation_params  pen_window;
 
-// global and loose stuff.. not very nice
-extern a_u8                        g_window_resize;
-int                                g_rs = 0;
-a_u64                              g_frame_index;
-a_u64                              g_resize_index;
-static u32                         s_error_code = 0;
+a_u64                               g_frame_index = { 0 };
 
 namespace pen
 {
@@ -44,6 +40,7 @@ namespace
     struct os_context
     {
         pen::window_frame frame;
+        u32               return_code = 0;
     };
     os_context s_ctx;
     
@@ -59,9 +56,6 @@ namespace
         s_ctx.frame.y = rect.origin.y;
         s_ctx.frame.width = rect.size.width;
         s_ctx.frame.height = rect.size.height;
-        
-        g_resize_index++;
-        g_window_resize = 1;
     }
 }
 
@@ -129,9 +123,7 @@ namespace
 
 - (void)mtkView:(nonnull MTKView*)view drawableSizeWillChange:(CGSize)size
 {
-    pen_window.width = size.width;
-    pen_window.height = size.height;
-    
+    pen::_renderer_resize_backbuffer(size.width, size.height);
     _update_window_frame();
 }
 
@@ -140,7 +132,7 @@ namespace
     @autoreleasepool {
         if (!pen::renderer_dispatch())
             pen::thread_sleep_us(100);
-        g_frame_index++;
+            g_frame_index++;
     }
 }
 
@@ -163,14 +155,8 @@ void create_metal_context()
 void pen_window_resize()
 {
     NSRect view_rect = [[_window contentView] bounds];
-
-    if (_metal_view.frame.size.width == view_rect.size.width && _metal_view.frame.size.height == view_rect.size.height)
-        return;
-
     [_metal_view setFrameSize:view_rect.size];
-
-    pen_window.width = view_rect.size.width;
-    pen_window.height = view_rect.size.height;
+    pen::_renderer_resize_backbuffer(view_rect.size.width, view_rect.size.height);
     _update_window_frame();
 }
 
@@ -186,12 +172,12 @@ void run()
         pen::thread_sleep_us(100);
     }
 }
+#else
 
 //
 // OpenGL Context
 //
 
-#else
 #import <OpenGL/gl3.h>
 #define PEN_GL_PROFILE_VERSION NSOpenGLProfileVersion4_1Core
 #define create_renderer_context create_gl_context
@@ -269,23 +255,15 @@ void pen_make_gl_context_current()
 
 void pen_gl_swap_buffers()
 {
-    if (g_rs <= 0)
-        [_gl_context flushBuffer];
+    [_gl_context flushBuffer];
 }
 
 void pen_window_resize()
 {
-    g_rs = 10;
-
     NSRect view_rect = [[_window contentView] bounds];
-
-    if (_gl_view.frame.size.width == view_rect.size.width && _gl_view.frame.size.height == view_rect.size.height)
-        return;
-
     [_gl_view setFrameSize:view_rect.size];
-
-    pen_window.width = view_rect.size.width;
-    pen_window.height = view_rect.size.height;
+    pen::_renderer_resize_backbuffer(view_rect.size.width, view_rect.size.height);
+    _update_window_frame();
 }
 
 void run()
@@ -594,8 +572,6 @@ int main(int argc, char** argv)
 
     s_cmd_buffer.create(32);
 
-    g_frame_index = 0;
-
     // strip exe and go back 2 \contents\macos\exe
     for (u32 i = 0, pos = 0; i < 4; ++i)
     {
@@ -661,7 +637,7 @@ int main(int argc, char** argv)
     // invoke renderer specific update for main thread
     run();
         
-    return s_error_code;
+    return s_ctx.return_code;
 }
 
 //
@@ -709,17 +685,13 @@ namespace pen
         get_mouse_pos(x, y);
         pen::input_set_mouse_pos(x, y);
 
-        if (g_rs > 0)
-        {
-            pen::input_set_mouse_up(PEN_MOUSE_L);
-            pen::input_set_mouse_up(PEN_MOUSE_R);
-            pen::input_set_mouse_up(PEN_MOUSE_M);
-        }
+        pen::input_set_mouse_up(PEN_MOUSE_L);
+        pen::input_set_mouse_up(PEN_MOUSE_R);
+        pen::input_set_mouse_up(PEN_MOUSE_M);
 
         input_gamepad_update();
 
-        g_rs--;
-
+        // process commands
         os_cmd* cmd = s_cmd_buffer.get();
         while (cmd)
         {
@@ -780,7 +752,7 @@ namespace pen
 
     void os_terminate(u32 error_code)
     {
-        s_error_code = error_code;
+        s_ctx.return_code = error_code;
         pen_terminate_app = true;
     }
 

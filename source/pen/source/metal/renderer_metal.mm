@@ -3,6 +3,7 @@
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
 #include "renderer.h"
+#include "renderer_shared.h"
 #include "console.h"
 #include "data_struct.h"
 #include "hash.h"
@@ -16,11 +17,8 @@
 using namespace pen;
 
 // globals / externs.. I want to get rid of
-a_u8                          g_window_resize;
-extern a_u64                  g_frame_index;
-extern a_u64                  g_resize_index;
-extern pen::resolve_resources g_resolve_resources;
 extern window_creation_params pen_window;
+extern a_u64                  g_frame_index;
 
 #define NBB 3                 // buffers to prevent locking gpu / cpu on dynamic buffers.
 #define CBUF_OFFSET 4         // from pmfx.. offset of cbuffers to prevent collisions with vertex buffers
@@ -299,7 +297,6 @@ namespace // internal structs and static vars
     current_state      _state;
     a_u64              _frame_sync;
     a_u64              _resize_sync;
-    managed_rt*        _managed_rts = nullptr;
 }
 
 namespace // pen consts -> metal consts
@@ -1077,6 +1074,8 @@ namespace pen
 
         void renderer_make_context_current()
         {
+            _renderer_new_frame();
+            
             _frame_sync = g_frame_index.load();
         }
 
@@ -1085,12 +1084,12 @@ namespace pen
             while (_frame_sync == g_frame_index.load())
                 thread_sleep_us(100);
                 
-            _resize_sync = g_resize_index.load();
+            _resize_sync = _renderer_resize_index();
         }
         
         bool renderer_frame_valid()
         {
-            return _resize_sync.load() == g_resize_index.load();
+            return _resize_sync.load() == _renderer_resize_index();
         }
 
         void renderer_create_clear_state(const clear_state& cs, u32 resource_slot)
@@ -1395,19 +1394,10 @@ namespace pen
 
         pen_inline texture_resource create_texture_internal(const texture_creation_params& tcp, u32 resource_slot, bool track)
         {
-            texture_creation_params _tcp = tcp;
-            if (tcp.width == PEN_INVALID_HANDLE)
-            {
-                _tcp.width = pen_window.width / tcp.height;
-                _tcp.height = pen_window.height / tcp.height;
-
-                // track rt
-                if (track)
-                {
-                    managed_rt manrt = {tcp, resource_slot};
-                    sb_push(_managed_rts, manrt);
-                }
-            }
+            // resolve backbuffer ratio dimensions and track if necessary
+            texture_creation_params _tcp = _renderer_tcp_resolve_ratio(tcp);
+            if (track)
+                _renderer_track_managed_render_target(tcp, resource_slot);
 
             if (tcp.num_mips == -1)
             {
@@ -2026,26 +2016,7 @@ namespace pen
                 }
             }
         }
-
-        static void resize_managed_targets()
-        {
-            if (g_window_resize == 0)
-                return;
-
-            u32 num_man_rt = sb_count(_managed_rts);
-            for (u32 i = 0; i < num_man_rt; ++i)
-            {
-                auto& manrt = _managed_rts[i];
-
-                resource& res = _res_pool[manrt.rt];
-                res.texture.tex = nil;
-
-                direct::renderer_create_render_target(manrt.tcp, manrt.rt, false);
-            }
-
-            g_window_resize = 0;
-        }
-
+        
         void renderer_present()
         {
             if (_state.render_encoder)
@@ -2053,26 +2024,6 @@ namespace pen
                 [_state.render_encoder endEncoding];
                 _state.render_encoder = nil;
             }
-            
-            // blit to drawable
-            /*
-            if(pen_window.sample_count > 1)
-            {
-                renderer_resolve_target(PEN_BACK_BUFFER_COLOUR, RESOLVE_CUSTOM, g_resolve_resources);
-            
-                id<MTLBlitCommandEncoder> bce = [_state.cmd_buffer blitCommandEncoder];
-                [bce copyFromTexture:_res_pool.get(PEN_BACK_BUFFER_COLOUR).texture.tex
-                           toTexture:_metal_view.currentDrawable.texture];
-                [bce endEncoding];
-            }
-            else
-            {
-                id<MTLBlitCommandEncoder> bce = [_state.cmd_buffer blitCommandEncoder];
-                [bce copyFromTexture:_res_pool.get(PEN_BACK_BUFFER_COLOUR).texture.tex
-                           toTexture:_metal_view.currentDrawable.texture];
-                [bce endEncoding];
-            }
-            */
 
             // flush cmd buf and present
             [_state.cmd_buffer presentDrawable:_metal_view.currentDrawable];
@@ -2094,9 +2045,6 @@ namespace pen
             // null state for next frame
             _state.cmd_buffer = nil;
             _state.pipeline_hash = 0;
-
-            // resize window and managed rt
-            resize_managed_targets();
 
             _frame++;
         }

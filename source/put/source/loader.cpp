@@ -15,6 +15,7 @@
 #include "renderer.h"
 #include "str/Str.h"
 #include "str_utilities.h"
+#include "timer.h"
 
 #include <fstream>
 #include <vector>
@@ -503,13 +504,24 @@ namespace put
     
     void trigger_hot_loader(const Str& cmdline)
     {
-        hot_loader_cmd cmd;
-        cmd.cmd_index = HOT_LOADER_CMD_CALL_SYSTEM;
-        u32 len = cmdline.length();
-        cmd.cmdline = (c8*)pen::memory_alloc(len+1);
-        memcpy(cmd.cmdline, cmdline.c_str(), len);
-        cmd.cmdline[len] = '\0';
-        s_hot_loader_cmd_buffer.put(cmd);
+        static f32 s_timeout = 0.0f;
+        static pen::timer* t = pen::timer_create();
+        s_timeout -= pen::timer_elapsed_ms(t);
+        
+        if(s_timeout <= 0.0)
+        {
+            hot_loader_cmd cmd;
+            cmd.cmd_index = HOT_LOADER_CMD_CALL_SYSTEM;
+            u32 len = cmdline.length();
+            cmd.cmdline = (c8*)pen::memory_alloc(len+1);
+            memcpy(cmd.cmdline, cmdline.c_str(), len);
+            cmd.cmdline[len] = '\0';
+            s_hot_loader_cmd_buffer.put(cmd);
+            
+            // wait 10 seconds
+            s_timeout = 1000.0f * 10.0f;
+            pen::timer_start(t);
+        }
     }
     
     Str get_build_cmd()

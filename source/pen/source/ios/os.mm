@@ -5,6 +5,7 @@
 #include "os.h"
 #include "pen.h"
 #include "renderer.h"
+#include "renderer_shared.h"
 #include "threads.h"
 #include "timer.h"
 #include "console.h"
@@ -24,8 +25,6 @@
 // global externs
 pen::user_info pen_user_info;
 a_u64          g_frame_index = { 0 };
-a_u64          g_resize_index = { 0 };
-extern a_u8    g_window_resize;
 
 extern         pen::window_creation_params pen_window;
 
@@ -60,10 +59,7 @@ namespace
     void update_pen_window()
     {
         // updates pen window size
-        pen_window.width = s_context.wsize.width;
-        pen_window.height = s_context.wsize.height;
-        g_resize_index++;
-        g_window_resize = 1;
+        pen::_renderer_resize_backbuffer(s_context.wsize.width, s_context.wsize.height);
     }
 }
 
