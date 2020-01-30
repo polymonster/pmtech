@@ -84,7 +84,8 @@
             "-o bin/osx/data/pmfx/glsl",
             "-h shader_structs",
             "-t temp/shaders",
-            "-source"
+            "-source",
+            "-v_flip"
         ]
     },
 
