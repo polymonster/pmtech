@@ -157,6 +157,12 @@ void pen_window_resize()
     NSRect view_rect = [[_window contentView] bounds];
     [_metal_view setFrameSize:view_rect.size];
     pen::_renderer_resize_backbuffer(view_rect.size.width, view_rect.size.height);
+    
+    // cancel clicks to prevent incorrect interactions
+    pen::input_set_mouse_up(PEN_MOUSE_L);
+    pen::input_set_mouse_up(PEN_MOUSE_R);
+    pen::input_set_mouse_up(PEN_MOUSE_M);
+    
     _update_window_frame();
 }
 
@@ -684,11 +690,6 @@ namespace pen
         f32 x, y;
         get_mouse_pos(x, y);
         pen::input_set_mouse_pos(x, y);
-
-        pen::input_set_mouse_up(PEN_MOUSE_L);
-        pen::input_set_mouse_up(PEN_MOUSE_R);
-        pen::input_set_mouse_up(PEN_MOUSE_M);
-
         input_gamepad_update();
 
         // process commands
