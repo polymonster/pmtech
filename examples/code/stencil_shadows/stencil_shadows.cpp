@@ -369,7 +369,7 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     scene->transforms[ground].scale = vec3f(30.0f, 1.0f, 30.0f);
     scene->entities[ground] |= CMP_TRANSFORM;
     scene->parents[ground] = ground;
-    scene->physics_data[ground].rigid_body.shape = physics::BOX;
+    scene->physics_data[ground].rigid_body.shape = physics::e_shape::box;
     scene->physics_data[ground].rigid_body.mass = 0.0f;
     instantiate_geometry(box, scene, ground);
     instantiate_material(default_material, scene, ground);
@@ -406,7 +406,7 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
                 instantiate_material(default_material, scene, new_prim);
                 instantiate_model_cbuffer(scene, new_prim);
 
-                scene->physics_data[new_prim].rigid_body.shape = physics::BOX;
+                scene->physics_data[new_prim].rigid_body.shape = physics::e_shape::box;
                 scene->physics_data[new_prim].rigid_body.mass = 1.0f;
                 instantiate_rigid_body(scene, new_prim);
 

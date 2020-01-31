@@ -85,7 +85,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     instantiate_geometry(box, scene, ground);
     instantiate_material(default_material, scene, ground);
     instantiate_model_cbuffer(scene, ground);
-    scene->physics_data[ground].rigid_body.shape = physics::BOX;
+    scene->physics_data[ground].rigid_body.shape = physics::e_shape::box;
     scene->physics_data[ground].rigid_body.mass = 0.0f;
     instantiate_rigid_body(scene, ground);
 
@@ -121,7 +121,7 @@ void example_setup(ecs_scene* scene, camera& cam)
         instantiate_geometry(box, scene, ramp);
         instantiate_material(default_material, scene, ramp);
         instantiate_model_cbuffer(scene, ramp);
-        scene->physics_data[ramp].rigid_body.shape = physics::BOX;
+        scene->physics_data[ramp].rigid_body.shape = physics::e_shape::box;
         scene->physics_data[ramp].rigid_body.mass = 0.0f;
         instantiate_rigid_body(scene, ramp);
 
@@ -137,7 +137,7 @@ void example_setup(ecs_scene* scene, camera& cam)
         instantiate_geometry(box, scene, ramp);
         instantiate_material(default_material, scene, ramp);
         instantiate_model_cbuffer(scene, ramp);
-        scene->physics_data[ramp].rigid_body.shape = physics::BOX;
+        scene->physics_data[ramp].rigid_body.shape = physics::e_shape::box;
         scene->physics_data[ramp].rigid_body.mass = 0.0f;
         instantiate_rigid_body(scene, ramp);
 
@@ -152,7 +152,7 @@ void example_setup(ecs_scene* scene, camera& cam)
         instantiate_geometry(box, scene, block);
         instantiate_material(default_material, scene, block);
         instantiate_model_cbuffer(scene, block);
-        scene->physics_data[block].rigid_body.shape = physics::BOX;
+        scene->physics_data[block].rigid_body.shape = physics::e_shape::box;
         scene->physics_data[block].rigid_body.mass = 0.0f;
         instantiate_rigid_body(scene, block);
 
@@ -167,7 +167,7 @@ void example_setup(ecs_scene* scene, camera& cam)
         instantiate_geometry(box, scene, block);
         instantiate_material(default_material, scene, block);
         instantiate_model_cbuffer(scene, block);
-        scene->physics_data[block].rigid_body.shape = physics::BOX;
+        scene->physics_data[block].rigid_body.shape = physics::e_shape::box;
         scene->physics_data[block].rigid_body.mass = 0.0f;
         instantiate_rigid_body(scene, block);
     }
@@ -218,7 +218,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->samplers[chorme_ball].sb[0].sampler_state = pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::e_render_state::sampler);
 
     // add physics
-    scene->physics_data[chorme_ball].rigid_body.shape = physics::SPHERE;
+    scene->physics_data[chorme_ball].rigid_body.shape = physics::e_shape::sphere;
     scene->physics_data[chorme_ball].rigid_body.mass = 1.0f;
     instantiate_rigid_body(scene, chorme_ball);
 
@@ -253,7 +253,7 @@ void example_setup(ecs_scene* scene, camera& cam)
         scene->samplers[chrome2_ball].sb[s].handle = 0;
 
     // add physics
-    scene->physics_data[chrome2_ball].rigid_body.shape = physics::SPHERE;
+    scene->physics_data[chrome2_ball].rigid_body.shape = physics::e_shape::sphere;
     scene->physics_data[chrome2_ball].rigid_body.mass = 1.0f;
     instantiate_rigid_body(scene, chrome2_ball);
 

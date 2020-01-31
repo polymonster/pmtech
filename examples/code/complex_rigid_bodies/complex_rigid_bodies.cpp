@@ -167,7 +167,7 @@ void example_setup(ecs_scene* scene, camera& cam)
         scene->transforms[bb].scale = vec3f(0.5f, 0.5f, 0.5f);
         scene->entities[bb] |= CMP_TRANSFORM;
         scene->parents[bb] = bb;
-        scene->physics_data[bb].rigid_body.shape = physics::BOX;
+        scene->physics_data[bb].rigid_body.shape = physics::e_shape::box;
         scene->physics_data[bb].rigid_body.mass = 1.0f;
         instantiate_geometry(box, scene, bb);
         instantiate_material(default_material, scene, bb);
@@ -185,7 +185,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->transforms[convex].scale = vec3f(1.0f, 1.0f, 1.0f);
     scene->entities[convex] |= CMP_TRANSFORM;
     scene->parents[convex] = convex;
-    scene->physics_data[convex].rigid_body.shape = physics::HULL;
+    scene->physics_data[convex].rigid_body.shape = physics::e_shape::hull;
     scene->physics_data[convex].rigid_body.mass = 1.0f;
 
     gen_convex_shape(scene->physics_data[convex].rigid_body.mesh_data);
@@ -200,7 +200,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->transforms[concave].scale = vec3f(1.0f, 1.0f, 1.0f);
     scene->entities[concave] |= CMP_TRANSFORM;
     scene->parents[concave] = concave;
-    scene->physics_data[concave].rigid_body.shape = physics::MESH;
+    scene->physics_data[concave].rigid_body.shape = physics::e_shape::mesh;
     scene->physics_data[concave].rigid_body.mass = 0.0f;
 
     gen_concave_shape(scene->physics_data[concave].rigid_body.mesh_data);
@@ -215,7 +215,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->transforms[compound].scale = vec3f(1.0f, 1.0f, 1.0f);
     scene->entities[compound] |= CMP_TRANSFORM;
     scene->parents[compound] = compound;
-    scene->physics_data[compound].rigid_body.shape = physics::COMPOUND;
+    scene->physics_data[compound].rigid_body.shape = physics::e_shape::compound;
     scene->physics_data[compound].rigid_body.mass = 1.0f;
 
     //instantiate_rigid_body(scene, compound);
@@ -227,7 +227,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->transforms[cc].scale = vec3f(0.5f, 2.0f, 0.5f);
     scene->entities[cc] |= CMP_TRANSFORM;
     scene->parents[cc] = cc;
-    scene->physics_data[cc].rigid_body.shape = physics::BOX;
+    scene->physics_data[cc].rigid_body.shape = physics::e_shape::box;
     scene->physics_data[cc].rigid_body.mass = 1.0f;
     instantiate_geometry(box, scene, cc);
     instantiate_material(default_material, scene, cc);
@@ -243,7 +243,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->transforms[cc].scale = vec3f(2.0f, 0.5f, 0.5f);
     scene->entities[cc] |= CMP_TRANSFORM;
     scene->parents[cc] = cc;
-    scene->physics_data[cc].rigid_body.shape = physics::BOX;
+    scene->physics_data[cc].rigid_body.shape = physics::e_shape::box;
     scene->physics_data[cc].rigid_body.mass = 1.0f;
     instantiate_geometry(box, scene, cc);
     instantiate_material(default_material, scene, cc);

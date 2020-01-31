@@ -48,39 +48,63 @@ namespace physics
         CMD_CONTACT_TEST,
         CMD_STEP
     };
-
-    enum e_physics_shape : s32
+    
+    namespace e_shape
     {
-        BOX = 1,
-        CYLINDER,
-        SPHERE,
-        CAPSULE,
-        CONE,
-        HULL,
-        MESH,
-        COMPOUND
-    };
+        enum shape_t
+        {
+            none,
+            box,
+            cylinder,
+            sphere,
+            capsule,
+            cone,
+            hull,
+            mesh,
+            compound,
+            COUNT
+        };
+    }
+    typedef e_shape::shape_t shape_type;
 
-    enum e_physics_constraint : s32
+    namespace e_constraint
     {
-        CONSTRAINT_DOF6 = 1,
-        CONSTRAINT_HINGE,
-        CONSTRAINT_P2P,
-        CONSTRAINT_P2P_MULTI
-    };
+        enum constraint_t
+        {
+            none,
+            dof6,
+            hinge,
+            p2p,
+            p2p_multi,
+            COUNT
+        };
+    }
+    typedef e_constraint::constraint_t constraint_type;
 
-    enum e_multibody_link_type : s32
+    namespace e_up_axis
     {
-        REVOLUTE = 1,
-        FIXED,
-    };
-
-    enum e_up_axis : s32
+        enum up_axis_t
+        {
+            y,
+            x,
+            z
+        };
+    }
+    typedef e_up_axis::up_axis_t up_axis;
+    
+    namespace e_create_flags
     {
-        UP_Y = 0,
-        UP_X = 1,
-        UP_Z = 2,
-    };
+        enum create_flags_t
+        {
+            automatic = 0,
+            position = 1<<1,
+            rotation = 1<<2,
+            dimensions = 1<<3,
+            kinematic = 1<<4,
+            set_all_transform = (position | rotation |dimensions)
+        };
+    }
+    typedef u32 create_flags;
 
     struct collision_response
     {
@@ -96,24 +120,13 @@ namespace physics
         u32  num_indices;
     };
 
-    enum e_physics_create_flags
-    {
-        CF_AUTO = 0, // create from geometry and scene node info
-        CF_POSITION = 1 << 1,
-        CF_ROTATION = 1 << 2,
-        CF_DIMENSIONS = 1 << 3,
-        CF_KINEMATIC = 1 << 4,
-
-        CF_SET_ALL_TRANSFORM = (CF_POSITION | CF_ROTATION | CF_DIMENSIONS)
-    };
-
     struct rigid_body_params
     {
         vec3f               position;
         vec3f               dimensions;
-        u32                 shape_up_axis;
+        up_axis             shape_up_axis;
         quat                rotation;
-        u32                 shape;
+        shape_type          shape;
         f32                 mass;
         u32                 group = 1;
         u32                 mask = 0xffffffff;

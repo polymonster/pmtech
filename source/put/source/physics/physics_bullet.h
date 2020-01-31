@@ -54,7 +54,7 @@ namespace physics
 
     struct constraint_entity
     {
-        e_physics_constraint type;
+        constraint_type type;
 
         union {
             btTypedConstraint*       generic;

@@ -50,7 +50,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     instantiate_material(default_material, scene, ground);
     instantiate_model_cbuffer(scene, ground);
 
-    scene->physics_data[ground].rigid_body.shape = physics::BOX;
+    scene->physics_data[ground].rigid_body.shape = physics::e_shape::box;
     scene->physics_data[ground].rigid_body.mass = 0.0f;
     instantiate_rigid_body(scene, ground);
 
@@ -61,7 +61,13 @@ void example_setup(ecs_scene* scene, camera& cam)
 
     const c8* primitive_names[] = {"box", "cylinder", "capsule", "cone", "sphere"};
 
-    u32 primitive_types[] = {physics::BOX, physics::CYLINDER, physics::CAPSULE, physics::CONE, physics::SPHERE};
+    physics::shape_type primitive_types[] = {
+        physics::e_shape::box,
+        physics::e_shape::cylinder,
+        physics::e_shape::capsule,
+        physics::e_shape::cone,
+        physics::e_shape::sphere
+    };
 
     geometry_resource* primitive_resources[] = {box, cylinder, capsule, cone, sphere};
 

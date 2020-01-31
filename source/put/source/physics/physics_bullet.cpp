@@ -10,17 +10,17 @@
 
 namespace physics
 {
-    inline btVector3 from_vec3(const vec3f& v3)
+    pen_inline btVector3 from_vec3(const vec3f& v3)
     {
         return btVector3(v3.x, v3.y, v3.z);
     }
 
-    inline vec3f from_btvector(const btVector3& bt)
+    pen_inline vec3f from_btvector(const btVector3& bt)
     {
         return vec3f(bt.getX(), bt.getY(), bt.getZ());
     }
 
-    inline quat from_btquat(const btQuaternion& bt)
+    pen_inline quat from_btquat(const btQuaternion& bt)
     {
         quat q;
         q.x = bt.getX();
@@ -31,7 +31,7 @@ namespace physics
         return q;
     }
 
-    inline maths::transform from_bttransform(const btTransform& bt)
+    pen_inline maths::transform from_bttransform(const btTransform& bt)
     {
         maths::transform t;
         t.translation = from_btvector(bt.getOrigin());
@@ -77,17 +77,17 @@ namespace physics
 
         switch (params.shape)
         {
-            case physics::BOX:
+            case physics::e_shape::box:
                 shape = new btBoxShape(
                     btVector3(btScalar(params.dimensions.x), btScalar(params.dimensions.y), btScalar(params.dimensions.z)));
                 break;
-            case physics::CYLINDER:
-                if (params.shape_up_axis == UP_X)
+            case physics::e_shape::cylinder:
+                if (params.shape_up_axis == e_up_axis::x)
                 {
                     shape = new btCylinderShapeX(btVector3(btScalar(params.dimensions.x), btScalar(params.dimensions.y),
                                                            btScalar(params.dimensions.z)));
                 }
-                else if (params.shape_up_axis == UP_Z)
+                else if (params.shape_up_axis == e_up_axis::z)
                 {
                     shape = new btCylinderShapeZ(btVector3(btScalar(params.dimensions.x), btScalar(params.dimensions.y),
                                                            btScalar(params.dimensions.z)));
@@ -98,12 +98,12 @@ namespace physics
                                                           btScalar(params.dimensions.z)));
                 }
                 break;
-            case physics::CAPSULE:
-                if (params.shape_up_axis == UP_X)
+            case physics::e_shape::capsule:
+                if (params.shape_up_axis == e_up_axis::x)
                 {
                     shape = new btCapsuleShapeX(btScalar(params.dimensions.y), btScalar(params.dimensions.x));
                 }
-                else if (params.shape_up_axis == UP_Z)
+                else if (params.shape_up_axis == e_up_axis::z)
                 {
                     shape = new btCapsuleShapeZ(btScalar(params.dimensions.x), btScalar(params.dimensions.z));
                 }
@@ -112,12 +112,12 @@ namespace physics
                     shape = new btCapsuleShape(btScalar(params.dimensions.x), btScalar(params.dimensions.y));
                 }
                 break;
-            case physics::CONE:
-                if (params.shape_up_axis == UP_X)
+            case physics::e_shape::cone:
+                if (params.shape_up_axis == e_up_axis::x)
                 {
                     shape = new btConeShapeX(btScalar(params.dimensions.y), btScalar(params.dimensions.x));
                 }
-                else if (params.shape_up_axis == UP_Z)
+                else if (params.shape_up_axis == e_up_axis::z)
                 {
                     shape = new btConeShapeZ(btScalar(params.dimensions.x), btScalar(params.dimensions.z));
                 }
@@ -126,10 +126,10 @@ namespace physics
                     shape = new btConeShape(btScalar(params.dimensions.x), btScalar(params.dimensions.y));
                 }
                 break;
-            case physics::HULL:
+            case physics::e_shape::hull:
                 shape = new btConvexHullShape(params.mesh_data.vertices, params.mesh_data.num_floats / 3, 12);
                 break;
-            case physics::MESH:
+            case physics::e_shape::mesh:
             {
                 u32 num_tris = params.mesh_data.num_indices / 3;
 
@@ -141,7 +141,7 @@ namespace physics
                 shape = concave_mesh;
             }
             break;
-            case physics::COMPOUND:
+            case physics::e_shape::compound:
             {
                 if (p_compound)
                 {
@@ -166,7 +166,7 @@ namespace physics
                 }
             }
             break;
-            case physics::SPHERE:
+            case physics::e_shape::sphere:
                 shape = new btSphereShape(params.dimensions.x);
                 break;
             default:
@@ -223,7 +223,7 @@ namespace physics
 
         btRigidBody* body = new btRigidBody(rb_info);
 
-        if (params.create_flags & CF_KINEMATIC)
+        if (params.create_flags & e_create_flags::kinematic)
         {
             body->setCollisionFlags(btCollisionObject::CF_KINEMATIC_OBJECT);
         }
@@ -476,7 +476,7 @@ namespace physics
 
         s_bullet_systems.dynamics_world->addConstraint(hinge);
 
-        entity.constraint.type = CONSTRAINT_HINGE;
+        entity.constraint.type = e_constraint::hinge;
         entity.constraint.hinge = hinge;
     }
 
@@ -488,7 +488,7 @@ namespace physics
 
         switch (params.type)
         {
-            case CONSTRAINT_P2P:
+            case e_constraint::p2p:
             {
                 add_p2p_constraint_params p2p;
                 p2p.entity_index = params.rb_indices[0];
@@ -497,13 +497,13 @@ namespace physics
             }
             break;
 
-            case CONSTRAINT_HINGE:
+            case e_constraint::hinge:
             {
                 add_hinge_internal(params, resource_slot);
             }
             break;
 
-            case CONSTRAINT_DOF6:
+            case e_constraint::dof6:
             {
                 btRigidBody* p_rb = nullptr;
                 btRigidBody* p_fixed = nullptr;
@@ -788,7 +788,7 @@ namespace physics
             p2p->m_setting.m_tau = 10.0f;
 
             entity->constraint.point = p2p;
-            entity->constraint.type = CONSTRAINT_P2P;
+            entity->constraint.type = e_constraint::p2p;
         }
     }
 
@@ -801,10 +801,10 @@ namespace physics
 
         switch (pe.constraint.type)
         {
-            case CONSTRAINT_P2P:
+            case e_constraint::p2p:
                 pe.constraint.point->setPivotB(bt_v3);
                 break;
-            case CONSTRAINT_P2P_MULTI:
+            case e_constraint::p2p_multi:
                 pe.constraint.point_multi->setPivotInB(bt_v3);
                 break;
             default:

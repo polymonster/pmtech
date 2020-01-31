@@ -1481,13 +1481,13 @@ namespace put
             ImGui::Combo("Constraint##Physics", (s32*)&constraint_type, "Six DOF\0Hinge\0Point to Point\0", 7);
 
             preview_constraint.type = constraint_type + 1;
-            if (preview_constraint.type == physics::CONSTRAINT_HINGE)
+            if (preview_constraint.type == physics::e_constraint::hinge)
             {
                 ImGui::InputFloat3("Axis", (f32*)&preview_constraint.axis);
                 ImGui::InputFloat("Lower Limit Rotation", (f32*)&preview_constraint.lower_limit_rotation);
                 ImGui::InputFloat("Upper Limit Rotation", (f32*)&preview_constraint.upper_limit_rotation);
             }
-            else if (preview_constraint.type == physics::CONSTRAINT_DOF6)
+            else if (preview_constraint.type == physics::e_constraint::dof6)
             {
                 ImGui::InputFloat3("Lower Limit Rotation", (f32*)&preview_constraint.lower_limit_rotation);
                 ImGui::InputFloat3("Upper Limit Rotation", (f32*)&preview_constraint.upper_limit_rotation);
@@ -1516,7 +1516,7 @@ namespace put
             else
                 ImGui::Text("No rigid bodies to constrain!");
 
-            bool valid_type = preview_constraint.type <= physics::CONSTRAINT_P2P && preview_constraint.type > 0;
+            bool valid_type = preview_constraint.type <= physics::e_constraint::p2p && preview_constraint.type > 0;
             if (rb_index > -1 && valid_type)
             {
                 preview_constraint.rb_indices[0] = index_lookup[rb_index];
@@ -1551,7 +1551,7 @@ namespace put
             ImGui::Combo("Shape##Physics", (s32*)&collision_shape,
                          "Box\0Cylinder\0Sphere\0Capsule\0Cone\0Hull\0Mesh\0Compound\0", 7);
 
-            s_physics_preview.params.rigid_body.shape = collision_shape + 1;
+            s_physics_preview.params.rigid_body.shape = physics::shape_type(collision_shape + 1);
 
             ImGui::InputInt("Group", (s32*)&s_physics_preview.params.rigid_body.group);
             ImGui::InputInt("Mask", (s32*)&s_physics_preview.params.rigid_body.mask);
@@ -1562,7 +1562,7 @@ namespace put
 
             if (!cfg)
             {
-                s_physics_preview.params.rigid_body.create_flags |= physics::CF_SET_ALL_TRANSFORM;
+                s_physics_preview.params.rigid_body.create_flags |= physics::e_create_flags::set_all_transform;
                 ImGui::InputFloat3("Dimensions", &s_physics_preview.params.rigid_body.dimensions[0]);
             }
             else
@@ -2665,7 +2665,7 @@ namespace put
                         {
                             physics::constraint_params cp;
                             cp.pivot = s_physics_pick_info.pos;
-                            cp.type = physics::CONSTRAINT_P2P;
+                            cp.type = physics::e_constraint::p2p;
                             cp.rb_indices[0] = s_physics_pick_info.physics_handle;
 
                             s_physics_pick_info.constraint = physics::add_constraint(cp);
@@ -2988,18 +2988,18 @@ namespace put
 
             switch (con.type)
             {
-                case physics::CONSTRAINT_HINGE:
+                case physics::e_constraint::hinge:
                     put::dbg::add_circle(axis, pos, 0.25f, vec4f::green());
                     put::dbg::add_line(pos - axis, pos + axis, vec4f::green());
                     put::dbg::add_circle_segment(axis, pos, 1.0f, min_rot, max_rot, vec4f::white());
                     break;
 
-                case physics::CONSTRAINT_P2P:
+                case physics::e_constraint::p2p:
                     put::dbg::add_point(pos, 0.5f, vec4f::magenta());
                     put::dbg::add_line(link_pos, pos, vec4f::magenta());
                     break;
 
-                case physics::CONSTRAINT_DOF6:
+                case physics::e_constraint::dof6:
                     put::dbg::add_circle_segment(vec3f::unit_x(), pos, 0.25f, min_rot_v3.x, max_rot_v3.x, vec4f::white());
                     put::dbg::add_circle_segment(vec3f::unit_y(), pos, 0.25f, min_rot_v3.y, max_rot_v3.y, vec4f::white());
                     put::dbg::add_circle_segment(vec3f::unit_z(), pos, 0.25f, min_rot_v3.z, max_rot_v3.z, vec4f::white());

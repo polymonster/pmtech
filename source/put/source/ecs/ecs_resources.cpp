@@ -92,16 +92,16 @@ namespace put
             rb.position = scene->transforms[s].translation + pt.translation;
             rb.rotation = scene->transforms[s].rotation;
 
-            if (!(rb.create_flags & physics::CF_DIMENSIONS))
+            if (!(rb.create_flags & physics::e_create_flags::dimensions))
             {
                 rb.dimensions = (max - min) * scale * 0.5f;
 
                 // capsule height is extents height + radius * 2 (for the capsule top and bottom)
-                if (rb.shape == physics::CAPSULE)
+                if (rb.shape == physics::e_shape::capsule)
                     rb.dimensions.y -= rb.dimensions.x / 2.0f;
 
                 // cone height is 1. (-0.5 to 0.5) but radius is 1.0;
-                if (rb.shape == physics::CONE)
+                if (rb.shape == physics::e_shape::cone)
                     rb.dimensions.y *= 2.0f;
             }
 
@@ -117,7 +117,7 @@ namespace put
             if (rb.group == 0)
                 rb.group = 1;
 
-            rb.shape_up_axis = physics::UP_Y;
+            rb.shape_up_axis = physics::e_up_axis::y;
             rb.start_matrix = start_transform;
         }
 
@@ -129,7 +129,7 @@ namespace put
 
             physics::rigid_body_params& rb = scene->physics_data[s].rigid_body;
 
-            if (rb.shape == physics::COMPOUND)
+            if (rb.shape == physics::e_shape::compound)
             {
                 physics::compound_rb_params cbpr;
                 cbpr.rb = nullptr;
