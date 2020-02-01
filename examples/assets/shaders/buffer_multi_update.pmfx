@@ -1,0 +1,41 @@
+struct vs_input
+{
+    float4 position : POSITION;
+};
+
+struct vs_output
+{
+    float4 position : SV_POSITION;
+    float4 colour: TEXCOORD0;
+};
+
+struct ps_output
+{
+    float4 colour : SV_Target;
+};
+
+cbuffer draw_call : register(b0)
+{
+	float4 pos;
+	float4 colour;
+};
+
+vs_output vs_main( vs_input input )
+{
+    vs_output output;
+    
+    output.position = input.position;
+    output.position.xy += pos.xy;
+    output.colour = colour;
+    
+    return output;
+}
+
+ps_output ps_main( vs_output input )
+{
+    ps_output output;
+    
+    output.colour = input.colour;
+
+    return output;
+}

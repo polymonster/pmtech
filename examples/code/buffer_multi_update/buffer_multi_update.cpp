@@ -12,10 +12,10 @@
 using namespace put;
 
 pen::window_creation_params pen_window{
-    1280,           // width
-    720,            // height
-    4,              // MSAA samples
-    "texture_array" // window title / process name
+    1280,                   // width
+    720,                    // height
+    4,                      // MSAA samples
+    "buffer_multi_update"   // window title / process name
 };
 
 struct vertex
@@ -23,10 +23,10 @@ struct vertex
     float x, y, z, w;
 };
 
-struct textured_vertex
+struct draw_call
 {
     float x, y, z, w;
-    float u, v;
+    float r, g, b, a;
 };
 
 PEN_TRV pen::user_entry(void* params)
@@ -37,7 +37,7 @@ PEN_TRV pen::user_entry(void* params)
     pen::semaphore_post(p_thread_info->p_sem_continue, 1);
 
     static pen::clear_state cs = {
-        133.0f / 255.0f, 179.0f / 255.0f, 178.0f / 255.0f, 1.0f, 1.0f, 0x00, PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
+        0.0f, 0.5f, 0.5f, 1.0f, 1.0f, 0x00, PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
     };
 
     u32 clear_state = pen::renderer_create_clear_state(cs);
@@ -52,39 +52,18 @@ PEN_TRV pen::user_entry(void* params)
 
     u32 raster_state = pen::renderer_create_rasterizer_state(rcp);
 
-    // viewport
-    pen::viewport vp = {0.0f, 0.0f, 1280.0f, 720.0f, 0.0f, 1.0f};
-
     // load shaders now requiring dependency on pmfx to make loading simpler.
-    u32 texture_array_shader = pmfx::load_shader("texture_array");
-
-    // load texture array
-    u32 texture_array = put::load_texture("data/textures/zombie.dds");
-        
-    // get frame / slice count from texture info
-    texture_info ti;
-    put::get_texture_info(texture_array, ti);
-    f32 num_frames = ti.num_arrays;
+    u32 textured_shader = pmfx::load_shader("buffer_multi_update");
 
     // manually scale 16:9 to 1:1
     f32 x_size = 0.5f / ((f32)pen_window.width / pen_window.height);
 
-    f32 uv_y_a = 1.0f;
-    f32 uv_y_b = 0.0f;
-
     // create vertex buffer for a quad
-    textured_vertex quad_vertices[] = {
+    vertex quad_vertices[] = {
         -x_size, -0.5f,  0.5f, 1.0f, // p1
-        0.0f,    uv_y_a,             // uv1
-
-        -x_size, 0.5f,   0.5f, 1.0f, // p2
-        0.0f,    uv_y_b,             // uv2
-
+        -x_size, 0.5f,   0.5f, 1.0f, // p
         x_size,  0.5f,   0.5f, 1.0f, // p3
-        1.0f,    uv_y_b,             // uv3
-
-        x_size,  -0.5f,  0.5f, 1.0f, // p4
-        1.0f,    uv_y_a,             // uv4
+        x_size,  -0.5f,  0.5f, 1.0f  // p4
     };
 
     pen::buffer_creation_params bcp;
@@ -92,7 +71,7 @@ PEN_TRV pen::user_entry(void* params)
     bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
     bcp.cpu_access_flags = 0;
 
-    bcp.buffer_size = sizeof(textured_vertex) * 4;
+    bcp.buffer_size = sizeof(vertex) * 4;
     bcp.data = (void*)&quad_vertices[0];
 
     u32 quad_vertex_buffer = pen::renderer_create_buffer(bcp);
@@ -107,75 +86,60 @@ PEN_TRV pen::user_entry(void* params)
     bcp.data = (void*)&indices[0];
 
     u32 quad_index_buffer = pen::renderer_create_buffer(bcp);
-
-    // create a sampler object so we can sample a texture
-    pen::sampler_creation_params scp;
-    pen::memory_zero(&scp, sizeof(pen::sampler_creation_params));
-    scp.filter = PEN_FILTER_MIN_MAG_MIP_LINEAR;
-    scp.address_u = PEN_TEXTURE_ADDRESS_CLAMP;
-    scp.address_v = PEN_TEXTURE_ADDRESS_CLAMP;
-    scp.address_w = PEN_TEXTURE_ADDRESS_CLAMP;
-    scp.comparison_func = PEN_COMPARISON_ALWAYS;
-    scp.min_lod = 0.0f;
-    scp.max_lod = 4.0f;
-
-    u32 linear_sampler = pen::renderer_create_sampler(scp);
     
-    // cbuffer to set the array slice
-    f32 time[4] = { 0 };
+    // cbuffer
     bcp.usage_flags = PEN_USAGE_DYNAMIC;
     bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
     bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-    bcp.buffer_size = sizeof(time);
-    bcp.data = &time[0];
+    bcp.buffer_size = sizeof(draw_call);
+    bcp.data = nullptr;
     
-    u32 cbuffer = pen::renderer_create_buffer(bcp);
+    u32 cbuffer_draw = pen::renderer_create_buffer(bcp);
     
-    f32 ft = 0.0f;
-    pen::timer* t = pen::timer_create();
-    pen::timer_start(t);
+    f32 offsetx = 0.3f * x_size;
+    f32 offsety = 0.3f;
     
+    // multiple draw call info
+    draw_call draw_calls[] = {
+        {-offsetx, -offsety, 0.0f, 1.0f, 0.5f, 0.8f, 0.0f, 1.0f},
+        { offsetx, -offsety, 0.0f, 1.0f, 0.0f, 0.5f, 1.0f, 1.0f},
+        { offsetx,  offsety, 0.0f, 1.0f, 1.0f, 0.5f, 0.0f, 1.0f},
+        {-offsetx,  offsety, 0.0f, 1.0f, 0.5f, 0.0f, 0.5f, 1.0f}
+    };
+
     while (1)
     {
         pen::renderer_set_rasterizer_state(raster_state);
-        
-        ft += pen::timer_elapsed_ms(t);
-        pen::timer_start(t);
-        
-        f32 ms_frame = 100.0f;
-        if(ft > ms_frame)
-        {
-            time[0] += 1.0f;
-            if(time[0] >= num_frames)
-                time[0] = 0.0f;
-            
-            ft -= ms_frame;
-        }
-        
-        pen::renderer_update_buffer(cbuffer, (void*)&time[0], sizeof(time));
-        
+
         // bind back buffer and clear
+        pen::viewport vp = {0.0f, 0.0f, (f32)pen_window.width, (f32)pen_window.height, 0.0f, 1.0f};
         pen::renderer_set_viewport(vp);
         pen::renderer_set_scissor_rect(rect{vp.x, vp.y, vp.width, vp.height});
 
         pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
         pen::renderer_clear(clear_state);
 
-        // draw quad
+        // draw quads
         {
-            // bind vertex layout and shaders
-            pmfx::set_technique(texture_array_shader, 0);
+            for(u32 i = 0; i < 4; ++i)
+            {
+                // update cbuffer.. use single buffer and update multiple times.
+                pen::renderer_update_buffer(cbuffer_draw, &draw_calls[i], sizeof(draw_call));
+            
+                // bind vertex layout and shaders
+                pmfx::set_technique(textured_shader, 0);
 
-            // bind buffers
-            pen::renderer_set_vertex_buffer(quad_vertex_buffer, 0, sizeof(textured_vertex), 0);
-            pen::renderer_set_index_buffer(quad_index_buffer, PEN_FORMAT_R16_UINT, 0);
-            pen::renderer_set_constant_buffer(cbuffer, 0, pen::CBUFFER_BIND_PS);
+                // bind vertex buffer
+                u32 stride = sizeof(vertex);
+                pen::renderer_set_vertex_buffer(quad_vertex_buffer, 0, stride, 0);
+                pen::renderer_set_index_buffer(quad_index_buffer, PEN_FORMAT_R16_UINT, 0);
+                
+                // bind cuffer
+                pen::renderer_set_constant_buffer(cbuffer_draw, 0, pen::CBUFFER_BIND_VS);
 
-            // bind render target as texture on sampler 0
-            pen::renderer_set_texture(texture_array, linear_sampler, 0, pen::TEXTURE_BIND_PS);
-
-            // draw
-            pen::renderer_draw_indexed(6, 0, 0, PEN_PT_TRIANGLELIST);
+                // draw
+                pen::renderer_draw_indexed(6, 0, 0, PEN_PT_TRIANGLELIST);
+            }
         }
 
         // present
@@ -194,12 +158,11 @@ PEN_TRV pen::user_entry(void* params)
     }
 
     // clean up mem here
-    pmfx::release_shader(texture_array_shader);
+    pmfx::release_shader(textured_shader);
 
     pen::renderer_release_buffer(quad_vertex_buffer);
     pen::renderer_release_buffer(quad_index_buffer);
-    pen::renderer_release_sampler(linear_sampler);
-    pen::renderer_release_texture(texture_array);
+    pen::renderer_release_buffer(cbuffer_draw);
     pen::renderer_consume_cmd_buffer();
 
     // signal to the engine the thread has finished
