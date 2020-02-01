@@ -156,6 +156,89 @@ namespace // internal structs and static vars
         bool                scissor_enabled;
     };
 
+#if 0
+    struct dynamic_buffer
+    {
+        id<MTLBuffer>                         static_buffer;
+        pen::multi_buffer<id<MTLBuffer>, NBB> dynamic_buffers;
+        u32                                   _buffer_size;
+        u32                                   _options;
+        u32                                   _static;
+        u32                                   frame;
+
+        id<MTLBuffer> read()
+        {
+            if (_static)
+                return static_buffer;
+                
+            return dynamic_buffers.backbuffer();
+        }
+
+        void init(id<MTLBuffer>* bufs, u32 num_buffers, u32 buffer_size, u32 options)
+        {
+            _buffer_size = buffer_size;
+            _options = options;
+            _static = 0;
+
+            if (num_buffers == 1)
+            {
+                _static = 1;
+                static_buffer = bufs[0];
+            }
+            else
+            {
+                pen::multi_buffer<id<MTLBuffer>, NBB>& db = dynamic_buffers;
+                db._fb = 0;
+                db._bb = num_buffers - 1;
+                db._swaps = 0;
+                db._frame = 0;
+
+                for (u32 i = 0; i < num_buffers; ++i)
+                    db._data[i] = {bufs[i]};
+            }
+        }
+
+        void release()
+        {
+            static_buffer = nil;
+            for (u32 i = 0; i < 10; ++i)
+                for (u32 j = 0; j < NBB; ++j)
+                    dynamic_buffers._data[j] = nil;
+        }
+
+        void update(const void* data, u32 data_size, u32 offset)
+        {
+            u32 cur_frame = _renderer_frame_index();
+            
+            if (frame != cur_frame)
+                frame = cur_frame;
+
+            auto& db = dynamic_buffers;
+            u32 c = db._swaps == 0 ? NBB : 1;
+
+            // swap once a frame
+            if (cur_frame != db._frame)
+            {
+                db._frame = cur_frame;
+                db.swap_buffers();
+            }
+
+            for (u32 i = 0; i < c; ++i)
+            {
+                id<MTLBuffer>& bb = db.backbuffer();
+
+                u8* pdata = (u8*)[bb contents];
+                pdata = pdata + offset;
+
+                memcpy(pdata, data, data_size);
+
+                // first update
+                if (c == NBB)
+                    db.swap_buffers();
+            }
+        }
+    };
+#else
     struct dynamic_buffer
     {
         id<MTLBuffer>                         static_buffer;
@@ -265,6 +348,7 @@ namespace // internal structs and static vars
             }
         }
     };
+#endif
 
     struct resource
     {
@@ -1314,8 +1398,10 @@ namespace pen
             {
                 u32 ri = buffer_indices[i];
                 u32 stride = strides[i];
+                
+                auto& bb = _res_pool.get(ri).buffer;
 
-                [_state.render_encoder setVertexBuffer:_res_pool.get(ri).buffer.read()
+                [_state.render_encoder setVertexBuffer:bb.read()
                                                 offset:offsets[i]
                                                atIndex:start_slot + i];
 

@@ -65,7 +65,7 @@ namespace pmfx_utility
         float m_index_range;
         float3 m_padding;
     };
-    struct skinning_debug_skinned_weights_pmfx_texture_cube_array
+    struct skinning_debug_skinned_weights
     {
         float m_index_range;
         float3 m_padding;

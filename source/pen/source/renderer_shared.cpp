@@ -19,6 +19,14 @@ namespace
         pen::texture_creation_params* tcp;
         u32 rt;
     };
+    
+    struct stretchy_dynamic_buffer
+    {
+        u32 _cpu_size = 0;
+        u32 _gpu_size = 0;
+        u32 _write_offset = 0;
+        u32 _gpu_buffer;
+    };
 
     struct renderer_shared
     {
