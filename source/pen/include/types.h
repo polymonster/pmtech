@@ -99,6 +99,8 @@ enum pen_error
 
 #define PEN_ARRAY_SIZE(A) (sizeof(A) / sizeof(A[0]))
 #define PEN_UNUSED (void)
+#define PEN_ALIGN(val, align) ((val) + ((val) % align ? align - (val) % align : 0))
+#define PEN_ALIGN_PO2(val, align) (((val)+(align-1)) & align)
 
 inline f16 float_to_half(f32 f)
 {

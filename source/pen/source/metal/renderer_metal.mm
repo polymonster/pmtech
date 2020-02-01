@@ -23,8 +23,6 @@ extern window_creation_params pen_window;
 
 namespace // internal structs and static vars
 {
-    id<MTLDevice> _metal_device;
-
     struct clear_cmd
     {
         u32 clear_state;
@@ -156,63 +154,133 @@ namespace // internal structs and static vars
         bool                scissor_enabled;
     };
 
-#if 0
     struct dynamic_buffer
     {
-        id<MTLBuffer>                         static_buffer;
-        pen::multi_buffer<id<MTLBuffer>, NBB> dynamic_buffers;
+        id<MTLBuffer>                         static_buffer;    // static data never updated
+        pen::multi_buffer<id<MTLBuffer>, NBB> dynamic_buffers;  // data updated once per frame
+        stretchy_dynamic_buffer*              stretchy_buffer;  // data updated multiple times per frame
+        size_t                                _dynamic_read_offset = 0;
+        u32                                   _frame_writes;
         u32                                   _buffer_size;
         u32                                   _options;
         u32                                   _static;
         u32                                   frame;
 
-        id<MTLBuffer> read()
-        {
-            if (_static)
-                return static_buffer;
-                
-            return dynamic_buffers.backbuffer();
-        }
+        id<MTLBuffer>   read(size_t& offset);
+        id<MTLBuffer>   read();
+        void            init(id<MTLBuffer>* bufs, u32 num_buffers, u32 buffer_size, u32 options, u32 bind_flags);
+        void            release();
+        void            update(const void* data, u32 data_size, u32 offset);
+    };
 
-        void init(id<MTLBuffer>* bufs, u32 num_buffers, u32 buffer_size, u32 options)
-        {
-            _buffer_size = buffer_size;
-            _options = options;
-            _static = 0;
+    struct resource
+    {
+        u32 type;
 
-            if (num_buffers == 1)
-            {
-                _static = 1;
-                static_buffer = bufs[0];
-            }
-            else
-            {
-                pen::multi_buffer<id<MTLBuffer>, NBB>& db = dynamic_buffers;
-                db._fb = 0;
-                db._bb = num_buffers - 1;
-                db._swaps = 0;
-                db._frame = 0;
+        union {
+            dynamic_buffer           buffer;
+            texture_resource         texture;
+            id<MTLSamplerState>      sampler;
+            shader_resource          shader;
+            metal_clear_state        clear;
+            MTLVertexDescriptor*     vertex_descriptor;
+            metal_blend_state        blend;
+            id<MTLDepthStencilState> depth_stencil;
+            metal_raster_state       raster_state;
+        };
 
-                for (u32 i = 0; i < num_buffers; ++i)
-                    db._data[i] = {bufs[i]};
-            }
-        }
+        resource(){};
+    };
 
-        void release()
-        {
-            static_buffer = nil;
-            for (u32 i = 0; i < 10; ++i)
-                for (u32 j = 0; j < NBB; ++j)
-                    dynamic_buffers._data[j] = nil;
-        }
-
-        void update(const void* data, u32 data_size, u32 offset)
-        {
-            u32 cur_frame = _renderer_frame_index();
+    // would like to make these into a ctx_ struct
+    id<MTLDevice>      _metal_device;
+    res_pool<resource> _res_pool;
+    MTKView*           _metal_view;
+    current_state      _state;
+    a_u64              _frame_sync;
+    a_u64              _resize_sync;
+    
+    // dynamic buffer impl
+    id<MTLBuffer> dynamic_buffer::read()
+    {
+        if (_static)
+            return static_buffer;
             
-            if (frame != cur_frame)
-                frame = cur_frame;
+        if(_frame_writes > 1)
+        {
+            _res_pool.get(stretchy_buffer->_gpu_buffer).buffer.dynamic_buffers.backbuffer();
+        }
+            
+        return dynamic_buffers.backbuffer();
+    }
+    
+    id<MTLBuffer> dynamic_buffer::read(size_t& offset)
+    {
+        offset = 0;
+        
+        if (_static)
+            return static_buffer;
+            
+        if(_frame_writes > 1)
+        {
+            offset = _dynamic_read_offset;
+            return _res_pool.get(stretchy_buffer->_gpu_buffer).buffer.dynamic_buffers.backbuffer();
+        }
+            
+        return dynamic_buffers.backbuffer();
+    }
 
+    void dynamic_buffer::init(id<MTLBuffer>* bufs, u32 num_buffers, u32 buffer_size, u32 options, u32 bind_flags)
+    {
+        _buffer_size = buffer_size;
+        _options = options;
+        _static = 0;
+        _frame_writes = 0;
+        
+        stretchy_buffer = _renderer_get_stretchy_dynamic_buffer(bind_flags);
+
+        if (num_buffers == 1)
+        {
+            _static = 1;
+            static_buffer = bufs[0];
+        }
+        else
+        {
+            pen::multi_buffer<id<MTLBuffer>, NBB>& db = dynamic_buffers;
+            db._fb = 0;
+            db._bb = num_buffers - 1;
+            db._swaps = 0;
+            db._frame = 0;
+
+            for (u32 i = 0; i < num_buffers; ++i)
+                db._data[i] = {bufs[i]};
+        }
+    }
+
+    void dynamic_buffer::release()
+    {
+        static_buffer = nil;
+        for (u32 i = 0; i < 10; ++i)
+            for (u32 j = 0; j < NBB; ++j)
+                dynamic_buffers._data[j] = nil;
+    }
+
+    void dynamic_buffer::update(const void* data, u32 data_size, u32 offset)
+    {
+        u32 cur_frame = _renderer_frame_index();
+        
+        if (frame != cur_frame)
+        {
+            frame = cur_frame;
+            _frame_writes = 0;
+        }
+        
+        if(_frame_writes > 0)
+        {
+            _dynamic_read_offset = _renderer_buffer_multi_update(stretchy_buffer, data, (size_t)data_size);
+        }
+        else
+        {
             auto& db = dynamic_buffers;
             u32 c = db._swaps == 0 ? NBB : 1;
 
@@ -237,143 +305,9 @@ namespace // internal structs and static vars
                     db.swap_buffers();
             }
         }
-    };
-#else
-    struct dynamic_buffer
-    {
-        id<MTLBuffer>                         static_buffer;
-        pen::multi_buffer<id<MTLBuffer>, NBB> dynamic_buffers[32];
-        s32                                   _dynamic_pos;
-        u32                                   _buffer_size;
-        u32                                   _options;
-        u32                                   frame;
-        u32                                   num_dynamic;
-
-        id<MTLBuffer> read()
-        {
-            if (_dynamic_pos == -1)
-                return static_buffer;
-
-            return dynamic_buffers[_dynamic_pos].backbuffer();
-        }
-
-        void alloc_dynamic(u32 slot)
-        {
-            pen::multi_buffer<id<MTLBuffer>, NBB>& db = dynamic_buffers[slot];
-            db._fb = 0;
-            db._bb = NBB - 1;
-            db._swaps = 0;
-            db._frame = 0;
-
-            for (u32 i = 0; i < NBB; ++i)
-                db._data[i] = [_metal_device newBufferWithLength:_buffer_size options:_options];
-
-            num_dynamic++;
-        }
-
-        void init(id<MTLBuffer>* bufs, u32 num_buffers, u32 buffer_size, u32 options)
-        {
-            _buffer_size = buffer_size;
-            _options = options;
-            num_dynamic = 1;
-
-            if (num_buffers == 1)
-            {
-                static_buffer = bufs[0];
-                _dynamic_pos = -1;
-            }
-            else
-            {
-                _dynamic_pos = 0;
-
-                pen::multi_buffer<id<MTLBuffer>, NBB>& db = dynamic_buffers[0];
-                db._fb = 0;
-                db._bb = num_buffers - 1;
-                db._swaps = 0;
-                db._frame = 0;
-
-                for (u32 i = 0; i < num_buffers; ++i)
-                    db._data[i] = {bufs[i]};
-            }
-        }
-
-        void release()
-        {
-            static_buffer = nil;
-            for (u32 i = 0; i < 10; ++i)
-                for (u32 j = 0; j < NBB; ++j)
-                    dynamic_buffers[i]._data[j] = nil;
-        }
-
-        void update(const void* data, u32 data_size, u32 offset)
-        {
-            u32 cur_frame = _renderer_frame_index();
-            
-            if (frame != cur_frame)
-            {
-                _dynamic_pos = 0;
-                frame = cur_frame;
-            }
-            else
-            {
-                _dynamic_pos++;
-            }
-
-            if (_dynamic_pos >= num_dynamic)
-                alloc_dynamic(_dynamic_pos);
-
-            auto& db = dynamic_buffers[_dynamic_pos];
-
-            u32 c = db._swaps == 0 ? NBB : 1;
-
-            // swap once a frame
-            if (cur_frame != db._frame)
-            {
-                db._frame = cur_frame;
-                db.swap_buffers();
-            }
-
-            for (u32 i = 0; i < c; ++i)
-            {
-                id<MTLBuffer>& bb = db.backbuffer();
-
-                u8* pdata = (u8*)[bb contents];
-                pdata = pdata + offset;
-
-                memcpy(pdata, data, data_size);
-
-                // first update
-                if (c == NBB)
-                    db.swap_buffers();
-            }
-        }
-    };
-#endif
-
-    struct resource
-    {
-        u32 type;
-
-        union {
-            dynamic_buffer           buffer;
-            texture_resource         texture;
-            id<MTLSamplerState>      sampler;
-            shader_resource          shader;
-            metal_clear_state        clear;
-            MTLVertexDescriptor*     vertex_descriptor;
-            metal_blend_state        blend;
-            id<MTLDepthStencilState> depth_stencil;
-            metal_raster_state       raster_state;
-        };
-
-        resource(){};
-    };
-
-    res_pool<resource> _res_pool;
-    MTKView*           _metal_view;
-    current_state      _state;
-    a_u64              _frame_sync;
-    a_u64              _resize_sync;
+        
+        _frame_writes++;
+    }
 }
 
 namespace // pen consts -> metal consts
@@ -1140,6 +1074,9 @@ namespace pen
             // frame completion sem
             _state.completion = dispatch_semaphore_create(NBB);
             dispatch_semaphore_signal(_state.completion);
+            
+            // shared init (stretchy buffer, resolve resources etc)
+            _renderer_shared_init();
 
             return 1;
         }
@@ -1380,7 +1317,7 @@ namespace pen
             _res_pool.insert(resource(), resource_slot);
 
             dynamic_buffer& db = _res_pool.get(resource_slot).buffer;
-            db.init(&buf[0], num_bufs, params.buffer_size, options);
+            db.init(&buf[0], num_bufs, params.buffer_size, options, params.bind_flags);
 
             _res_pool[resource_slot].type = RESOURCE_BUFFER;
         }
@@ -1438,19 +1375,22 @@ namespace pen
             if(buffer_index == 0)
                 return;
             
-            u32 bi = buffer_index;
+            size_t bind_offset = 0;
+            id<MTLBuffer> buf = _res_pool.get(buffer_index).buffer.read(bind_offset);
 
             if (flags & pen::CBUFFER_BIND_VS)
             {
                 validate_render_encoder();
-                [_state.render_encoder setVertexBuffer:_res_pool.get(bi).buffer.read() offset:0
+                [_state.render_encoder setVertexBuffer:buf
+                                                offset:bind_offset
                                                atIndex:resource_slot + CBUF_OFFSET];
             }
 
             if (flags & pen::CBUFFER_BIND_PS)
             {
                 validate_render_encoder();
-                [_state.render_encoder setFragmentBuffer:_res_pool.get(bi).buffer.read() offset:0
+                [_state.render_encoder setFragmentBuffer:buf
+                                                  offset:bind_offset
                                                  atIndex:resource_slot + CBUF_OFFSET];
             }
 
@@ -1458,7 +1398,8 @@ namespace pen
             if (flags & pen::CBUFFER_BIND_CS)
             {
                 validate_compute_encoder();
-                [_state.compute_encoder setBuffer:_res_pool.get(bi).buffer.read() offset:0
+                [_state.compute_encoder setBuffer:buf
+                                           offset:bind_offset
                                           atIndex:resource_slot + CBUF_OFFSET];
             }
         }
@@ -2112,6 +2053,8 @@ namespace pen
                 [_state.render_encoder endEncoding];
                 _state.render_encoder = nil;
             }
+            
+            _renderer_commit_stretchy_dynamic_buffers();
 
             // flush cmd buf and present
             [_state.cmd_buffer presentDrawable:_metal_view.currentDrawable];
