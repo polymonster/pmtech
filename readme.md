@@ -17,7 +17,7 @@
 - [Pmfx](https://github.com/polymonster/pmtech/wiki/Pmfx): Scriptable renderer, shader, compute and post-processing system.
 - Tools: Graphical editor, volume texture / signed distance field generator.
 - [Build Pipeline](https://github.com/polymonster/pmtech/wiki/Build-Pipeline): project generation, compilation, asset building and packaging. 
-- [Examples](https://github.com/polymonster/pmtech/wiki/Examples): 30+ samples and unit tests.
+- [Examples](https://github.com/polymonster/pmtech/wiki/Examples): 40+ samples and unit tests.
 - Visit the [wiki](https://github.com/polymonster/pmtech/wiki) for more information. 
 
 **Usage**  
@@ -33,13 +33,14 @@
 [<img src="https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/sdf-shadow.gif" width="1280" />](https://www.youtube.com/watch?v=369cPinAhdo)
 <sup>Signed Distance Field Shadows.</sup>
 [![Renderer](https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/pmfx-renderer.gif)](https://github.com/polymonster/pmtech/blob/master/examples/code/pmfx_renderer/pmfx_renderer_demo.cpp)
-<sup>Data Driven, JSON Scriptable Renderer. 100 Lights using Forward, Deferred or Z-Prepass.</sup>
+<sup>Scriptable Renderer. 100 Lights using Forward, Deferred or Z-Prepass.</sup>
 [![Post Processing](https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/post-pro.gif)](https://github.com/polymonster/pmtech/blob/master/examples/code/post_processing/post_processing.cpp)
-<sup>Data Driven, JSON Scriptable Post-Processing. Ray Marched Menger Sponges, Depth of Field, Bloom.</sup>
+<sup>Scriptable Post-Processing. Ray Marched Menger Sponges, Depth of Field, Bloom.</sup>
 <img src="https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/stencil-shadows.gif" width="1280" />
 <sup>Stencil Shadow Volumes.</sup>
 <img src="https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/tourus.gif" width="1280" />
 <sup>64k Data-Oriented Entities, Multiple Shadow Maps, Texture Arrays.</sup>
 [![Vertex Stream Out](https://github.com/polymonster/polymonster.github.io/raw/master/assets/demos/vertex-stream-pbr.gif)](https://github.com/polymonster/pmtech/blob/master/examples/code/vertex_stream_out/vertex_stream_out.cpp)
 <sup>Vertex Stream Out, Instanced Skinning, PBR, Oren Nayar, Cook Torrence.</sup>
-
+<img src="https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/shadow-maps.gif" width="1280" />
+<sup>Directional, spot and point light shadows.</sup>
