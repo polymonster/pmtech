@@ -24,9 +24,8 @@
 
 // global externs
 pen::user_info pen_user_info;
-a_u64          g_frame_index = { 0 };
 
-extern         pen::window_creation_params pen_window;
+extern pen::window_creation_params pen_window;
 
 // objc interfaces
 @interface pen_mtk_renderer : NSObject<MTKViewDelegate>
@@ -133,7 +132,6 @@ namespace pen
     @autoreleasepool {
         pen::renderer_dispatch();
         pen::os_update();
-        g_frame_index++;
     }
 }
 @end
@@ -275,9 +273,16 @@ namespace pen
 
     void window_get_frame(window_frame& f)
     {
+        f = {
+            (u32)s_context.wframe.origin.x,
+            (u32)s_context.wframe.origin.y,
+            (u32)s_context.wframe.size.width,
+            (u32)s_context.wframe.size.height
+        };
     }
 
     void window_set_frame(const window_frame& f)
     {
+        // not possible on ios
     }
 }

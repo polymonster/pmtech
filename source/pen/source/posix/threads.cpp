@@ -6,11 +6,14 @@
 #include "console.h"
 #include "memory.h"
 #include "pen_string.h"
+#include "hash.h"
 
 #include <fcntl.h>
 #include <pthread.h>
 #include <semaphore.h>
 #include <unistd.h>
+
+extern pen::window_creation_params pen_window;
 
 namespace pen
 {
@@ -106,8 +109,8 @@ namespace pen
     {
         pen::semaphore* new_semaphore = (pen::semaphore*)pen::memory_alloc(sizeof(pen::semaphore));
 
-        c8 name_buf[16];
-        pen::string_format(&name_buf[0], 32, "sem%i", semaphone_index++);
+        static c8 name_buf[32];
+        pen::string_format(&name_buf[0], 32, "sem%i%i", semaphone_index++, PEN_HASH(pen_window.window_title));
 
         sem_unlink(name_buf);
         new_semaphore->handle = sem_open(name_buf, O_CREAT, 0, 0);
