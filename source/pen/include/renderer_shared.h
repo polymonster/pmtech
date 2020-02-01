@@ -12,6 +12,7 @@
 namespace pen
 {
     void                    _renderer_new_frame();
+    void                    _renderer_end_frame();
     texture_creation_params _renderer_tcp_resolve_ratio(const texture_creation_params& tcp);
     void                    _renderer_track_managed_render_target(const texture_creation_params& tcp, u32 texture_handle);
     void                    _renderer_resize_backbuffer(u32 width, u32 height);

@@ -5,28 +5,29 @@
 #define GL_SILENCE_DEPRECATION
 #define GLES_SILENCE_DEPRECATION
 
-#include <stdlib.h>
-
+#include "renderer.h"
+#include "renderer_shared.h"
 #include "hash.h"
 #include "memory.h"
 #include "pen.h"
 #include "pen_string.h"
-#include "renderer.h"
-#include "str/Str.h"
 #include "threads.h"
 #include "timer.h"
-#include <vector>
-
 #include "console.h"
 #include "data_struct.h"
 
+#include "str/Str.h"
+
+#include <vector>
+#include <stdlib.h>
+
 extern pen::window_creation_params pen_window;
 
+// these are required for platform specific gl implementation calls.
 extern void pen_make_gl_context_current();
 extern void pen_gl_swap_buffers();
-extern void pen_window_resize();
 
-a_u8 g_window_resize(0);
+a_u8        g_window_resize(0);
 
 namespace
 {
@@ -106,9 +107,6 @@ namespace
 
 namespace pen
 {
-    //--------------------------------------------------------------------------------------
-    //  PERF MARKER API
-    //--------------------------------------------------------------------------------------
     a_u64 g_gpu_total;
 
     struct gpu_perf_result
@@ -606,25 +604,36 @@ namespace pen
         return sb_count(s_shader_programs) - 1;
     }
 
-    //--------------------------------------------------------------------------------------
-    //  DIRECT API
-    //--------------------------------------------------------------------------------------
-    
-    void direct::renderer_make_context_current()
-    {
-        pen_make_gl_context_current();
-    }
-
     void direct::renderer_sync()
     {
         // unused for opengl, required to sync for metal
+    }
+    
+    void direct::renderer_new_frame()
+    {
+        pen_make_gl_context_current();
+        _renderer_new_frame();
+        
+        // if we resize render targets, delete frame buffers to invalidate and recreate them
+        static u32 rs = 0;
+        if(_renderer_resize_index() != rs)
+        {
+            rs = _renderer_resize_index();
+            sb_free(s_framebuffers);
+            s_framebuffers = nullptr;
+        }
+    }
+    
+    void direct::renderer_end_frame()
+    {
+        // unused on this platform
     }
     
     bool direct::renderer_frame_valid()
     {
         return true;
     }
-
+    
     void direct::renderer_clear(u32 clear_state_index, u32 colour_face, u32 depth_face)
     {
         resource_allocation&  rc = _res_pool[clear_state_index];
@@ -663,60 +672,16 @@ namespace pen
         }
     }
 
-    void renderer_resize_managed_targets()
-    {
-        u32 num_man_rt = sb_count(s_managed_render_targets);
-        for (u32 i = 0; i < num_man_rt; ++i)
-        {
-            auto& managed_rt = s_managed_render_targets[i];
-
-            resource_allocation& res = _res_pool[managed_rt.render_target_handle];
-            CHECK_CALL(glDeleteTextures(1, &res.render_target.texture.handle));
-
-            if (managed_rt.tcp.sample_count > 1)
-            {
-                CHECK_CALL(glDeleteTextures(1, &res.render_target.texture_msaa.handle));
-                res.render_target.texture_msaa.handle = 0;
-            }
-
-            direct::renderer_create_render_target(managed_rt.tcp, managed_rt.render_target_handle, false);
-        }
-
-        sb_free(s_framebuffers);
-        s_framebuffers = nullptr;
-    }
-
     void direct::renderer_present()
     {
-        static u32  resize_counter = 0;
-        static bool needs_resize = false;
-
         pen_gl_swap_buffers();
 
+// gpu counters
 #ifndef __linux__
         if (s_frame > 0)
             renderer_pop_perf_marker(); // gpu total
 
         gather_perf_markers();
-
-        if (g_window_resize)
-        {
-            needs_resize = true;
-            resize_counter = 0;
-            g_window_resize = 0;
-        }
-        else
-        {
-            resize_counter++;
-        }
-
-        if (resize_counter > 5 && needs_resize)
-        {
-            resize_counter = 0;
-            renderer_resize_managed_targets();
-            needs_resize = false;
-        }
-
         s_frame++;
 
         // gpu total
@@ -1358,29 +1323,19 @@ namespace pen
 
     void direct::renderer_create_render_target(const texture_creation_params& tcp, u32 resource_slot, bool track)
     {
+        PEN_ASSERT(tcp.width != 0 && tcp.height != 0);
         _res_pool.grow(resource_slot);
 
         resource_allocation& res = _res_pool[resource_slot];
 
         res.type = RES_RENDER_TARGET;
 
-        texture_creation_params _tcp = tcp;
+        texture_creation_params _tcp = _renderer_tcp_resolve_ratio(tcp);
+        
+        if(track)
+            _renderer_track_managed_render_target(tcp, resource_slot);
 
         res.render_target.uid = (u32)get_time_ms();
-
-        PEN_ASSERT(tcp.width != 0 && tcp.height != 0);
-
-        if (tcp.width == BACK_BUFFER_RATIO)
-        {
-            _tcp.width = pen_window.width / tcp.height;
-            _tcp.height = pen_window.height / tcp.height;
-
-            if (track)
-            {
-                managed_render_target man_rt = {tcp, resource_slot};
-                sb_push(s_managed_render_targets, man_rt);
-            }
-        }
 
         if (tcp.num_mips == -1)
             _tcp.num_mips = calc_num_mips(_tcp.width, _tcp.height);

@@ -28,8 +28,6 @@ pen::user_info                      pen_user_info;
 extern PEN_TRV                      pen::user_entry(void* params);
 extern pen::window_creation_params  pen_window;
 
-a_u64                               g_frame_index = { 0 };
-
 namespace pen
 {
     void renderer_init(void*, bool);
@@ -98,8 +96,6 @@ namespace
 #import <MetalKit/MetalKit.h>
 #import <QuartzCore/CAMetalLayer.h>
 
-id<CAMetalDrawable> g_current_drawable;
-
 #define create_renderer_context create_metal_context
 
 @interface metal_delegate : NSObject <MTKViewDelegate>
@@ -132,7 +128,6 @@ namespace
     @autoreleasepool {
         if (!pen::renderer_dispatch())
             pen::thread_sleep_us(100);
-            g_frame_index++;
     }
 }
 

@@ -34,8 +34,12 @@ namespace pen
 {
     void _renderer_new_frame()
     {
-        s_shared_ctx.frame_index++;
         _renderer_resize_managed_targets();
+    }
+    
+    void _renderer_end_frame()
+    {
+        s_shared_ctx.frame_index++;
     }
     
     texture_creation_params _renderer_tcp_resolve_ratio(const texture_creation_params& tcp)

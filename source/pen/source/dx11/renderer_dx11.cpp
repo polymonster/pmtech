@@ -11,21 +11,15 @@
 #include "pen.h"
 #include "pen_string.h"
 #include "renderer.h"
-#include "str/Str.h"
 #include "threads.h"
 #include "timer.h"
-
 #include "console.h"
 
-//--------------------------------------------------------------------------------------
-// Global Variables
-//--------------------------------------------------------------------------------------
+#include "str/Str.h"
+
 extern pen::window_creation_params pen_window;
 a_u8                               g_window_resize(0);
 
-//--------------------------------------------------------------------------------------
-// Statics
-//--------------------------------------------------------------------------------------
 namespace
 {
     D3D_DRIVER_TYPE         s_driverType = D3D_DRIVER_TYPE_HARDWARE;
@@ -478,17 +472,19 @@ namespace pen
                     mrt[i].f[c] = (f32)cs.mrt[i].u[c];
     }
 
-    //--------------------------------------------------------------------------------------
-    //  DIRECT API
-    //--------------------------------------------------------------------------------------
-    void direct::renderer_make_context_current()
-    {
-        // unused on dx11 so far
-    }
-
     void direct::renderer_sync()
     {
-        // unused for d3d, required to sync for metal
+        // unused on this platform
+    }
+    
+    void direct::renderer_new_frame()
+    {
+        // unused on this platform
+    }
+    
+    void direct::renderer_end_frame()
+    {
+        // unused on this platform
     }
     
     bool direct::renderer_frame_valid()

@@ -16,16 +16,13 @@
 
 using namespace pen;
 
-// globals / externs.. I want to get rid of
 extern window_creation_params pen_window;
-extern a_u64                  g_frame_index;
 
 #define NBB 3                 // buffers to prevent locking gpu / cpu on dynamic buffers.
 #define CBUF_OFFSET 4         // from pmfx.. offset of cbuffers to prevent collisions with vertex buffers
 
 namespace // internal structs and static vars
 {
-    u32           _frame = 0;
     id<MTLDevice> _metal_device;
 
     struct clear_cmd
@@ -227,10 +224,12 @@ namespace // internal structs and static vars
 
         void update(const void* data, u32 data_size, u32 offset)
         {
-            if (frame != g_frame_index)
+            u32 cur_frame = _renderer_frame_index();
+            
+            if (frame != cur_frame)
             {
                 _dynamic_pos = 0;
-                frame = (u32)g_frame_index;
+                frame = cur_frame;
             }
             else
             {
@@ -245,9 +244,9 @@ namespace // internal structs and static vars
             u32 c = db._swaps == 0 ? NBB : 1;
 
             // swap once a frame
-            if (g_frame_index != db._frame)
+            if (cur_frame != db._frame)
             {
-                db._frame = (u32)g_frame_index;
+                db._frame = cur_frame;
                 db.swap_buffers();
             }
 
@@ -284,12 +283,6 @@ namespace // internal structs and static vars
         };
 
         resource(){};
-    };
-
-    struct managed_rt
-    {
-        pen::texture_creation_params tcp;
-        u32                          rt;
     };
 
     res_pool<resource> _res_pool;
@@ -1074,14 +1067,23 @@ namespace pen
 
         void renderer_make_context_current()
         {
+            // to remove
+        }
+        
+        void renderer_new_frame()
+        {
+            _frame_sync = _renderer_frame_index();
             _renderer_new_frame();
-            
-            _frame_sync = g_frame_index.load();
+        }
+        
+        void renderer_end_frame()
+        {
+            _renderer_end_frame();
         }
 
         void renderer_sync()
         {
-            while (_frame_sync == g_frame_index.load())
+            while (_frame_sync == _renderer_frame_index())
                 thread_sleep_us(100);
                 
             _resize_sync = _renderer_resize_index();
@@ -2045,8 +2047,6 @@ namespace pen
             // null state for next frame
             _state.cmd_buffer = nil;
             _state.pipeline_hash = 0;
-
-            _frame++;
         }
 
         void renderer_push_perf_marker(const c8* name)

@@ -648,7 +648,7 @@ namespace pen
         if (semaphore_try_wait(p_consume_semaphore))
         {
             // some api's need to set the current context on the caller thread.
-            direct::renderer_make_context_current();
+            direct::renderer_new_frame();
 
             semaphore_post(p_continue_semaphore, 1);
 
@@ -672,6 +672,8 @@ namespace pen
                     cmd = _cmd_buffer.get();
                 }
             }
+
+            direct::renderer_end_frame();
 
             return true;
         }

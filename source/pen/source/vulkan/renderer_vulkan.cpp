@@ -8,7 +8,6 @@
 #include "data_struct.h"
 #include "hash.h"
 
-
 #include "vulkan/vulkan.h"
 #ifdef _WIN32
 #include "vulkan/vulkan_win32.h"
@@ -1956,15 +1955,25 @@ namespace pen
             vkDestroySurfaceKHR(_ctx.instance, _ctx.surface, nullptr);
             vkDestroyInstance(_ctx.instance, nullptr);
         }
-
-        void renderer_make_context_current()
-        {
-            // stub.. this function is for opengl
-        }
-
+        
         void renderer_sync()
         {
-            // stub.. this function is for metal
+            // unused on this platform
+        }
+        
+        void renderer_new_frame()
+        {
+            // unused on this platform
+        }
+        
+        void renderer_end_frame()
+        {
+            // unused on this platform
+        }
+        
+        bool renderer_frame_valid()
+        {
+            return true;
         }
 
         void renderer_create_clear_state(const clear_state& cs, u32 resource_slot)

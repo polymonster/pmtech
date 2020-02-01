@@ -462,13 +462,15 @@ namespace pen
 
     namespace direct
     {
-        // Platform specific implementation, implements these functions
-
+        // Platform specific implementation, implements these function
         u32  renderer_initialise(void* params, u32 bb_res, u32 bb_depth_res);
         void renderer_shutdown();
-        void renderer_make_context_current();
+        
+        // functions to syncronise the render and main threads
         void renderer_sync();
-        bool renderer_frame_valid();
+        void renderer_new_frame();
+        void renderer_end_frame();
+        bool renderer_frame_valid(); // invalid if we resize while we are building cmdbuf on the user thread
 
         // clears
         void renderer_create_clear_state(const clear_state& cs, u32 resource_slot);

@@ -347,6 +347,8 @@ def run_textures(config):
                     cmd += "-t " + export["format"] + " "
                     if "cubemap" in export.keys() and export["cubemap"]:
                         cmd += " --cubearray "
+                    if "mips" in export.keys() and export["mips"]:
+                        cmd += " --mips "
                     cmd += "-o " + dst
                     print("texturec " + f[0])
                     subprocess.call(cmd, shell=True)
