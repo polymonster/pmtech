@@ -10,7 +10,105 @@ namespace put
 {
     namespace ecs
     {
-        // anim v2
+        namespace e_anim_flags
+        {
+            enum anim_flags_t
+            {
+                play = 1,
+                apply_root_motion = 1 << 1,
+                baked_quaternion = 1 << 2,
+                looped = 1 << 3,
+                paused = 1 << 4
+            };
+        }
+        typedef u32 anim_flags;
+        
+        namespace e_anim_semantics
+        {
+            enum anim_semantics_t
+            {
+                time = 0,
+                transform,
+                x,
+                y,
+                z,
+                angle,
+                interpolation
+            };
+        }
+        typedef e_anim_semantics::anim_semantics_t anim_semantics;
+        
+        namespace e_anim_interpolation
+        {
+            enum anim_interpolation_t
+            {
+                linear = 0,
+                bezier,
+                cardinal,
+                hermite,
+                bspline,
+                step
+            };
+        }
+        typedef e_anim_interpolation::anim_interpolation_t anim_interpolation;
+        
+        namespace e_anim_data
+        {
+            enum anim_data_t
+            {
+                type_float = 0,
+                type_float4x4,
+                type_int,
+            };
+        }
+        typedef e_anim_data::anim_data_t anim_data;
+        
+        namespace e_anim_target
+        {
+            enum anim_target_t
+            {
+                transform = 0,
+                translate,
+                rotate,
+                scale,
+                translate_x,
+                translate_y,
+                translate_z,
+                rotate_x,
+                rotate_y,
+                rotate_z,
+                scale_x,
+                scale_y,
+                scale_z
+            };
+        }
+        
+        namespace e_anim_output
+        {
+            enum anim_output_t
+            {
+                translate_x = 0,
+                translate_y = 1,
+                translate_z = 2,
+                scale_x = 6,
+                scale_y = 7,
+                scale_z = 8,
+                quaternion = 9
+            };
+        }
+        
+        namespace e_pmm_load_flags
+        {
+            enum pmm_load_flags_t
+            {
+                geometry = 1<<0,
+                material = 1<<1,
+                nodes = 1<<2,
+                all = (geometry | material | nodes)
+            };
+        }
+        typedef u32 pmm_load_flags;
+        
         struct anim_info
         {
             f32 time;
@@ -34,24 +132,11 @@ namespace put
             f32**         data = nullptr; // [frame][sampler offset]
         };
 
-        namespace anim_flags
-        {
-            enum
-            {
-                PLAY = 1,
-                APPLY_ROOT_MOTION = 1 << 1,
-                BAKED_QUATERNION = 1 << 2,
-                LOOPED = 1 << 3,
-                PAUSED = 1 << 4
-            };
-        }
-
         struct anim_sampler
         {
             u32 pos;
             u32 joint;
             u32 flags;
-
             f32 cur_t;
             f32 prev_t;
         };
@@ -74,72 +159,6 @@ namespace put
             anim_sampler*  samplers = nullptr;
             vec3f          root_translation;
             vec3f          root_delta = vec3f::zero();
-        };
-
-        enum e_animation_semantics
-        {
-            A_TIME = 0,
-            A_TRANSFORM,
-            A_X,
-            A_Y,
-            A_Z,
-            A_ANGLE,
-            A_INTERPOLATION
-        };
-
-        enum e_animation_interpolation_types
-        {
-            A_LINEAR = 0,
-            A_BEZIER,
-            A_CARDINAL,
-            A_HERMITE,
-            A_BSPLINE,
-            A_STEP
-        };
-
-        enum e_animation_data_types
-        {
-            A_FLOAT = 0,
-            A_FLOAT4x4,
-            A_INT
-        };
-
-        enum e_animation_targets
-        {
-            A_TRANSFORM_TARGET = 0,
-            A_TRANSLATE_TARGET,
-            A_ROTATE_TARGET,
-            A_SCALE_TARGET,
-            A_TRANSLATE_X_TARGET,
-            A_TRANSLATE_Y_TARGET,
-            A_TRANSLATE_Z_TARGET,
-            A_ROTATE_X_TARGET,
-            A_ROTATE_Y_TARGET,
-            A_ROTATE_Z_TARGET,
-            A_SCALE_X_TARGET,
-            A_SCALE_Y_TARGET,
-            A_SCALE_Z_TARGET
-        };
-
-        enum e_animation_outputs
-        {
-            A_OUT_TX = 0,
-            A_OUT_TY = 1,
-            A_OUT_TZ = 2,
-
-            A_OUT_SX = 6,
-            A_OUT_SY = 7,
-            A_OUT_SZ = 8,
-
-            A_OUT_QUAT = 9
-        };
-
-        enum e_pmm_load_flags : u32
-        {
-            PMM_GEOMETRY = (1 << 0),
-            PMM_MATERIAL = (1 << 1),
-            PMM_NODES = (1 << 2),
-            PMM_ALL = 7
         };
 
         struct animation_channel
@@ -241,7 +260,7 @@ namespace put
         void save_sub_scene(ecs_scene* scene, u32 root);
         void load_scene(const c8* filename, ecs_scene* scene, bool merge = false);
 
-        s32 load_pmm(const c8* model_scene_name, ecs_scene* scene = nullptr, u32 load_flags = PMM_ALL);
+        s32 load_pmm(const c8* model_scene_name, ecs_scene* scene = nullptr, u32 load_flags = e_pmm_load_flags::all);
         s32 load_pma(const c8* model_scene_name);
         s32 load_pmv(const c8* filename, ecs_scene* scene);
 

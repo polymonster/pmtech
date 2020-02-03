@@ -18,7 +18,7 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     clear_scene(scene);
 
     // add model
-    u32 model = load_pmm("data/models/lucy.pmm", scene, PMM_ALL);
+    u32 model = load_pmm("data/models/lucy.pmm", scene, e_pmm_load_flags::all);
     scene->transforms[model].scale = vec3f(0.07f);
     scene->transforms[model].rotation = quat(0.0f, -M_PI / 4.0f, 0.0f);
     scene->transforms[model].translation = vec3f(0.0f, -0.35f, 0.0f);

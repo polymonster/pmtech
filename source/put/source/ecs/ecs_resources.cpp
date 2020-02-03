@@ -15,26 +15,36 @@
 #include "console.h"
 #include "data_struct.h"
 
-namespace put
-{
-    enum pmm_transform_types
-    {
-        PMM_TRANSLATE = 0,
-        PMM_ROTATE = 1,
-        PMM_MATRIX = 2,
-        PMM_IDENTITY
-    };
+using namespace put;
+using namespace ecs;
 
+namespace
+{
+    namespace e_pmm_transform
+    {
+        enum pmm_transform_t
+        {
+            translate = 0,
+            rotate,
+            matrix,
+            identity
+        };
+    }
+    typedef e_pmm_transform::pmm_transform_t pmm_transform;
+    
     // id hashes
     const hash_id ID_CONTROL_RIG = PEN_HASH("controlrig");
     const hash_id ID_JOINT = PEN_HASH("joint");
     const hash_id ID_TRAJECTORY = PEN_HASH("trajectoryshjnt");
+    
+    static std::vector<geometry_resource*> s_geometry_resources;
+    static std::vector<material_resource*> s_material_resources;
+}
 
+namespace put
+{
     namespace ecs
     {
-        static std::vector<geometry_resource*> s_geometry_resources;
-        static std::vector<material_resource*> s_material_resources;
-
         void add_material_resource(material_resource* mr)
         {
             s_material_resources.push_back(mr);
@@ -953,17 +963,17 @@ namespace put
                     // read float buffer
                     u32 num_elements = *p_u32reader++;
 
-                    if (sematic == A_INTERPOLATION)
+                    if (sematic == e_anim_semantics::interpolation)
                     {
-                        PEN_ASSERT(type == A_INT);
+                        PEN_ASSERT(type == e_anim_data::type_int);
 
                         u32* data = new u32[num_elements];
                         memcpy(data, p_u32reader, sizeof(u32) * num_elements);
                         new_animation.channels[i].interpolation = data;
                     }
-                    else if (sematic == A_TIME)
+                    else if (sematic == e_anim_semantics::time)
                     {
-                        PEN_ASSERT(type == A_FLOAT);
+                        PEN_ASSERT(type == e_anim_data::type_float);
 
                         f32* data = new f32[num_elements];
                         memcpy(data, p_u32reader, sizeof(f32) * num_elements);
@@ -978,7 +988,7 @@ namespace put
 
                         switch (target)
                         {
-                            case A_TRANSFORM_TARGET:
+                            case e_anim_target::transform:
                             {
                                 new_animation.channels[i].matrices = (mat4*)data;
 
@@ -1026,14 +1036,14 @@ namespace put
                             }
                             break;
 
-                            case A_TRANSLATE_X_TARGET:
-                            case A_TRANSLATE_Y_TARGET:
-                            case A_TRANSLATE_Z_TARGET:
-                                new_animation.channels[i].offset[target - A_TRANSLATE_X_TARGET] = (f32*)data;
+                            case e_anim_target::translate_x:
+                            case e_anim_target::translate_y:
+                            case e_anim_target::translate_z:
+                                new_animation.channels[i].offset[target - e_anim_target::translate_x] = (f32*)data;
                                 break;
-                            case A_ROTATE_X_TARGET:
-                            case A_ROTATE_Y_TARGET:
-                            case A_ROTATE_Z_TARGET:
+                            case e_anim_target::rotate_x:
+                            case e_anim_target::rotate_y:
+                            case e_anim_target::rotate_z:
                             {
                                 new_animation.channels[i].rotation[num_rots] = new quat[num_floats];
 
@@ -1041,22 +1051,22 @@ namespace put
                                 {
                                     vec3f mask[] = {vec3f::unit_x(), vec3f::unit_y(), vec3f::unit_z()};
 
-                                    vec3f vr = vec3f(data[q]) * mask[target - A_ROTATE_X_TARGET];
+                                    vec3f vr = vec3f(data[q]) * mask[target - e_anim_target::rotate_x];
                                     new_animation.channels[i].rotation[num_rots][q] = quat(vr.z, vr.y, vr.x);
                                 }
 
                                 num_rots++;
                             }
                             break;
-                            case A_SCALE_X_TARGET:
-                            case A_SCALE_Y_TARGET:
-                            case A_SCALE_Z_TARGET:
-                                new_animation.channels[i].scale[target - A_SCALE_X_TARGET] = (f32*)data;
+                            case e_anim_target::scale_x:
+                            case e_anim_target::scale_y:
+                            case e_anim_target::scale_z:
+                                new_animation.channels[i].scale[target - e_anim_target::scale_x] = (f32*)data;
                                 break;
-                            case A_TRANSLATE_TARGET:
-                                new_animation.channels[i].offset[sematic - A_X] = (f32*)data;
+                            case e_anim_target::translate:
+                                new_animation.channels[i].offset[sematic - e_anim_semantics::x] = (f32*)data;
                                 break;
-                            case A_ROTATE_TARGET:
+                            case e_anim_target::rotate:
                             {
                                 PEN_ASSERT(0); // code path hasnt been tested
 
@@ -1074,8 +1084,8 @@ namespace put
                                 num_rots++;
                             }
                             break;
-                            case A_SCALE_TARGET:
-                                new_animation.channels[i].scale[sematic - A_X] = (f32*)data;
+                            case e_anim_target::scale:
+                                new_animation.channels[i].scale[sematic - e_anim_semantics::x] = (f32*)data;
                                 break;
                             default:
                                 // PEN_ASSERT(0); // unhandled targets
@@ -1124,23 +1134,23 @@ namespace put
                 // translate
                 for (u32 i = 0; i < 3; ++i)
                     if (channel.offset[i])
-                        soa.channels[c].element_offset[elm++] = A_OUT_TX + i;
+                        soa.channels[c].element_offset[elm++] = e_anim_output::translate_x + i;
 
                 // scale
                 for (u32 i = 0; i < 3; ++i)
                     if (channel.scale[i])
-                        soa.channels[c].element_offset[elm++] = A_OUT_SX + i;
+                        soa.channels[c].element_offset[elm++] = e_anim_output::scale_x + i;
 
                 // quaternion
                 for (u32 i = 0; i < 3; ++i)
                     if (channel.rotation[i])
                         for (u32 q = 0; q < 4; ++q)
-                            soa.channels[c].element_offset[elm++] = A_OUT_QUAT;
+                            soa.channels[c].element_offset[elm++] = e_anim_output::quaternion;
 
                 if (channel.matrices)
                 {
                     // baked
-                    soa.channels[c].flags = anim_flags::BAKED_QUATERNION;
+                    soa.channels[c].flags = e_anim_flags::baked_quaternion;
                 }
 
                 soa.channels[c].element_count = elm;
@@ -1260,7 +1270,7 @@ namespace put
             }
 
             // load resources
-            if (load_flags & PMM_MATERIAL)
+            if (load_flags & e_pmm_load_flags::material)
             {
                 for (u32 m = 0; m < num_materials; ++m)
                 {
@@ -1269,7 +1279,7 @@ namespace put
                 }
             }
 
-            if (load_flags & PMM_GEOMETRY)
+            if (load_flags & e_pmm_load_flags::geometry)
             {
                 for (u32 g = 0; g < num_geom; ++g)
                 {
@@ -1278,7 +1288,7 @@ namespace put
                 }
             }
 
-            if (!(load_flags & PMM_NODES))
+            if (!(load_flags & e_pmm_load_flags::nodes))
             {
                 pen::memory_free(model_file);
                 return PEN_INVALID_HANDLE;
@@ -1358,11 +1368,11 @@ namespace put
 
                     switch (type)
                     {
-                        case PMM_TRANSLATE:
+                        case e_pmm_transform::translate:
                             memcpy(&translation, p_u32reader, 12);
                             p_u32reader += 3;
                             break;
-                        case PMM_ROTATE:
+                        case e_pmm_transform::rotate:
                             memcpy(&rotations[num_rotations], p_u32reader, 16);
                             rotations[num_rotations].w = maths::deg_to_rad(rotations[num_rotations].w);
                             if (rotations[num_rotations].w < zero_rotation_epsilon &&
@@ -1371,12 +1381,12 @@ namespace put
                             num_rotations++;
                             p_u32reader += 4;
                             break;
-                        case PMM_MATRIX:
+                        case e_pmm_transform::matrix:
                             has_matrix_transform = true;
                             memcpy(&matrix, p_u32reader, 16 * 4);
                             p_u32reader += 16;
                             break;
-                        case PMM_IDENTITY:
+                        case e_pmm_transform::identity:
                             has_matrix_transform = true;
                             matrix = mat4::create_identity();
                             break;

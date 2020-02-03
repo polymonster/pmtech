@@ -866,7 +866,7 @@ namespace put
                 {
                     anim_instance& instance = controller.anim_instances[ai];
 
-                    if (instance.flags & anim_flags::PAUSED)
+                    if (instance.flags & e_anim_flags::paused)
                         continue;
 
                     soa_anim& soa = instance.soa;
@@ -883,9 +883,9 @@ namespace put
                         looped = true;
                     }
 
-                    if (instance.flags & anim_flags::LOOPED)
+                    if (instance.flags & e_anim_flags::looped)
                     {
-                        instance.flags &= ~anim_flags::LOOPED;
+                        instance.flags &= ~e_anim_flags::looped;
                         looped = true;
                     }
 
@@ -912,12 +912,12 @@ namespace put
                             }
 
                         //reset flag
-                        sampler.flags &= ~anim_flags::LOOPED;
+                        sampler.flags &= ~e_anim_flags::looped;
 
                         if (sampler.pos >= channel.num_frames || looped)
                         {
                             sampler.pos = 0;
-                            sampler.flags = anim_flags::LOOPED;
+                            sampler.flags = e_anim_flags::looped;
                         }
 
                         u32 next = (sampler.pos + 1) % channel.num_frames;
@@ -942,7 +942,7 @@ namespace put
                             u32 eo = channel.element_offset[e];
 
                             // slerp quats
-                            if (eo == A_OUT_QUAT)
+                            if (eo == e_anim_output::quaternion)
                             {
                                 quat q1;
                                 quat q2;
@@ -979,10 +979,13 @@ namespace put
 
                         f32* f = &instance.targets[j].t[0];
 
-                        instance.joints[j].translation = vec3f(f[A_OUT_TX], f[A_OUT_TY], f[A_OUT_TZ]);
-                        instance.joints[j].scale = vec3f(f[A_OUT_SX], f[A_OUT_SY], f[A_OUT_SZ]);
+                        instance.joints[j].translation = vec3f(f[e_anim_output::translate_x],
+                            f[e_anim_output::translate_y], f[e_anim_output::translate_z]);
+                            
+                        instance.joints[j].scale = vec3f(f[e_anim_output::scale_x],
+                            f[e_anim_output::scale_y], f[e_anim_output::scale_z]);
 
-                        if (instance.targets[j].flags & anim_flags::BAKED_QUATERNION)
+                        if (instance.targets[j].flags & e_anim_flags::baked_quaternion)
                             instance.joints[j].rotation = instance.targets[j].q;
                         else
                             instance.joints[j].rotation = scene->initial_transform[jnode].rotation * instance.targets[j].q;
@@ -994,7 +997,7 @@ namespace put
                         f32*  f = &instance.targets[tj].t[0];
                         vec3f tt = vec3f(f[0], f[1], f[2]);
 
-                        if (instance.samplers[0].flags & anim_flags::LOOPED)
+                        if (instance.samplers[0].flags & e_anim_flags::looped)
                         {
                             // inherit prev root motion
                             instance.root_translation = tt;
@@ -2246,7 +2249,7 @@ namespace put
                     if (name_hash != primitive_id)
                     {
                         dev_console_log("[scene load] %s", name.c_str());
-                        load_pmm(filename.c_str(), nullptr, PMM_GEOMETRY);
+                        load_pmm(filename.c_str(), nullptr, e_pmm_load_flags::geometry);
 
                         pen::hash_murmur hm;
                         hm.begin(0);
