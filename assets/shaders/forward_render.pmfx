@@ -396,6 +396,7 @@ ps_output ps_forward_lit( vs_output input )
     //for directional lights
     float3 lll = float3(0.0, 0.0, 0.0);
     int shadow_map_index = 0;
+	_pmfx_loop
     for( int i = 0; i < int(light_info.x); ++i )
     {        
         float3 light_col = float3( 0.0, 0.0, 0.0 );
@@ -498,6 +499,7 @@ ps_output ps_forward_lit( vs_output input )
     int point_start = int(light_info.x);
     int point_end =  int(light_info.x) + int(light_info.y);
     int omni_shadow_index = 0;
+	_pmfx_loop
     for( int i = point_start; i < point_end; ++i )
     {
         float3 light_col = float3( 0.0, 0.0, 0.0 );
@@ -546,7 +548,7 @@ ps_output ps_forward_lit( vs_output input )
 				float3 to_light = (input.world_pos.xyz - lights[i].pos_radius.xyz);
 				float d = length(to_light) / 2.0; // omni shadow space far plane is radius * 2.0
 				float3 cv = normalize(to_light) * float3(1.0, 1.0, -1.0);
-				float cube_d = sample_texture_array_level(omni_shadow_texture, cv, float(omni_shadow_index), 0).r;
+				float cube_d = sample_texture_cube_array_level(omni_shadow_texture, cv, float(omni_shadow_index), 0).r;
 				lit_colour += d < cube_d * lights[i].pos_radius.w ? light_col : 0.0;
 			
 				++omni_shadow_index;
@@ -557,6 +559,7 @@ ps_output ps_forward_lit( vs_output input )
     //for spot lights
     int spot_start = point_end;
     int spot_end =  spot_start + int(light_info.z);
+	_pmfx_loop
     for(int i = spot_start; i < spot_end; ++i )
     {
         float3 light_col = float3( 0.0, 0.0, 0.0 );

@@ -186,7 +186,7 @@
         
         pmfx: [
             "-shader_platform hlsl",
-            "-shader_version 3_0",
+            "-shader_version 4_0",
             "-i assets/shaders ../assets/shaders",
             "-o bin/win32/data/pmfx/hlsl",
             "-h shader_structs",
