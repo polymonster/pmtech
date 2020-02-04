@@ -55,36 +55,29 @@ def parse_library_images(library_node):
         for file_node in img_node.iter(schema+'init_from'):
             corrected = file_node.text.replace('\\', '/')
             identifier = dependencies.get_build_config_setting("textures_dir")
-            identifier += "/"
+            identifier = "assets/exported/textures/"
             texture_src = corrected.find(identifier)
-
             # check for relative path
             if texture_src == -1:
                 identifier = "../textures/"
                 texture_src = corrected.find(identifier)
-
             if texture_src != -1:
                 texture_sub_dir = corrected[texture_src + len(identifier):len(corrected)]
                 texture_bin = os.path.join("data", "textures", texture_sub_dir)
                 lib_img.filename = texture_bin
                 image_list.append(lib_img)
                 break
-
             else:
                 corrected = corrected.replace("/models/images/", "/textures/")
                 corrected = corrected.replace("file://", "assets/textures/")
-
             split_dirs = corrected.split('/')
             filename_split = len(split_dirs)-1
-
             if helpers.author == "Max":
                 split_dirs[filename_split] = split_dirs[filename_split].lstrip("0123456789_")
-
             cur_dir = 0
             lib_img.filename = ""
             while split_dirs[cur_dir] != "assets" and cur_dir < filename_split:
                 cur_dir += 1
-
             if cur_dir == len(split_dirs)-1:
                 print("warning: texture not in assets folder " + lib_img.filename)
                 lib_img.filename = "data/textures/" + split_dirs[filename_split]
@@ -95,7 +88,6 @@ def parse_library_images(library_node):
                     if cur_dir != filename_split:
                         lib_img.filename += '/'
                     cur_dir += 1
-
             image_list.append(lib_img)
             break
 

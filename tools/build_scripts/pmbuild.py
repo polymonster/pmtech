@@ -332,7 +332,7 @@ def run_textures(config):
                 if fext in cont_fmt:
                     export = export_config_for_directory(f[0], "osx")
                     dep_inputs = get_container_dep_inputs(f[0], dep_inputs)
-                dst = util.change_ext(f[1], ".dds")
+                dst = util.change_ext(f[1], ".dds").lower()
                 if not dependencies.check_up_to_date_single(dst):
                     if "format" not in export.keys():
                         export["format"] = "RGBA8"
