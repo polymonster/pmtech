@@ -1305,7 +1305,7 @@ namespace pen
     void renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
     {
         renderer_cmd cmd;
-
+        
         cmd.command_index = CMD_SET_CONSTANT_BUFFER;
 
         cmd.set_buffer.buffer_index = buffer_index;

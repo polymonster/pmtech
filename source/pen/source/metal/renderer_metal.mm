@@ -218,13 +218,14 @@ namespace // internal structs and static vars
     {
         offset = 0;
         
+        // bind a static buffer that is never updated
         if (_static)
             return static_buffer;
             
         if(_frame_writes > 1)
         {
             offset = _dynamic_read_offset;
-            return _res_pool.get(stretchy_buffer->_gpu_buffer).buffer.dynamic_buffers.backbuffer();
+            return _res_pool.get(stretchy_buffer->_gpu_buffer).buffer.dynamic_buffers.frontbuffer();
         }
             
         return dynamic_buffers.backbuffer();
@@ -277,10 +278,12 @@ namespace // internal structs and static vars
         
         if(_frame_writes > 0)
         {
+            // multiple updates per frame
             _dynamic_read_offset = _renderer_buffer_multi_update(stretchy_buffer, data, (size_t)data_size);
         }
         else
         {
+            // single update per frame
             auto& db = dynamic_buffers;
             u32 c = db._swaps == 0 ? NBB : 1;
 
@@ -306,7 +309,7 @@ namespace // internal structs and static vars
             }
         }
         
-        _frame_writes++;
+         _frame_writes++;
     }
 }
 
@@ -1146,9 +1149,11 @@ namespace pen
                 switch (m.type)
                 {
                     case CLEAR_F32:
+                        mc.colour_load_action[i] = MTLLoadActionClear;
                         mc.colour[i] = MTLClearColorMake(m.rf, m.gf, m.bf, m.af);
                         break;
                     case CLEAR_U32:
+                        mc.colour_load_action[i] = MTLLoadActionClear;
                         mc.colour[i] = MTLClearColorMake(m.ri, m.gi, m.bi, m.ai);
                         break;
                 }
@@ -1374,7 +1379,7 @@ namespace pen
         {
             if(buffer_index == 0)
                 return;
-            
+                            
             size_t bind_offset = 0;
             id<MTLBuffer> buf = _res_pool.get(buffer_index).buffer.read(bind_offset);
 
