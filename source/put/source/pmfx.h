@@ -167,6 +167,17 @@ namespace put
             };
         }
         typedef e_vrt_mode::vrt_mode_t vrt_mode;
+        
+        namespace e_scene_render_flags
+        {
+            enum scene_render_flags_t
+            {
+                forward_lit = 1,
+                deferred_lit = 1<<1,
+                COUNT
+            };
+        }
+        typedef e_scene_render_flags::scene_render_flags_t scene_render_flags;
 
         struct technique_constant
         {

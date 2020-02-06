@@ -28,52 +28,52 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->id_name[light] = PEN_HASH("cyan_light");
     scene->lights[light].colour = vec3f(250.0f, 162.0f, 117.0f) / 255.0f;
     scene->lights[light].direction = vec3f::one();
-    scene->lights[light].type = LIGHT_TYPE_DIR;
+    scene->lights[light].type = e_light_type::dir;
     scene->lights[light].shadow_map = true;
     scene->transforms[light].translation = vec3f::zero();
     scene->transforms[light].rotation = quat();
     scene->transforms[light].scale = vec3f::one();
-    scene->entities[light] |= CMP_LIGHT;
-    scene->entities[light] |= CMP_TRANSFORM;
+    scene->entities[light] |= e_cmp::light;
+    scene->entities[light] |= e_cmp::transform;
 
     light = get_new_entity(scene);
     scene->names[light] = "magenta_light";
     scene->id_name[light] = PEN_HASH("magenta_light");
     scene->lights[light].colour = vec3f(206.0f, 106.0f, 84.0f) / 255.0f;
     scene->lights[light].direction = vec3f(-1.0f, 1.0f, 1.0f);
-    scene->lights[light].type = LIGHT_TYPE_DIR;
+    scene->lights[light].type = e_light_type::dir;
     scene->lights[light].shadow_map = true;
     scene->transforms[light].translation = vec3f::zero();
     scene->transforms[light].rotation = quat();
     scene->transforms[light].scale = vec3f::one();
-    scene->entities[light] |= CMP_LIGHT;
-    scene->entities[light] |= CMP_TRANSFORM;
+    scene->entities[light] |= e_cmp::light;
+    scene->entities[light] |= e_cmp::transform;
 
     light = get_new_entity(scene);
     scene->names[light] = "yellow_light";
     scene->id_name[light] = PEN_HASH("yellow_light");
     scene->lights[light].colour = vec3f(152.0f, 82.0f, 119.0f) / 255.0f;
     scene->lights[light].direction = vec3f(0.0f, 1.0f, 1.0f);
-    scene->lights[light].type = LIGHT_TYPE_DIR;
+    scene->lights[light].type = e_light_type::dir;
     scene->lights[light].shadow_map = true;
     scene->transforms[light].translation = vec3f::zero();
     scene->transforms[light].rotation = quat();
     scene->transforms[light].scale = vec3f::one();
-    scene->entities[light] |= CMP_LIGHT;
-    scene->entities[light] |= CMP_TRANSFORM;
+    scene->entities[light] |= e_cmp::light;
+    scene->entities[light] |= e_cmp::transform;
 
     light = get_new_entity(scene);
     scene->names[light] = "red_light";
     scene->id_name[light] = PEN_HASH("red_light");
     scene->lights[light].colour = vec3f(222.0f, 50.0f, 97.0f) / 255.0f;
     scene->lights[light].direction = vec3f(0.0f, 1.0f, 1.0f);
-    scene->lights[light].type = LIGHT_TYPE_DIR;
+    scene->lights[light].type = e_light_type::dir;
     scene->lights[light].shadow_map = true;
     scene->transforms[light].translation = vec3f::zero();
     scene->transforms[light].rotation = quat();
     scene->transforms[light].scale = vec3f::one();
-    scene->entities[light] |= CMP_LIGHT;
-    scene->entities[light] |= CMP_TRANSFORM;
+    scene->entities[light] |= e_cmp::light;
+    scene->entities[light] |= e_cmp::transform;
 
     //floor for shadow casting
     u32 floor = get_new_entity(scene);
@@ -82,7 +82,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->transforms[floor].rotation.euler_angles(0.0f, 0.0f, 0.0f);
     scene->transforms[floor].scale = vec3f(100.0f, 1.0f, 100.0f);
     scene->transforms[floor].translation = vec3f(0.0f, -60.0f, 0.0f);
-    scene->entities[floor] |= CMP_TRANSFORM;
+    scene->entities[floor] |= e_cmp::transform;
     scene->parents[floor] = floor;
     instantiate_geometry(box_resource, scene, floor);
     instantiate_material(default_material, scene, floor);
@@ -101,7 +101,7 @@ void example_setup(ecs_scene* scene, camera& cam)
         scene->transforms[wall].rotation.euler_angles(0.0f, 0.0f, 0.0f);
         scene->transforms[wall].scale = scale[i];
         scene->transforms[wall].translation = offset[i];
-        scene->entities[wall] |= CMP_TRANSFORM;
+        scene->entities[wall] |= e_cmp::transform;
         scene->parents[wall] = wall;
         instantiate_geometry(box_resource, scene, wall);
         instantiate_material(default_material, scene, wall);
@@ -114,7 +114,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->transforms[master_node].rotation.euler_angles(0.0f, 0.0f, 0.0f);
     scene->transforms[master_node].scale = vec3f::one();
     scene->transforms[master_node].translation = vec3f::zero();
-    scene->entities[master_node] |= CMP_TRANSFORM;
+    scene->entities[master_node] |= e_cmp::transform;
     scene->parents[master_node] = master_node;
     instantiate_geometry(box_resource, scene, master_node);
     instantiate_material(default_material, scene, master_node);
@@ -156,14 +156,14 @@ void example_setup(ecs_scene* scene, camera& cam)
             scene->transforms[new_prim].rotation.euler_angles(z, y, x);
             scene->transforms[new_prim].scale = vec3f::one();
             scene->transforms[new_prim].translation = inner_pos;
-            scene->entities[new_prim] |= CMP_TRANSFORM;
+            scene->entities[new_prim] |= e_cmp::transform;
             scene->parents[new_prim] = master_node;
 
             scene->bounding_volumes[new_prim] = scene->bounding_volumes[master_node];
 
-            scene->entities[new_prim] |= CMP_GEOMETRY;
-            scene->entities[new_prim] |= CMP_MATERIAL;
-            scene->entities[new_prim] |= CMP_SUB_INSTANCE;
+            scene->entities[new_prim] |= e_cmp::geometry;
+            scene->entities[new_prim] |= e_cmp::material;
+            scene->entities[new_prim] |= e_cmp::sub_instance;
 
             scene->draw_call_data[new_prim].v2 = vec4f::white();
 
@@ -202,7 +202,7 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
     {
         // animate boxes
         scene->transforms[i].rotation = scene->transforms[i].rotation * q;
-        scene->entities[i] |= CMP_TRANSFORM;
+        scene->entities[i] |= e_cmp::transform;
     }
 
 #if 0 // debug / test array cost vs operator [] in component entity system
@@ -210,11 +210,11 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
     pen::timer_start(timer);
     for (s32 i = 0; i < scene->num_nodes; ++i)
     {
-        if(!(scene->entities.data[i] & CMP_SDF_SHADOW))
+        if(!(scene->entities.data[i] & e_cmp::sdf_shadow))
             continue;
         
         scene->transforms.data[i].rotation = scene->transforms.data[i].rotation * q;
-        scene->entities.data[i] |= CMP_TRANSFORM;
+        scene->entities.data[i] |= e_cmp::transform;
     }
     f32 operator_cost = pen::timer_elapsed_ms(timer);
     pen::timer_start(timer);

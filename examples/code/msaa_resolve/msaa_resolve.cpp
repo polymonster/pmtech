@@ -57,12 +57,12 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     scene->id_name[light] = PEN_HASH("front_light");
     scene->lights[light].colour = vec3f::one();
     scene->lights[light].direction = vec3f::one();
-    scene->lights[light].type = LIGHT_TYPE_DIR;
+    scene->lights[light].type = e_light_type::dir;
     scene->transforms[light].translation = vec3f::zero();
     scene->transforms[light].rotation = quat();
     scene->transforms[light].scale = vec3f::one();
-    scene->entities[light] |= CMP_LIGHT;
-    scene->entities[light] |= CMP_TRANSFORM;
+    scene->entities[light] |= e_cmp::light;
+    scene->entities[light] |= e_cmp::transform;
 
     // add some spheres
     f32   num_rows = 5;
@@ -84,7 +84,7 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
                 scene->transforms[capsule].scale = vec3f(2.0f, 2.0f, 2.0f);
                 scene->transforms[capsule].translation = pos;
                 scene->parents[capsule] = capsule;
-                scene->entities[capsule] |= CMP_TRANSFORM;
+                scene->entities[capsule] |= e_cmp::transform;
 
                 instantiate_geometry(capsule_resource, scene, capsule);
                 instantiate_material(default_material, scene, capsule);

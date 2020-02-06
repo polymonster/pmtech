@@ -31,14 +31,14 @@ void animate_lights(ecs_scene* scene, f32 dt)
     static f32 t = 0.0f;
     t += dt * 0.001f;
 
-    static vec3f s_velocities[MAX_FORWARD_LIGHTS];
+    static vec3f s_velocities[e_scene_limits::max_forward_lights];
     static bool  s_initialise = true;
     if (s_initialise)
     {
         s_initialise = false;
         srand(pen::get_time_us());
 
-        for (u32 i = 0; i < MAX_FORWARD_LIGHTS; ++i)
+        for (u32 i = 0; i < e_scene_limits::max_forward_lights; ++i)
             s_velocities[i] = random_vel(-1.0f, 1.0f);
     }
 
@@ -46,24 +46,24 @@ void animate_lights(ecs_scene* scene, f32 dt)
 
     for (u32 n = 0; n < scene->num_entities; ++n)
     {
-        if (!(scene->entities[n] & CMP_LIGHT))
+        if (!(scene->entities[n] & e_cmp::light))
             continue;
 
-        if (scene->lights[n].type == LIGHT_TYPE_DIR)
+        if (scene->lights[n].type == e_light_type::dir)
             continue;
 
         if (vel_index == 0)
         {
             f32 tx = sin(t);
             scene->transforms[n].translation = vec3f(tx * -20.0f, 4.0f, 15.0f);
-            scene->entities[n] |= CMP_TRANSFORM;
+            scene->entities[n] |= e_cmp::transform;
         }
 
         if (vel_index == 1)
         {
             f32 tz = cos(t);
             scene->transforms[n].translation = vec3f(-15.0f, 3.0f, tz * 20.0f);
-            scene->entities[n] |= CMP_TRANSFORM;
+            scene->entities[n] |= e_cmp::transform;
         }
 
         if (vel_index == 2)
@@ -71,7 +71,7 @@ void animate_lights(ecs_scene* scene, f32 dt)
             f32 tx = sin(t * 0.5);
             f32 tz = cos(t * 0.5);
             scene->transforms[n].translation = vec3f(tx * 40.0f, 1.0f, tz * 30.0f);
-            scene->entities[n] |= CMP_TRANSFORM;
+            scene->entities[n] |= e_cmp::transform;
         }
 
         if (vel_index == 3)
@@ -79,7 +79,7 @@ void animate_lights(ecs_scene* scene, f32 dt)
             f32 tx = cos(t * 0.25);
             f32 tz = sin(t * 0.25);
             scene->transforms[n].translation = vec3f(tx * 30.0f, 6.0f, tz * 30.0f);
-            scene->entities[n] |= CMP_TRANSFORM;
+            scene->entities[n] |= e_cmp::transform;
         }
 
         ++vel_index;

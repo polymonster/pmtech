@@ -98,10 +98,10 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     scene->transforms[new_prim].rotation = quat();
     scene->transforms[new_prim].scale = vec3f(10.0f);
     scene->transforms[new_prim].translation = vec3f::zero();
-    scene->entities[new_prim] |= CMP_TRANSFORM;
+    scene->entities[new_prim] |= e_cmp::transform;
     scene->parents[new_prim] = new_prim;
     scene->samplers[new_prim].sb[0].handle = volume_texture;
-    scene->samplers[new_prim].sb[0].sampler_unit = SN_VOLUME_TEXTURE;
+    scene->samplers[new_prim].sb[0].sampler_unit = e_texture::volume;
     scene->samplers[new_prim].sb[0].sampler_state = pmfx::get_render_state(PEN_HASH("clamp_point"), pmfx::e_render_state::sampler);
 
     instantiate_geometry(cube, scene, new_prim);

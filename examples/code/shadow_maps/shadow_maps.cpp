@@ -39,13 +39,13 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->id_name[light] = PEN_HASH("front_light");
     scene->lights[light].colour = vec3f::one() * 0.3f;
     scene->lights[light].direction = vec3f::one();
-    scene->lights[light].type = LIGHT_TYPE_DIR;
+    scene->lights[light].type = e_light_type::dir;
     scene->lights[light].shadow_map = true;
     scene->transforms[light].translation = vec3f::zero();
     scene->transforms[light].rotation = quat();
     scene->transforms[light].scale = vec3f::one();
-    scene->entities[light] |= CMP_LIGHT;
-    scene->entities[light] |= CMP_TRANSFORM;
+    scene->entities[light] |= e_cmp::light;
+    scene->entities[light] |= e_cmp::transform;
     
     // point
     light = get_new_entity(scene);
@@ -54,13 +54,13 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->id_name[light] = PEN_HASH("point_light1");
     scene->lights[light].colour = vec3f(1.0f, 0.0f, 0.0f);
     scene->lights[light].radius = 50.0f;
-    scene->lights[light].type = LIGHT_TYPE_POINT;
+    scene->lights[light].type = e_light_type::point;
     scene->lights[light].shadow_map = true;
     scene->transforms[light].translation = vec3f(-16.0f, 30.0f, -16.0f);
     scene->transforms[light].rotation = quat();
     scene->transforms[light].scale = vec3f::one();
-    scene->entities[light] |= CMP_LIGHT;
-    scene->entities[light] |= CMP_TRANSFORM;
+    scene->entities[light] |= e_cmp::light;
+    scene->entities[light] |= e_cmp::transform;
     
     light = get_new_entity(scene);
     instantiate_light(scene, light);
@@ -68,13 +68,13 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->id_name[light] = PEN_HASH("point_light2");
     scene->lights[light].colour = vec3f(0.0f, 0.0f, 1.0f);
     scene->lights[light].radius = 50.0f;
-    scene->lights[light].type = LIGHT_TYPE_POINT;
+    scene->lights[light].type = e_light_type::point;
     scene->lights[light].shadow_map = true;
     scene->transforms[light].translation = vec3f(16.0f, 30.0f, 16.0f);
     scene->transforms[light].rotation = quat();
     scene->transforms[light].scale = vec3f::one();
-    scene->entities[light] |= CMP_LIGHT;
-    scene->entities[light] |= CMP_TRANSFORM;
+    scene->entities[light] |= e_cmp::light;
+    scene->entities[light] |= e_cmp::transform;
     
     // spot
     light = get_new_entity(scene);
@@ -85,13 +85,13 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->lights[light].cos_cutoff = 0.3f;
     scene->lights[light].radius = 30.0f; // range
     scene->lights[light].spot_falloff = 0.2f;
-    scene->lights[light].type = LIGHT_TYPE_SPOT;
+    scene->lights[light].type = e_light_type::spot;
     scene->lights[light].shadow_map = true;
     scene->transforms[light].translation = vec3f(75.0f, 30.0f, -50.0f);
     scene->transforms[light].rotation = quat(-45.0f, 0.0f, 0.0f);
     scene->transforms[light].scale = vec3f::one();
-    scene->entities[light] |= CMP_LIGHT;
-    scene->entities[light] |= CMP_TRANSFORM;
+    scene->entities[light] |= e_cmp::light;
+    scene->entities[light] |= e_cmp::transform;
     
     light = get_new_entity(scene);
     instantiate_light(scene, light);
@@ -101,13 +101,13 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->lights[light].cos_cutoff = 0.3f;
     scene->lights[light].radius = 30.0f; // range
     scene->lights[light].spot_falloff = 0.2f;
-    scene->lights[light].type = LIGHT_TYPE_SPOT;
+    scene->lights[light].type = e_light_type::spot;
     scene->lights[light].shadow_map = true;
     scene->transforms[light].translation = vec3f(-75.0f, 30.0f, 50.0f);
     scene->transforms[light].rotation = quat(45.0f, 0.0f, 0.0f);
     scene->transforms[light].scale = vec3f::one();
-    scene->entities[light] |= CMP_LIGHT;
-    scene->entities[light] |= CMP_TRANSFORM;
+    scene->entities[light] |= e_cmp::light;
+    scene->entities[light] |= e_cmp::transform;
     
     // add ground
     f32 ground_size = 100.0f;
@@ -116,7 +116,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->transforms[ground].scale = vec3f(ground_size, 1.0f, ground_size);
     scene->transforms[ground].translation = vec3f::zero();
     scene->parents[ground] = ground;
-    scene->entities[ground] |= CMP_TRANSFORM;
+    scene->entities[ground] |= e_cmp::transform;
 
     instantiate_geometry(box_resource, scene, ground);
     instantiate_material(default_material, scene, ground);
@@ -149,7 +149,7 @@ void example_setup(ecs_scene* scene, camera& cam)
             scene->transforms[pillar].scale = vec3f(2.0f, pillar_size * 0.75f, 2.0f);
             scene->transforms[pillar].translation = pos;
             scene->parents[pillar] = pillar;
-            scene->entities[pillar] |= CMP_TRANSFORM;
+            scene->entities[pillar] |= e_cmp::transform;
             
             // random rotation offset
             f32 x = maths::deg_to_rad(rand() % 360);
@@ -199,7 +199,7 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
         scene->lights[i].direction = dir;
         
         scene->transforms.data[i].rotation = quat(xz.x, 0.0f, xz.y);
-        scene->entities.data[i] |= CMP_TRANSFORM;
+        scene->entities.data[i] |= e_cmp::transform;
     }
 
     static f32 t = 0.0;
@@ -207,14 +207,14 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
     f32 tx = sin(t * 0.5);
     f32 tz = cos(t * 0.5);
     scene->transforms[1].translation = vec3f(tx * 30.0f, 30.0f, tz * 30.0f);
-    scene->entities[1] |= CMP_TRANSFORM;
+    scene->entities[1] |= e_cmp::transform;
 
     static f32 t2 = dt;
     t2 += dt;
     tx = sin(t2 * 0.5);
     tz = cos(t2 * 0.5);
     scene->transforms[2].translation = vec3f(tz * 30.0f, 30.0f, tx * 30.0f);
-    scene->entities[2] |= CMP_TRANSFORM;
+    scene->entities[2] |= e_cmp::transform;
     
     // animating pillars
     q.euler_angles(0.01f, 0.01f, 0.01f);
@@ -225,6 +225,6 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
     for (s32 i = pillar_start; i < scene->num_entities; ++i)
     {
         scene->transforms.data[i].rotation = scene->transforms.data[i].rotation * q;
-        scene->entities.data[i] |= CMP_TRANSFORM;
+        scene->entities.data[i] |= e_cmp::transform;
     }
 }

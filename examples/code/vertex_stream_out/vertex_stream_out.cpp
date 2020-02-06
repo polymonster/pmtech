@@ -33,12 +33,12 @@ void example_setup(ecs_scene* scene, camera& cam)
         scene->lights[light].colour = light_cols[l];
         scene->lights[light].direction = vec3f::one();
         scene->lights[light].radius = 70.0f;
-        scene->lights[light].type = LIGHT_TYPE_POINT;
+        scene->lights[light].type = e_light_type::point;
         scene->transforms[light].translation = light_pos[l];
         scene->transforms[light].rotation = quat();
         scene->transforms[light].scale = vec3f::one();
-        scene->entities[light] |= CMP_LIGHT;
-        scene->entities[light] |= CMP_TRANSFORM;
+        scene->entities[light] |= e_cmp::light;
+        scene->entities[light] |= e_cmp::transform;
     }
 
     // ground
@@ -47,7 +47,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->transforms[ground].translation = vec3f::zero();
     scene->transforms[ground].rotation = quat();
     scene->transforms[ground].scale = vec3f(50.0f, 1.0f, 50.0f);
-    scene->entities[ground] |= CMP_TRANSFORM;
+    scene->entities[ground] |= e_cmp::transform;
     scene->parents[ground] = ground;
     instantiate_geometry(box, scene, ground);
     instantiate_material(default_material, scene, ground);
@@ -60,7 +60,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     // set character scale and pos
     scene->transforms[skinned_char].translation = vec3f(0.0f, 1.0f, 0.0f);
     scene->transforms[skinned_char].scale = vec3f(0.25f);
-    scene->entities[skinned_char] |= CMP_TRANSFORM;
+    scene->entities[skinned_char] |= e_cmp::transform;
 
     instantiate_model_pre_skin(scene, skinned_char);
 
@@ -77,7 +77,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->anim_controller[skinned_char].play_flags = cmp_anim_controller::PLAY;
 
     // remove the geometry flag from the skinned character as we just want to use it as vertex stream out
-    scene->entities[skinned_char] &= ~CMP_GEOMETRY;
+    scene->entities[skinned_char] &= ~e_cmp::geometry;
 
     // in order to instance stuff we must have a contiguous list of nodes.
     // this node aliases the geometry and materials from the skinned_char root node
@@ -88,7 +88,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->transforms[master_node].scale = vec3f::one();
     scene->parents[master_node] = master_node;
 
-    scene->entities[master_node] |= (CMP_TRANSFORM | CMP_GEOMETRY | CMP_MATERIAL);
+    scene->entities[master_node] |= (e_cmp::transform | e_cmp::geometry | e_cmp::material);
 
     scene->geometries[master_node] = scene->geometries[skinned_char];
     scene->materials[master_node] = scene->materials[skinned_char];
@@ -124,10 +124,10 @@ void example_setup(ecs_scene* scene, camera& cam)
             scene->transforms[new_prim].translation = cur_pos;
             scene->parents[new_prim] = skinned_char;
 
-            scene->entities[new_prim] |= CMP_TRANSFORM;
-            scene->entities[new_prim] |= CMP_GEOMETRY;
-            scene->entities[new_prim] |= CMP_MATERIAL;
-            scene->entities[new_prim] |= CMP_SUB_INSTANCE;
+            scene->entities[new_prim] |= e_cmp::transform;
+            scene->entities[new_prim] |= e_cmp::geometry;
+            scene->entities[new_prim] |= e_cmp::material;
+            scene->entities[new_prim] |= e_cmp::sub_instance;
 
             scene->draw_call_data[new_prim].v2 = vec4f(0.5f, 0.5f, 0.5f, 1.0f - roughness);
 

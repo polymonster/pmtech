@@ -65,12 +65,12 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
     {
         if (i >= lights_end)
         {
-            scene->entities[i] &= ~CMP_LIGHT;
+            scene->entities[i] &= ~e_cmp::light;
             continue;
         }
 
         scene->transforms[i].translation += anim_dir[dir_index] * dt * 0.1f;
-        scene->entities[i] |= CMP_TRANSFORM;
+        scene->entities[i] |= e_cmp::transform;
 
         for (u32 j = 0; j < 3; ++j)
         {
@@ -85,7 +85,7 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
             }
         }
 
-        scene->entities[i] |= CMP_LIGHT;
+        scene->entities[i] |= e_cmp::light;
         scene->lights[i].radius = light_radius;
 
         dir_index++;
@@ -151,7 +151,7 @@ void example_setup(ecs::ecs_scene* scene, camera& main_camera)
             scene->transforms[pillar].scale = vec3f(rx, ry, rz);
             scene->transforms[pillar].translation = pos;
             scene->parents[pillar] = pillar;
-            scene->entities[pillar] |= CMP_TRANSFORM;
+            scene->entities[pillar] |= e_cmp::transform;
             scene->names[pillar] = "pillar";
 
             instantiate_geometry(box_resource, scene, pillar);
@@ -214,12 +214,12 @@ void example_setup(ecs::ecs_scene* scene, camera& main_camera)
         scene->transforms[light].rotation = quat();
         scene->transforms[light].rotation.euler_angles(rrx, rry, rrz);
         scene->transforms[light].scale = vec3f::one();
-        scene->entities[light] |= CMP_TRANSFORM;
+        scene->entities[light] |= e_cmp::transform;
 
         instantiate_light(scene, light);
         scene->lights[light].colour = col.xyz;
         scene->lights[light].radius = light_radius;
-        scene->lights[light].type = LIGHT_TYPE_POINT;
+        scene->lights[light].type = e_light_type::point;
 
         anim_dir[i] = vec3f(rrx, rry, rrz) * vec3f(2.0f) - vec3f(1.0);
 

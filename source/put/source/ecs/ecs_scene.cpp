@@ -62,7 +62,7 @@ namespace put
             {
                 scene->free_list[i].node = i;
 
-                if (!(scene->entities[i] & CMP_ALLOCATED))
+                if (!(scene->entities[i] & e_cmp::allocated))
                 {
                     free_node_list* l = &scene->free_list[i];
                     l->next = scene->free_list_head;
@@ -163,13 +163,13 @@ namespace put
         void delete_entity_first_pass(ecs_scene* scene, u32 node_index)
         {
             // constraints must be freed or removed before we delete rigidbodies using them
-            if (is_valid(scene->physics_handles[node_index]) && (scene->entities[node_index] & CMP_CONSTRAINT))
+            if (is_valid(scene->physics_handles[node_index]) && (scene->entities[node_index] & e_cmp::constraint))
                 physics::release_entity(scene->physics_handles[node_index]);
 
             if (is_valid(scene->cbuffer[node_index]))
                 pen::renderer_release_buffer(scene->cbuffer[node_index]);
 
-            if (scene->entities[node_index] & CMP_PRE_SKINNED)
+            if (scene->entities[node_index] & e_cmp::pre_skinned)
             {
                 if (scene->pre_skin[node_index].vertex_buffer)
                     pen::renderer_release_buffer(scene->pre_skin[node_index].vertex_buffer);
@@ -185,7 +185,7 @@ namespace put
         void delete_entity_second_pass(ecs_scene* scene, u32 node_index)
         {
             // all constraints must be removed by this point.
-            if (scene->physics_handles[node_index] && (scene->entities[node_index] & CMP_PHYSICS))
+            if (scene->physics_handles[node_index] && (scene->entities[node_index] & e_cmp::physics))
                 physics::release_entity(scene->physics_handles[node_index]);
 
             zero_entity_components(scene, node_index);
@@ -281,10 +281,10 @@ namespace put
                 if (p_sn->physics_handles[src])
                     instantiate_rigid_body(scene, dst);
 
-                if (p_sn->entities[dst] & CMP_GEOMETRY)
+                if (p_sn->entities[dst] & e_cmp::geometry)
                     instantiate_model_cbuffer(scene, dst);
 
-                if (p_sn->entities[dst] & CMP_MATERIAL)
+                if (p_sn->entities[dst] & e_cmp::material)
                 {
                     p_sn->materials[dst].material_cbuffer = PEN_INVALID_HANDLE;
                     instantiate_material_cbuffer(scene, dst, p_sn->materials[dst].material_cbuffer_size);
@@ -333,7 +333,7 @@ namespace put
             bcp.usage_flags = PEN_USAGE_DYNAMIC;
             bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
             bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-            bcp.buffer_size = sizeof(mat4) * MAX_SHADOW_MAPS;
+            bcp.buffer_size = sizeof(mat4) * e_scene_limits::max_shadow_maps;
             bcp.data = nullptr;
 
             new_instance.scene->shadow_map_buffer = pen::renderer_create_buffer(bcp);
@@ -367,10 +367,10 @@ namespace put
             u32 area_light = -1;
             for (u32 i = 0; i < scene->num_entities; ++i)
             {
-                if (!(scene->entities[i] & CMP_LIGHT))
+                if (!(scene->entities[i] & e_cmp::light))
                     continue;
 
-                if (!(scene->lights[i].type == LIGHT_TYPE_AREA_EX))
+                if (!(scene->lights[i].type == e_light_type::area_ex))
                     continue;
 
                 cmp_area_light& al = scene->area_light[i];
@@ -423,14 +423,14 @@ namespace put
                 cb_view = pen::renderer_create_buffer(bcp);
             }
 
-            static mat4 shadow_matrices[MAX_SHADOW_MAPS];
+            static mat4 shadow_matrices[e_scene_limits::max_shadow_maps];
             u32         shadow_index = 0;
             for (u32 n = 0; n < scene->num_entities; ++n)
             {
-                if (!(scene->entities[n] & CMP_LIGHT))
+                if (!(scene->entities[n] & e_cmp::light))
                     continue;
 
-                if (!scene->lights[n].shadow_map || scene->lights[n].type == LIGHT_TYPE_POINT)
+                if (!scene->lights[n].shadow_map || scene->lights[n].type == e_light_type::point)
                     continue;
 
                 if (shadow_index++ != view.array_index)
@@ -438,7 +438,7 @@ namespace put
 
                 // create a shadow camera
                 camera cam;
-                if(scene->lights[n].type == LIGHT_TYPE_DIR)
+                if(scene->lights[n].type == e_light_type::dir)
                 {
                     vec3f  light_dir = normalised(-scene->lights[n].direction);
                     camera_update_shadow_frustum(&cam, light_dir, scene->renderable_extents.min - vec3f(0.1f),
@@ -473,7 +473,7 @@ namespace put
             // update cbuffer
             if (is_valid(scene->shadow_map_buffer))
             {
-                pen::renderer_update_buffer(scene->shadow_map_buffer, &shadow_matrices[0], sizeof(mat4) * MAX_SHADOW_MAPS);
+                pen::renderer_update_buffer(scene->shadow_map_buffer, &shadow_matrices[0], sizeof(mat4) * e_scene_limits::max_shadow_maps);
             }
         }
         
@@ -484,17 +484,17 @@ namespace put
             vec3f pos = scene->world_matrices[n].get_translation();
             switch (scene->lights[n].type)
             {
-                case LIGHT_TYPE_DIR:
+                case e_light_type::dir:
                     ld.pos_radius = vec4f(scene->lights[n].direction * 10000.0f, 0.0f);
                     ld.dir_cutoff = vec4f(scene->lights[n].direction, 0.0f);
                     ld.colour = vec4f(scene->lights[n].colour, 0.0f);
                     break;
-                case LIGHT_TYPE_POINT:
+                case e_light_type::point:
                     ld.pos_radius = vec4f(pos, scene->lights[n].radius);
                     ld.dir_cutoff = vec4f(scene->lights[n].direction, 0.0f);
                     ld.colour = vec4f(scene->lights[n].colour, 0.0f);
                     break;
-                case LIGHT_TYPE_SPOT:
+                case e_light_type::spot:
                     ld.pos_radius = vec4f(pos, scene->lights[n].radius);
                     ld.dir_cutoff = vec4f(-dc.world_matrix.get_column(1).xyz, scene->lights[n].cos_cutoff);
                     ld.colour = vec4f(scene->lights[n].colour, 0.0f);
@@ -530,10 +530,10 @@ namespace put
             u32 omni_light_index = 0;
             for (u32 n = 0; n < scene->num_entities; ++n)
             {
-                if (!(scene->entities[n] & CMP_LIGHT))
+                if (!(scene->entities[n] & e_cmp::light))
                     continue;
 
-                if (!scene->lights[n].shadow_map || scene->lights[n].type != LIGHT_TYPE_POINT)
+                if (!scene->lights[n].shadow_map || scene->lights[n].type != e_light_type::point)
                     continue;
                     
                 if(omni_light_index++ != target_omni_light_index)
@@ -584,7 +584,7 @@ namespace put
 
             for (u32 n = 0; n < scene->num_entities; ++n)
             {
-                if (!(scene->entities[n] & CMP_LIGHT))
+                if (!(scene->entities[n] & e_cmp::light))
                     continue;
 
                 u32                t = scene->lights[n].type;
@@ -603,12 +603,12 @@ namespace put
 
                 switch (t)
                 {
-                    case LIGHT_TYPE_DIR:
+                    case e_light_type::dir:
                         ld.pos_radius = vec4f(scene->lights[n].direction * 10000.0f, 0.0f);
                         ld.dir_cutoff = vec4f(scene->lights[n].direction, 0.0f);
                         ld.colour = vec4f(scene->lights[n].colour, 0.0f);
                         break;
-                    case LIGHT_TYPE_POINT:
+                    case e_light_type::point:
                         ld.pos_radius = vec4f(pos, scene->lights[n].radius);
                         ld.dir_cutoff = vec4f(scene->lights[n].direction, 0.0f);
                         ld.colour = vec4f(scene->lights[n].colour, 0.0f);
@@ -617,7 +617,7 @@ namespace put
                             inside_volume = true;
 
                         break;
-                    case LIGHT_TYPE_SPOT:
+                    case e_light_type::spot:
                         ld.pos_radius = vec4f(pos, scene->lights[n].radius);
                         ld.dir_cutoff = vec4f(-dc.world_matrix.get_column(1).xyz, scene->lights[n].cos_cutoff);
                         ld.colour = vec4f(scene->lights[n].colour, 0.0f);
@@ -670,13 +670,13 @@ namespace put
 
             for (u32 n = 0; n < scene->num_entities; ++n)
             {
-                if (!(scene->entities[n] & CMP_GEOMETRY && scene->entities[n] & CMP_MATERIAL))
+                if (!(scene->entities[n] & e_cmp::geometry && scene->entities[n] & e_cmp::material))
                     continue;
 
-                if (scene->entities[n] & CMP_SUB_INSTANCE)
+                if (scene->entities[n] & e_cmp::sub_instance)
                     continue;
 
-                if (scene->state_flags[n] & SF_HIDDEN)
+                if (scene->state_flags[n] & e_state::hidden)
                     continue;
 
                 // frustum cull
@@ -723,7 +723,7 @@ namespace put
                     bool set = pmfx::set_technique_perm(view.pmfx_shader, view.technique, permutation);
                     if (!set)
                     {
-                        if (scene->entities[n] & CMP_MASTER_INSTANCE)
+                        if (scene->entities[n] & e_cmp::master_instance)
                         {
                             u32 num_instances = scene->master_instances[n].num_instances;
                             n += num_instances;
@@ -734,7 +734,7 @@ namespace put
                 }
 
                 // update skin
-                if (scene->entities[n] & CMP_SKINNED && !(scene->entities[n] & CMP_SUB_GEOMETRY))
+                if (scene->entities[n] & e_cmp::skinned && !(scene->entities[n] & e_cmp::sub_geometry))
                 {
                     if (p_geom->p_skin->bone_cbuffer == PEN_INVALID_HANDLE)
                     {
@@ -767,7 +767,7 @@ namespace put
                 pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
 
                 // set ib / vb
-                if (scene->entities[n] & CMP_MASTER_INSTANCE)
+                if (scene->entities[n] & e_cmp::master_instance)
                 {
                     u32 vbs[2] = {p_geom->vertex_buffer, scene->master_instances[n].instance_buffer};
                     u32 strides[2] = {p_geom->vertex_size, scene->master_instances[n].instance_stride};
@@ -800,7 +800,7 @@ namespace put
                 pen::renderer_set_constant_buffer(view.cb_view, 0, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
 
                 // fwd lights
-                if (view.render_flags & RENDER_FORWARD_LIT)
+                if (view.render_flags & pmfx::e_scene_render_flags::forward_lit)
                 {
                     pen::renderer_set_constant_buffer(scene->forward_light_buffer, 3, pen::CBUFFER_BIND_PS);
                     pen::renderer_set_constant_buffer(scene->shadow_map_buffer, 4, pen::CBUFFER_BIND_PS);
@@ -816,25 +816,28 @@ namespace put
                     pen::renderer_set_texture(ltc_mat, clamp_linear, 13, pen::TEXTURE_BIND_PS);
                     pen::renderer_set_texture(ltc_mag, clamp_linear, 12, pen::TEXTURE_BIND_PS);
                 }
-
+                
                 // sdf shadows
                 pen::renderer_set_constant_buffer(scene->sdf_shadow_buffer, 5, pen::CBUFFER_BIND_PS);
                 for (u32 n = 0; n < scene->num_entities; ++n)
                 {
-                    if (scene->entities[n] & CMP_SDF_SHADOW)
-                    {
-                        cmp_shadow& shadow = scene->shadows[n];
+                    if (!(scene->entities[n] & e_cmp::sdf_shadow))
+                        continue;
+                    
+                    cmp_shadow& shadow = scene->shadows[n];
 
-                        if (is_valid(shadow.texture_handle))
-                            pen::renderer_set_texture(shadow.texture_handle, shadow.sampler_state, SDF_SHADOW_UNIT,
-                                                      pen::TEXTURE_BIND_PS);
-                    }
+                    if (is_valid(shadow.texture_handle))
+                        pen::renderer_set_texture(shadow.texture_handle, shadow.sampler_state, e_global_textures::sdf_shadow,
+                                                  pen::TEXTURE_BIND_PS);
+                                                  
+                    // info for sdf
+                    pen::renderer_set_constant_buffer(scene->sdf_shadow_buffer, 5, pen::CBUFFER_BIND_PS);
                 }
 
                 // draw
 
                 // instances
-                if (scene->entities[n] & CMP_MASTER_INSTANCE)
+                if (scene->entities[n] & e_cmp::master_instance)
                 {
                     u32 num_instances = scene->master_instances[n].num_instances;
                     pen::renderer_draw_indexed_instanced(num_instances, 0, scene->geometries[n].num_indices, 0, 0,
@@ -856,7 +859,7 @@ namespace put
 
             for (u32 n = 0; n < scene->num_entities; ++n)
             {
-                if (!(scene->entities[n] & CMP_ANIM_CONTROLLER))
+                if (!(scene->entities[n] & e_cmp::anim_controller))
                     continue;
 
                 cmp_anim_controller_v2 controller = scene->anim_controller_v2[n];
@@ -971,7 +974,7 @@ namespace put
                     {
                         u32 jnode = controller.joint_indices[j];
 
-                        if (scene->entities[jnode] & CMP_ANIM_TRAJECTORY)
+                        if (scene->entities[jnode] & e_cmp::anim_trajectory)
                         {
                             tj = j;
                             continue;
@@ -1027,7 +1030,7 @@ namespace put
                         cmp_transform& ta = a.joints[j];
                         cmp_transform& tb = b.joints[j];
 
-                        if (scene->entities[jnode] & CMP_ANIM_TRAJECTORY)
+                        if (scene->entities[jnode] & e_cmp::anim_trajectory)
                         {
                             vec3f lerp_delta = lerp(a.root_delta, b.root_delta, t);
 
@@ -1040,7 +1043,7 @@ namespace put
                             // apply root motion to the root controller, so we bring along the meshes
                             scene->transforms[n].rotation = q;
                             scene->transforms[n].translation += transform_translation;
-                            scene->entities[n] |= CMP_TRANSFORM;
+                            scene->entities[n] |= e_cmp::transform;
 
                             continue;
                         }
@@ -1049,7 +1052,7 @@ namespace put
                         tc.rotation = slerp2(ta.rotation, tb.rotation, t);
                         tc.scale = lerp(ta.scale, tb.scale, t);
 
-                        scene->entities[jnode] |= CMP_TRANSFORM;
+                        scene->entities[jnode] |= e_cmp::transform;
                     }
                 }
             }
@@ -1062,7 +1065,7 @@ namespace put
         {
             for (u32 n = 0; n < scene->num_entities; ++n)
             {
-                if (!(scene->entities[n] & CMP_ANIM_CONTROLLER))
+                if (!(scene->entities[n] & e_cmp::anim_controller))
                     continue;
 
                 auto& controller = scene->anim_controller[n];
@@ -1121,7 +1124,7 @@ namespace put
                         continue;
 
                     //
-                    if (scene->entities[sni] & CMP_ANIM_TRAJECTORY)
+                    if (scene->entities[sni] & e_cmp::anim_trajectory)
                     {
                         if (anim->channels[c].matrices)
                         {
@@ -1211,14 +1214,14 @@ namespace put
             for (u32 n = 0; n < scene->num_entities; ++n)
             {
                 // force physics entity to sync and ignore controlled transform
-                if (scene->state_flags[n] & SF_SYNC_PHYSICS_TRANSFORM)
+                if (scene->state_flags[n] & e_state::sync_physics_transform)
                 {
-                    scene->state_flags[n] &= ~SF_SYNC_PHYSICS_TRANSFORM;
-                    scene->entities[n] &= ~CMP_TRANSFORM;
+                    scene->state_flags[n] &= ~e_state::sync_physics_transform;
+                    scene->entities[n] &= ~e_cmp::transform;
                 }
 
                 // controlled transform
-                if (scene->entities[n] & CMP_TRANSFORM)
+                if (scene->entities[n] & e_cmp::transform)
                 {
                     cmp_transform& t = scene->transforms[n];
 
@@ -1232,9 +1235,9 @@ namespace put
 
                     scene->local_matrices[n] = translation_mat * rot_mat * scale_mat;
 
-                    if (scene->entities[n] & CMP_PHYSICS)
+                    if (scene->entities[n] & e_cmp::physics)
                     {
-                        if (scene->physics_data[n].type == PHYSICS_TYPE_RIGID_BODY)
+                        if (scene->physics_data[n].type == e_physics_type::rigid_body)
                         {
                             cmp_transform& pt = scene->physics_offset[n];
                             physics::set_transform(scene->physics_handles[n], t.translation + pt.translation, t.rotation);
@@ -1244,9 +1247,9 @@ namespace put
                     }
 
                     // local matrix will be baked
-                    scene->entities[n] &= ~CMP_TRANSFORM;
+                    scene->entities[n] &= ~e_cmp::transform;
                 }
-                else if (scene->entities[n] & CMP_PHYSICS)
+                else if (scene->entities[n] & e_cmp::physics)
                 {
                     if (!physics::has_rb_matrix(n))
                         continue;
@@ -1297,7 +1300,7 @@ namespace put
                 vec3f& tmin = scene->bounding_volumes[n].transformed_min_extents;
                 vec3f& tmax = scene->bounding_volumes[n].transformed_max_extents;
 
-                if (scene->entities[n] & CMP_BONE)
+                if (scene->entities[n] & e_cmp::bone)
                 {
                     tmin = tmax = scene->world_matrices[n].get_translation();
                     continue;
@@ -1317,7 +1320,7 @@ namespace put
                 f32& trad = scene->bounding_volumes[n].radius;
                 trad = mag(tmax - tmin) * 0.5f;
 
-                if (!(scene->entities[n] & CMP_GEOMETRY))
+                if (!(scene->entities[n] & e_cmp::geometry))
                     continue;
 
                 // also set scene extents
@@ -1328,7 +1331,7 @@ namespace put
             // reverse iterate over scene and expand parents extents by children
             for (s32 n = scene->num_entities - 1; n > 0; --n)
             {
-                if (!(scene->entities[n] & CMP_ALLOCATED))
+                if (!(scene->entities[n] & e_cmp::allocated))
                     continue;
 
                 u32 p = scene->parents[n];
@@ -1341,7 +1344,7 @@ namespace put
                 vec3f& tmin = scene->bounding_volumes[n].transformed_min_extents;
                 vec3f& tmax = scene->bounding_volumes[n].transformed_max_extents;
 
-                if (scene->entities[p] & CMP_ANIM_CONTROLLER)
+                if (scene->entities[p] & e_cmp::anim_controller)
                 {
                     vec3f pad = vec3f(0.0f);
 
@@ -1366,18 +1369,18 @@ namespace put
             s32 num_directions_lights = 0;
             for (s32 n = 0; n < scene->num_entities; ++n)
             {
-                if (!(scene->entities[n] & CMP_LIGHT))
+                if (!(scene->entities[n] & e_cmp::light))
                     continue;
 
                 cmp_light& l = scene->lights[n];
-                if (l.type != LIGHT_TYPE_DIR)
+                if (l.type != e_light_type::dir)
                     continue;
 
                 // update bv and transform
                 scene->bounding_volumes[n].min_extents = -vec3f(FLT_MAX);
                 scene->bounding_volumes[n].max_extents = vec3f(FLT_MAX);
 
-                if (num_lights >= MAX_FORWARD_LIGHTS)
+                if (num_lights >= e_scene_limits::max_forward_lights)
                     break;
 
                 // current directional light is a point light very far away
@@ -1395,11 +1398,11 @@ namespace put
             s32 num_point_lights = 0;
             for (s32 n = 0; n < scene->num_entities; ++n)
             {
-                if (!(scene->entities[n] & CMP_LIGHT))
+                if (!(scene->entities[n] & e_cmp::light))
                     continue;
 
                 cmp_light& l = scene->lights[n];
-                if (l.type != LIGHT_TYPE_POINT)
+                if (l.type != e_light_type::point)
                     continue;
 
                 // update bv and transform
@@ -1408,9 +1411,9 @@ namespace put
 
                 f32 rad = std::max<f32>(l.radius, 1.0f) * 2.0f;
                 scene->transforms[n].scale = vec3f(rad, rad, rad);
-                scene->entities[n] |= CMP_TRANSFORM;
+                scene->entities[n] |= e_cmp::transform;
 
-                if (num_lights >= MAX_FORWARD_LIGHTS)
+                if (num_lights >= e_scene_limits::max_forward_lights)
                     break;
 
                 cmp_transform& t = scene->transforms[n];
@@ -1427,15 +1430,15 @@ namespace put
             s32 num_spot_lights = 0;
             for (s32 n = 0; n < scene->num_entities; ++n)
             {
-                if (num_lights >= MAX_FORWARD_LIGHTS)
+                if (num_lights >= e_scene_limits::max_forward_lights)
                     break;
 
-                if (!(scene->entities[n] & CMP_LIGHT))
+                if (!(scene->entities[n] & e_cmp::light))
                     continue;
 
                 cmp_light& l = scene->lights[n];
 
-                if (l.type != LIGHT_TYPE_SPOT)
+                if (l.type != e_light_type::spot)
                     continue;
 
                 // update bv and transform
@@ -1447,7 +1450,7 @@ namespace put
                 f32 range = l.radius;
 
                 scene->transforms[n].scale = vec3f(lo * range, range, lo * range);
-                scene->entities[n] |= CMP_TRANSFORM;
+                scene->entities[n] |= e_cmp::transform;
 
                 cmp_transform& t = scene->transforms[n];
 
@@ -1480,14 +1483,14 @@ namespace put
             // constant colour area light
             for (s32 n = 0; n < scene->num_entities; ++n)
             {
-                if (num_lights >= MAX_FORWARD_LIGHTS)
+                if (num_lights >= e_scene_limits::max_forward_lights)
                     break;
 
-                if (!(scene->entities[n] & CMP_LIGHT))
+                if (!(scene->entities[n] & e_cmp::light))
                     continue;
 
                 cmp_light& l = scene->lights[n];
-                if (l.type != LIGHT_TYPE_AREA)
+                if (l.type != e_light_type::area)
                     continue;
 
                 mat4& wm = scene->world_matrices[n];
@@ -1502,14 +1505,14 @@ namespace put
             // textured / shader / animated area light
             for (s32 n = 0; n < scene->num_entities; ++n)
             {
-                if (num_lights >= MAX_FORWARD_LIGHTS)
+                if (num_lights >= e_scene_limits::max_forward_lights)
                     break;
 
-                if (!(scene->entities[n] & CMP_LIGHT))
+                if (!(scene->entities[n] & e_cmp::light))
                     continue;
 
                 cmp_light& l = scene->lights[n];
-                if (l.type != LIGHT_TYPE_AREA_EX)
+                if (l.type != e_light_type::area_ex)
                     continue;
 
                 mat4& wm = scene->world_matrices[n];
@@ -1548,7 +1551,7 @@ namespace put
             // Distance field shadows
             for (s32 n = 0; n < scene->num_entities; ++n)
             {
-                if (!(scene->entities[n] & CMP_SDF_SHADOW))
+                if (!(scene->entities[n] & e_cmp::sdf_shadow))
                     continue;
 
                 static distance_field_shadow_buffer sdf_buffer;
@@ -1557,8 +1560,6 @@ namespace put
                 sdf_buffer.shadows.world_matrix_inverse = mat::inverse4x4(scene->world_matrices[n]);
 
                 pen::renderer_update_buffer(scene->sdf_shadow_buffer, &sdf_buffer, sizeof(sdf_buffer));
-
-                pen::renderer_set_constant_buffer(scene->sdf_shadow_buffer, 5, pen::CBUFFER_BIND_PS);
             }
 
             // Shadow maps
@@ -1568,14 +1569,14 @@ namespace put
             u32 num_omni_shadow_maps = 0;
             for (s32 n = 0; n < scene->num_entities; ++n)
             {
-                if (!(scene->entities[n] & CMP_LIGHT))
+                if (!(scene->entities[n] & e_cmp::light))
                     continue;
 
                 cmp_light& l = scene->lights[n];
                 if (!l.shadow_map)
                     continue;
 
-                if(l.type == LIGHT_TYPE_POINT)
+                if(l.type == e_light_type::point)
                     ++num_omni_shadow_maps;
                 else
                     ++num_shadow_maps;
@@ -1619,7 +1620,7 @@ namespace put
             {
                 for (s32 n = 0; n < scene->num_entities; ++n)
                 {
-                    if (!(scene->entities[n] & CMP_PRE_SKINNED))
+                    if (!(scene->entities[n] & e_cmp::pre_skinned))
                         continue;
 
                     // update bone cbuffer
@@ -1658,7 +1659,7 @@ namespace put
             // update draw call data
             for (s32 n = 0; n < scene->num_entities; ++n)
             {
-                if (scene->entities[n] & CMP_MATERIAL)
+                if (scene->entities[n] & e_cmp::material)
                 {
                     // per node material cbuffer
                     if (is_valid(scene->materials[n].material_cbuffer))
@@ -1674,11 +1675,11 @@ namespace put
                 if (is_invalid_or_null(scene->cbuffer[n]))
                     continue;
 
-                if (scene->entities[n] & CMP_SUB_INSTANCE)
+                if (scene->entities[n] & e_cmp::sub_instance)
                     continue;
 
                 // skinned meshes have the world matrix baked into the bones
-                if (scene->entities[n] & CMP_SKINNED || scene->entities[n] & CMP_PRE_SKINNED)
+                if (scene->entities[n] & e_cmp::skinned || scene->entities[n] & e_cmp::pre_skinned)
                     scene->draw_call_data[n].world_matrix = mat4::create_identity();
 
                 mat4 invt = scene->world_matrices[n];
@@ -1695,7 +1696,7 @@ namespace put
             // update instance buffers
             for (s32 n = 0; n < scene->num_entities; ++n)
             {
-                if (!(scene->entities[n] & CMP_MASTER_INSTANCE))
+                if (!(scene->entities[n] & e_cmp::master_instance))
                     continue;
 
                 cmp_master_instance& master = scene->master_instances[n];
@@ -1877,7 +1878,7 @@ namespace put
             // geometry
             for (s32 n = 0; n < scene->num_entities; ++n)
             {
-                if (!(scene->entities[n] & CMP_GEOMETRY))
+                if (!(scene->entities[n] & e_cmp::geometry))
                     continue;
 
                 geometry_resource* gr = get_geometry_resource(scene->id_geometry[n]);
@@ -1908,7 +1909,7 @@ namespace put
             // material
             for (s32 n = 0; n < scene->num_entities; ++n)
             {
-                if (!(scene->entities[n] & CMP_MATERIAL))
+                if (!(scene->entities[n] & e_cmp::material))
                     continue;
 
                 cmp_material&      mat = scene->materials[n];
@@ -1925,7 +1926,7 @@ namespace put
             // shadow
             for (s32 n = 0; n < scene->num_entities; ++n)
             {
-                if (!(scene->entities[n] & CMP_SDF_SHADOW))
+                if (!(scene->entities[n] & e_cmp::sdf_shadow))
                     continue;
 
                 cmp_shadow& shadow = scene->shadows[n];
@@ -1936,7 +1937,7 @@ namespace put
             // sampler bindings
             for (s32 n = 0; n < scene->num_entities; ++n)
             {
-                if (!(scene->entities[n] & CMP_SAMPLERS))
+                if (!(scene->entities[n] & e_cmp::samplers))
                     continue;
 
                 cmp_samplers& samplers = scene->samplers[n];
@@ -2230,7 +2231,7 @@ namespace put
             // geometry
             for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
             {
-                if (scene->entities[n] & CMP_GEOMETRY)
+                if (scene->entities[n] & e_cmp::geometry)
                 {
                     u32 submesh;
                     ifs.read((c8*)&submesh, sizeof(u32));
@@ -2281,7 +2282,7 @@ namespace put
                         dev_ui::log_level(dev_ui::console_level::error, "[error] geometry - cannot find pmm file: %s",
                                           filename.c_str());
 
-                        scene->entities[n] &= ~CMP_GEOMETRY;
+                        scene->entities[n] &= ~e_cmp::geometry;
                         error = true;
                     }
                 }
@@ -2289,11 +2290,11 @@ namespace put
 
             // instantiate physics
             for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
-                if (scene->entities[n] & CMP_PHYSICS)
+                if (scene->entities[n] & e_cmp::physics)
                     instantiate_rigid_body(scene, n);
 
             for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
-                if (scene->entities[n] & CMP_CONSTRAINT)
+                if (scene->entities[n] & e_cmp::constraint)
                     instantiate_constraint(scene, n);
 
             // animations
@@ -2327,7 +2328,7 @@ namespace put
             // materials
             for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
             {
-                if (!(scene->entities[n] & CMP_MATERIAL))
+                if (!(scene->entities[n] & e_cmp::material))
                     continue;
 
                 cmp_material&      mat = scene->materials[n];
@@ -2351,7 +2352,7 @@ namespace put
             // sdf shadow
             for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
             {
-                if (!(scene->entities[n] & CMP_SDF_SHADOW))
+                if (!(scene->entities[n] & e_cmp::sdf_shadow))
                     continue;
 
                 Str sdf_shadow_volume_file = read_lookup_string(ifs);
@@ -2364,7 +2365,7 @@ namespace put
             // sampler binding textures
             for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
             {
-                if (!(scene->entities[n] & CMP_SAMPLERS))
+                if (!(scene->entities[n] & e_cmp::samplers))
                     continue;
 
                 cmp_samplers& samplers = scene->samplers[n];
@@ -2402,7 +2403,7 @@ namespace put
             // light geom
             for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
             {
-                if (!(scene->entities[n] & CMP_LIGHT))
+                if (!(scene->entities[n] & e_cmp::light))
                     continue;
 
                 instantiate_model_cbuffer(scene, n);

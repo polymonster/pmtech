@@ -101,7 +101,7 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     scene->transforms[effector].translation = vec3f(0.0f, 0.0f, 2.0f);
     scene->transforms[effector].scale = vec3f::one();
     scene->transforms[effector].rotation = quat();
-    scene->entities[effector] |= CMP_TRANSFORM;
+    scene->entities[effector] |= e_cmp::transform;
 
     for (u32 i = 0; i < 8; ++i)
     {
@@ -125,7 +125,7 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
     {
         u32 ii = root + i;
         get_local_transform(ik_nodes[i], scene->transforms[ii]);
-        scene->entities[ii] |= CMP_TRANSFORM;
+        scene->entities[ii] |= e_cmp::transform;
     }
 
     //ik_jacobian->SetJtargetActive();

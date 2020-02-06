@@ -106,44 +106,36 @@ def parse_light_component(component_node):
     col = "1.0 1.0 1.0 1.0"
     for col_node in component_node.iter(schema+'color'):
         col = col_node.text
-
     for tex_node in component_node.iter(schema+'texture'):
         tex = parse_texture(tex_node)
-
     return col, tex
 
 
 def parse_effect(effect):
     output_material = material()
-
     for param in effect.iter(schema+'diffuse'):
         col_out, tex_out = parse_light_component(param)
         output_material.diffuse_colour = col_out
         output_material.diffuse_map = tex_out
-
     for param in effect.iter(schema+'specular'):
         col_out, tex_out = parse_light_component(param)
         output_material.specular_colour = col_out
         output_material.specular_map = tex_out
-
     output_material.shininess = "1.0"
     for param in effect.iter(schema+'shininess'):
         for f in param.iter(schema+'float'):
             output_material.shininess = f.text
-
     output_material.reflectivity = "1.0"
     for param in effect.iter(schema+'reflectivity'):
         for f in param.iter(schema+'float'):
             output_material.reflectivity = f.text
-
     for bump in effect.iter(schema+'bump'):
         for tex_node in bump.iter(schema+'texture'):
             output_material.normal_map = parse_texture(tex_node)
-
     return output_material
 
-def parse_materials(dae_root, materials_root):
 
+def parse_materials(dae_root, materials_root):
     # find effects library
     library_effects = None
     for child in dae_root:
@@ -152,7 +144,6 @@ def parse_materials(dae_root, materials_root):
             break
     if(library_effects == None):
         return
-
     for mat in materials_root.iter(schema+'material'):
         effect_id = None
         for fx_instance in mat.iter(schema+'instance_effect'):
@@ -168,13 +159,11 @@ def parse_materials(dae_root, materials_root):
 def write_material_file(mat):
     # write out materials
     material_data = [struct.pack("i", (int(helpers.version_number)))]
-
     # float values
     helpers.pack_split_floats(material_data, mat.diffuse_colour)
     helpers.pack_split_floats(material_data, mat.specular_colour)
     helpers.pack_split_floats(material_data, mat.shininess)
     helpers.pack_split_floats(material_data, mat.reflectivity)
-
     # texture maps
     maps = []
     types = []
@@ -187,7 +176,6 @@ def write_material_file(mat):
     if mat.specular_map:
         maps.append(mat.specular_map.filename)
         types.append(2)
-
     num_maps = len(maps)
     material_data.append(struct.pack("i", num_maps))
     for i in range(0, num_maps):

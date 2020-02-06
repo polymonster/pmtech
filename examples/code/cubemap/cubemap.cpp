@@ -30,7 +30,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->transforms[new_prim].rotation = quat();
     scene->transforms[new_prim].scale = vec3f(10.0f);
     scene->transforms[new_prim].translation = vec3f::zero();
-    scene->entities[new_prim] |= CMP_TRANSFORM;
+    scene->entities[new_prim] |= e_cmp::transform;
     scene->parents[new_prim] = new_prim;
     instantiate_geometry(sphere, scene, new_prim);
     instantiate_material(cubemap_material, scene, new_prim);

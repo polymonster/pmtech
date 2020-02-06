@@ -24,12 +24,12 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->id_name[light] = PEN_HASH("front_light");
     scene->lights[light].colour = vec3f::one();
     scene->lights[light].direction = vec3f::one();
-    scene->lights[light].type = LIGHT_TYPE_DIR;
+    scene->lights[light].type = e_light_type::dir;
     scene->transforms[light].translation = vec3f::zero();
     scene->transforms[light].rotation = quat();
     scene->transforms[light].scale = vec3f::one();
-    scene->entities[light] |= CMP_LIGHT;
-    scene->entities[light] |= CMP_TRANSFORM;
+    scene->entities[light] |= e_cmp::light;
+    scene->entities[light] |= e_cmp::transform;
 
     // ground
     u32 ground = get_new_entity(scene);
@@ -37,7 +37,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->transforms[ground].translation = vec3f::zero();
     scene->transforms[ground].rotation = quat();
     scene->transforms[ground].scale = vec3f(50.0f, 1.0f, 50.0f);
-    scene->entities[ground] |= CMP_TRANSFORM;
+    scene->entities[ground] |= e_cmp::transform;
     scene->parents[ground] = ground;
     instantiate_geometry(box, scene, ground);
     instantiate_material(default_material, scene, ground);
@@ -50,7 +50,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     // set character scale and pos
     scene->transforms[skinned_char].translation = vec3f(0.0f, 1.0f, 0.0f);
     scene->transforms[skinned_char].scale = vec3f(0.25f);
-    scene->entities[skinned_char] |= CMP_TRANSFORM;
+    scene->entities[skinned_char] |= e_cmp::transform;
 
     // instantiate anim controller
     instantiate_anim_controller(scene, skinned_char);

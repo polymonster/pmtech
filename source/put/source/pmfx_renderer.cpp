@@ -155,7 +155,8 @@ namespace
     };
     
     const mode_map render_flags_map[] = {
-        "forward_lit", ecs::RENDER_FORWARD_LIT,
+        "forward_lit", e_scene_render_flags::forward_lit,
+        "deferred_lit", e_scene_render_flags::deferred_lit,
         nullptr, 0
     };
     

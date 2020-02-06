@@ -28,12 +28,12 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->id_name[light] = PEN_HASH("front_light");
     scene->lights[light].colour = vec3f::one();
     scene->lights[light].direction = vec3f::one();
-    scene->lights[light].type = LIGHT_TYPE_DIR;
+    scene->lights[light].type = e_light_type::dir;
     scene->transforms[light].translation = vec3f::zero();
     scene->transforms[light].rotation = quat();
     scene->transforms[light].scale = vec3f::one();
-    scene->entities[light] |= CMP_LIGHT;
-    scene->entities[light] |= CMP_TRANSFORM;
+    scene->entities[light] |= e_cmp::light;
+    scene->entities[light] |= e_cmp::transform;
 
     // add a hinge in the x-axis
     vec3f hinge_x_pos = vec3f(-30.0f, 0.0f, 0.0f);
@@ -44,7 +44,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->transforms[hinge_x_body].translation = hinge_x_pos;
     scene->transforms[hinge_x_body].rotation = quat();
     scene->transforms[hinge_x_body].scale = vec3f(10.0f, 1.0f, 10.0f);
-    scene->entities[hinge_x_body] |= CMP_TRANSFORM;
+    scene->entities[hinge_x_body] |= e_cmp::transform;
     instantiate_geometry(box, scene, hinge_x_body);
     instantiate_material(default_material, scene, hinge_x_body);
     instantiate_model_cbuffer(scene, hinge_x_body);
@@ -58,7 +58,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->transforms[hinge_x_constraint].translation = hinge_x_pos - vec3f(0.0f, 0.0f, -10.0f);
     scene->transforms[hinge_x_constraint].rotation = quat();
     scene->transforms[hinge_x_constraint].scale = vec3f(1.0f, 1.0f, 1.0f);
-    scene->entities[hinge_x_constraint] |= CMP_TRANSFORM;
+    scene->entities[hinge_x_constraint] |= e_cmp::transform;
     scene->physics_data[hinge_x_constraint].constraint.type = physics::e_constraint::hinge;
     scene->physics_data[hinge_x_constraint].constraint.axis = vec3f::unit_x();
     scene->physics_data[hinge_x_constraint].constraint.rb_indices[0] = scene->physics_handles[hinge_x_body];
@@ -75,7 +75,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->transforms[hinge_y_body].translation = hinge_y_pos;
     scene->transforms[hinge_y_body].rotation = quat();
     scene->transforms[hinge_y_body].scale = vec3f(10.0f, 10.0f, 1.0f);
-    scene->entities[hinge_y_body] |= CMP_TRANSFORM;
+    scene->entities[hinge_y_body] |= e_cmp::transform;
     instantiate_geometry(box, scene, hinge_y_body);
     instantiate_material(default_material, scene, hinge_y_body);
     instantiate_model_cbuffer(scene, hinge_y_body);
@@ -89,7 +89,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->transforms[hinge_y_constraint].translation = hinge_y_pos - vec3f(10.0f, 0.0f, 0.0f);
     scene->transforms[hinge_y_constraint].rotation = quat();
     scene->transforms[hinge_y_constraint].scale = vec3f(1.0f, 1.0f, 1.0f);
-    scene->entities[hinge_y_constraint] |= CMP_TRANSFORM;
+    scene->entities[hinge_y_constraint] |= e_cmp::transform;
     scene->physics_data[hinge_y_constraint].constraint.type = physics::e_constraint::hinge;
     scene->physics_data[hinge_y_constraint].constraint.axis = vec3f::unit_y();
     scene->physics_data[hinge_y_constraint].constraint.rb_indices[0] = scene->physics_handles[hinge_y_body];
@@ -106,7 +106,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->transforms[p2p_body].translation = p2p_pos;
     scene->transforms[p2p_body].rotation = quat();
     scene->transforms[p2p_body].scale = vec3f(2.0f, 2.0f, 2.0f);
-    scene->entities[p2p_body] |= CMP_TRANSFORM;
+    scene->entities[p2p_body] |= e_cmp::transform;
     instantiate_geometry(box, scene, p2p_body);
     instantiate_material(default_material, scene, p2p_body);
     instantiate_model_cbuffer(scene, p2p_body);
@@ -120,7 +120,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->transforms[p2p_constraint].translation = p2p_pos + vec3f(0.0f, 10.0f, 0.0f);
     scene->transforms[p2p_constraint].rotation = quat();
     scene->transforms[p2p_constraint].scale = vec3f(1.0f, 1.0f, 1.0f);
-    scene->entities[p2p_constraint] |= CMP_TRANSFORM;
+    scene->entities[p2p_constraint] |= e_cmp::transform;
     scene->physics_data[p2p_constraint].constraint.type = physics::e_constraint::p2p;
     scene->physics_data[p2p_constraint].constraint.rb_indices[0] = scene->physics_handles[p2p_body];
     instantiate_constraint(scene, p2p_constraint);
@@ -134,7 +134,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->transforms[slider_x_body].translation = slider_x_pos;
     scene->transforms[slider_x_body].rotation = quat();
     scene->transforms[slider_x_body].scale = vec3f(2.0f, 2.0f, 2.0f);
-    scene->entities[slider_x_body] |= CMP_TRANSFORM;
+    scene->entities[slider_x_body] |= e_cmp::transform;
     instantiate_geometry(box, scene, slider_x_body);
     instantiate_material(default_material, scene, slider_x_body);
     instantiate_model_cbuffer(scene, slider_x_body);
@@ -148,7 +148,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->transforms[slider_x_constraint].translation = slider_x_pos;
     scene->transforms[slider_x_constraint].rotation = quat();
     scene->transforms[slider_x_constraint].scale = vec3f(1.0f, 1.0f, 1.0f);
-    scene->entities[slider_x_constraint] |= CMP_TRANSFORM;
+    scene->entities[slider_x_constraint] |= e_cmp::transform;
     scene->physics_data[slider_x_constraint].constraint.type = physics::e_constraint::dof6;
     scene->physics_data[slider_x_constraint].constraint.rb_indices[0] = scene->physics_handles[slider_x_body];
     scene->physics_data[slider_x_constraint].constraint.lower_limit_rotation = vec3f::zero();

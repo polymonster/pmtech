@@ -56,13 +56,13 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     scene->id_name[light] = PEN_HASH("front_light");
     scene->lights[light].colour = vec3f::one();
     scene->lights[light].direction = vec3f::one();
-    scene->lights[light].type = LIGHT_TYPE_DIR;
+    scene->lights[light].type = e_light_type::dir;
     scene->lights[light].shadow_map = true;
     scene->transforms[light].translation = vec3f::zero();
     scene->transforms[light].rotation = quat();
     scene->transforms[light].scale = vec3f::one();
-    scene->entities[light] |= CMP_LIGHT;
-    scene->entities[light] |= CMP_TRANSFORM;
+    scene->entities[light] |= e_cmp::light;
+    scene->entities[light] |= e_cmp::transform;
 
     // add ground
     f32 ground_size = 100.0f;
@@ -71,7 +71,7 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     scene->transforms[ground].scale = vec3f(ground_size, 1.0f, ground_size);
     scene->transforms[ground].translation = vec3f::zero();
     scene->parents[ground] = ground;
-    scene->entities[ground] |= CMP_TRANSFORM;
+    scene->entities[ground] |= e_cmp::transform;
 
     instantiate_geometry(box_resource, scene, ground);
     instantiate_material(default_material, scene, ground);
@@ -94,7 +94,7 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
             scene->transforms[pillar].scale = vec3f(2.0f, pillar_size, 2.0f);
             scene->transforms[pillar].translation = pos;
             scene->parents[pillar] = pillar;
-            scene->entities[pillar] |= CMP_TRANSFORM;
+            scene->entities[pillar] |= e_cmp::transform;
 
             instantiate_geometry(box_resource, scene, pillar);
             instantiate_material(default_material, scene, pillar);

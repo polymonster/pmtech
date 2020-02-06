@@ -81,12 +81,12 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     scene->id_name[light] = PEN_HASH("front_light");
     scene->lights[light].colour = vec3f::one();
     scene->lights[light].direction = vec3f::one();
-    scene->lights[light].type = LIGHT_TYPE_DIR;
+    scene->lights[light].type = e_light_type::dir;
     scene->transforms[light].translation = vec3f::zero();
     scene->transforms[light].rotation = quat();
     scene->transforms[light].scale = vec3f::one();
-    scene->entities[light] |= CMP_LIGHT;
-    scene->entities[light] |= CMP_TRANSFORM;
+    scene->entities[light] |= e_cmp::light;
+    scene->entities[light] |= e_cmp::transform;
 
     // add a few cubes
     vec3f pos = vec3f(-(f32)(num_rs - 1) * 2.0f * 5.0f, 0.0f, 0.0f);
@@ -98,7 +98,7 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
         scene->transforms[ci].translation = pos;
         scene->transforms[ci].rotation = quat();
         scene->transforms[ci].scale = vec3f(5.0f, 5.0f, 5.0f);
-        scene->entities[ci] |= CMP_TRANSFORM;
+        scene->entities[ci] |= e_cmp::transform;
         scene->parents[ci] = ci;
         instantiate_geometry(box, scene, ci);
         instantiate_material(default_material, scene, ci);

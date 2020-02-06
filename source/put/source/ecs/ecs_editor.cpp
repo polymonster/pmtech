@@ -177,12 +177,12 @@ namespace put
             scene->id_name[light] = PEN_HASH("front_light");
             scene->lights[light].colour = vec3f::one();
             scene->lights[light].direction = vec3f::one();
-            scene->lights[light].type = LIGHT_TYPE_DIR;
+            scene->lights[light].type = e_light_type::dir;
             scene->transforms[light].translation = vec3f::zero();
             scene->transforms[light].rotation = quat();
             scene->transforms[light].scale = vec3f::one();
-            scene->entities[light] |= CMP_LIGHT;
-            scene->entities[light] |= CMP_TRANSFORM;
+            scene->entities[light] |= e_cmp::light;
+            scene->entities[light] |= e_cmp::transform;
             instantiate_model_cbuffer(scene, light);
 
             sb_clear(scene->selection_list);
@@ -257,10 +257,10 @@ namespace put
 
             s32 master = scene->selection_list[0];
 
-            if (scene->entities[master] & CMP_MASTER_INSTANCE)
+            if (scene->entities[master] & e_cmp::master_instance)
                 return;
 
-            scene->entities[master] |= CMP_MASTER_INSTANCE;
+            scene->entities[master] |= e_cmp::master_instance;
 
             scene->master_instances[master].num_instances = selection_size;
             scene->master_instances[master].instance_stride = sizeof(cmp_draw_call);
@@ -337,7 +337,7 @@ namespace put
             for (u32 i = 0; i < sel_count; ++i)
             {
                 u32 si = scene->selection_list[i];
-                scene->state_flags[si] &= ~SF_SELECTED;
+                scene->state_flags[si] &= ~e_state::selected;
             }
 
             sb_clear(scene->selection_list);
@@ -388,9 +388,9 @@ namespace put
                 return;
 
             if (select_mode == e_select_mode::remove)
-                scene->state_flags[index] &= ~SF_SELECTED;
+                scene->state_flags[index] &= ~e_state::selected;
             else
-                scene->state_flags[index] |= SF_SELECTED;
+                scene->state_flags[index] |= e_state::selected;
         }
 
         void delete_selection(ecs_scene* scene)
@@ -435,7 +435,6 @@ namespace put
         void picking_read_back(void* p_data, u32 row_pitch, u32 depth_pitch, u32 block_size)
         {
             s_picking_info.result = *((u32*)(((u8*)p_data) + s_picking_info.y * row_pitch + s_picking_info.x * block_size));
-
             s_picking_info.ready = 1;
         }
 
@@ -504,7 +503,7 @@ namespace put
                         // unflag current selected
                         u32 sls = sb_count(scene->selection_list);
                         for (u32 i = 0; i < sls; ++i)
-                            scene->state_flags[scene->selection_list[i]] &= ~SF_SELECTED;
+                            scene->state_flags[scene->selection_list[i]] &= ~e_state::selected;
 
                         sb_clear(scene->selection_list);
 
@@ -513,10 +512,10 @@ namespace put
 
                     for (s32 node = 0; node < scene->num_entities; ++node)
                     {
-                        if (!(scene->entities[node] & CMP_ALLOCATED))
+                        if (!(scene->entities[node] & e_cmp::allocated))
                             continue;
 
-                        if (!(scene->entities[node] & CMP_GEOMETRY))
+                        if (!(scene->entities[node] & e_cmp::geometry))
                             continue;
 
                         bool selected = true;
@@ -545,7 +544,7 @@ namespace put
                     s32 pos = 0;
                     for (s32 node = 0; node < scene->num_entities; ++node)
                     {
-                        if (scene->state_flags[node] & SF_SELECTED)
+                        if (scene->state_flags[node] & e_state::selected)
                             scene->selection_list[pos++] = node;
                     }
 
@@ -651,8 +650,8 @@ namespace put
                 if (p == n)
                     continue;
 
-                if (scene->state_flags[p] & SF_SELECTED || scene->state_flags[p] & SF_CHILD_SELECTED)
-                    scene->state_flags[n] |= SF_CHILD_SELECTED;
+                if (scene->state_flags[p] & e_state::selected || scene->state_flags[p] & e_state::child_selected)
+                    scene->state_flags[n] |= e_state::child_selected;
             }
         }
 
@@ -822,7 +821,7 @@ namespace put
                     continue;
                 }
 
-                if (scene->state_flags[ua.node_index] & SF_SELECTED)
+                if (scene->state_flags[ua.node_index] & e_state::selected)
                     sb_clear(scene->selection_list);
 
                 restore_node_state(scene, ua.action_state[action], ua.node_index);
@@ -1005,7 +1004,7 @@ namespace put
                 {
                     for (u32 i = 0; i < scene->num_entities; ++i)
                     {
-                        scene->state_flags[i] |= SF_HIDDEN;
+                        scene->state_flags[i] |= e_state::hidden;
                     }
                 }
 
@@ -1013,7 +1012,7 @@ namespace put
                 {
                     for (u32 i = 0; i < scene->num_entities; ++i)
                     {
-                        scene->state_flags[i] &= ~SF_HIDDEN;
+                        scene->state_flags[i] &= ~e_state::hidden;
                     }
                 }
 
@@ -1023,8 +1022,8 @@ namespace put
                     {
                         for (u32 i = 0; i < scene->num_entities; ++i)
                         {
-                            if (scene->state_flags[i] & SF_SELECTED)
-                                scene->state_flags[i] |= SF_HIDDEN;
+                            if (scene->state_flags[i] & e_state::selected)
+                                scene->state_flags[i] |= e_state::hidden;
                         }
                     }
 
@@ -1032,8 +1031,8 @@ namespace put
                     {
                         for (u32 i = 0; i < scene->num_entities; ++i)
                         {
-                            if (!(scene->state_flags[i] & SF_SELECTED))
-                                scene->state_flags[i] |= SF_HIDDEN;
+                            if (!(scene->state_flags[i] & e_state::selected))
+                                scene->state_flags[i] |= e_state::hidden;
                         }
                     }
                 }
@@ -1157,9 +1156,9 @@ namespace put
                 // reset physics positions
                 for (s32 i = 0; i < scene->num_entities; ++i)
                 {
-                    if (scene->entities[i] & CMP_PHYSICS)
+                    if (scene->entities[i] & e_cmp::physics)
                     {
-                        if (scene->physics_data[i].type != PHYSICS_TYPE_RIGID_BODY)
+                        if (scene->physics_data[i].type != e_physics_type::rigid_body)
                             continue;
 
                         vec3f t = scene->physics_data[i].rigid_body.position;
@@ -1170,7 +1169,7 @@ namespace put
                         scene->transforms[i].translation = t;
                         scene->transforms[i].rotation = q;
 
-                        scene->entities[i] |= CMP_TRANSFORM;
+                        scene->entities[i] |= e_cmp::transform;
 
                         // reset velocity
                         physics::set_v3(scene->physics_handles[i], vec3f::zero(), physics::CMD_SET_LINEAR_VELOCITY);
@@ -1476,7 +1475,7 @@ namespace put
             physics::constraint_params& preview_constraint = s_physics_preview.params.constraint;
             s32                         constraint_type = preview_constraint.type - 1;
 
-            s_physics_preview.params.type = PHYSICS_TYPE_CONSTRAINT;
+            s_physics_preview.params.type = e_physics_type::constraint;
 
             ImGui::Combo("Constraint##Physics", (s32*)&constraint_type, "Six DOF\0Hinge\0Point to Point\0", 7);
 
@@ -1503,7 +1502,7 @@ namespace put
             std::vector<const c8*> rb_names;
             for (s32 i = 0; i < scene->num_entities; ++i)
             {
-                if (scene->entities[i] & CMP_PHYSICS)
+                if (scene->entities[i] & e_cmp::physics)
                 {
                     rb_names.push_back(scene->names[i].c_str());
                     index_lookup.push_back(scene->physics_handles[i]);
@@ -1528,7 +1527,7 @@ namespace put
                     {
                         u32 i = scene->selection_list[s];
 
-                        if (scene->entities[i] & CMP_CONSTRAINT)
+                        if (scene->entities[i] & e_cmp::constraint)
                             continue;
 
                         scene->physics_data[i].constraint = preview_constraint;
@@ -1579,7 +1578,7 @@ namespace put
             {
                 u32 i = scene->selection_list[s];
 
-                if (!(scene->entities[i] & CMP_PHYSICS))
+                if (!(scene->entities[i] & e_cmp::physics))
                 {
                     button_text = "Add";
                     break;
@@ -1595,7 +1594,7 @@ namespace put
                     scene->physics_data[i].rigid_body = s_physics_preview.params.rigid_body;
                     scene->physics_offset[i].translation = s_physics_preview.offset.translation;
 
-                    if (!(scene->entities[i] & CMP_PHYSICS))
+                    if (!(scene->entities[i] & e_cmp::physics))
                         instantiate_rigid_body(scene, i);
 
                     s_physics_preview.params.rigid_body = scene->physics_data[i].rigid_body;
@@ -1630,7 +1629,7 @@ namespace put
                 {
                     u32 i = scene->selection_list[s];
 
-                    if (!(scene->entities[i] & CMP_PHYSICS))
+                    if (!(scene->entities[i] & e_cmp::physics))
                     {
                         del_button = false;
                         break;
@@ -1658,12 +1657,12 @@ namespace put
 
                 s_physics_preview.params.type = physics_type;
 
-                if (physics_type == PHYSICS_TYPE_RIGID_BODY)
+                if (physics_type == e_physics_type::rigid_body)
                 {
                     // rb
                     scene_rigid_body_ui(scene);
                 }
-                else if (physics_type == PHYSICS_TYPE_CONSTRAINT)
+                else if (physics_type == e_physics_type::constraint)
                 {
                     // constraint
                     scene_constraint_ui(scene);
@@ -1686,7 +1685,7 @@ namespace put
             // geom
             if (ImGui::CollapsingHeader("Geometry"))
             {
-                if (scene->entities[selected_index] & CMP_GEOMETRY)
+                if (scene->entities[selected_index] & e_cmp::geometry)
                 {
                     ImGui::PushID("geom");
 
@@ -1722,7 +1721,7 @@ namespace put
 
                     instantiate_model_cbuffer(scene, selected_index);
 
-                    scene->entities[selected_index] |= CMP_TRANSFORM;
+                    scene->entities[selected_index] |= e_cmp::transform;
                 }
             }
 
@@ -1741,7 +1740,7 @@ namespace put
             for (u32 i = 0; i < num_selected; ++i)
             {
                 u32 s = scene->selection_list[i];
-                if (scene->state_flags[s] & SF_HIDDEN)
+                if (scene->state_flags[s] & e_state::hidden)
                     visible = false;
             }
 
@@ -1752,11 +1751,11 @@ namespace put
                     u32 s = scene->selection_list[i];
                     if (!visible)
                     {
-                        scene->state_flags[s] |= SF_HIDDEN;
+                        scene->state_flags[s] |= e_state::hidden;
                     }
                     else
                     {
-                        scene->state_flags[s] &= ~SF_HIDDEN;
+                        scene->state_flags[s] &= ~e_state::hidden;
                     }
                 }
             }
@@ -1864,7 +1863,7 @@ namespace put
 
                 if (perform_transform)
                 {
-                    scene->entities[selected_index] |= CMP_TRANSFORM;
+                    scene->entities[selected_index] |= e_cmp::transform;
                 }
 
                 apply_transform_to_selection(scene, vec3f::zero());
@@ -1902,7 +1901,7 @@ namespace put
                 return false;
 
             u32 selected_index = scene->selection_list[0];
-            if (!(scene->entities[selected_index] & CMP_MATERIAL))
+            if (!(scene->entities[selected_index] & e_cmp::material))
                 return false;
 
             if (!ImGui::CollapsingHeader("Material"))
@@ -2161,7 +2160,7 @@ namespace put
             {
                 cmp_light& snl = scene->lights[selected_index];
 
-                if (scene->entities[selected_index] & CMP_LIGHT)
+                if (scene->entities[selected_index] & e_cmp::light)
                 {
                     bool changed = ImGui::Combo("Type", (s32*)&scene->lights[selected_index].type,
                                                 "Directional\0Point\0Spot\0Area\0Area Ex\0", 4);
@@ -2175,17 +2174,17 @@ namespace put
 
                     switch (scene->lights[selected_index].type)
                     {
-                        case LIGHT_TYPE_DIR:
+                        case e_light_type::dir:
                             ImGui::SliderAngle("Azimuth", &snl.azimuth);
                             ImGui::SliderAngle("Altitude", &snl.altitude);
                             break;
 
-                        case LIGHT_TYPE_POINT:
+                        case e_light_type::point:
                             edited |= ImGui::SliderFloat("Radius##slider", &snl.radius, 0.0f, 100.0f);
                             edited |= ImGui::InputFloat("Radius##input", &snl.radius);
                             break;
 
-                        case LIGHT_TYPE_SPOT:
+                        case e_light_type::spot:
                             edited |= ImGui::SliderFloat("Cos Cutoff", &snl.cos_cutoff, 0.0f, 1.0f);
                             edited |= ImGui::SliderFloat("Range", &snl.radius, 0.0f, 100.0f);
                             edited |= ImGui::InputFloat("Falloff", &snl.spot_falloff, 0.01f);
@@ -2194,11 +2193,11 @@ namespace put
                             snl.spot_falloff = max(snl.spot_falloff, 0.001f);
                             break;
 
-                        case LIGHT_TYPE_AREA:
+                        case e_light_type::area:
                             if (changed)
                                 instantiate_area_light(scene, selected_index);
                             break;
-                        case LIGHT_TYPE_AREA_EX:
+                        case e_light_type::area_ex:
                         {
                             if (changed)
                             {
@@ -2290,29 +2289,29 @@ namespace put
             if (ImGui::CollapsingHeader("Shadow Caster"))
             {
                 s32 caster_type = 0;
-                if (scene->entities[si] & CMP_SDF_SHADOW)
+                if (scene->entities[si] & e_cmp::sdf_shadow)
                 {
                     caster_type = 2;
                 }
                 else
                 {
-                    if (scene->entities[si] & CMP_GEOMETRY)
+                    if (scene->entities[si] & e_cmp::geometry)
                         caster_type = 1;
 
-                    if (scene->state_flags[si] & SF_NO_SHADOW)
+                    if (scene->state_flags[si] & e_state::no_shadow)
                         caster_type = 0;
                 }
 
                 if (ImGui::Combo("Shadow Caster", &caster_type, "None\0Geometry\0Signed Distance Field\0"))
                 {
                     if (caster_type == 0)
-                        scene->state_flags[si] |= SF_NO_SHADOW;
+                        scene->state_flags[si] |= e_state::no_shadow;
 
                     if (caster_type > 0)
-                        scene->state_flags[si] &= SF_NO_SHADOW;
+                        scene->state_flags[si] &= e_state::no_shadow;
 
                     if (caster_type == 2)
-                        scene->entities[si] |= CMP_SDF_SHADOW;
+                        scene->entities[si] |= e_cmp::sdf_shadow;
                 }
 
                 if (caster_type == CAST_SDF)
@@ -2344,7 +2343,7 @@ namespace put
 
                     u32 nn = ecs::get_new_entity(scene);
 
-                    scene->entities[nn] |= CMP_ALLOCATED;
+                    scene->entities[nn] |= e_cmp::allocated;
 
                     scene->names[nn] = "node_";
                     scene->names[nn].appendf("%u", nn);
@@ -2355,7 +2354,7 @@ namespace put
                     scene->transforms[nn].rotation.euler_angles(0.0f, 0.0f, 0.0f);
                     scene->transforms[nn].scale = vec3f::one();
 
-                    scene->entities[nn] |= CMP_TRANSFORM;
+                    scene->entities[nn] |= e_cmp::transform;
 
                     add_selection(scene, nn);
 
@@ -2389,10 +2388,10 @@ namespace put
                     u32       count;
                 };
 
-                static scene_num_dump dumps[] = {{CMP_ALLOCATED, "Allocated", 0},
-                                                 {CMP_GEOMETRY, "Geometries", 0},
-                                                 {CMP_BONE, "Bones", 0},
-                                                 {CMP_ANIM_CONTROLLER, "Anim Controllers", 0}};
+                static scene_num_dump dumps[] = {{e_cmp::allocated, "Allocated", 0},
+                                                 {e_cmp::geometry, "Geometries", 0},
+                                                 {e_cmp::bone, "Bones", 0},
+                                                 {e_cmp::anim_controller, "Anim Controllers", 0}};
 
                 s32 selected_index = -1;
                 u32 num_selected = sb_count(scene->selection_list);
@@ -2436,10 +2435,10 @@ namespace put
                     {
                         for (u32 i = 0; i < scene->num_entities; ++i)
                         {
-                            if (!(scene->entities[i] & CMP_ALLOCATED))
+                            if (!(scene->entities[i] & e_cmp::allocated))
                                 continue;
 
-                            bool selected = scene->state_flags[i] & SF_SELECTED;
+                            bool selected = scene->state_flags[i] & e_state::selected;
 
                             ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
 
@@ -2591,7 +2590,7 @@ namespace put
                     t.rotation = t.rotation * q;
                 }
 
-                scene->entities[i] |= CMP_TRANSFORM;
+                scene->entities[i] |= e_cmp::transform;
 
                 store_node_state(scene, i, REDO);
             }
@@ -3033,17 +3032,17 @@ namespace put
 
             for (u32 n = 0; n < scene->num_entities; ++n)
             {
-                if (!(scene->entities[n] & CMP_LIGHT))
+                if (!(scene->entities[n] & e_cmp::light))
                     continue;
 
-                if (selected_only && !(scene->state_flags[n] & SF_SELECTED))
+                if (selected_only && !(scene->state_flags[n] & e_state::selected))
                     continue;
 
                 cmp_light& snl = scene->lights[n];
 
                 switch (snl.type)
                 {
-                    case LIGHT_TYPE_DIR:
+                    case e_light_type::dir:
                     {
                         // line only
                         dbg::add_line(vec3f::zero(), scene->lights[n].direction * k_dir_light_offset,
@@ -3052,14 +3051,14 @@ namespace put
                     }
                     break;
 
-                    case LIGHT_TYPE_AREA:
+                    case e_light_type::area:
                     {
                         dbg::add_obb(scene->world_matrices[n], vec4f(snl.colour, 1.0f));
                     }
                     break;
 
-                    case LIGHT_TYPE_SPOT:
-                    case LIGHT_TYPE_POINT:
+                    case e_light_type::spot:
+                    case e_light_type::point:
                     {
                         // quad point at pos
                         vec3f p = scene->world_matrices[n].get_translation();
@@ -3098,12 +3097,12 @@ namespace put
 
             for (u32 n = 0; n < scene->num_entities; ++n)
             {
-                if (!(scene->state_flags[n] & SF_SELECTED) && !(scene->view_flags & e_scene_view_flags::physics))
+                if (!(scene->state_flags[n] & e_state::selected) && !(scene->view_flags & e_scene_view_flags::physics))
                     continue;
 
-                bool preview_rb = s_physics_preview.active && s_physics_preview.params.type == PHYSICS_TYPE_RIGID_BODY;
+                bool preview_rb = s_physics_preview.active && s_physics_preview.params.type == e_physics_type::rigid_body;
 
-                if ((scene->entities[n] & CMP_PHYSICS) || preview_rb)
+                if ((scene->entities[n] & e_cmp::physics) || preview_rb)
                 {
                     u32 prim = scene->physics_data[n].rigid_body.shape;
 
@@ -3132,7 +3131,7 @@ namespace put
 
                     // update cbuffer
                     cmp_draw_call dc;
-                    if (preview_rb && !(scene->entities[n] & CMP_PHYSICS))
+                    if (preview_rb && !(scene->entities[n] & e_cmp::physics))
                     {
                         // from preview
                         mat4 scale = mat::create_scale(s_physics_preview.params.rigid_body.dimensions);
@@ -3159,12 +3158,12 @@ namespace put
                     pen::renderer_draw_indexed(gr->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
                 }
 
-                bool preview_con = s_physics_preview.active && s_physics_preview.params.type == PHYSICS_TYPE_CONSTRAINT;
+                bool preview_con = s_physics_preview.active && s_physics_preview.params.type == e_physics_type::constraint;
 
                 if (preview_con)
                     render_constraint(scene, n, s_physics_preview.params.constraint);
 
-                if ((scene->entities[n] & CMP_CONSTRAINT))
+                if ((scene->entities[n] & e_cmp::constraint))
                     render_constraint(scene, n, scene->physics_data[n].constraint);
             }
         }
@@ -3308,21 +3307,21 @@ namespace put
                 {
                     vec4f col = vec4f::white();
                     bool  selected = false;
-                    if (scene->state_flags[n] & SF_SELECTED)
+                    if (scene->state_flags[n] & e_state::selected)
                         selected = true;
 
                     u32 p = scene->parents[n];
                     if (p != n)
                     {
-                        if (scene->state_flags[p] & SF_SELECTED || scene->state_flags[p] & SF_CHILD_SELECTED)
+                        if (scene->state_flags[p] & e_state::selected || scene->state_flags[p] & e_state::child_selected)
                         {
-                            scene->state_flags[n] |= SF_CHILD_SELECTED;
+                            scene->state_flags[n] |= e_state::child_selected;
                             selected = true;
                             col = vec4f(0.75f, 0.75f, 0.75f, 1.0f);
                         }
                         else
                         {
-                            scene->state_flags[n] &= ~SF_CHILD_SELECTED;
+                            scene->state_flags[n] &= ~e_state::child_selected;
                         }
                     }
 
@@ -3336,10 +3335,10 @@ namespace put
             {
                 for (u32 n = 0; n < scene->num_entities; ++n)
                 {
-                    if (!(scene->entities[n] & CMP_BONE))
+                    if (!(scene->entities[n] & e_cmp::bone))
                         continue;
 
-                    if (scene->entities[n] & CMP_ANIM_TRAJECTORY)
+                    if (scene->entities[n] & e_cmp::anim_trajectory)
                     {
                         vec3f p = scene->world_matrices[n].get_translation();
 
@@ -3349,7 +3348,7 @@ namespace put
                     u32 p = scene->parents[n];
                     if (p != n)
                     {
-                        if (!(scene->entities[p] & CMP_BONE) || (scene->entities[p] & CMP_ANIM_TRAJECTORY))
+                        if (!(scene->entities[p] & e_cmp::bone) || (scene->entities[p] & e_cmp::anim_trajectory))
                             continue;
 
                         vec3f p1 = scene->world_matrices[n].get_translation();

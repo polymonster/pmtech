@@ -83,9 +83,9 @@ namespace put
             cp.pivot = scene->transforms[node_index].translation - scene->physics_data[rb].rigid_body.position;
 
             scene->physics_handles[node_index] = physics::add_constraint(cp);
-            scene->physics_data[node_index].type = PHYSICS_TYPE_CONSTRAINT;
+            scene->physics_data[node_index].type = e_physics_type::constraint;
 
-            scene->entities[node_index] |= CMP_CONSTRAINT;
+            scene->entities[node_index] |= e_cmp::constraint;
         }
 
         void bake_rigid_body_params(ecs_scene* scene, u32 node_index)
@@ -154,8 +154,8 @@ namespace put
                 scene->physics_handles[s] = physics::add_rb(rb);
             }
 
-            scene->physics_data[node_index].type = PHYSICS_TYPE_RIGID_BODY;
-            scene->entities[s] |= CMP_PHYSICS;
+            scene->physics_data[node_index].type = e_physics_type::rigid_body;
+            scene->entities[s] |= e_cmp::physics;
         }
 
         using physics::rigid_body_params;
@@ -182,8 +182,8 @@ namespace put
 
             u32* child_handles = nullptr;
             scene->physics_handles[parent] = physics::add_compound_rb(cbpr, &child_handles);
-            scene->physics_data[parent].type = PHYSICS_TYPE_RIGID_BODY;
-            scene->entities[parent] |= CMP_PHYSICS;
+            scene->physics_data[parent].type = e_physics_type::rigid_body;
+            scene->entities[parent] |= e_cmp::physics;
 
             // fixup children
             PEN_ASSERT(sb_count(child_handles) == num_children);
@@ -191,17 +191,17 @@ namespace put
             {
                 u32 ci = children[i];
                 scene->physics_handles[ci] = child_handles[i];
-                scene->physics_data[ci].type = PHYSICS_TYPE_COMPOUND_CHILD;
-                scene->entities[ci] |= CMP_PHYSICS;
+                scene->physics_data[ci].type = e_physics_type::compound_child;
+                scene->entities[ci] |= e_cmp::physics;
             }
         }
 
         void destroy_physics(ecs_scene* scene, s32 node_index)
         {
-            if (!(scene->entities[node_index] & CMP_PHYSICS))
+            if (!(scene->entities[node_index] & e_cmp::physics))
                 return;
 
-            scene->entities[node_index] &= ~CMP_PHYSICS;
+            scene->entities[node_index] &= ~e_cmp::physics;
 
             physics::release_entity(scene->physics_handles[node_index]);
             scene->physics_handles[node_index] = PEN_INVALID_HANDLE;
@@ -228,24 +228,24 @@ namespace put
 
             scene->geometry_names[node_index] = gr->geometry_name;
             scene->id_geometry[node_index] = gr->hash;
-            scene->entities[node_index] |= CMP_GEOMETRY;
+            scene->entities[node_index] |= e_cmp::geometry;
 
             if (gr->p_skin)
-                scene->entities[node_index] |= CMP_SKINNED;
+                scene->entities[node_index] |= e_cmp::skinned;
 
             instance->vertex_shader_class = ID_VERTEX_CLASS_BASIC;
 
-            if (scene->entities[node_index] & CMP_SKINNED)
+            if (scene->entities[node_index] & e_cmp::skinned)
                 instance->vertex_shader_class = ID_VERTEX_CLASS_SKINNED;
         }
 
         void destroy_geometry(ecs_scene* scene, u32 node_index)
         {
-            if (!(scene->entities[node_index] & CMP_GEOMETRY))
+            if (!(scene->entities[node_index] & e_cmp::geometry))
                 return;
 
-            scene->entities[node_index] &= ~CMP_GEOMETRY;
-            scene->entities[node_index] &= ~CMP_MATERIAL;
+            scene->entities[node_index] &= ~e_cmp::geometry;
+            scene->entities[node_index] &= ~e_cmp::material;
 
             // zero cmp geom
             pen::memory_zero(&scene->geometries[node_index], sizeof(cmp_geometry));
@@ -332,8 +332,8 @@ namespace put
             geom.vertex_size = sizeof(vertex_model);
 
             // set pre-skinned and unset skinned
-            scene->entities[node_index] |= CMP_PRE_SKINNED;
-            scene->entities[node_index] &= ~CMP_SKINNED;
+            scene->entities[node_index] |= e_cmp::pre_skinned;
+            scene->entities[node_index] &= ~e_cmp::skinned;
 
             geom.vertex_shader_class = ID_VERTEX_CLASS_BASIC;
         }
@@ -353,7 +353,7 @@ namespace put
                 {
                     s32 jnode = joint_indices[jj];
 
-                    if (jnode > -1 && scene->entities[jnode] & CMP_BONE)
+                    if (jnode > -1 && scene->entities[jnode] & e_cmp::bone)
                     {
                         controller.joints_offset = jnode;
                         break;
@@ -368,7 +368,7 @@ namespace put
                 controller.current_time = 0.0f;
                 controller.current_frame = 0;
 
-                scene->entities[node_index] |= CMP_ANIM_CONTROLLER;
+                scene->entities[node_index] |= e_cmp::anim_controller;
             }
         }
 
@@ -387,13 +387,13 @@ namespace put
                 {
                     s32 jnode = joint_indices[jj];
 
-                    if (jnode > -1 && scene->entities[jnode] & CMP_BONE)
+                    if (jnode > -1 && scene->entities[jnode] & e_cmp::bone)
                     {
                         sb_push(controller.joint_indices, jnode);
                     }
                 }
 
-                scene->entities[node_index] |= CMP_ANIM_CONTROLLER;
+                scene->entities[node_index] |= e_cmp::anim_controller;
             }
         }
 
@@ -420,7 +420,7 @@ namespace put
             scene->transforms[node_index].scale = scale;
             scene->shadows[node_index].texture_handle = volume_texture;
             scene->shadows[node_index].sampler_state = pmfx::get_render_state(id_cl, pmfx::e_render_state::sampler);
-            scene->entities[node_index] |= CMP_SDF_SHADOW;
+            scene->entities[node_index] |= e_cmp::sdf_shadow;
         }
 
         void instantiate_light(ecs_scene* scene, u32 node_index)
@@ -429,7 +429,7 @@ namespace put
                 return;
 
             // cbuffer for draw call, light volume for editor / deferred etc
-            scene->entities[node_index] |= CMP_LIGHT;
+            scene->entities[node_index] |= e_cmp::light;
             instantiate_model_cbuffer(scene, node_index);
 
             scene->bounding_volumes[node_index].min_extents = -vec3f::one();
@@ -438,7 +438,7 @@ namespace put
             scene->world_matrices[node_index] = mat4::create_identity();
             f32 rad = std::max<f32>(scene->lights[node_index].radius, 1.0f);
             scene->transforms[node_index].scale = vec3f(rad, rad, rad);
-            scene->entities[node_index] |= CMP_TRANSFORM;
+            scene->entities[node_index] |= e_cmp::transform;
 
             // basic defaults
             cmp_light& snl = scene->lights[node_index];
@@ -468,8 +468,8 @@ namespace put
             instantiate_material(&area_light_material, scene, node_index);
             instantiate_model_cbuffer(scene, node_index);
 
-            scene->entities[node_index] |= CMP_LIGHT;
-            scene->lights[node_index].type = LIGHT_TYPE_AREA;
+            scene->entities[node_index] |= e_cmp::light;
+            scene->lights[node_index].type = e_light_type::area;
             scene->area_light[node_index].shader = PEN_INVALID_HANDLE;
         }
 
@@ -487,8 +487,8 @@ namespace put
             instantiate_material(&area_light_material, scene, node_index);
             instantiate_model_cbuffer(scene, node_index);
 
-            scene->entities[node_index] |= CMP_LIGHT;
-            scene->lights[node_index].type = LIGHT_TYPE_AREA_EX;
+            scene->entities[node_index] |= e_cmp::light;
+            scene->lights[node_index].type = e_light_type::area_ex;
 
             if (!alr.texture_name.empty())
             {
@@ -684,7 +684,7 @@ namespace put
             scene->id_material[node_index] = mr->hash;
             scene->material_names[node_index] = mr->material_name;
 
-            scene->entities[node_index] |= CMP_MATERIAL;
+            scene->entities[node_index] |= e_cmp::material;
 
             // set defaults
             if (mr->id_shader == 0)
@@ -699,7 +699,7 @@ namespace put
 
             static hash_id id_default_sampler_state = PEN_HASH("wrap_linear");
 
-            for (u32 i = 0; i < SN_NUM_TEXTURES; ++i)
+            for (u32 i = 0; i < e_texture::COUNT; ++i)
             {
                 if (!mr->id_sampler_state[i])
                     mr->id_sampler_state[i] = id_default_sampler_state;
@@ -748,23 +748,23 @@ namespace put
             // material / technique constant buffers
             s32 cbuffer_size = pmfx::get_technique_cbuffer_size(material->shader, material->technique_index);
 
-            if (!(scene->state_flags[node_index] & SF_MATERIAL_INITIALISED))
+            if (!(scene->state_flags[node_index] & e_state::material_initialised))
             {
                 pmfx::initialise_constant_defaults(material->shader, material->technique_index,
                                                    scene->material_data[node_index].data);
 
-                scene->state_flags[node_index] |= SF_MATERIAL_INITIALISED;
+                scene->state_flags[node_index] |= e_state::material_initialised;
             }
 
             instantiate_material_cbuffer(scene, node_index, cbuffer_size);
 
             // material samplers
-            if (!(scene->state_flags[node_index] & SF_SAMPLERS_INITIALISED))
+            if (!(scene->state_flags[node_index] & e_state::samplers_initialised))
             {
                 pmfx::initialise_sampler_defaults(material->shader, material->technique_index, samplers);
 
                 // set material texture from source data
-                for (u32 t = 0; t < SN_NUM_TEXTURES; ++t)
+                for (u32 t = 0; t < e_texture::COUNT; ++t)
                 {
                     if (resource->texture_handles[t] != 0 && is_valid(resource->texture_handles[t]))
                     {
@@ -780,8 +780,8 @@ namespace put
                     }
                 }
 
-                scene->entities[node_index] |= CMP_SAMPLERS;
-                scene->state_flags[node_index] |= SF_SAMPLERS_INITIALISED;
+                scene->entities[node_index] |= e_cmp::samplers;
+                scene->state_flags[node_index] |= e_state::samplers_initialised;
             }
 
             // bake ss handles
@@ -799,7 +799,7 @@ namespace put
 
                 for (u32 n = 0; n < scene->soa_size; ++n)
                 {
-                    if (scene->entities[n] & CMP_MATERIAL)
+                    if (scene->entities[n] & e_cmp::material)
                         bake_material_handles(scene, n);
                 }
             }
@@ -854,9 +854,9 @@ namespace put
                                                put::load_texture("data/textures/defaults/spec.dds"),
                                                put::load_texture("data/textures/defaults/black.dds"),
                                                put::load_texture("data/textures/defaults/black.dds")};
-            static_assert(SN_NUM_TEXTURES == PEN_ARRAY_SIZE(default_maps), "mismatched defaults size");
+            static_assert(e_texture::COUNT == PEN_ARRAY_SIZE(default_maps), "mismatched defaults size");
 
-            for (u32 map = 0; map < SN_NUM_TEXTURES; ++map)
+            for (u32 map = 0; map < e_texture::COUNT; ++map)
                 p_mat->texture_handles[map] = default_maps[map];
 
             for (u32 map = 0; map < num_maps; ++map)
@@ -1317,13 +1317,13 @@ namespace put
                 scene->names[current_node] = node_name;
                 scene->geometry_names[current_node] = geometry_name;
 
-                scene->entities[current_node] |= CMP_ALLOCATED;
+                scene->entities[current_node] |= e_cmp::allocated;
 
                 if (scene->id_geometry[current_node] == ID_JOINT)
-                    scene->entities[current_node] |= CMP_BONE;
+                    scene->entities[current_node] |= e_cmp::bone;
 
                 if (scene->id_name[current_node] == ID_TRAJECTORY)
-                    scene->entities[current_node] |= CMP_ANIM_TRAJECTORY;
+                    scene->entities[current_node] |= e_cmp::anim_trajectory;
 
                 u32 num_meshes = *p_u32reader++;
 
@@ -1491,7 +1491,7 @@ namespace put
                             scene->local_matrices[dest] = mat4::create_identity();
 
                             // child geometry which will inherit any skinning from its parent
-                            scene->entities[dest] |= CMP_SUB_GEOMETRY;
+                            scene->entities[dest] |= e_cmp::sub_geometry;
                         }
 
                         // generate geometry hash
@@ -1530,8 +1530,8 @@ namespace put
                                 scene->material_names[dest] = mat_name;
 
                                 // due to cloning, clear these flags
-                                scene->state_flags[dest] &= ~SF_MATERIAL_INITIALISED;
-                                scene->state_flags[dest] &= ~SF_SAMPLERS_INITIALISED;
+                                scene->state_flags[dest] &= ~e_state::material_initialised;
+                                scene->state_flags[dest] &= ~e_state::samplers_initialised;
 
                                 instantiate_material(mr, scene, dest);
 
@@ -1564,11 +1564,11 @@ namespace put
             // now we have loaded the whole scene fix up any anim controllers
             for (s32 i = node_zero_offset; i < node_zero_offset + num_import_nodes; ++i)
             {
-                if (scene->entities[i] & CMP_SUB_GEOMETRY)
+                if (scene->entities[i] & e_cmp::sub_geometry)
                     continue;
 
                 // parent geometry deals with skinning
-                if ((scene->entities[i] & CMP_GEOMETRY) && scene->geometries[i].p_skin)
+                if ((scene->entities[i] & e_cmp::geometry) && scene->geometries[i].p_skin)
                 {
                     instantiate_anim_controller(scene, i);
                     instantiate_anim_controller_v2(scene, i);
@@ -1599,9 +1599,9 @@ namespace put
             hash_id id_type = pmv["volume_type"].as_hash_id();
 
             static volume_instance vi[] = {
-                {PEN_HASH("volume_texture"), PEN_HASH("volume_texture"), PEN_HASH("clamp_point"), CMP_VOLUME},
+                {PEN_HASH("volume_texture"), PEN_HASH("volume_texture"), PEN_HASH("clamp_point"), e_cmp::volume},
 
-                {PEN_HASH("signed_distance_field"), PEN_HASH("volume_sdf"), PEN_HASH("clamp_linear"), CMP_SDF_SHADOW}};
+                {PEN_HASH("signed_distance_field"), PEN_HASH("volume_sdf"), PEN_HASH("clamp_linear"), e_cmp::sdf_shadow}};
 
             int i = 0;
             for (auto& v : vi)
@@ -1632,10 +1632,10 @@ namespace put
             scene->transforms[v].rotation = quat();
             scene->transforms[v].scale = scale;
             scene->transforms[v].translation = pos;
-            scene->entities[v] |= CMP_TRANSFORM;
+            scene->entities[v] |= e_cmp::transform;
             scene->parents[v] = v;
 
-            scene->samplers[v].sb[0].sampler_unit = SN_VOLUME_TEXTURE;
+            scene->samplers[v].sb[0].sampler_unit = e_texture::volume;
             scene->samplers[v].sb[0].handle = volume_texture;
             scene->samplers[v].sb[0].sampler_state = pmfx::get_render_state(vi[i].id_sampler_state, pmfx::e_render_state::sampler);
 

@@ -23,12 +23,12 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->id_name[light] = PEN_HASH("front_light");
     scene->lights[light].colour = vec3f::one();
     scene->lights[light].direction = vec3f::one();
-    scene->lights[light].type = LIGHT_TYPE_DIR;
+    scene->lights[light].type = e_light_type::dir;
     scene->transforms[light].translation = vec3f::zero();
     scene->transforms[light].rotation = quat();
     scene->transforms[light].scale = vec3f::one();
-    scene->entities[light] |= CMP_LIGHT;
-    scene->entities[light] |= CMP_TRANSFORM;
+    scene->entities[light] |= e_cmp::light;
+    scene->entities[light] |= e_cmp::transform;
 
     f32 spacing = 4.0f;
     s32 num = 32; // 32768 instances;
@@ -45,7 +45,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->transforms[master_node].scale = vec3f::one();
     scene->transforms[master_node].translation = vec3f::zero();
 
-    scene->entities[master_node] |= CMP_TRANSFORM;
+    scene->entities[master_node] |= e_cmp::transform;
     scene->parents[master_node] = master_node;
 
     instantiate_geometry(box_resource, scene, master_node);
@@ -77,15 +77,15 @@ void example_setup(ecs_scene* scene, camera& cam)
 
                 scene->transforms[new_prim].scale = vec3f::one();
                 scene->transforms[new_prim].translation = cur_pos;
-                scene->entities[new_prim] |= CMP_TRANSFORM;
+                scene->entities[new_prim] |= e_cmp::transform;
                 scene->parents[new_prim] = master_node;
 
                 scene->bounding_volumes[new_prim] = scene->bounding_volumes[master_node];
 
-                scene->entities[new_prim] |= CMP_GEOMETRY;
-                scene->entities[new_prim] |= CMP_MATERIAL;
+                scene->entities[new_prim] |= e_cmp::geometry;
+                scene->entities[new_prim] |= e_cmp::material;
 
-                scene->entities[new_prim] |= CMP_SUB_INSTANCE;
+                scene->entities[new_prim] |= e_cmp::sub_instance;
 
                 ImColor ii = ImColor::HSV((rand() % 255) / 255.0f, (rand() % 255) / 255.0f, (rand() % 255) / 255.0f);
                 scene->draw_call_data[new_prim].v2 = vec4f(ii.Value.x, ii.Value.y, ii.Value.z, 1.0f);
@@ -113,7 +113,7 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
     for (s32 i = 2; i < scene->num_entities; ++i)
     {
         scene->transforms.data[i].rotation = scene->transforms.data[i].rotation * q;
-        scene->entities.data[i] |= CMP_TRANSFORM;
+        scene->entities.data[i] |= e_cmp::transform;
     }
 
 #if 0 // debug / test array cost vs operator [] in component entity system
@@ -122,7 +122,7 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
     for (s32 i = 2; i < scene->num_nodes; ++i)
     {
         scene->transforms[i].rotation = scene->transforms[i].rotation * q;
-        scene->entities[i] |= CMP_TRANSFORM;
+        scene->entities[i] |= e_cmp::transform;
     }
     f32 operator_cost = pen::timer_elapsed_ms(timer);
 

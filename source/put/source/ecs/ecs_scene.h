@@ -5,13 +5,16 @@
 #pragma once
 
 #include "camera.h"
-#include "data_struct.h"
 #include "loader.h"
-#include "maths/maths.h"
-#include "maths/quat.h"
-#include "pen.h"
 #include "physics/physics.h"
 #include "pmfx.h"
+
+#include "pen.h"
+#include "data_struct.h"
+
+#include "maths/maths.h"
+#include "maths/quat.h"
+
 #include "str/Str.h"
 
 #include <vector>
@@ -60,101 +63,107 @@ namespace put
             };
         }
         typedef u32 scene_flags;
-
-        enum e_component_flags : u32
+        
+        namespace e_state
         {
-            CMP_ALLOCATED = (1 << 0),
-            CMP_GEOMETRY = (1 << 1),
-            CMP_PHYSICS = (1 << 2),
-            CMP_PHYSICS_MULTI = (1 << 3),
-            CMP_MATERIAL = (1 << 4),
-            CMP_HAND = (1 << 5),
-            CMP_SKINNED = (1 << 6),
-            CMP_BONE = (1 << 7),
-            CMP_DYNAMIC = (1 << 8),
-            CMP_ANIM_CONTROLLER = (1 << 9),
-            CMP_ANIM_TRAJECTORY = (1 << 10),
-            CMP_LIGHT = (1 << 11),
-            CMP_TRANSFORM = (1 << 12),
-            CMP_CONSTRAINT = (1 << 13),
-            CMP_SUB_INSTANCE = (1 << 14),
-            CMP_MASTER_INSTANCE = (1 << 15),
-            CMP_PRE_SKINNED = (1 << 16),
-            CMP_SUB_GEOMETRY = (1 << 17),
-            CMP_SDF_SHADOW = (1 << 18),
-            CMP_VOLUME = (1 << 19),
-            CMP_SAMPLERS = (1 << 20)
-        };
-
-        enum e_state_flags : u32
-        {
-            SF_SELECTED = (1 << 0),
-            SF_CHILD_SELECTED = (1 << 1),
-            SF_HIDDEN = (1 << 2),
-            SF_MATERIAL_INITIALISED = (1 << 3),
-            SF_NO_SHADOW = (1 << 4),
-            SF_SAMPLERS_INITIALISED = (1 << 5),
-            SF_APPLY_ANIM_TRANSFORM = (1 << 6),
-            SF_SYNC_PHYSICS_TRANSFORM = (1 << 7)
-        };
-
-        enum e_light_types : u32
-        {
-            LIGHT_TYPE_DIR = 0,
-            LIGHT_TYPE_POINT = 1,
-            LIGHT_TYPE_SPOT = 2,
-            LIGHT_TYPE_AREA = 3,
-            LIGHT_TYPE_AREA_EX = 4
-        };
+            enum state_flags_t
+            {
+                selected = (1 << 0),
+                child_selected = (1 << 1),
+                hidden = (1 << 2),
+                material_initialised = (1 << 3),
+                no_shadow = (1 << 4),
+                samplers_initialised = (1 << 5),
+                apply_anim_transform = (1 << 6),
+                sync_physics_transform = (1 << 7)
+            };
+        }
+        
         static const f32 k_dir_light_offset = 1000000.0f;
-
-        enum e_scene_node_textures
+        namespace e_light_type
         {
-            SN_ALBEDO_MAP = 0,
-            SN_NORMAL_MAP,
-            SN_SPECULAR_MAP,
-            SN_ENV_MAP,
-            SN_VOLUME_TEXTURE,
-            SN_EMISSIVE_MAP,
-
-            SN_NUM_TEXTURES
-        };
-
-        enum e_scene_node_cb
+            enum light_type_t
+            {
+                dir,
+                point,
+                spot,
+                area,
+                area_ex
+            };
+        }
+        
+        namespace e_texture
         {
-            SN_CB1,
-            SN_CB2,
-            SN_CB3,
-
-            SN_NUM_CB
-        };
-
-        enum e_scene_global_textures
+            enum texture_t
+            {
+                albedo = 0,
+                normal_map,
+                specular_map,
+                env_map,
+                volume,
+                emissive_map,
+                COUNT
+            };
+        }
+        
+        namespace e_global_textures
         {
-            SHADOW_MAP_UNIT = 15,
-            SDF_SHADOW_UNIT = 14
-        };
-
-        enum e_physics_type
+            enum global_textures_t
+            {
+                shadow_map = 15,
+                sdf_shadow = 14,
+                omni_shadow_map = 13
+            };
+        }
+        
+        namespace e_physics_type
         {
-            PHYSICS_TYPE_RIGID_BODY = 0,
-            PHYSICS_TYPE_CONSTRAINT,
-            PHYSICS_TYPE_COMPOUND_CHILD
-        };
-
-        enum e_scene_limits
+            enum physics_type_t
+            {
+                rigid_body,
+                constraint,
+                compound_child
+            };
+        }
+        
+        namespace e_scene_limits
         {
-            MAX_FORWARD_LIGHTS = 100,
-            MAX_AREA_LIGHTS = 10,
-            MAX_SHADOW_MAPS = 100,
-            MAX_SDF_SHADOWS = 1
-        };
-
-        enum e_scene_render_flags
+            enum scene_limits_t
+            {
+                max_forward_lights = 100,
+                max_area_lights = 10,
+                max_shadow_maps = 100,
+                max_sdf_shadows = 1,
+                max_omni_shadow_maps = 100
+            };
+        }
+        
+        namespace e_cmp
         {
-            RENDER_FORWARD_LIT = 1,
-            RENDER_DEFERRED_LIT = 1 << 1
-        };
+            enum cmp_t
+            {
+                allocated = (1 << 0),
+                geometry = (1 << 1),
+                physics = (1 << 2),
+                physics_multi = (1 << 3),
+                material = (1 << 4), // 1<<5 unused
+                skinned = (1 << 6),
+                bone = (1 << 7),
+                dynamic = (1 << 8),
+                anim_controller = (1 << 9),
+                anim_trajectory = (1 << 10),
+                light = (1 << 11),
+                transform = (1 << 12),
+                constraint = (1 << 13),
+                sub_instance = (1 << 14),
+                master_instance = (1 << 15),
+                pre_skinned = (1 << 16),
+                sub_geometry = (1 << 17),
+                sdf_shadow = (1 << 18),
+                volume = (1 << 19),
+                samplers = (1 << 20)
+            };
+        }
 
         struct cmp_draw_call
         {
@@ -182,8 +191,8 @@ namespace put
             f32     data[64];
             hash_id id_shader = 0;
             hash_id id_technique = 0;
-            hash_id id_sampler_state[SN_NUM_TEXTURES] = {0};
-            s32     texture_handles[SN_NUM_TEXTURES] = {0};
+            hash_id id_sampler_state[e_texture::COUNT] = {0};
+            s32     texture_handles[e_texture::COUNT] = {0};
         };
 
         // contains baked handles for o(1) time setting of technique / shader
@@ -347,7 +356,7 @@ namespace put
         struct forward_light_buffer
         {
             vec4f      info;
-            light_data lights[MAX_FORWARD_LIGHTS];
+            light_data lights[e_scene_limits::max_forward_lights];
         };
 
         struct distance_field_shadow
@@ -370,7 +379,7 @@ namespace put
         struct area_light_buffer
         {
             vec4f      info;
-            area_light lights[MAX_AREA_LIGHTS];
+            area_light lights[e_scene_limits::max_area_lights];
         };
 
         struct free_node_list
