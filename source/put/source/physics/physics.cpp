@@ -29,141 +29,141 @@ namespace physics
     {
         switch (cmd.command_index)
         {
-            case CMD_SET_LINEAR_VELOCITY:
+            case e_cmd::set_linear_velocity:
                 set_linear_velocity_internal(cmd.set_v3);
                 break;
 
-            case CMD_SET_ANGULAR_VELOCITY:
+            case e_cmd::set_angular_velocity:
                 set_angular_velocity_internal(cmd.set_v3);
                 break;
 
-            case CMD_SET_LINEAR_FACTOR:
+            case e_cmd::set_linear_factor:
                 set_linear_factor_internal(cmd.set_v3);
                 break;
 
-            case CMD_SET_ANGULAR_FACTOR:
+            case e_cmd::set_angular_factor:
                 set_angular_factor_internal(cmd.set_v3);
                 break;
 
-            case CMD_SET_TRANSFORM:
+            case e_cmd::set_transform:
                 set_transform_internal(cmd.set_transform);
                 break;
 
-            case CMD_ADD_RIGID_BODY:
+            case e_cmd::add_rigid_body:
                 add_rb_internal(cmd.add_rb, cmd.resource_slot);
                 break;
 
-            case CMD_ADD_GHOST_RIGID_BODY:
+            case e_cmd::add_ghost_rigid_body:
                 add_rb_internal(cmd.add_rb, true);
                 break;
 
-            case CMD_SET_GRAVITY:
+            case e_cmd::set_gravity:
                 set_gravity_internal(cmd.set_v3);
                 break;
 
-            case CMD_SET_FRICTION:
+            case e_cmd::set_friction:
                 set_friction_internal(cmd.set_float);
                 break;
 
-            case CMD_SET_HINGE_MOTOR:
+            case e_cmd::set_hinge_motor:
                 set_hinge_motor_internal(cmd.set_v3);
                 break;
 
-            case CMD_SET_BUTTON_MOTOR:
+            case e_cmd::set_button_motor:
                 set_button_motor_internal(cmd.set_v3);
                 break;
 
-            case CMD_SET_MULTI_JOINT_MOTOR:
+            case e_cmd::set_multi_joint_motor:
                 set_multi_joint_motor_internal(cmd.set_multi_v3);
                 break;
 
-            case CMD_SET_MULTI_JOINT_POS:
+            case e_cmd::set_multi_joint_pos:
                 set_multi_joint_pos_internal(cmd.set_multi_v3);
                 break;
 
-            case CMD_SET_MULTI_JOINT_LIMITS:
+            case e_cmd::set_multi_joint_limits:
                 set_multi_joint_limit_internal(cmd.set_multi_v3);
                 break;
 
-            case CMD_SET_MULTI_BASE_VELOCITY:
+            case e_cmd::set_multi_base_velocity:
                 set_multi_base_velocity_internal(cmd.set_multi_v3);
                 break;
 
-            case CMD_SET_MULTI_BASE_POS:
+            case e_cmd::set_multi_base_pos:
                 set_multi_base_pos_internal(cmd.set_multi_v3);
                 break;
 
-            case CMD_ADD_COMPOUND_RB:
+            case e_cmd::add_compound_rb:
                 add_compound_rb_internal(cmd.add_compound_rb, cmd.resource_slot);
                 break;
 
-            case CMD_SYNC_COMPOUND_TO_MULTI:
+            case e_cmd::sync_compound_to_multi:
                 sync_compound_multi_internal(cmd.sync_compound);
                 break;
 
-            case CMD_SYNC_RIGID_BODY_TRANSFORM:
+            case e_cmd::sync_rigid_body_transform:
                 sync_rigid_bodies_internal(cmd.sync_rb);
                 break;
 
-            case CMD_SYNC_RIGID_BODY_VELOCITY:
+            case e_cmd::sync_rigid_body_velocity:
                 sync_rigid_body_velocity_internal(cmd.sync_rb);
                 break;
 
-            case CMD_SET_P2P_CONSTRAINT_POS:
+            case e_cmd::set_p2p_constraint_pos:
                 set_p2p_constraint_pos_internal(cmd.set_v3);
                 break;
 
-            case CMD_SET_DAMPING:
+            case e_cmd::set_damping:
                 set_damping_internal(cmd.set_v3);
                 break;
 
-            case CMD_SET_GROUP:
+            case e_cmd::set_group:
                 set_group_internal(cmd.set_group);
                 break;
 
-            case CMD_ADD_COMPOUND_SHAPE:
+            case e_cmd::add_compound_shape:
                 add_compound_shape_internal(cmd.add_compound_rb.params, cmd.resource_slot);
                 break;
 
-            case CMD_ATTACH_RB_TO_COMPOUND:
+            case e_cmd::attach_rb_to_compound:
                 attach_rb_to_compound_internal(cmd.attach_compound);
                 break;
 
-            case CMD_REMOVE_FROM_WORLD:
+            case e_cmd::remove_from_world:
                 remove_from_world_internal(cmd.entity_index);
                 break;
 
-            case CMD_ADD_TO_WORLD:
+            case e_cmd::add_to_world:
                 add_to_world_internal(cmd.entity_index);
                 break;
 
-            case CMD_RELEASE_ENTITY:
+            case e_cmd::release_entity:
                 release_entity_internal(cmd.entity_index);
                 break;
 
-            case CMD_CAST_RAY:
+            case e_cmd::cast_ray:
                 cast_ray_internal(cmd.ray_cast);
                 break;
 
-            case CMD_CAST_SPHERE:
+            case e_cmd::cast_sphere:
                 cast_sphere_internal(cmd.sphere_cast);
                 break;
 
-            case CMD_ADD_CONSTRAINT:
+            case e_cmd::add_constraint:
                 add_constraint_internal(cmd.add_constraint_params, cmd.resource_slot);
                 break;
 
-            case CMD_ADD_CENTRAL_FORCE:
+            case e_cmd::add_central_force:
                 add_central_force(cmd.set_v3);
                 break;
 
-            case CMD_ADD_CENTRAL_IMPULSE:
+            case e_cmd::add_central_impulse:
                 add_central_impulse(cmd.set_v3);
                 break;
-            case CMD_CONTACT_TEST:
+            case e_cmd::contact_test:
                 contact_test_internal(cmd.contact_test);
                 break;
-            case CMD_STEP:
+            case e_cmd::step:
                 physics_update(dt_ms * 1000.0f);
                 break;
 
@@ -251,7 +251,7 @@ namespace physics
     void set_transform(const u32& entity_index, const vec3f& position, const quat& quaternion)
     {
         physics_cmd pc;
-        pc.command_index = CMD_SET_TRANSFORM;
+        pc.command_index = e_cmd::set_transform;
         memcpy(&pc.set_transform.position, &position, sizeof(vec3f));
         memcpy(&pc.set_transform.rotation, &quaternion, sizeof(quat));
         pc.set_transform.object_index = entity_index;
@@ -285,7 +285,7 @@ namespace physics
     {
         physics_cmd pc;
 
-        pc.command_index = CMD_ADD_RIGID_BODY;
+        pc.command_index = e_cmd::add_rigid_body;
         pc.add_rb = rbp;
 
         u32 resource_slot = pen::slot_resources_get_next(&s_physics_slot_resources);
@@ -300,7 +300,7 @@ namespace physics
     {
         physics_cmd pc;
 
-        pc.command_index = CMD_ADD_GHOST_RIGID_BODY;
+        pc.command_index = e_cmd::add_ghost_rigid_body;
         pc.add_rb = rbp;
 
         u32 resource_slot = pen::slot_resources_get_next(&s_physics_slot_resources);
@@ -315,7 +315,7 @@ namespace physics
     {
         physics_cmd pc;
 
-        pc.command_index = CMD_ADD_MULTI_BODY;
+        pc.command_index = e_cmd::add_multi_body;
         pc.add_multi = mbp;
 
         u32 resource_slot = pen::slot_resources_get_next(&s_physics_slot_resources);
@@ -348,7 +348,7 @@ namespace physics
     {
         physics_cmd pc;
 
-        pc.command_index = CMD_ADD_COMPOUND_RB;
+        pc.command_index = e_cmd::add_compound_rb;
         pc.add_compound_rb.params = crbp;
 
         u32 resource_slot = pen::slot_resources_get_next(&s_physics_slot_resources);
@@ -372,7 +372,7 @@ namespace physics
     {
         physics_cmd pc;
 
-        pc.command_index = CMD_SYNC_COMPOUND_TO_MULTI;
+        pc.command_index = e_cmd::sync_compound_to_multi;
 
         pc.sync_compound.compound_index = compound_index;
         pc.sync_compound.multi_index = multi_index;
@@ -397,7 +397,7 @@ namespace physics
     {
         physics_cmd pc;
 
-        pc.command_index = CMD_ADD_CONSTRAINT;
+        pc.command_index = e_cmd::add_constraint;
         pc.add_constraint_params = crbp;
 
         u32 resource_slot = pen::slot_resources_get_next(&s_physics_slot_resources);
@@ -412,7 +412,7 @@ namespace physics
     {
         physics_cmd pc;
 
-        pc.command_index = CMD_SET_GROUP;
+        pc.command_index = e_cmd::set_group;
         pc.set_group.group = group;
         pc.set_group.mask = mask;
 
@@ -423,7 +423,7 @@ namespace physics
     {
         physics_cmd pc;
 
-        pc.command_index = CMD_ADD_COMPOUND_SHAPE;
+        pc.command_index = e_cmd::add_compound_shape;
         pc.add_compound_rb.params = crbp;
 
         u32 resource_slot = pen::slot_resources_get_next(&s_physics_slot_resources);
@@ -438,7 +438,7 @@ namespace physics
     {
         physics_cmd pc;
 
-        pc.command_index = CMD_ATTACH_RB_TO_COMPOUND;
+        pc.command_index = e_cmd::attach_rb_to_compound;
         pc.attach_compound = params;
 
         s_cmd_buffer.put(pc);
@@ -450,7 +450,7 @@ namespace physics
     {
         physics_cmd pc;
 
-        pc.command_index = CMD_REMOVE_FROM_WORLD;
+        pc.command_index = e_cmd::remove_from_world;
         pc.entity_index = entity_index;
 
         s_cmd_buffer.put(pc);
@@ -460,7 +460,7 @@ namespace physics
     {
         physics_cmd pc;
 
-        pc.command_index = CMD_ADD_TO_WORLD;
+        pc.command_index = e_cmd::add_to_world;
         pc.entity_index = entity_index;
 
         s_cmd_buffer.put(pc);
@@ -473,7 +473,7 @@ namespace physics
 
         physics_cmd pc;
 
-        pc.command_index = CMD_RELEASE_ENTITY;
+        pc.command_index = e_cmd::release_entity;
         pc.entity_index = entity_index;
 
         s_cmd_buffer.put(pc);
@@ -487,7 +487,7 @@ namespace physics
         if (!immediate)
         {
             physics_cmd pc;
-            pc.command_index = CMD_CAST_RAY;
+            pc.command_index = e_cmd::cast_ray;
             pc.ray_cast = rcp;
             s_cmd_buffer.put(pc);
         }
@@ -505,7 +505,7 @@ namespace physics
         if (!immediate)
         {
             physics_cmd pc;
-            pc.command_index = CMD_CAST_SPHERE;
+            pc.command_index = e_cmd::cast_sphere;
             pc.sphere_cast = scp;
             s_cmd_buffer.put(pc);
         }
@@ -518,7 +518,7 @@ namespace physics
     void contact_test(const contact_test_params& ctp)
     {
         physics_cmd pc;
-        pc.command_index = CMD_CONTACT_TEST;
+        pc.command_index = e_cmd::contact_test;
         pc.contact_test = ctp;
         s_cmd_buffer.put(pc);
     }
@@ -526,7 +526,7 @@ namespace physics
     void step()
     {
         physics_cmd pc;
-        pc.command_index = CMD_STEP;
+        pc.command_index = e_cmd::step;
         s_cmd_buffer.put(pc);
     }
 } // namespace physics

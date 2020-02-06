@@ -1241,8 +1241,8 @@ namespace put
                         {
                             cmp_transform& pt = scene->physics_offset[n];
                             physics::set_transform(scene->physics_handles[n], t.translation + pt.translation, t.rotation);
-                            physics::set_v3(scene->physics_handles[n], vec3f::zero(), physics::CMD_SET_ANGULAR_VELOCITY);
-                            physics::set_v3(scene->physics_handles[n], vec3f::zero(), physics::CMD_SET_LINEAR_VELOCITY);
+                            physics::set_v3(scene->physics_handles[n], vec3f::zero(), physics::e_cmd::set_angular_velocity);
+                            physics::set_v3(scene->physics_handles[n], vec3f::zero(), physics::e_cmd::set_linear_velocity);
                         }
                     }
 

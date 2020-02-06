@@ -1172,8 +1172,8 @@ namespace put
                         scene->entities[i] |= e_cmp::transform;
 
                         // reset velocity
-                        physics::set_v3(scene->physics_handles[i], vec3f::zero(), physics::CMD_SET_LINEAR_VELOCITY);
-                        physics::set_v3(scene->physics_handles[i], vec3f::zero(), physics::CMD_SET_ANGULAR_VELOCITY);
+                        physics::set_v3(scene->physics_handles[i], vec3f::zero(), physics::e_cmd::set_linear_velocity);
+                        physics::set_v3(scene->physics_handles[i], vec3f::zero(), physics::e_cmd::set_angular_velocity);
                     }
                 }
             }
@@ -2683,7 +2683,7 @@ namespace put
                         vec3f new_pos =
                             maths::ray_plane_intersect(r0, vr, s_physics_pick_info.pos, view.camera->view.get_row(2).xyz);
 
-                        physics::set_v3(s_physics_pick_info.constraint, new_pos, physics::CMD_SET_P2P_CONSTRAINT_POS);
+                        physics::set_v3(s_physics_pick_info.constraint, new_pos, physics::e_cmd::set_p2p_constraint_pos);
                     }
                     else
                     {
