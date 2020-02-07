@@ -890,12 +890,31 @@ namespace pen
         return 0;
     }
 
+    pen_inline bool is_array(u32 srv)
+    {
+        return srv == D3D_SRV_DIMENSION_TEXTURE2DARRAY ||
+            srv == D3D_SRV_DIMENSION_TEXTURECUBEARRAY ||
+            srv == D3D_SRV_DIMENSION_TEXTURECUBE;
+    }
+
+    pen_inline bool is_cube(u32 srv)
+    {
+        return srv == D3D_SRV_DIMENSION_TEXTURECUBEARRAY ||
+            srv == D3D_SRV_DIMENSION_TEXTURECUBE;
+    }
+
     void renderer_create_render_target_multi(const texture_creation_params& tcp, texture2d_internal* texture_container,
                                              ID3D11DepthStencilView*** dsv, ID3D11RenderTargetView*** rtv)
     {
         // create an empty texture
         D3D11_TEXTURE2D_DESC texture_desc;
         memcpy(&texture_desc, (void*)&tcp, sizeof(D3D11_TEXTURE2D_DESC));
+
+        if (tcp.collection_type == pen::TEXTURE_COLLECTION_CUBE ||
+            tcp.collection_type == pen::TEXTURE_COLLECTION_CUBE_ARRAY)
+        {
+            texture_desc.MiscFlags |= 0x4L; // resource misc texture cube
+        }
 
         u32  array_size = texture_desc.ArraySize;
         bool texture2dms = texture_desc.SampleDesc.Count > 1;
@@ -918,6 +937,8 @@ namespace pen
             srv_dimension = D3D_SRV_DIMENSION_TEXTURECUBE;
         else if (tcp.collection_type == pen::TEXTURE_COLLECTION_ARRAY)
             srv_dimension = D3D_SRV_DIMENSION_TEXTURE2DARRAY;
+        else if (tcp.collection_type == pen::TEXTURE_COLLECTION_CUBE_ARRAY)
+            srv_dimension = D3D_SRV_DIMENSION_TEXTURECUBEARRAY;
 
         if (texture_desc.BindFlags & D3D11_BIND_DEPTH_STENCIL)
         {
@@ -936,7 +957,7 @@ namespace pen
             ID3D11DepthStencilView** _dsv = *dsv;
 
             // Create the render target view.
-            if (srv_dimension != D3D_SRV_DIMENSION_TEXTURE2DARRAY)
+            if (!is_array(srv_dimension))
             {
                 // single rt
                 dsv_desc.ViewDimension = texture2dms ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
@@ -964,6 +985,13 @@ namespace pen
                     resource_view_desc.Texture2DArray.MipLevels = num_mips;
                     resource_view_desc.Texture2DArray.MostDetailedMip = 0;
                 }
+                else if (is_cube(srv_dimension))
+                {
+                    resource_view_desc.Texture2DArray.ArraySize = array_size/6;
+                    resource_view_desc.Texture2DArray.FirstArraySlice = 0;
+                    resource_view_desc.Texture2DArray.MipLevels = num_mips;
+                    resource_view_desc.Texture2DArray.MostDetailedMip = 0;
+                }
             }
         }
         else if (texture_desc.BindFlags & D3D11_BIND_RENDER_TARGET)
@@ -982,7 +1010,7 @@ namespace pen
             ID3D11RenderTargetView** _rtv = *rtv;
 
             // Create the render target view.
-            if (srv_dimension != D3D_SRV_DIMENSION_TEXTURE2DARRAY)
+            if (!is_array(srv_dimension))
             {
                 // single rt
                 rtv_desc.ViewDimension = texture2dms ? D3D11_RTV_DIMENSION_TEXTURE2DMS : D3D11_RTV_DIMENSION_TEXTURE2D;
@@ -1005,6 +1033,13 @@ namespace pen
                 if (srv_dimension == D3D_SRV_DIMENSION_TEXTURE2DARRAY)
                 {
                     resource_view_desc.Texture2DArray.ArraySize = array_size;
+                    resource_view_desc.Texture2DArray.FirstArraySlice = 0;
+                    resource_view_desc.Texture2DArray.MipLevels = num_mips;
+                    resource_view_desc.Texture2DArray.MostDetailedMip = 0;
+                }
+                else if (is_cube(srv_dimension))
+                {
+                    resource_view_desc.Texture2DArray.ArraySize = array_size / 6;
                     resource_view_desc.Texture2DArray.FirstArraySlice = 0;
                     resource_view_desc.Texture2DArray.MipLevels = num_mips;
                     resource_view_desc.Texture2DArray.MostDetailedMip = 0;
@@ -1203,7 +1238,7 @@ namespace pen
         }
         else
         {
-            // texture 2d, arrays and cubemaps
+            // texture 2d, arrays and cubemaps, cubemap arrays
             D3D11_TEXTURE2D_DESC texture_desc;
             memcpy(&texture_desc, (void*)&tcp, sizeof(D3D11_TEXTURE2D_DESC));
 
@@ -1275,29 +1310,6 @@ namespace pen
 
             CHECK_CALL(s_device->CreateUnorderedAccessView(tex_res->resource, &uav_desc, &tex_res->uav));
         }
-
-        // reference for structured bufffers
-        /*
-		if ( descBuf.MiscFlags & D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS )
-		{
-			// This is a Raw Buffer
-
-			desc.Format = DXGI_FORMAT_R32_TYPELESS; // Format must be DXGI_FORMAT_R32_TYPELESS, when creating Raw Unordered Access View
-			desc.Buffer.Flags = D3D11_BUFFER_UAV_FLAG_RAW;
-			desc.Buffer.NumElements = descBuf.ByteWidth / 4; 
-		} 
-		else if ( descBuf.MiscFlags & D3D11_RESOURCE_MISC_BUFFER_STRUCTURED )
-		{
-			// This is a Structured Buffer
-
-			desc.Format = DXGI_FORMAT_UNKNOWN;      // Format must be must be DXGI_FORMAT_UNKNOWN, when creating a View of a Structured Buffer
-			desc.Buffer.NumElements = descBuf.ByteWidth / descBuf.StructureByteStride; 
-		} 
-		else
-		{
-			return E_INVALIDARG;
-		}
-		*/
     }
 
     void direct::renderer_create_sampler(const sampler_creation_params& scp, u32 resource_slot)
@@ -1413,7 +1425,8 @@ namespace pen
         for (u32 i = 0; i < bcp.num_render_targets; ++i)
         {
             memcpy(&bd.RenderTarget[i], (void*)&(bcp.render_targets[i]), sizeof(render_target_blend));
-			PEN_ASSERT(bcp.render_targets[i].render_target_write_mask >= 0xf); // 0xf is max value supported
+			//PEN_ASSERT(bcp.render_targets[i].render_target_write_mask >= 0xf); // 0xf is max value supported
+            min<u8>(bcp.render_targets[i].render_target_write_mask, 0xf);
         }
 
         CHECK_CALL(s_device->CreateBlendState(&bd, &_res_pool[resource_index].blend_state));

@@ -1113,7 +1113,7 @@ namespace put
                             if (type == "cube")
                             {
                                 tcp.collection_type = pen::TEXTURE_COLLECTION_CUBE;
-                                tcp.flags |= PEN_RESOURCE_MISC_TEXTURECUBE;
+                                //tcp.flags |= PEN_RESOURCE_MISC_TEXTURECUBE;
                                 tcp.num_arrays = 6;
                             }
                             else if (type == "array")
@@ -1124,6 +1124,7 @@ namespace put
                             else if (type == "cube_array")
                             {
                                 tcp.collection_type = pen::TEXTURE_COLLECTION_CUBE_ARRAY;
+                                //tcp.flags |= PEN_RESOURCE_MISC_TEXTURECUBE;
                                 tcp.num_arrays = r["num_arrays"].as_u32(6);
                             }
                         }
