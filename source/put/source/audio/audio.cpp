@@ -19,29 +19,28 @@ using namespace put;
 
 namespace
 {
-    enum commands : u32
+    namespace e_cmd
     {
-        CMD_AUDIO_CREATE_STREAM,
-        CMD_AUDIO_CREATE_SOUND,
-        CMD_AUDIO_CREATE_GROUP,
-        CMD_AUDIO_CREATE_CHANNEL_FOR_SOUND,
-        CMD_AUDIO_RELEASE_RESOURCE,
-
-        CMD_AUDIO_ADD_CHANNEL_TO_GROUP,
-        CMD_AUDIO_ADD_DSP_TO_GROUP,
-
-        CMD_AUDIO_CHANNEL_SET_POSITION,
-        CMD_AUDIO_CHANNEL_SET_FREQUENCY,
-        CMD_AUDIO_CHANNEL_STOP,
-
-        CMD_AUDIO_GROUP_SET_PAUSE,
-        CMD_AUDIO_GROUP_SET_MUTE,
-        CMD_AUDIO_GROUP_SET_PITCH,
-        CMD_AUDIO_GROUP_SET_VOLUME,
-
-        CMD_AUDIO_DSP_SET_THREE_BAND_EQ,
-        CMD_AUDIO_DSP_SET_GAIN
-    };
+        enum cmd_t
+        {
+            create_stream,
+            create_sound,
+            create_group,
+            create_channel_for_sound,
+            release_resource,
+            add_channel_to_group,
+            add_dsp_to_group,
+            channel_set_position,
+            channel_set_frequency,
+            channel_stop,
+            group_set_pause,
+            group_set_mute,
+            group_set_pitch,
+            group_set_volume,
+            dsp_set_three_band_eq,
+            dsp_set_gain
+        };
+    }
 
     struct set_valuei
     {
@@ -86,55 +85,55 @@ namespace put
     {
         switch (cmd.command_index)
         {
-            case CMD_AUDIO_CREATE_STREAM:
+            case e_cmd::create_stream:
                 direct::audio_create_stream(cmd.filename, cmd.resource_slot);
                 pen::memory_free(cmd.filename);
                 break;
-            case CMD_AUDIO_CREATE_SOUND:
+            case e_cmd::create_sound:
                 direct::audio_create_sound(cmd.filename, cmd.resource_slot);
                 pen::memory_free(cmd.filename);
                 break;
-            case CMD_AUDIO_CREATE_GROUP:
+            case e_cmd::create_group:
                 direct::audio_create_channel_group(cmd.resource_slot);
                 break;
-            case CMD_AUDIO_ADD_CHANNEL_TO_GROUP:
+            case e_cmd::add_channel_to_group:
                 direct::audio_add_channel_to_group(cmd.set_valuei.resource_index, cmd.set_valuei.value);
                 break;
-            case CMD_AUDIO_ADD_DSP_TO_GROUP:
+            case e_cmd::add_dsp_to_group:
                 direct::audio_add_dsp_to_group(cmd.set_valuei.resource_index, (dsp_type)cmd.set_valuei.value,
                                                cmd.resource_slot);
                 break;
-            case CMD_AUDIO_CREATE_CHANNEL_FOR_SOUND:
+            case e_cmd::create_channel_for_sound:
                 direct::audio_create_channel_for_sound(cmd.resource_index, cmd.resource_slot);
                 break;
-            case CMD_AUDIO_CHANNEL_SET_POSITION:
+            case e_cmd::channel_set_position:
                 direct::audio_channel_set_position(cmd.set_valuei.resource_index, cmd.set_valuei.value);
                 break;
-            case CMD_AUDIO_CHANNEL_SET_FREQUENCY:
+            case e_cmd::channel_set_frequency:
                 direct::audio_channel_set_frequency(cmd.resource_index, cmd.set_valuef.value);
                 break;
-            case CMD_AUDIO_CHANNEL_STOP:
+            case e_cmd::channel_stop:
                 direct::audio_channel_stop(cmd.resource_index);
                 break;
-            case CMD_AUDIO_GROUP_SET_MUTE:
+            case e_cmd::group_set_mute:
                 direct::audio_group_set_mute(cmd.set_valuei.resource_index, (bool)cmd.set_valuei.value);
                 break;
-            case CMD_AUDIO_GROUP_SET_PAUSE:
+            case e_cmd::group_set_pause:
                 direct::audio_group_set_pause(cmd.set_valuei.resource_index, (bool)cmd.set_valuei.value);
                 break;
-            case CMD_AUDIO_GROUP_SET_VOLUME:
+            case e_cmd::group_set_volume:
                 direct::audio_group_set_volume(cmd.set_valuef.resource_index, cmd.set_valuef.value);
                 break;
-            case CMD_AUDIO_DSP_SET_GAIN:
+            case e_cmd::dsp_set_gain:
                 direct::audio_dsp_set_gain(cmd.set_valuef.resource_index, cmd.set_valuef.value);
                 break;
-            case CMD_AUDIO_GROUP_SET_PITCH:
+            case e_cmd::group_set_pitch:
                 direct::audio_group_set_pitch(cmd.set_valuef.resource_index, cmd.set_valuef.value);
                 break;
-            case CMD_AUDIO_RELEASE_RESOURCE:
+            case e_cmd::release_resource:
                 direct::audio_release_resource(cmd.resource_index);
                 break;
-            case CMD_AUDIO_DSP_SET_THREE_BAND_EQ:
+            case e_cmd::dsp_set_three_band_eq:
                 direct::audio_dsp_set_three_band_eq(cmd.set_value3f.resource_index, cmd.set_value3f.value[0],
                                                     cmd.set_value3f.value[1], cmd.set_value3f.value[2]);
                 break;
@@ -215,7 +214,7 @@ namespace put
     {
         u32 res = pen::slot_resources_get_next(&_audio_slot_resources);
 
-        create_file_command(filename, CMD_AUDIO_CREATE_STREAM, res);
+        create_file_command(filename, e_cmd::create_stream, res);
 
         return res;
     }
@@ -224,7 +223,7 @@ namespace put
     {
         u32 res = pen::slot_resources_get_next(&_audio_slot_resources);
 
-        create_file_command(filename, CMD_AUDIO_CREATE_SOUND, res);
+        create_file_command(filename, e_cmd::create_sound, res);
 
         return res;
     }
@@ -235,7 +234,7 @@ namespace put
 
         u32 res = pen::slot_resources_get_next(&_audio_slot_resources);
 
-        ac.command_index = CMD_AUDIO_CREATE_GROUP;
+        ac.command_index = e_cmd::create_group;
         ac.resource_slot = res;
 
         _cmd_buffer.put(ac);
@@ -254,7 +253,7 @@ namespace put
 
         audio_cmd ac;
 
-        ac.command_index = CMD_AUDIO_CREATE_CHANNEL_FOR_SOUND;
+        ac.command_index = e_cmd::create_channel_for_sound;
         ac.resource_index = sound_index;
         ac.resource_slot = res;
 
@@ -267,7 +266,7 @@ namespace put
     {
         audio_cmd ac;
 
-        ac.command_index = CMD_AUDIO_CHANNEL_SET_POSITION;
+        ac.command_index = e_cmd::channel_set_position;
         ac.set_valuei.resource_index = channel_index;
         ac.set_valuei.value = position_ms;
 
@@ -278,7 +277,7 @@ namespace put
     {
         audio_cmd ac;
 
-        ac.command_index = CMD_AUDIO_CHANNEL_SET_FREQUENCY;
+        ac.command_index = e_cmd::channel_set_frequency;
         ac.set_valuef.resource_index = channel_index;
         ac.set_valuef.value = frequency;
 
@@ -289,7 +288,7 @@ namespace put
     {
         audio_cmd ac;
 
-        ac.command_index = CMD_AUDIO_GROUP_SET_PAUSE;
+        ac.command_index = e_cmd::group_set_pause;
         ac.set_valuei.resource_index = group_index;
         ac.set_valuei.value = (s32)val;
 
@@ -300,7 +299,7 @@ namespace put
     {
         audio_cmd ac;
 
-        ac.command_index = CMD_AUDIO_GROUP_SET_MUTE;
+        ac.command_index = e_cmd::group_set_mute;
         ac.set_valuei.resource_index = group_index;
         ac.set_valuei.value = (s32)val;
 
@@ -311,7 +310,7 @@ namespace put
     {
         audio_cmd ac;
 
-        ac.command_index = CMD_AUDIO_GROUP_SET_PITCH;
+        ac.command_index = e_cmd::group_set_pitch;
         ac.set_valuef.resource_index = group_index;
         ac.set_valuef.value = pitch;
 
@@ -322,7 +321,7 @@ namespace put
     {
         audio_cmd ac;
 
-        ac.command_index = CMD_AUDIO_GROUP_SET_VOLUME;
+        ac.command_index = e_cmd::group_set_volume;
         ac.set_valuef.resource_index = group_index;
         ac.set_valuef.value = volume;
 
@@ -338,7 +337,7 @@ namespace put
 
         audio_cmd ac;
 
-        ac.command_index = CMD_AUDIO_ADD_CHANNEL_TO_GROUP;
+        ac.command_index = e_cmd::add_channel_to_group;
         ac.set_valuei.resource_index = channel_index;
         ac.set_valuei.value = group_index;
 
@@ -352,7 +351,7 @@ namespace put
 
         audio_cmd ac;
 
-        ac.command_index = CMD_AUDIO_RELEASE_RESOURCE;
+        ac.command_index = e_cmd::release_resource;
         ac.resource_index = index;
 
         _cmd_buffer.put(ac);
@@ -364,7 +363,7 @@ namespace put
 
         audio_cmd ac;
 
-        ac.command_index = CMD_AUDIO_ADD_DSP_TO_GROUP;
+        ac.command_index = e_cmd::add_dsp_to_group;
         ac.set_valuei.resource_index = group_index;
         ac.set_valuei.value = type;
         ac.resource_slot = res;
@@ -378,7 +377,7 @@ namespace put
     {
         audio_cmd ac;
 
-        ac.command_index = CMD_AUDIO_DSP_SET_THREE_BAND_EQ;
+        ac.command_index = e_cmd::dsp_set_three_band_eq;
         ac.set_value3f.resource_index = eq_index;
         ac.set_value3f.value[0] = low;
         ac.set_value3f.value[1] = med;
@@ -391,7 +390,7 @@ namespace put
     {
         audio_cmd ac;
 
-        ac.command_index = CMD_AUDIO_DSP_SET_GAIN;
+        ac.command_index = e_cmd::dsp_set_gain;
         ac.set_valuef.resource_index = dsp_index;
         ac.set_valuef.value = gain;
 
@@ -402,7 +401,7 @@ namespace put
     {
         audio_cmd ac;
 
-        ac.command_index = CMD_AUDIO_CHANNEL_STOP;
+        ac.command_index = e_cmd::channel_stop;
         ac.resource_index = channel_index;
 
         _cmd_buffer.put(ac);

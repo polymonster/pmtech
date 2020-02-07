@@ -15,24 +15,6 @@ namespace put
     // Public API used by the user thread will store function call arguments in a command buffer
     // Dedicated thread will wait on a semaphore until audio_consume_command_buffer is called
     // command buffer will be consumed passing arguments to the direct:: functions.
-
-    /*
-    enum audio_play_state : s32
-    {
-        NOT_PLAYING = 0,
-        PLAYING = 2,
-        PAUSED = 3
-    };
-    */
-
-    /*
-    enum dsp_type : s32
-    {
-        DSP_FFT,
-        DSP_THREE_BAND_EQ,
-        DSP_GAIN
-    };
-    */
     
     namespace e_audio_play_state
     {
