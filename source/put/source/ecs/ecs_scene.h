@@ -451,6 +451,7 @@ namespace put
             cmp_array<cmp_geometry>           geometries;
             cmp_array<cmp_pre_skin>           pre_skin;
             cmp_array<cmp_physics>            physics_data;
+            cmp_array<u32>                    _unused;             // removed anim controller
             cmp_array<u32>                    cbuffer;
             cmp_array<cmp_draw_call>          draw_call_data;
             cmp_array<free_node_list>         free_list;
