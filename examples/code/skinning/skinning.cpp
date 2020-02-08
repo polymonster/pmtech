@@ -52,17 +52,9 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->transforms[skinned_char].scale = vec3f(0.25f);
     scene->entities[skinned_char] |= e_cmp::transform;
 
-    // instantiate anim controller
-    instantiate_anim_controller(scene, skinned_char);
-
     // load an animation
     anim_handle ah = load_pma("data/models/characters/testcharacter/anims/testcharacter_idle.pma");
     bind_animation_to_rig(scene, ah, skinned_char);
-
-    scene->anim_controller[skinned_char].current_frame = 0;
-    scene->anim_controller[skinned_char].current_time = 1.0f;
-    scene->anim_controller[skinned_char].current_animation = ah;
-    scene->anim_controller[skinned_char].play_flags = cmp_anim_controller::PLAY;
 
     scene->anim_controller_v2[skinned_char].blend.anim_a = 0;
     scene->anim_controller_v2[skinned_char].blend.anim_b = 0;

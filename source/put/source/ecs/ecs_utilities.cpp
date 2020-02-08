@@ -608,7 +608,7 @@ namespace put
             instantiate_model_cbuffer(scene, nn);
         }
 
-        bool bind_animation_to_rig(ecs_scene* scene, anim_handle anim_handle, u32 node_index)
+        u32 bind_animation_to_rig(ecs_scene* scene, anim_handle anim_handle, u32 node_index)
         {
             animation_resource* anim = get_animation_resource(anim_handle);
             anim_instance       anim_instance;
@@ -676,11 +676,12 @@ namespace put
             u32 num_samplers = sb_count(anim_instance.samplers);
             PEN_ASSERT(num_samplers == anim->num_channels);
 
+            u32 anim_index = sb_count(controller.anim_instances);
             sb_push(controller.anim_instances, anim_instance);
 
             // todo validate
             scene->entities[node_index] |= e_cmp::anim_controller;
-            return true;
+            return anim_index;
         }
     } // namespace ecs
 } // namespace put

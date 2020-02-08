@@ -749,7 +749,7 @@ namespace put
                     }
 
                     static mat4 bb[85];
-                    s32         joints_offset = scene->anim_controller[n].joints_offset;
+                    s32         joints_offset = scene->anim_controller_v2[n].joints_offset;
                     for (s32 i = 0; i < p_geom->p_skin->num_joints; ++i)
                         bb[i] = scene->world_matrices[joints_offset + i] * p_geom->p_skin->joint_bind_matrices[i];
 
@@ -790,7 +790,7 @@ namespace put
                     {
                         if (!samplers.sb[s].handle)
                             continue;
-                        
+
                         pen::renderer_set_texture(samplers.sb[s].handle, samplers.sb[s].sampler_state,
                                                   samplers.sb[s].sampler_unit, pen::TEXTURE_BIND_PS);
                     }
@@ -1059,98 +1059,6 @@ namespace put
 
             //f32 ms = pen::timer_elapsed_ms(timer);
             //PEN_LOG("anim_v2 : %f", ms);
-        }
-
-        void update_animations_baked(ecs_scene* scene, f32 dt)
-        {
-            for (u32 n = 0; n < scene->num_entities; ++n)
-            {
-                if (!(scene->entities[n] & e_cmp::anim_controller))
-                    continue;
-
-                auto& controller = scene->anim_controller[n];
-                if (!is_valid(controller.current_animation))
-                    continue;
-
-                auto* anim = get_animation_resource(controller.current_animation);
-                if (!anim)
-                    continue;
-
-                bool apply_trajectory = false;
-                mat4 trajectory = mat4::create_identity();
-
-                if (controller.play_flags == cmp_anim_controller::PLAY)
-                    controller.current_time += dt * 0.001f;
-
-                s32       joints_offset = scene->anim_controller[n].joints_offset;
-                cmp_skin* skin = nullptr;
-                if (scene->geometries[n].p_skin)
-                    skin = scene->geometries[n].p_skin;
-
-                if (controller.current_frame > 0)
-                    continue;
-
-                for (s32 c = 0; c < anim->num_channels; ++c)
-                {
-                    s32 num_frames = anim->channels[c].num_frames;
-
-                    if (num_frames <= 0)
-                        continue;
-
-                    s32 t = 0;
-                    for (t = 0; t < num_frames; ++t)
-                        if (controller.current_time < anim->channels[c].times[t])
-                            break;
-
-                    bool new_frame = false;
-                    if (anim->channels[c].processed_frame != t)
-                    {
-                        new_frame = true;
-                        anim->channels[c].processed_frame = t;
-                    }
-
-                    // loop
-                    if (t >= num_frames)
-                        t = 0;
-
-                    // anim channel to scene node
-                    s32 sni = joints_offset + c;
-
-                    if (anim->remap_channels)
-                        sni = anim->channels[c].target_node_index;
-
-                    // invalid
-                    if (sni < 0)
-                        continue;
-
-                    //
-                    if (scene->entities[sni] & e_cmp::anim_trajectory)
-                    {
-                        if (anim->channels[c].matrices)
-                        {
-                            trajectory = anim->channels[c].matrices[num_frames - 1];
-                        }
-                    }
-
-                    if (anim->channels[c].matrices)
-                    {
-                        // apply baked tansform anim
-                        mat4& mat = anim->channels[c].matrices[t];
-                        scene->local_matrices[sni] = mat;
-                    }
-
-                    if (controller.current_time > anim->length)
-                    {
-                        apply_trajectory = true;
-                        controller.current_time = (controller.current_time) - (anim->length);
-                    }
-                }
-
-                if (apply_trajectory && controller.apply_root_motion)
-                {
-                    scene->local_matrices[n] *= trajectory;
-                }
-            }
         }
 
         void update()
@@ -1638,7 +1546,7 @@ namespace put
                     }
 
                     static mat4 bb[85];
-                    s32         joints_offset = scene->anim_controller[n].joints_offset;
+                    s32         joints_offset = scene->anim_controller_v2[n].joints_offset;
                     for (s32 i = 0; i < geom.p_skin->num_joints; ++i)
                         bb[i] = scene->world_matrices[joints_offset + i] * geom.p_skin->joint_bind_matrices[i];
 
@@ -1894,15 +1802,16 @@ namespace put
             {
                 s32 size = 0;
 
-                if (scene->anim_controller[n].handles)
-                    size = sb_count(scene->anim_controller[n].handles);
+                if (scene->anim_controller_v2[n].anim_instances)
+                    size = sb_count(scene->anim_controller_v2[n].anim_instances);
 
                 ofs.write((const c8*)&size, sizeof(s32));
 
                 for (s32 i = 0; i < size; ++i)
                 {
-                    auto* anim = get_animation_resource(scene->anim_controller[n].handles[i]);
-                    write_lookup_string(anim->name.c_str(), ofs, project_dir.c_str());
+                    // todo with anim controller v2
+                    // auto* anim = get_animation_resource(scene->anim_controller_v2[n].anim_instances[i].);
+                    write_lookup_string("placeholder", ofs, project_dir.c_str());
                 }
             }
 
@@ -2275,7 +2184,7 @@ namespace put
                         instantiate_model_cbuffer(scene, n);
 
                         if (gr->p_skin)
-                            instantiate_anim_controller(scene, n);
+                            instantiate_anim_controller_v2(scene, n);
                     }
                     else
                     {
@@ -2302,7 +2211,6 @@ namespace put
             {
                 s32 size;
                 ifs.read((c8*)&size, sizeof(s32));
-                scene->anim_controller[n].handles = nullptr;
 
                 for (s32 i = 0; i < size; ++i)
                 {
@@ -2320,9 +2228,6 @@ namespace put
 
                     bind_animation_to_rig(scene, h, n);
                 }
-
-                if (scene->anim_controller[n].current_animation > sb_count(scene->anim_controller[n].handles))
-                    scene->anim_controller[n].current_animation = PEN_INVALID_HANDLE;
             }
 
             // materials

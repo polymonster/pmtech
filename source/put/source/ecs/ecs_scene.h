@@ -146,7 +146,8 @@ namespace put
                 geometry = (1 << 1),
                 physics = (1 << 2),
                 physics_multi = (1 << 3),
-                material = (1 << 4), // 1<<5 unused
+                material = (1 << 4),
+                // 1<<5 unused
                 skinned = (1 << 6),
                 bone = (1 << 7),
                 dynamic = (1 << 8),
@@ -270,24 +271,7 @@ namespace put
             u32 instance_buffer;
             u32 instance_stride;
         };
-
-        struct cmp_anim_controller
-        {
-            enum e_play_flags : u8
-            {
-                STOPPED = 0,
-                PLAY = 1
-            };
-
-            anim_handle* handles = nullptr;
-            s32          joints_offset;
-            anim_handle  current_animation;
-            f32          current_time;
-            s32          current_frame = -1;
-            u8           play_flags = STOPPED;
-            bool         apply_root_motion = true;
-        };
-
+        
         struct anim_blend
         {
             u32 anim_a = 0;
@@ -301,6 +285,7 @@ namespace put
             u32*           joint_indices = nullptr; // indices into the scene hierarchy
             u8*            joint_flags = nullptr;
             anim_blend     blend;
+            u32            joints_offset;
         };
 
         struct cmp_light
@@ -466,7 +451,6 @@ namespace put
             cmp_array<cmp_geometry>           geometries;
             cmp_array<cmp_pre_skin>           pre_skin;
             cmp_array<cmp_physics>            physics_data;
-            cmp_array<cmp_anim_controller>    anim_controller;
             cmp_array<u32>                    cbuffer;
             cmp_array<cmp_draw_call>          draw_call_data;
             cmp_array<free_node_list>         free_list;

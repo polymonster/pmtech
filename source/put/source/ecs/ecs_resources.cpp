@@ -338,40 +338,6 @@ namespace put
             geom.vertex_shader_class = ID_VERTEX_CLASS_BASIC;
         }
 
-        void instantiate_anim_controller(ecs_scene* scene, s32 node_index)
-        {
-            cmp_geometry* geom = &scene->geometries[node_index];
-
-            if (geom->p_skin)
-            {
-                cmp_anim_controller& controller = scene->anim_controller[node_index];
-
-                std::vector<s32> joint_indices;
-                build_heirarchy_node_list(scene, node_index, joint_indices);
-
-                for (s32 jj = 0; jj < joint_indices.size(); ++jj)
-                {
-                    s32 jnode = joint_indices[jj];
-
-                    if (jnode > -1 && scene->entities[jnode] & e_cmp::bone)
-                    {
-                        controller.joints_offset = jnode;
-                        break;
-                    }
-
-                    // parent stray nodes to the top level anim / geom node
-                    if (jnode > -1)
-                        if (scene->parents[jnode] == jnode)
-                            scene->parents[jnode] = node_index;
-                }
-
-                controller.current_time = 0.0f;
-                controller.current_frame = 0;
-
-                scene->entities[node_index] |= e_cmp::anim_controller;
-            }
-        }
-
         void instantiate_anim_controller_v2(ecs_scene* scene, s32 node_index)
         {
             cmp_geometry* geom = &scene->geometries[node_index];
@@ -383,12 +349,16 @@ namespace put
                 std::vector<s32> joint_indices;
                 build_heirarchy_node_list(scene, node_index, joint_indices);
 
+                controller.joints_offset = -1;
                 for (s32 jj = 0; jj < joint_indices.size(); ++jj)
                 {
                     s32 jnode = joint_indices[jj];
 
                     if (jnode > -1 && scene->entities[jnode] & e_cmp::bone)
                     {
+                        if(controller.joints_offset == -1)
+                            controller.joints_offset = jnode;
+                        
                         sb_push(controller.joint_indices, jnode);
                     }
                 }
@@ -1569,10 +1539,7 @@ namespace put
 
                 // parent geometry deals with skinning
                 if ((scene->entities[i] & e_cmp::geometry) && scene->geometries[i].p_skin)
-                {
-                    instantiate_anim_controller(scene, i);
                     instantiate_anim_controller_v2(scene, i);
-                }
             }
 
             pen::memory_free(model_file);

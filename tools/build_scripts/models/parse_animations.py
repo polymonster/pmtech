@@ -129,6 +129,8 @@ def parse_animations(root, anims_out, joints_in):
     global animation_channels
     animation_channels = []
     for animation in root.iter(schema+'animation'):
+        if animation.get("id").find(".matrix") == -1:
+            continue
         samplers = []
         for sampler in animation.iter(schema+'sampler'):
             a_sampler = animation_sampler()

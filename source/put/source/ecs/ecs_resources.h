@@ -272,7 +272,7 @@ namespace put
         void instantiate_model_pre_skin(ecs_scene* scene, s32 node_index);
         void instantiate_model_cbuffer(ecs_scene* scene, s32 node_index);
         void instantiate_material_cbuffer(ecs_scene* scene, s32 node_index, s32 size);
-        void instantiate_anim_controller(ecs_scene* scene, s32 node_index);
+        void instantiate_anim_controller_v2(ecs_scene* scene, s32 node_index);
         void instantiate_material(material_resource* mr, ecs_scene* scene, u32 node_index);
         void instantiate_sdf_shadow(const c8* pmv_filename, ecs_scene* scene, u32 node_index);
         void instantiate_light(ecs_scene* scene, u32 node_index);

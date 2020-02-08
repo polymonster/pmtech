@@ -2069,6 +2069,7 @@ namespace put
 
         void scene_anim_ui(ecs_scene* scene)
         {
+#if 0
             if (sb_count(scene->selection_list) != 1)
                 return;
 
@@ -2145,6 +2146,7 @@ namespace put
                     ImGui::Separator();
                 }
             }
+#endif
         }
 
         void scene_light_ui(ecs_scene* scene)

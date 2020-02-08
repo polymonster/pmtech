@@ -51,7 +51,7 @@ namespace put
         void set_entity_parent(ecs_scene* scene, u32 parent, u32 child);
         void set_entity_parent_validate(ecs_scene* scene, u32& parent, u32& child);
         void trim_entities(ecs_scene* scene); // trim entites setting num_entities to the last allocated
-        bool bind_animation_to_rig(ecs_scene* scene, anim_handle anim_handle, u32 node_index);
+        u32  bind_animation_to_rig(ecs_scene* scene, anim_handle anim_handle, u32 node_index);
         void tree_to_entity_index_list(const scene_tree& tree, s32 start_node, std::vector<s32>& list_out);
         void build_scene_tree(ecs_scene* scene, s32 start_node, scene_tree& tree_out);
         void build_heirarchy_node_list(ecs_scene* scene, s32 start_node, std::vector<s32>& node_list);
