@@ -943,7 +943,7 @@ namespace physics
         s_bullet_systems.dynamics_world->addRigidBody(pe.rb.rigid_body, pe.group, pe.mask);
     }
 
-    void cast_ray_internal(const ray_cast_params& rcp)
+    cast_result cast_ray_internal(const ray_cast_params& rcp)
     {
         btVector3 from = from_vec3(rcp.start);
         btVector3 to = from_vec3(rcp.end);
@@ -952,7 +952,7 @@ namespace physics
         ray_callback.m_collisionFilterMask = rcp.mask;
         ray_callback.m_collisionFilterGroup = rcp.group;
 
-        ray_cast_result rcr;
+        cast_result rcr;
         rcr.user_data = rcp.user_data;
 
         rcr.physics_handle = -1;
@@ -965,13 +965,19 @@ namespace physics
             btRigidBody* body = (btRigidBody*)btRigidBody::upcast(ray_callback.m_collisionObject);
 
             if (body)
+            {
                 rcr.physics_handle = body->getUserIndex();
+                rcr.set = true;
+            }
         }
 
-        rcp.callback(rcr);
+        if(rcp.callback)
+            rcp.callback(rcr);
+        
+        return rcr;
     }
 
-    void cast_sphere_internal(const sphere_cast_params& scp)
+    cast_result cast_sphere_internal(const sphere_cast_params& scp)
     {
         btTransform from = get_bttransform(scp.from, quat());
         btTransform to = get_bttransform(scp.to, quat());
@@ -988,7 +994,7 @@ namespace physics
 
         s_bullet_systems.dynamics_world->convexSweepTest((btConvexShape*)&shape, from, to, cast_callback);
 
-        sphere_cast_result sr;
+        cast_result sr;
         sr.user_data = scp.user_data;
 
         sr.physics_handle = -1;
@@ -997,13 +1003,19 @@ namespace physics
             btRigidBody* body = (btRigidBody*)btRigidBody::upcast(cast_callback.m_hitCollisionObject);
 
             if (body)
+            {
                 sr.physics_handle = body->getUserIndex();
+                sr.set = true;
+            }
 
             sr.point = from_btvector(cast_callback.m_hitPointWorld);
             sr.normal = from_btvector(cast_callback.m_hitNormalWorld);
         }
 
-        scp.callback(sr);
+        if(scp.callback)
+            scp.callback(sr);
+            
+        return sr;
     }
 
     class contact_processor : public btCollisionWorld::ContactResultCallback

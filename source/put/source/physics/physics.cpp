@@ -479,40 +479,36 @@ namespace physics
         s_cmd_buffer.put(pc);
     }
 
-    void cast_ray(const ray_cast_params& rcp, bool immediate)
+    void cast_ray(const ray_cast_params& rcp)
     {
         if (mag(rcp.start - rcp.end) < 0.0001f)
             return;
 
-        if (!immediate)
-        {
-            physics_cmd pc;
-            pc.command_index = e_cmd::cast_ray;
-            pc.ray_cast = rcp;
-            s_cmd_buffer.put(pc);
-        }
-        else
-        {
-            cast_ray_internal(rcp);
-        }
+        physics_cmd pc;
+        pc.command_index = e_cmd::cast_ray;
+        pc.ray_cast = rcp;
+        s_cmd_buffer.put(pc);
     }
 
-    void cast_sphere(const sphere_cast_params& scp, bool immediate)
+    void cast_sphere(const sphere_cast_params& scp)
     {
         if (mag(scp.from - scp.to) < 0.0001f)
             return;
-
-        if (!immediate)
-        {
-            physics_cmd pc;
-            pc.command_index = e_cmd::cast_sphere;
-            pc.sphere_cast = scp;
-            s_cmd_buffer.put(pc);
-        }
-        else
-        {
-            cast_sphere_internal(scp);
-        }
+            
+        physics_cmd pc;
+        pc.command_index = e_cmd::cast_sphere;
+        pc.sphere_cast = scp;
+        s_cmd_buffer.put(pc);
+    }
+    
+    cast_result cast_ray_immediate(const ray_cast_params& rcp)
+    {
+        return cast_ray_internal(rcp);
+    }
+    
+    cast_result cast_sphere_immediate(const sphere_cast_params& scp)
+    {
+        return cast_sphere_internal(scp);
     }
 
     void contact_test(const contact_test_params& ctp)

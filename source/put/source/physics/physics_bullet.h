@@ -168,8 +168,8 @@ namespace physics
     void remove_from_world_internal(u32 entity_index);
     void release_entity_internal(u32 entity_index);
 
-    void cast_ray_internal(const ray_cast_params& rcp);
-    void cast_sphere_internal(const sphere_cast_params& ccp);
+    cast_result cast_ray_internal(const ray_cast_params& rcp);
+    cast_result cast_sphere_internal(const sphere_cast_params& ccp);
     void contact_test_internal(const contact_test_params& ctp);
 
     void add_central_force(const set_v3_params& cmd);

@@ -222,7 +222,7 @@ namespace physics
 
     struct set_v3_params
     {
-        u32      object_index;
+        u32 object_index;
         vec3f data;
     };
 
@@ -273,12 +273,13 @@ namespace physics
         s32 link_index;
     };
 
-    struct ray_cast_result
+    struct cast_result
     {
-        vec3f point;
-        vec3f normal;
-        u32   physics_handle;
-        void* user_data;
+        vec3f point = vec3f::zero();
+        vec3f normal = vec3f::zero();
+        u32   physics_handle = 0;
+        bool  set = false;
+        void* user_data = nullptr;
     };
 
     struct ray_cast_params
@@ -288,16 +289,8 @@ namespace physics
         u32   timestamp;
         u32   mask = 0xffffffff;
         u32   group = 0;
-        void* user_data;
-        void (*callback)(const ray_cast_result& result);
-    };
-
-    struct sphere_cast_result
-    {
-        vec3f point;
-        vec3f normal;
-        u32   physics_handle;
-        void* user_data;
+        void* user_data = nullptr;
+        void (*callback)(const cast_result& result) = nullptr;
     };
 
     struct sphere_cast_params
@@ -309,8 +302,8 @@ namespace physics
         u32   timestamp;
         u32   mask = 0xffffffff;
         u32   group = 0;
-        void* user_data;
-        void (*callback)(const sphere_cast_result& result);
+        void* user_data = nullptr;
+        void (*callback)(const cast_result& result) = nullptr;
     };
 
     struct contact
@@ -383,11 +376,16 @@ namespace physics
     void add_to_world(const u32& entity_index);
     void remove_from_world(const u32& entity_index);
 
-    void cast_ray(const ray_cast_params& rcp, bool immediate = false); // non immedite will put a cast command in the buffer.
-    void cast_sphere(const sphere_cast_params& rcp,
-                     bool                      immediate = false); // using non immediate may not be thread safe..
+    // callback will be called on completion, from the physics thread
+    void cast_ray(const ray_cast_params& rcp);
+    void cast_sphere(const sphere_cast_params& rcp);
     void contact_test(const contact_test_params& ctp);
-
+    
+    // these casts will give you the result immediately, but might not be thread safe, so far they seem ok though.
+    // the contact test is not thread safe at all.
+    cast_result cast_ray_immediate(const ray_cast_params& rcp);
+    cast_result cast_sphere_immediate(const sphere_cast_params& scp);
+    
     void step();
     void set_v3(const u32& entity_index, const vec3f& v3, u32 cmd);
     void set_float(const u32& entity_index, const f32& fval, u32 cmd);

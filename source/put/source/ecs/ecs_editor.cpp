@@ -2606,7 +2606,7 @@ namespace put
         };
         static physics_pick s_physics_pick_info;
 
-        void physics_pick_callback(const physics::ray_cast_result& result)
+        void physics_pick_callback(const physics::cast_result& result)
         {
             s_physics_pick_info.state = PICKING_COMPLETE;
             s_physics_pick_info.pos = result.point;
