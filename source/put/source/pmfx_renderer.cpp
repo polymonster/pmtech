@@ -693,7 +693,6 @@ namespace put
                 hash_id id_blend = PEN_HASH(state.name().c_str());
 
                 // avoid name collisions..
-                bool exists = false;
                 for (auto& p : s_partial_blend_states)
                     if (p.id_name == id_blend)
                         return;

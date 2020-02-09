@@ -310,6 +310,9 @@ namespace physics
     {
         vec3f normal;
         vec3f pos;
+        u32   group;
+        u32   mask;
+        u32   physics_handle;
     };
 
     struct contact_test_results

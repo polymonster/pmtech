@@ -1023,6 +1023,7 @@ namespace physics
       public:
         btRigidBody*         ref_rb;
         contact_test_results ctr;
+        u32                  ref_entity;
 
         btScalar addSingleResult(btManifoldPoint& cp, const btCollisionObjectWrapper* colObj0Wrap, int partId0, int index0,
                                  const btCollisionObjectWrapper* colObj1Wrap, int partId1, int index1)
@@ -1031,10 +1032,18 @@ namespace physics
 
             if (ref_rb == colObj0Wrap->getCollisionObject())
             {
+                c.group = colObj1Wrap->getCollisionObject()->getBroadphaseHandle()->m_collisionFilterGroup;
+                c.mask = colObj1Wrap->getCollisionObject()->getBroadphaseHandle()->m_collisionFilterMask;
+                c.physics_handle = colObj1Wrap->getCollisionObject()->getUserIndex();
+                
                 c.pos = from_btvector(cp.m_positionWorldOnB);
             }
             else
             {
+                c.group = colObj0Wrap->getCollisionObject()->getBroadphaseHandle()->m_collisionFilterGroup;
+                c.mask = colObj0Wrap->getCollisionObject()->getBroadphaseHandle()->m_collisionFilterMask;
+                c.physics_handle = colObj1Wrap->getCollisionObject()->getUserIndex();
+                
                 c.pos = from_btvector(cp.m_positionWorldOnA);
             }
             
@@ -1053,6 +1062,7 @@ namespace physics
         
         contact_processor cb;
         cb.ref_rb = rb;
+        cb.ref_entity = ctp.entity;
 
         btCollisionObject* cobj = (btCollisionObject*)rb;
 
