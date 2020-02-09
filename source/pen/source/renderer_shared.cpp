@@ -73,8 +73,11 @@ namespace pen
     void _renderer_shared_init()
     {
         // create a stretchy buffer for dynamic draw data on vertices
-        _create_stretchy_dynamic_buffer(&s_shared_ctx.dynamic_cbuffer, 6, 32, CBUFFER_ALIGNMENT);
-        _create_stretchy_dynamic_buffer(&s_shared_ctx.dynamic_vbuffer, 7, 32, VBUFFER_ALIGNMENT);
+        
+        // resizing can cause a flicker
+        static const size_t mb = 1024*1024*1024;
+        _create_stretchy_dynamic_buffer(&s_shared_ctx.dynamic_cbuffer, 6, mb, CBUFFER_ALIGNMENT);
+        _create_stretchy_dynamic_buffer(&s_shared_ctx.dynamic_vbuffer, 7, mb, VBUFFER_ALIGNMENT);
     }
     
     void _renderer_new_frame()

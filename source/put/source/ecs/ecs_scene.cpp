@@ -699,7 +699,7 @@ namespace put
                         break;
                     }
                 }
-
+                
                 if (!inside)
                 {
                     cull_count++;
@@ -1511,8 +1511,8 @@ namespace put
                 if (osm->num_arrays < num_omni_shadow_maps*6)
                 {
                     pmfx::rt_resize_params rrp;
-                    rrp.width = 256;
-                    rrp.height = 256;
+                    rrp.width = osm->width;
+                    rrp.height = osm->height;
                     rrp.format = nullptr;
                     rrp.num_arrays = num_omni_shadow_maps*6;
                     rrp.num_mips = 1;

@@ -160,7 +160,7 @@
         
         omni_shadow_map:
         {
-            size: [256, 256],
+            size: [512, 512],
             format: d24s8,
             type: cube_array
         },

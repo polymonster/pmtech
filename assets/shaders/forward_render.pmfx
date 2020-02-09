@@ -689,7 +689,7 @@ ps_output ps_forward_lit( vs_output input )
 
     return output;
 }
-
+x
 ps_output_multi ps_gbuffer( vs_output input ) 
 {    
     ps_output_multi output;
@@ -760,6 +760,12 @@ pmfx:
     {
         "vs": "vs_main",
         "ps": "ps_omni_shadow",
+        
+        "permutations":
+        {
+            "SKINNED": [31, [0,1]],
+            "INSTANCED": [30, [0,1]]
+        },
         
         "constants":
         {

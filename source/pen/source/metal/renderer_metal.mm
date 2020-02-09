@@ -309,7 +309,7 @@ namespace // internal structs and static vars
             }
         }
         
-         _frame_writes++;
+        _frame_writes++;
     }
 }
 

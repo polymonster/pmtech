@@ -1037,7 +1037,7 @@ namespace physics
             {
                 c.pos = from_btvector(cp.m_positionWorldOnA);
             }
-
+            
             c.normal = from_btvector(cp.m_normalWorldOnB);
 
             sb_push(ctr.contacts, c);
@@ -1050,7 +1050,7 @@ namespace physics
         btRigidBody* rb = s_entities.get(ctp.entity).rb.rigid_body;
         if (!rb)
             return;
-
+        
         contact_processor cb;
         cb.ref_rb = rb;
 
