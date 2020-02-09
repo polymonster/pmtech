@@ -1119,7 +1119,7 @@ namespace put
             pen::timer_start(timer);
 
             // scene node transform
-            for (u32 n = 0; n < scene->num_entities; ++n)
+            for (size_t n = 0; n < scene->num_entities; ++n)
             {
                 // force physics entity to sync and ignore controlled transform
                 if (scene->state_flags[n] & e_state::sync_physics_transform)
@@ -1200,7 +1200,7 @@ namespace put
             scene->renderable_extents.max = -vec3f::flt_max();
 
             // transform extents by transform
-            for (s32 n = 0; n < scene->num_entities; ++n)
+            for (size_t n = 0; n < scene->num_entities; ++n)
             {
                 vec3f min = scene->bounding_volumes[n].min_extents;
                 vec3f max = scene->bounding_volumes[n].max_extents - min;
@@ -1237,7 +1237,7 @@ namespace put
             }
 
             // reverse iterate over scene and expand parents extents by children
-            for (s32 n = scene->num_entities - 1; n > 0; --n)
+            for (size_t n = scene->num_entities - 1; n > 0; --n)
             {
                 if (!(scene->entities[n] & e_cmp::allocated))
                     continue;
@@ -1275,7 +1275,7 @@ namespace put
 
             // directional lights
             s32 num_directions_lights = 0;
-            for (s32 n = 0; n < scene->num_entities; ++n)
+            for (size_t n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & e_cmp::light))
                     continue;
@@ -1304,7 +1304,7 @@ namespace put
 
             // point lights
             s32 num_point_lights = 0;
-            for (s32 n = 0; n < scene->num_entities; ++n)
+            for (size_t n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & e_cmp::light))
                     continue;
@@ -1336,7 +1336,7 @@ namespace put
 
             // spot lights
             s32 num_spot_lights = 0;
-            for (s32 n = 0; n < scene->num_entities; ++n)
+            for (size_t n = 0; n < scene->num_entities; ++n)
             {
                 if (num_lights >= e_scene_limits::max_forward_lights)
                     break;
@@ -1389,7 +1389,7 @@ namespace put
             u32 num_constant_colour_area_lights = 0;
             u32 num_textured_area_lights = 0;
             // constant colour area light
-            for (s32 n = 0; n < scene->num_entities; ++n)
+            for (size_t n = 0; n < scene->num_entities; ++n)
             {
                 if (num_lights >= e_scene_limits::max_forward_lights)
                     break;
@@ -1411,7 +1411,7 @@ namespace put
                 ++num_area_lights;
             }
             // textured / shader / animated area light
-            for (s32 n = 0; n < scene->num_entities; ++n)
+            for (size_t n = 0; n < scene->num_entities; ++n)
             {
                 if (num_lights >= e_scene_limits::max_forward_lights)
                     break;
@@ -1457,7 +1457,7 @@ namespace put
             }
 
             // Distance field shadows
-            for (s32 n = 0; n < scene->num_entities; ++n)
+            for (size_t n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & e_cmp::sdf_shadow))
                     continue;
@@ -1475,7 +1475,7 @@ namespace put
             // directional
             u32 num_shadow_maps = 0;
             u32 num_omni_shadow_maps = 0;
-            for (s32 n = 0; n < scene->num_entities; ++n)
+            for (size_t n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & e_cmp::light))
                     continue;
@@ -1526,7 +1526,7 @@ namespace put
             static u32 shader = pmfx::load_shader("forward_render");
             if (pmfx::set_technique_perm(shader, id_pre_skin_technique))
             {
-                for (s32 n = 0; n < scene->num_entities; ++n)
+                for (size_t n = 0; n < scene->num_entities; ++n)
                 {
                     if (!(scene->entities[n] & e_cmp::pre_skinned))
                         continue;
@@ -1565,7 +1565,7 @@ namespace put
             }
 
             // update draw call data
-            for (s32 n = 0; n < scene->num_entities; ++n)
+            for (size_t n = 0; n < scene->num_entities; ++n)
             {
                 if (scene->entities[n] & e_cmp::material)
                 {
@@ -1602,7 +1602,7 @@ namespace put
             }
 
             // update instance buffers
-            for (s32 n = 0; n < scene->num_entities; ++n)
+            for (size_t n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & e_cmp::master_instance))
                     continue;
@@ -1624,6 +1624,10 @@ namespace put
             for (u32 c = 0; c < num_controllers; ++c)
                 if (scene->controllers[c].post_update_func)
                     scene->controllers[c].post_update_func(scene->controllers[c], scene, dt);
+                    
+            f32 elapsed = pen::timer_elapsed_ms(timer);
+            PEN_UNUSED(elapsed);
+            // PEN_LOG("scene update: %f(ms)", elapsed);
         }
 
         struct scene_header

@@ -35,26 +35,26 @@ namespace pen
 {
     // Functions
 
-    void* memory_alloc(u32 size_bytes);
-    void* memory_alloc_align(u32 size_bytes, u32 alignment);
-    void* memory_realloc(void* mem, u32 size_bytes);
+    void* memory_alloc(size_t size_bytes);
+    void* memory_alloc_align(size_t size_bytes, size_t alignment);
+    void* memory_realloc(void* mem, size_t size_bytes);
     void  memory_free(void* mem);
     void  memory_free_align(void* mem);
-    void  memory_zero(void* dest, u32 size_bytes);
+    void  memory_zero(void* dest, size_t size_bytes);
 
     // Implementation
 
-    inline void* memory_alloc(u32 size_bytes)
+    inline void* memory_alloc(size_t size_bytes)
     {
         return malloc(size_bytes);
     }
 
-    inline void* memory_calloc(u32 count, u32 size_bytes)
+    inline void* memory_calloc(size_t count, size_t size_bytes)
     {
         return calloc(count, size_bytes);
     }
 
-    inline void* memory_realloc(void* mem, u32 size_bytes)
+    inline void* memory_realloc(void* mem, size_t size_bytes)
     {
         return realloc(mem, size_bytes);
     }
@@ -64,12 +64,12 @@ namespace pen
         free(mem);
     }
 
-    inline void memory_zero(void* dest, u32 size_bytes)
+    inline void memory_zero(void* dest, size_t size_bytes)
     {
         memset(dest, 0x00, size_bytes);
     }
 
-    inline void* memory_alloc_align(u32 size_bytes, u32 alignment)
+    inline void* memory_alloc_align(size_t size_bytes, size_t alignment)
     {
         void* mem;
         PEN_MEM_ALIGN_ALLOC(mem, alignment, size_bytes);
