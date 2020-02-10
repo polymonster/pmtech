@@ -68,34 +68,6 @@ namespace forward_render
     };
     #define OMNI_SHADOW_SKINNED 2147483648
     #define OMNI_SHADOW_INSTANCED 1073741824
-    struct omni_shadow
-    {
-        float4 m_albedo;
-        float m_roughness;
-        float m_reflectivity;
-        float2 m_padding;
-    };
-    struct omni_shadow_skinned
-    {
-        float4 m_albedo;
-        float m_roughness;
-        float m_reflectivity;
-        float2 m_padding;
-    };
-    struct omni_shadow_instanced
-    {
-        float4 m_albedo;
-        float m_roughness;
-        float m_reflectivity;
-        float2 m_padding;
-    };
-    struct omni_shadow_instanced_skinned
-    {
-        float4 m_albedo;
-        float m_roughness;
-        float m_reflectivity;
-        float2 m_padding;
-    };
     #define FORWARD_LIT_SKINNED 2147483648
     #define FORWARD_LIT_INSTANCED 1073741824
     #define FORWARD_LIT_UV_SCALE 2

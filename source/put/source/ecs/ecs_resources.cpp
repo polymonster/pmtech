@@ -637,10 +637,19 @@ namespace put
                 p_reader = (u32*)((c8*)p_reader + bcp.buffer_size);
                 p_reader += num_collision_floats;
                 
+                // extract ful fat u32 indices
+                u32* ffi = new u32[num_indices];
+                memset(&ffi[0], 0x0, sizeof(u32)*num_indices);
+                u8* ci = (u8*)p_geometry->cpu_index_buffer;
+                for(u32 i = 0; i < num_indices; ++i)
+                {
+                    memcpy(&ffi[i], &ci[i*index_size], index_size);
+                }
+                
                 //
                 std::vector<u32> remap(num_indices); // allocate temporary memory for the remap table
                 size_t vertex_count = meshopt_generateVertexRemap(
-                    &remap[0], nullptr, num_indices, p_geometry->cpu_vertex_buffer, num_verts, vertex_size);
+                    &remap[0], ffi, num_indices, p_geometry->cpu_vertex_buffer, num_verts, vertex_size);
                     
                 u32* ni = (u32*)pen::memory_alloc(sizeof(u32)*num_indices);
                 meshopt_remapIndexBuffer(ni, nullptr, num_indices, &remap[0]);
