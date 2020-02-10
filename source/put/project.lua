@@ -36,7 +36,7 @@ project "put"
         "../pen/include/" .. platform_dir,
         "../pen/include/" .. renderer_dir,
           
-        "../../third_party"
+        "../../third_party",
         "../../third_party/fmod/inc",
         "../../third_party/bullet/src/",
         "../../third_party/imgui",
