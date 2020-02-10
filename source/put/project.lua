@@ -59,6 +59,8 @@ project "put"
         "../../third_party/sdf_gen/*.cpp",
         "../../third_party/bussik/*.h",
         "../../third_party/bussik/*.cpp",
+        "../../third_party/meshoptimizer/*.cpp",
+        "../../third_party/meshoptimizer/*.h",
         
         "../../third_party/maths/*.h"
     }

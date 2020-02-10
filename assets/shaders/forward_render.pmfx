@@ -86,6 +86,13 @@ struct vs_output_zonly
     float4 position : SV_POSITION;
 };
 
+struct vs_output_zonly_wp
+{
+    float4 position : SV_POSITION;
+    float4 world_pos : TEXCOORD0;
+};
+
+
 struct vs_output_picking
 {
     float4 position : SV_POSITION;
@@ -163,6 +170,43 @@ vs_output_zonly vs_main_zonly( vs_input_multi input, vs_instance_input instance_
     // for d3d 0 - 1 clip space    
     output.position /= output.position.w;
     remap_z_clip_space(output.position.z);
+    return output;
+}
+
+vs_output_zonly_wp vs_main_zonly_wp( vs_input_multi input, vs_instance_input instance_input )
+{
+    vs_output_zonly_wp output;
+    
+    float4x4 wvp = mul( world_matrix, vp_matrix );
+    float4x4 wm = world_matrix;
+    
+    if:(INSTANCED)
+    {
+        float4x4 instance_world_mat;
+        unpack_vb_instance_mat(
+            instance_world_mat, 
+            instance_input.world_matrix_0, 
+            instance_input.world_matrix_1, 
+            instance_input.world_matrix_2, 
+            instance_input.world_matrix_3
+        );
+        
+        wvp = mul( instance_world_mat, vp_matrix );
+        wm = instance_world_mat;
+    }
+        
+    if:(SKINNED)
+    {
+        float4 sp = skin_pos(input.position, input.blend_weights, input.blend_indices);
+        output.position = mul( sp, vp_matrix );
+        output.world_pos = sp;
+    }
+    else:
+    {
+        output.position = mul( input.position, wvp );
+        output.world_pos = mul( input.position, wm );
+    }
+        
     return output;
 }
 
@@ -733,7 +777,7 @@ ps_output ps_dbg( vs_output input )
     return output;
 }
 
-ps_output_depth ps_omni_shadow( vs_output input )
+ps_output_depth ps_omni_shadow( vs_output_zonly_wp input )
 {
     ps_output_depth output;
     float d = length(input.world_pos.xyz - single_light.pos_radius.xyz) / single_light.pos_radius.w;
@@ -758,20 +802,13 @@ pmfx:
     
     "omni_shadow":
     {
-        "vs": "vs_main",
+        "vs": "vs_main_zonly_wp",
         "ps": "ps_omni_shadow",
         
         "permutations":
         {
             "SKINNED": [31, [0,1]],
             "INSTANCED": [30, [0,1]]
-        },
-        
-        "constants":
-        {
-            "albedo"      : { "type": "float4", "widget": "colour", "default": [1.0, 1.0, 1.0, 1.0] },
-            "roughness"   : { "type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 },
-            "reflectivity": { "type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.3 }
         }
     },
     

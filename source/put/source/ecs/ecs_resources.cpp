@@ -2,18 +2,20 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
+#include "ecs/ecs_resources.h"
+#include "ecs/ecs_utilities.h"
+
 #include "debug_render.h"
 #include "dev_ui.h"
+
 #include "file_system.h"
 #include "hash.h"
 #include "pen_string.h"
 #include "str_utilities.h"
-
-#include "ecs/ecs_resources.h"
-#include "ecs/ecs_utilities.h"
-
 #include "console.h"
 #include "data_struct.h"
+
+#include "meshoptimizer.h"
 
 using namespace put;
 using namespace ecs;
@@ -633,9 +635,44 @@ namespace put
                 memcpy(p_geometry->cpu_index_buffer, bcp.data, bcp.buffer_size);
 
                 p_reader = (u32*)((c8*)p_reader + bcp.buffer_size);
-
                 p_reader += num_collision_floats;
-
+                
+                //
+                std::vector<u32> remap(num_indices); // allocate temporary memory for the remap table
+                size_t vertex_count = meshopt_generateVertexRemap(
+                    &remap[0], nullptr, num_indices, p_geometry->cpu_vertex_buffer, num_verts, vertex_size);
+                    
+                u32* ni = (u32*)pen::memory_alloc(sizeof(u32)*num_indices);
+                meshopt_remapIndexBuffer(ni, nullptr, num_indices, &remap[0]);
+                
+                void* nv = pen::memory_alloc(vertex_size*vertex_count);
+                meshopt_remapVertexBuffer(nv, p_geometry->cpu_vertex_buffer, num_indices, vertex_size, &remap[0]);
+                
+                // swap winding
+                for(u32 i = 0; i < num_indices; i+=3)
+                    std::swap(ni[i], ni[i+2]);
+                            
+                // create a vertex buffer
+                bcp.usage_flags = PEN_USAGE_DEFAULT;
+                bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
+                bcp.cpu_access_flags = 0;
+                bcp.buffer_size = vertex_size * vertex_count;
+                bcp.data = (void*)nv;
+                u32 opt_vb = pen::renderer_create_buffer(bcp);
+                
+                // create an index buffer
+                bcp.usage_flags = PEN_USAGE_DEFAULT;
+                bcp.bind_flags = PEN_BIND_INDEX_BUFFER;
+                bcp.cpu_access_flags = 0;
+                bcp.buffer_size = sizeof(u32) * num_indices;
+                bcp.data = (void*)ni;
+                u32 opt_ib = pen::renderer_create_buffer(bcp);
+                
+                p_geometry->num_vertices = vertex_count;
+                p_geometry->vertex_buffer = opt_vb;
+                p_geometry->index_buffer = opt_ib;
+                p_geometry->index_type = PEN_FORMAT_R32_UINT;
+                
                 s_geometry_resources.push_back(p_geometry);
             }
         }
@@ -818,12 +855,14 @@ namespace put
             u32 num_maps = *p_reader++;
 
             // clear all maps to invalid
-            static const u32 default_maps[] = {put::load_texture("data/textures/defaults/albedo.dds"),
-                                               put::load_texture("data/textures/defaults/normal.dds"),
-                                               put::load_texture("data/textures/defaults/spec.dds"),
-                                               put::load_texture("data/textures/defaults/spec.dds"),
-                                               put::load_texture("data/textures/defaults/black.dds"),
-                                               put::load_texture("data/textures/defaults/black.dds")};
+            static const u32 default_maps[] = {
+                put::load_texture("data/textures/defaults/albedo.dds"),
+                put::load_texture("data/textures/defaults/normal.dds"),
+                put::load_texture("data/textures/defaults/spec.dds"),
+                put::load_texture("data/textures/defaults/spec.dds"),
+                put::load_texture("data/textures/defaults/black.dds"),
+                put::load_texture("data/textures/defaults/black.dds")
+            };
             static_assert(e_texture::COUNT == PEN_ARRAY_SIZE(default_maps), "mismatched defaults size");
 
             for (u32 map = 0; map < e_texture::COUNT; ++map)
@@ -928,6 +967,7 @@ namespace put
                 {
                     u32 sematic = *p_u32reader++;
                     u32 type = *p_u32reader++;
+                    PEN_UNUSED(type);
                     u32 target = *p_u32reader++;
 
                     // read float buffer
