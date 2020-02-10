@@ -637,6 +637,9 @@ namespace put
                 p_reader = (u32*)((c8*)p_reader + bcp.buffer_size);
                 p_reader += num_collision_floats;
                 
+#if 0
+                // This is work in progress, leaking memory and experimental
+                
                 // extract ful fat u32 indices
                 u32* ffi = new u32[num_indices];
                 memset(&ffi[0], 0x0, sizeof(u32)*num_indices);
@@ -681,6 +684,7 @@ namespace put
                 p_geometry->vertex_buffer = opt_vb;
                 p_geometry->index_buffer = opt_ib;
                 p_geometry->index_type = PEN_FORMAT_R32_UINT;
+#endif
                 
                 s_geometry_resources.push_back(p_geometry);
             }
