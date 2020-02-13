@@ -11,15 +11,7 @@ using namespace pen;
 #define VBUFFER_ALIGNMENT 1
 
 namespace
-{
-    namespace e_shared_flags
-    {
-        enum shared_flags_t
-        {
-            backbuffer_resize = 1
-        };
-    }
-    
+{    
     struct managed_rt
     {
         pen::texture_creation_params* tcp;
@@ -164,6 +156,11 @@ namespace pen
     {
         return s_shared_ctx.resize_index.load();
     }
+
+	shared_flags _renderer_flags()
+	{
+		return s_shared_ctx.flags;
+	}
     
     size_t _renderer_buffer_multi_update(stretchy_dynamic_buffer* buf, const void* data, size_t size)
     {

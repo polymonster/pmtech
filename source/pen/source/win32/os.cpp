@@ -13,12 +13,12 @@
 #include "timer.h"
 #include "data_struct.h"
 #include "str_utilities.h"
+#include "renderer_shared.h"
 
-// one day I will remove this junk and make a nice api.
+// slowly I am removing this junk to make a nicer api
 pen::user_info                      pen_user_info;
-extern a_u8                         g_window_resize;
-static u32                          s_return_code = 0;
 extern pen::window_creation_params  pen_window;
+static u32                          s_return_code = 0;
 
 namespace pen
 {
@@ -30,6 +30,14 @@ struct window_params
     HINSTANCE hinstance;
     int       cmdshow;
 };
+
+namespace
+{
+	void pen_window_resize(u32 w, u32 h)
+	{
+		pen::_renderer_resize_backbuffer(w, h);
+	}
+}
 
 //
 // OpenGL Render Context
@@ -229,15 +237,10 @@ namespace pen
             {
                 case OS_CMD_SET_WINDOW_FRAME:
                 {
+					RECT r;
                     SetWindowPos(g_hwnd, HWND_TOP, cmd->frame.x, cmd->frame.y, cmd->frame.width, cmd->frame.height, 0);
-
-                    RECT r;
                     GetClientRect(g_hwnd, &r);
-
-                    pen_window.width = r.right - r.left;
-                    pen_window.height = r.bottom - r.top;
-
-                    g_window_resize = 1;
+					pen_window_resize(r.right - r.left, r.bottom - r.top);
                 }
                 break;
                 default:
@@ -419,17 +422,10 @@ namespace pen
             case WM_SIZE:
             {
                 s16 lo = LOWORD(wParam);
-
                 if (lo == SIZE_MINIMIZED)
                     break;
 
-                if (g_window_resize == 0)
-                {
-                    pen_window.width = LOWORD(lParam);
-                    pen_window.height = HIWORD(lParam);
-
-                    g_window_resize = 1;
-                }
+				pen_window_resize(LOWORD(lParam), HIWORD(lParam));
             }
             break;
 

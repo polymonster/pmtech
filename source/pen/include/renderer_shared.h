@@ -22,6 +22,15 @@ namespace pen
         u8* _cpu_data = nullptr;
         u32 _gpu_buffer;
     };
+
+	namespace e_shared_flags
+	{
+		enum shared_flags_t
+		{
+			backbuffer_resize = 1
+		};
+	}
+	typedef u32 shared_flags;
     
     void                        _renderer_shared_init();
     void                        _renderer_new_frame();
@@ -32,6 +41,7 @@ namespace pen
     void                        _renderer_resize_managed_targets();
     u64                         _renderer_frame_index();
     u64                         _renderer_resize_index();
+	shared_flags				_renderer_flags();
     
     void                        _renderer_commit_stretchy_dynamic_buffers();
     size_t                      _renderer_buffer_multi_update(stretchy_dynamic_buffer* buf, const void* data, size_t size);

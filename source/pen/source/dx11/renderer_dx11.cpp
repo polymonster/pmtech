@@ -2,23 +2,24 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#include <d3d11_1.h>
-#include <stdlib.h>
-#include <windows.h>
+#include "renderer.h"
+#include "renderer_shared.h"
 
+#include "pen.h"
 #include "data_struct.h"
 #include "memory.h"
-#include "pen.h"
 #include "pen_string.h"
-#include "renderer.h"
 #include "threads.h"
 #include "timer.h"
 #include "console.h"
 
 #include "str/Str.h"
 
+#include <d3d11_1.h>
+#include <stdlib.h>
+#include <windows.h>
+
 extern pen::window_creation_params pen_window;
-a_u8                               g_window_resize(0);
 
 namespace
 {
@@ -31,8 +32,7 @@ namespace
     ID3D11RenderTargetView* s_backbuffer_rtv = nullptr;
     ID3D11DeviceContext*    s_immediate_context = nullptr;
     ID3D11DeviceContext1*   s_immediate_context_1 = nullptr;
-
-    u64 s_frame = 0;
+    u64						s_frame = 0; // to remove
 } // namespace
 
 // level 0 = no errors, level 1 = print errors, level 2 = assert on error
@@ -480,6 +480,42 @@ namespace pen
     void direct::renderer_new_frame()
     {
         // unused on this platform
+		shared_flags flags = _renderer_flags();
+		if (flags & e_shared_flags::backbuffer_resize)
+		{
+			s_immediate_context->OMSetRenderTargets(0, 0, 0);
+
+			// Release all outstanding references to the swap chain's buffers.
+			if (_res_pool[g_context.backbuffer_depth].depth_target->ds)
+			{
+				_res_pool[g_context.backbuffer_depth].depth_target->ds[0]->Release();
+				_res_pool[g_context.backbuffer_depth].depth_target->tex.texture->Release();
+			}
+
+			if (_res_pool[g_context.backbuffer_colour].render_target->rt)
+			{
+				_res_pool[g_context.backbuffer_colour].render_target->rt[0]->Release();
+				_res_pool[g_context.backbuffer_colour].render_target->tex.texture->Release();
+			}
+
+			uint32_t w = pen_window.width;
+			uint32_t h = pen_window.height;
+
+			s_swap_chain->ResizeBuffers(0, w, h, DXGI_FORMAT_UNKNOWN, 0);
+
+			create_rtvs(g_context.backbuffer_colour, g_context.backbuffer_depth, w, h);
+
+			// recreate dynamic buffers
+			u32 num_man_rt = sb_count(s_managed_render_targets);
+			for (u32 i = 0; i < num_man_rt; ++i)
+			{
+				auto& rt = s_managed_render_targets[i];
+				release_render_target_internal(rt.resource_index);
+				renderer_create_render_target(rt.tcp, rt.resource_index, false);
+			}
+		}
+
+		_renderer_new_frame();
     }
     
     void direct::renderer_end_frame()
@@ -563,9 +599,6 @@ namespace pen
         }
     }
 
-    static u32  s_resize_counter = 0;
-    static bool s_needs_resize = 0;
-
     void direct::renderer_present()
     {
         // Just present
@@ -576,57 +609,7 @@ namespace pen
 
         gather_perf_markers();
 
-        if (g_window_resize == 1)
-        {
-            s_immediate_context->OMSetRenderTargets(0, 0, 0);
-
-            // Release all outstanding references to the swap chain's buffers.
-            if (_res_pool[g_context.backbuffer_depth].depth_target->ds)
-            {
-                _res_pool[g_context.backbuffer_depth].depth_target->ds[0]->Release();
-                _res_pool[g_context.backbuffer_depth].depth_target->tex.texture->Release();
-            }
-
-            if (_res_pool[g_context.backbuffer_colour].render_target->rt)
-            {
-                _res_pool[g_context.backbuffer_colour].render_target->rt[0]->Release();
-                _res_pool[g_context.backbuffer_colour].render_target->tex.texture->Release();
-            }
-
-            uint32_t w = pen_window.width;
-            uint32_t h = pen_window.height;
-
-            s_swap_chain->ResizeBuffers(0, w, h, DXGI_FORMAT_UNKNOWN, 0);
-
-            create_rtvs(g_context.backbuffer_colour, g_context.backbuffer_depth, w, h);
-
-            s_needs_resize = true;
-            s_resize_counter = 0;
-            g_window_resize = 0;
-        }
-        else
-        {
-            s_resize_counter++;
-        }
-
-        if (s_needs_resize && s_resize_counter > 5)
-        {
-            // recreate dynamic buffers
-            u32 num_man_rt = sb_count(s_managed_render_targets);
-            for (u32 i = 0; i < num_man_rt; ++i)
-            {
-                auto& rt = s_managed_render_targets[i];
-
-                release_render_target_internal(rt.resource_index);
-
-                renderer_create_render_target(rt.tcp, rt.resource_index, false);
-            }
-
-            s_needs_resize = 0;
-            s_resize_counter = 0;
-        }
-
-        s_frame++;
+		s_frame++;
 
         renderer_push_perf_marker(nullptr);
     }
