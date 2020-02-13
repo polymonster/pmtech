@@ -27,8 +27,6 @@ extern pen::window_creation_params pen_window;
 extern void pen_make_gl_context_current();
 extern void pen_gl_swap_buffers();
 
-a_u8        g_window_resize(0);
-
 namespace
 {
     u64   s_frame = 0;

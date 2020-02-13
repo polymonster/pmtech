@@ -2180,7 +2180,7 @@ namespace pen
             vulkan_texture& vt = _res_pool.get(resource_slot).texture;
 
             // take a cpy of tcp, we might need it later
-            vt.tcp = new texture_creation_params(renderer_tcp_resolve_ratio(tcp));
+            vt.tcp = new texture_creation_params(_renderer_tcp_resolve_ratio(tcp));
             vt.format = to_vk_image_format(vt.tcp->format);
 
             if (vt.tcp->bind_flags & PEN_BIND_SHADER_WRITE)
