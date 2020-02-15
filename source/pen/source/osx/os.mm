@@ -25,7 +25,7 @@
 
 // pen required externs / globals.. trying to remove these
 pen::user_info                      pen_user_info;
-extern PEN_TRV                      pen::user_entry(void* params);
+// extern PEN_TRV                      pen::user_entry(void* params);
 extern pen::window_creation_params  pen_window;
 
 namespace pen
@@ -159,19 +159,6 @@ void pen_window_resize()
     pen::input_set_mouse_up(PEN_MOUSE_M);
     
     _update_window_frame();
-}
-
-void run()
-{
-    pen::renderer_init(_metal_view, false);
-    
-    for (;;)
-    {
-        if (!pen::os_update())
-            break;
-
-        pen::thread_sleep_us(100);
-    }
 }
 #else
 
@@ -563,8 +550,14 @@ namespace
     }
 }
 
+pen::pen_creation_params pc;
 int main(int argc, char** argv)
 {
+    // call pmtech entry first
+#if PEN_ENTRY_FUNCTION
+    pc = pen::pen_entry(argc, argv);
+#endif
+    
     NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
     
     // get working dir
@@ -592,42 +585,47 @@ int main(int argc, char** argv)
             pen::renderer_test_enable();
         }
     }
-
-    // window creation
-    [NSApplication sharedApplication];
-
-    id dg = [app_delegate shared_delegate];
-    [NSApp setDelegate:dg];
-    [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
-    [NSApp activateIgnoringOtherApps:YES];
-    [NSApp finishLaunching];
-
-    [[NSNotificationCenter defaultCenter] postNotificationName:NSApplicationWillFinishLaunchingNotification object:NSApp];
-    [[NSNotificationCenter defaultCenter] postNotificationName:NSApplicationDidFinishLaunchingNotification object:NSApp];
-
-    NSRect frame = NSMakeRect(0, 0, pen_window.width, pen_window.height);
-
-    NSUInteger style_mask =
-        NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable;
-
-    _window = [[NSWindow alloc] initWithContentRect:frame styleMask:style_mask backing:NSBackingStoreBuffered defer:NO];
-
-    [_window makeKeyAndOrderFront:_window];
-
-    id wd = [window_delegate shared_delegate];
-    [_window setDelegate:wd];
-    [_window setTitle:[NSString stringWithUTF8String:pen_window.window_title]];
-    [_window setAcceptsMouseMovedEvents:YES];
-    [_window center];
-
-    [_window registerForDraggedTypes:[NSArray arrayWithObjects:NSFilenamesPboardType, nil]];
-    _update_window_frame();
-
-    // creates an opengl or metal rendering context
-    create_renderer_context();
-
+    
     // os stuff
     users();
+
+    // window creation
+    if(1)
+    {
+        [NSApplication sharedApplication];
+
+        id dg = [app_delegate shared_delegate];
+        [NSApp setDelegate:dg];
+        [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
+        [NSApp activateIgnoringOtherApps:YES];
+        [NSApp finishLaunching];
+
+        [[NSNotificationCenter defaultCenter] postNotificationName:NSApplicationWillFinishLaunchingNotification object:NSApp];
+        [[NSNotificationCenter defaultCenter] postNotificationName:NSApplicationDidFinishLaunchingNotification object:NSApp];
+
+        NSRect frame = NSMakeRect(0, 0, pen_window.width, pen_window.height);
+
+        NSUInteger style_mask =
+            NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable;
+
+        _window = [[NSWindow alloc] initWithContentRect:frame styleMask:style_mask backing:NSBackingStoreBuffered defer:NO];
+
+        [_window makeKeyAndOrderFront:_window];
+
+        id wd = [window_delegate shared_delegate];
+        [_window setDelegate:wd];
+        [_window setTitle:[NSString stringWithUTF8String:pen_window.window_title]];
+        [_window setAcceptsMouseMovedEvents:YES];
+        [_window center];
+
+        [_window registerForDraggedTypes:[NSArray arrayWithObjects:NSFilenamesPboardType, nil]];
+        _update_window_frame();
+
+        // creates an opengl or metal rendering context
+        create_renderer_context();
+        
+        pen::renderer_init(_metal_view, false);
+    }
 
     // init systems
     pen::timer_system_intialise();
@@ -636,7 +634,19 @@ int main(int argc, char** argv)
     [pool drain];
 
     // invoke renderer specific update for main thread
-    run();
+    
+    // creates user thread
+    pen::default_thread_info thread_info;
+    pen::jobs_create_default(thread_info);
+    
+    // main loop
+    for (;;)
+    {
+        if (!pen::os_update())
+            break;
+
+        pen::thread_sleep_us(100);
+    }
         
     return s_ctx.return_code;
 }
@@ -650,16 +660,6 @@ namespace pen
     bool os_update()
     {
         NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
-        
-        static bool thread_started = false;
-        if (!thread_started)
-        {
-            // audio, user thread etc
-            pen::default_thread_info thread_info;
-            thread_info.flags = pen::PEN_CREATE_AUDIO_THREAD;
-            pen::jobs_create_default(thread_info);
-            thread_started = true;
-        }
 
         [NSApp updateWindows];
         

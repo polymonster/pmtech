@@ -116,10 +116,10 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
         scene->entities.data[i] |= e_cmp::transform;
     }
 
-#if 0 // debug / test array cost vs operator [] in component entity system
+#if 1 // debug / test array cost vs operator [] in component entity system
     f32 array_cost = pen::timer_elapsed_ms(timer);
     pen::timer_start(timer);
-    for (s32 i = 2; i < scene->num_nodes; ++i)
+    for (s32 i = 2; i < scene->num_entities; ++i)
     {
         scene->transforms[i].rotation = scene->transforms[i].rotation * q;
         scene->entities[i] |= e_cmp::transform;

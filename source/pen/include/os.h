@@ -14,9 +14,8 @@ namespace pen
     {
         u32 x, y, width, height;
     };
-
+    
     // Window
-
     u32   window_init(void* params);
     void* window_get_primary_display_handle();
     void  window_get_frame(window_frame& f);

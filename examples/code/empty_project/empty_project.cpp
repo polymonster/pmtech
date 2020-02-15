@@ -37,3 +37,20 @@ PEN_TRV pen::user_entry(void* params)
 
     return PEN_THREAD_OK;
 }
+
+#if PEN_ENTRY_FUNCTION
+namespace pen
+{
+    pen_creation_params pen_entry(int argc, char** argv)
+    {
+        pen::pen_creation_params p;
+        p.window_width = 1280;
+        p.window_height =  720;
+        p.window_title = "empty_project";
+        p.window_sample_count = 4;
+        p.user_thread_function = user_entry;
+        p.flags = pen::e_pmtech_create_flags::renderer;
+        return p;
+    }
+}
+#endif
