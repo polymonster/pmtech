@@ -1689,13 +1689,13 @@ namespace put
             
             for (u32 m = 0; m < contents.num_materials; ++m)
             {
-                write_parsable_string(contents.material_names[m], ofs);
+                write_parsable_string_u32(contents.material_names[m], ofs);
                 ofs.write((const c8*)&contents.material_offsets[m], sizeof(u32));
             }
             
             for(u32 g = 0; g < contents.num_geometry; ++g)
             {
-                write_parsable_string(contents.geometry_names[g], ofs);
+                write_parsable_string_u32(contents.geometry_names[g], ofs);
                 ofs.write((const c8*)&contents.geometry_offsets[g], sizeof(u32));
             }
                         

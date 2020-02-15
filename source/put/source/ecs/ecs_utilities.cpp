@@ -65,6 +65,28 @@ namespace put
                 ofs.write((const c8*)&zero, sizeof(u32));
             }
         }
+        
+        void write_parsable_string_u32(const Str& str, std::ofstream& ofs)
+        {
+            // writes chars as u32? because some stupid code in the python export
+            if (str.c_str())
+            {
+                u32 l = str.length();
+                ofs.write((const c8*)&l, sizeof(u32));
+                for(u32 c = 0; c < l; ++c)
+                {
+                    ofs.write(&str.c_str()[c], 1);
+                    ofs.write(&str.c_str()[c], 1);
+                    ofs.write(&str.c_str()[c], 1);
+                    ofs.write(&str.c_str()[c], 1);
+                }
+            }
+            else
+            {
+                u32 zero = 0;
+                ofs.write((const c8*)&zero, sizeof(u32));
+            }
+        }
 
         void get_new_entities_append(ecs_scene* scene, s32 num, s32& start, s32& end)
         {
