@@ -338,7 +338,6 @@ namespace pen
         {
             // audio, user thread etc
             pen::default_thread_info thread_info;
-            thread_info.flags = pen::PEN_CREATE_AUDIO_THREAD;
             pen::jobs_create_default(thread_info);
             init_jobs = true;
         }
