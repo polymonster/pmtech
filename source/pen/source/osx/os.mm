@@ -160,6 +160,17 @@ void pen_window_resize()
     
     _update_window_frame();
 }
+
+void run()
+{
+    for (;;)
+    {
+        if (!pen::os_update())
+            break;
+
+        pen::thread_sleep_us(100);
+    }
+}
 #else
 
 //
@@ -590,7 +601,7 @@ int main(int argc, char** argv)
     users();
 
     // window creation
-    if(1)
+    if(1) // this will be conditional based on pen_create_params
     {
         [NSApplication sharedApplication];
 
@@ -634,19 +645,7 @@ int main(int argc, char** argv)
     [pool drain];
 
     // invoke renderer specific update for main thread
-    
-    // creates user thread
-    pen::default_thread_info thread_info;
-    pen::jobs_create_default(thread_info);
-    
-    // main loop
-    for (;;)
-    {
-        if (!pen::os_update())
-            break;
-
-        pen::thread_sleep_us(100);
-    }
+    run();
         
     return s_ctx.return_code;
 }
@@ -660,6 +659,15 @@ namespace pen
     bool os_update()
     {
         NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+        
+        static bool thread_started = false;
+        if (!thread_started)
+        {
+            // audio, user thread etc
+            pen::default_thread_info thread_info;
+            pen::jobs_create_default(thread_info);
+            thread_started = true;
+        }
 
         [NSApp updateWindows];
         
