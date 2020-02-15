@@ -146,7 +146,7 @@ namespace put
         pen::semaphore_wait(_audio_job_thread_info->p_sem_continue);
     }
 
-    PEN_TRV audio_thread_function(void* params)
+    void* audio_thread_function(void* params)
     {
         job_thread_params* job_params = (job_thread_params*)params;
         _audio_job_thread_info = job_params->job_info;

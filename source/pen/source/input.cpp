@@ -620,7 +620,7 @@ namespace pen
     }
 
     std::atomic<bool> a_detecting;
-    PEN_TRV           detect_devices_async(void* params)
+    void*           detect_devices_async(void* params)
     {
         a_detecting = true;
 

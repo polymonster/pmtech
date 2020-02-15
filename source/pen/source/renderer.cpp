@@ -791,7 +791,7 @@ namespace pen
             renderer_wait_for_jobs();
     }
 
-    PEN_TRV renderer_thread_function(void* params)
+    void* renderer_thread_function(void* params)
     {
         job_thread_params* job_params = (job_thread_params*)params;
 

@@ -10,7 +10,7 @@ pen::window_creation_params pen_window{
     "empty_project" // window title / process name
 };
 
-PEN_TRV pen::user_entry(void* params)
+void* pen::user_entry(void* params)
 {
     PEN_LOG("User Thread Entry");
 

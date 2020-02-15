@@ -272,7 +272,7 @@ namespace put
             current_slice++;
         }
 
-        PEN_TRV raster_voxel_combine(void* params)
+        void* raster_voxel_combine(void* params)
         {
             pen::job_thread_params* job_params = (pen::job_thread_params*)params;
             vgt_rasteriser_job*     rasteriser_job = (vgt_rasteriser_job*)job_params->user_data;
@@ -1100,7 +1100,7 @@ namespace put
             current_requested_slice = current_slice;
         }
 
-        PEN_TRV sdf_generate(void* params)
+        void* sdf_generate(void* params)
         {
             pen::job_thread_params* job_params = (pen::job_thread_params*)params;
             vgt_sdf_job*            sdf_job = (vgt_sdf_job*)job_params->user_data;

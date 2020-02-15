@@ -34,7 +34,7 @@ namespace pen
 
     u32 semaphone_index = 0;
 
-    pen::thread* thread_create(PEN_THREAD_ROUTINE(thread_func), u32 stack_size, void* thread_params, thread_start_flags flags)
+    pen::thread* thread_create(dispatch_thread thread_func, u32 stack_size, void* thread_params, thread_start_flags flags)
     {
         // allocate penthread handle
         pen::thread* new_thread = (pen::thread*)pen::memory_alloc(sizeof(pen::thread));

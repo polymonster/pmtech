@@ -10,13 +10,6 @@
 
 #include "pen.h"
 
-#if _WIN32
-#include <windows.h>
-#define PEN_THREAD_ROUTINE(FP) LPTHREAD_START_ROUTINE FP
-#else
-#define PEN_THREAD_ROUTINE(FP) PEN_TRV (*FP)(void* data)
-#endif
-
 namespace pen
 {
     struct thread;
@@ -24,6 +17,7 @@ namespace pen
     struct semaphore;
 
     typedef void (*completion_callback)(void*);
+    typedef void* (*dispatch_thread)(void*);
 
     // A Job is just a thread with some user data, a callback
     // and some syncronisation semaphores
@@ -53,12 +47,6 @@ namespace pen
         THREAD_CALL_FUNCTION = 3
     };
 
-    enum default_thread_create_flags
-    {
-        PEN_CREATE_RENDER_THREAD = 1 << 0,
-        PEN_CREATE_AUDIO_THREAD = 1 << 1,
-    };
-
     struct default_thread_info
     {
         u32   flags;
@@ -68,30 +56,30 @@ namespace pen
     };
 
     // Threads
-    thread* thread_create(PEN_THREAD_ROUTINE(thread_func), u32 stack_size, void* thread_params, thread_start_flags flags);
-    void    thread_destroy(pen::thread* p_thread);
-    void    thread_sleep_ms(u32 milliseconds);
-    void    thread_sleep_us(u32 microseconds);
+    thread*     thread_create(dispatch_thread thread_func, u32 stack_size, void* thread_params, thread_start_flags flags);
+    void        thread_destroy(pen::thread* p_thread);
+    void        thread_sleep_ms(u32 milliseconds);
+    void        thread_sleep_us(u32 microseconds);
 
     // Jobs
-    void jobs_create_default(const default_thread_info& info);
-    bool jobs_terminate_all();
-    job* jobs_create_job(PEN_THREAD_ROUTINE(thread_func), u32 stack_size, void* user_data, thread_start_flags flags,
+    void        jobs_create_default(const default_thread_info& info);
+    bool        jobs_terminate_all();
+    job*        jobs_create_job(dispatch_thread thread_func, u32 stack_size, void* user_data, thread_start_flags flags,
                          completion_callback cb = nullptr);
 
     // Mutex
-    mutex* mutex_create();
-    void   mutex_destroy(mutex* p_mutex);
-    void   mutex_lock(mutex* p_mutex);
-    u32    mutex_try_lock(mutex* p_mutex);
-    void   mutex_unlock(mutex* p_mutex);
+    mutex*      mutex_create();
+    void        mutex_destroy(mutex* p_mutex);
+    void        mutex_lock(mutex* p_mutex);
+    u32         mutex_try_lock(mutex* p_mutex);
+    void        mutex_unlock(mutex* p_mutex);
 
     // Semaphore
-    semaphore* semaphore_create(u32 initial_count, u32 max_count);
-    void       semaphore_destroy(semaphore* p_semaphore);
-    bool       semaphore_try_wait(semaphore* p_semaphore);
-    bool       semaphore_wait(semaphore* p_semaphore);
-    void       semaphore_post(semaphore* p_semaphore, u32 count);
+    semaphore*  semaphore_create(u32 initial_count, u32 max_count);
+    void        semaphore_destroy(semaphore* p_semaphore);
+    bool        semaphore_try_wait(semaphore* p_semaphore);
+    bool        semaphore_wait(semaphore* p_semaphore);
+    void        semaphore_post(semaphore* p_semaphore, u32 count);
 
 } // namespace pen
 

@@ -360,7 +360,7 @@ namespace pen
 
     //
 
-    PEN_TRV              renderer_thread_function(void* params);
+    void*              renderer_thread_function(void* params);
     const c8*            renderer_get_shader_platform();
     bool                 renderer_viewport_vup();
     const renderer_info& renderer_get_info();

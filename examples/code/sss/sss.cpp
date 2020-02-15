@@ -16,7 +16,7 @@ pen::window_creation_params pen_window{
 
 namespace physics
 {
-    extern PEN_TRV physics_thread_main(void* params);
+    extern void* physics_thread_main(void* params);
 }
 
 void example_setup(ecs_scene* scene, camera& cam)

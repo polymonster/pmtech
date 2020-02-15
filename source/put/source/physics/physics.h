@@ -7,7 +7,7 @@
 
 namespace physics
 {
-    PEN_TRV physics_thread_main(void* params);
+    void* physics_thread_main(void* params);
     
     namespace e_cmd
     {

@@ -181,7 +181,7 @@ namespace physics
         pen::semaphore_wait(p_physics_job_thread_info->p_sem_continue);
     }
 
-    PEN_TRV physics_thread_main(void* params)
+    void* physics_thread_main(void* params)
     {
         pen::job_thread_params* job_params = (pen::job_thread_params*)params;
         pen::job*               p_thread_info = job_params->job_info;

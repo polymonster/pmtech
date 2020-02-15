@@ -427,7 +427,7 @@ namespace
 
     pen::ring_buffer<hot_loader_cmd> s_hot_loader_cmd_buffer;
     
-    PEN_TRV hot_loader_thread(void* params)
+    void* hot_loader_thread(void* params)
     {
         pen::job_thread_params* job_params = (pen::job_thread_params*)params;
 

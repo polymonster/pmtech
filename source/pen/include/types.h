@@ -40,11 +40,6 @@ typedef std::atomic<uint64_t> a_u64;
 typedef std::atomic<size_t>   a_size_t;
 
 // Thread return value just for win32 portability
-#ifdef _WIN32
-#define PEN_TRV dword __stdcall
-#else
-#define PEN_TRV void*
-#endif
 #define PEN_THREAD_OK 0
 
 // Use min max and swap everywhere and undef windows

@@ -46,13 +46,13 @@ namespace pen
         u32                 window_sample_count;
         const c8*           window_title;
         pmtech_create_flags flags;
-        PEN_TRV             (*user_thread_function)(void* params);
+        void*               (*user_thread_function)(void*);
     };
 
 #if PEN_ENTRY_FUNCTION
     extern pen_creation_params pen_entry(int argc, char** argv);
 #else
-    extern PEN_TRV user_entry(void* params);
+    extern void* user_entry(void* params);
 #endif
     
 } // namespace pen

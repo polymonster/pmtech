@@ -73,7 +73,7 @@ namespace put
 
     // Threading
 
-    PEN_TRV audio_thread_function(void* params);
+    void* audio_thread_function(void* params);
     void    audio_consume_command_buffer();
 
     // Creation
