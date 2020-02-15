@@ -450,56 +450,70 @@ def write_geometry_file(geom_instance):
 
     data_size = len(geometry_data)*4
     for mesh in geom_instance.meshes:
-        # write collision info
         mesh_data = []
+
+        # calulate index size
+        num_floats = len(mesh.vertex_elements[0].float_values)
+        num_vertices = num_floats / 4
+        index_type = "i"
+        index_size = 4
+        if num_vertices < 65535:
+            index_type = "H"
+            index_size = 2
 
         # write min / max extents
         for i in range(0, 3, 1):
             mesh_data.append(struct.pack("f", (float(mesh.min_extents[i]))))
         for i in range(0, 3, 1):
             mesh_data.append(struct.pack("f", (float(mesh.max_extents[i]))))
-        # write vb and ib
+
+        # write info
+        mesh_data.append(struct.pack("i", int(num_vertices)))
+        mesh_data.append(struct.pack("i", int(index_size)))
         mesh_data.append(struct.pack("i", (len(mesh.vertex_elements[0].float_values))))
         mesh_data.append(struct.pack("i", (len(mesh.vertex_buffer))))
-
         mesh_data.append(struct.pack("i", (len(mesh.index_buffer))))
         mesh_data.append(struct.pack("i", (len(mesh.collision_vertices))))
 
-        index_type = "i"
-        if len(mesh.index_buffer) < 65535:
-            index_type = "H"
-
+        # skinning is conditional, but write any fixed length data anyway
         skinned = 0
-        if geom_instance.controller != None:
+        num_joint_floats = 0
+        bind_shape_matrix = [
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 1.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, 0.0, 1.0
+        ]
+        if geom_instance.controller:
             skinned = 1
-
-        num_floats = len(mesh.vertex_elements[0].float_values)
-        num_vertices = num_floats / 4
-
+            num_joint_floats = len(geom_instance.controller.joint_bind_matrix)
+            bind_shape_matrix = geom_instance.controller.bind_shape_matrix
+            print(bind_shape_matrix)
         mesh_data.append(struct.pack("i", int(skinned)))
+        mesh_data.append(struct.pack("i", int(num_joint_floats)))
+        helpers.pack_corrected_4x4matrix(mesh_data, bind_shape_matrix)
 
-        if skinned:
-            helpers.pack_corrected_4x4matrix(mesh_data, geom_instance.controller.bind_shape_matrix)
-            mesh_data.append(struct.pack("i", len(geom_instance.controller.joint_bind_matrix)))
+
+        # now write data
+        if num_joint_floats > 0:
             helpers.pack_corrected_4x4matrix(mesh_data, geom_instance.controller.joint_bind_matrix)
+
+        # position only buffer
         for vertexfloat in mesh.vertex_elements[0].float_values:
-            # position only buffer
             mesh_data.append(struct.pack("f", (float(vertexfloat))))
+        # vertex buffer
         for vertexfloat in mesh.vertex_buffer:
             mesh_data.append(struct.pack("f", (float(vertexfloat))))
-
         data_size += len(mesh_data)*4
-
+        # index buffer
         for index in mesh.index_buffer:
             mesh_data.append(struct.pack(index_type, (int(index))))
-
         data_size += len(mesh.index_buffer) * 2
-
+        # collision vertex buffer
         for vertexfloat in mesh.collision_vertices:
             mesh_data.append(struct.pack("f", (float(vertexfloat))))
-
         data_size += len(mesh.collision_vertices) * 4
-
+        # top level pmm
         for m in mesh_data:
             geometry_data.append(m)
 

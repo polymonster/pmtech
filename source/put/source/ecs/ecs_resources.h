@@ -263,6 +263,9 @@ namespace put
         s32 load_pmm(const c8* model_scene_name, ecs_scene* scene = nullptr, u32 load_flags = e_pmm_load_flags::all);
         s32 load_pma(const c8* model_scene_name);
         s32 load_pmv(const c8* filename, ecs_scene* scene);
+        
+        void optimise_pmm(const c8* input_filename, const c8* output_filename);
+        void optimise_pma(const c8* input_filename, const c8* output_filename);
 
         void instantiate_rigid_body(ecs_scene* scene, u32 node_index);
         void instantiate_compound_rigid_body(ecs_scene* scene, u32 parent, u32* children, u32 num_children);
