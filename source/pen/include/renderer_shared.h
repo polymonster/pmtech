@@ -27,7 +27,8 @@ namespace pen
 	{
 		enum shared_flags_t
 		{
-			backbuffer_resize = 1
+			backbuffer_resize = 1,
+            realloc_managed_render_targets = 1<<1
 		};
 	}
 	typedef u32 shared_flags;
@@ -37,6 +38,7 @@ namespace pen
     void                        _renderer_end_frame();
     texture_creation_params     _renderer_tcp_resolve_ratio(const texture_creation_params& tcp);
     void                        _renderer_track_managed_render_target(const texture_creation_params& tcp, u32 texture_handle);
+    void                        _renderer_untrack_managed_render_target(u32 texture_handle);
     void                        _renderer_resize_backbuffer(u32 width, u32 height);
     void                        _renderer_resize_managed_targets();
     u64                         _renderer_frame_index();

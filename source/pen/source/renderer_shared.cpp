@@ -130,11 +130,35 @@ namespace pen
             sb_push(s_shared_ctx.managed_rts, rt);
         }
     }
+
+    void _renderer_untrack_managed_render_target(u32 resource_handle)
+    {
+        if (s_shared_ctx.flags & e_shared_flags::realloc_managed_render_targets)
+            return;
+
+        // remove from managed rts
+        managed_rt* erased = nullptr;
+
+        u32 num_man_rt = sb_count(s_shared_ctx.managed_rts);
+        for (s32 i = num_man_rt - 1; i >= 0; --i)
+        {
+            if (s_shared_ctx.managed_rts[i].rt == resource_handle)
+                continue;
+
+            sb_push(erased, s_shared_ctx.managed_rts[i]);
+        }
+
+        sb_free(s_shared_ctx.managed_rts);
+        s_shared_ctx.managed_rts = erased;
+    }
         
     void _renderer_resize_managed_targets()
     {
         if (!(s_shared_ctx.flags & e_shared_flags::backbuffer_resize))
             return;
+
+        // we must call release on rt and re-alloc but dont want to untrack them
+        s_shared_ctx.flags |= e_shared_flags::realloc_managed_render_targets;
 
         u32 couunt = sb_count(s_shared_ctx.managed_rts);
         for (u32 i = 0; i < couunt; ++i)
@@ -144,6 +168,7 @@ namespace pen
             direct::renderer_create_render_target(*manrt.tcp, manrt.rt, false);
         }
         
+        s_shared_ctx.flags &= ~e_shared_flags::realloc_managed_render_targets;
         s_shared_ctx.flags &= ~e_shared_flags::backbuffer_resize;
     }
     

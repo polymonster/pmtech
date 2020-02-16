@@ -65,7 +65,7 @@ void check_d3d_error(HRESULT hr)
 namespace pen
 {
     void create_rtvs(u32 crtv, u32 dsv, uint32_t w, uint32_t h);
-    void release_render_target_internal(u32 render_target, bool remove_managed = false);
+    void release_render_target_internal(u32 render_target);
 
     //--------------------------------------------------------------------------------------
     //  PERF MARKER API
@@ -435,13 +435,6 @@ namespace pen
     };
     static res_pool<resource_allocation> _res_pool;
 
-    struct managed_rt
-    {
-        u32                     resource_index;
-        texture_creation_params tcp;
-    };
-    static managed_rt* s_managed_render_targets;
-
     context_state g_context;
 
     void direct::renderer_create_clear_state(const clear_state& cs, u32 resource_slot)
@@ -504,15 +497,6 @@ namespace pen
 			s_swap_chain->ResizeBuffers(0, w, h, DXGI_FORMAT_UNKNOWN, 0);
 
 			create_rtvs(g_context.backbuffer_colour, g_context.backbuffer_depth, w, h);
-
-			// recreate dynamic buffers
-			u32 num_man_rt = sb_count(s_managed_render_targets);
-			for (u32 i = 0; i < num_man_rt; ++i)
-			{
-				auto& rt = s_managed_render_targets[i];
-				release_render_target_internal(rt.resource_index);
-				renderer_create_render_target(rt.tcp, rt.resource_index, false);
-			}
 		}
 
 		_renderer_new_frame();
@@ -1055,18 +1039,10 @@ namespace pen
         _res_pool[resource_index].render_target->format = (DXGI_FORMAT)tcp.format;
         _res_pool[resource_index].render_target->tcp = nullptr;
 
-        texture_creation_params _tcp = tcp;
-
-        if (_tcp.width == -1)
+        texture_creation_params _tcp = _renderer_tcp_resolve_ratio(tcp);
+        if (track)
         {
-            _tcp.width = pen_window.width / _tcp.height;
-            _tcp.height = pen_window.height / _tcp.height;
-
-            if (track)
-            {
-                managed_rt man_rt = {resource_index, tcp};
-                sb_push(s_managed_render_targets, man_rt);
-            }
+            _renderer_track_managed_render_target(tcp, resource_index);
         }
 
         // rt mip maps
@@ -1594,25 +1570,9 @@ namespace pen
         _res_pool[blend_state].blend_state->Release();
     }
 
-    void release_render_target_internal(u32 render_target, bool remove_managed)
+    void release_render_target_internal(u32 render_target)
     {
-        if (remove_managed)
-        {
-            // remove from managed rt
-            managed_rt* erased = nullptr;
-
-            u32 num_man_rt = sb_count(s_managed_render_targets);
-            for (s32 i = num_man_rt - 1; i >= 0; --i)
-            {
-                if (s_managed_render_targets[i].resource_index == render_target)
-                    continue;
-
-                sb_push(erased, s_managed_render_targets[i]);
-            }
-
-            sb_free(s_managed_render_targets);
-            s_managed_render_targets = erased;
-        }
+        _renderer_untrack_managed_render_target(render_target);
 
         render_target_internal* rt = _res_pool[render_target].render_target;
 
@@ -1656,7 +1616,7 @@ namespace pen
 
     void direct::renderer_release_render_target(u32 render_target)
     {
-        release_render_target_internal(render_target, true);
+        release_render_target_internal(render_target);
     }
 
     void direct::renderer_release_input_layout(u32 input_layout)
@@ -2033,6 +1993,7 @@ namespace pen
             sd.SampleDesc.Count = pen_window.sample_count;
             sd.SampleDesc.Quality = 0;
             sd.Windowed = TRUE;
+            sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
             hr = dxgiFactory->CreateSwapChain(s_device, &sd, &s_swap_chain);
         }
