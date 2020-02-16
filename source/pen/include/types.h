@@ -2,8 +2,7 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#ifndef _pen_types_h
-#define _pen_types_h
+#pragma once
 
 #include <algorithm>
 #include <atomic>
@@ -135,5 +134,3 @@ inline f16 float_to_half(f32 f)
     v.si ^= ((v.si - minD) ^ v.si) & -(v.si > subC);
     return v.ui | sign;
 }
-
-#endif //_pen_types_h

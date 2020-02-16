@@ -2,12 +2,11 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#ifndef _memory_h
-#define _memory_h
-
 // Minimalist memory api wrapping up malloc and free.
 // It provides some very minor portability solutions between win32 and osx and linux.
 // Mostly it is here to intercept allocs, so at a later date custom allocation or tracking schemes could be used.
+
+#pragma once
 
 #include "pen.h"
 #include <stdio.h>
@@ -88,8 +87,5 @@ namespace pen
 void* operator new(std::size_t size, const std::nothrow_t& nothrow_value) THROW_NO_EXCEPT;
 void* operator new(size_t n) THROW_BAD_ALLOC;
 void* operator new[](size_t n) THROW_BAD_ALLOC;
-
 void operator delete[](void* p) THROW_NO_EXCEPT;
-void operator delete(void* p)THROW_NO_EXCEPT;
-
-#endif
+void operator delete(void* p) THROW_NO_EXCEPT;

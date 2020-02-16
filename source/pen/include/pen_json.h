@@ -2,9 +2,6 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#ifndef _pen_json_h
-#define _pen_json_h
-
 // C++ wrapper api for JSMN.
 // Provides operators to access JSON objects and arrays and get retreive typed values.
 // json file is kept in a char buffer and jsmn tokens are used to iterate.
@@ -47,6 +44,8 @@
 // API for writing json is limited, if you want to write to nested members or arrays
 // you will need to create copies of the objects and then manually recursively write the objects
 // back upwards once you have written to a value (leaf).
+
+#pragma once
 
 #include "hash.h"
 #include "jsmn/jsmn.h"
@@ -176,5 +175,3 @@ namespace pen
     }
 
 } // namespace pen
-
-#endif

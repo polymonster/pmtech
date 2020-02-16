@@ -2,9 +2,9 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#pragma once
-
 // Barebones high resolution c-style timer api.
+
+#pragma once
 
 #include "pen.h"
 

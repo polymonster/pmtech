@@ -2,9 +2,9 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#pragma once
-
 // Tiny api with some window and os specific abstractions.
+
+#pragma once
 
 #include "pen.h"
 

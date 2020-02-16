@@ -2,10 +2,10 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#pragma once
-
 // API for shared renderer functionality across multiple rendering backends.
 // all functions must be called on the render thread and inside the rendering backend implementation.
+
+#pragma once
 
 #include "renderer.h"
 

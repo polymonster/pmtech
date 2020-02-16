@@ -2,18 +2,15 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#ifndef _hash_h
-#define _hash_h
+// Hash murmur2 implementation for all hashing needs
+
+#pragma once
 
 #include "str/Str.h"
 #include "types.h"
 
 namespace pen
 {
-    // Hash class for all your hashing needs
-    // use hashes as much as possible instead of
-    // string compares :)
-
     class HashMurmur2A
     {
       public:
@@ -52,8 +49,6 @@ namespace pen
     typedef HashMurmur2A hash_murmur;
 } // namespace pen
 
+#define _hash_h
 #define PEN_HASH(V) pen::hashMurmur2A(V)
-
 #include "hash.inl"
-
-#endif

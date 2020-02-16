@@ -2,8 +2,7 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#ifndef _str_utilities_h
-#define _str_utilities_h
+#pragma once
 
 #include "console.h"
 #include "memory.h"
@@ -193,5 +192,3 @@ namespace pen
         return f;
     }
 } // namespace pen
-
-#endif

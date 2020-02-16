@@ -2,9 +2,9 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#pragma once
-
 // Wrapper around assert and print for portability, to control and re-direct in the future if required
+
+#pragma once
 
 #include "types.h"
 

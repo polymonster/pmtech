@@ -2,12 +2,11 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#ifndef _slot_resource_h
-#define _slot_resource_h
-
 // Simple slot resource api can be used to allocate an array slot to a generic opaque resource via a handle.
 // Implements a free list so getting a new resource slot is an o(1) operation.
 // will grow to accomodate more items
+
+#pragma once
 
 #include "pen.h"
 
@@ -118,5 +117,3 @@ namespace pen
         return true;
     }
 } // namespace pen
-
-#endif

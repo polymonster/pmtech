@@ -2,10 +2,9 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#ifndef _pen_data_struct_h
-#define _pen_data_struct_h
-
 // Minimalist, thread safe, bloat free data structures.. check description for thread safety, lock / lockless, etc
+
+#pragma once
 
 #include "console.h"
 #include "memory.h"
@@ -454,5 +453,3 @@ namespace pen
     }
 
 } // namespace pen
-
-#endif //_pen_data_struct

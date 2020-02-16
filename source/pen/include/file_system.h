@@ -2,13 +2,18 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#ifndef _file_system_h
-#define _file_system_h
+// Minimalist cross platform file system api.
 
-// Minimalist c-style file system api.
 // Can read files and also enumerate file system and volumes as an fs_tree_node.
 // Make sure to free p_buffer yourself allocated from filesystem_read_file_to_buffer.
 // Make sure to call filesystem_enum_free_mem with your fs_tree_node once finished with it.
+
+// Implemented with:
+//      win32 (windows)
+//      dirent (mac, ios, linux)
+//      android not implemented.
+
+#pragma once
 
 #include "pen.h"
 
@@ -32,5 +37,3 @@ namespace pen
     const c8** filesystem_get_user_directory(s32& directory_depth); // returns array of directories like the above
     s32        filesystem_exclude_slash_depth();
 } // namespace pen
-
-#endif

@@ -2,9 +2,6 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#ifndef _renderer_h
-#define _renderer_h
-
 // Generic rendering api wrapper, with a dedicated dispatch thread.
 // Currently implementations are in:
 //      Direct3D11 (win32)
@@ -16,6 +13,8 @@
 // Public api used by the user thread will store function call arguments in a command buffer
 // Dedicated thread will wait on a semaphore until renderer_consume_command_buffer is called
 // command buffer will be consumed passing arguments to the direct:: functions.
+
+#pragma once
 
 #include "pen.h"
 #include "renderer_definitions.h"
@@ -593,5 +592,3 @@ namespace pen
     }
 
 } // namespace pen
-
-#endif

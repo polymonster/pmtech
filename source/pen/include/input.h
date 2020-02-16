@@ -2,11 +2,17 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#pragma once
+// Simple input api for getting keyboard and mouse presses + unicode characters, gamepad states
+// Implemented with:
+//      win32 (windows)
+//      NS (mac, ios)
+//      xlib (linux)
+// Gamepad api: (libstemgamepad)
+//      xinput (windows xbox360 controller)
+//      direct input (windows other controllers)
+//      raw usb input (mac, linux)
 
-// Simple input api for getting keyboard and mouse presses + unicode characters
-// Implemented with win32, NS and xlib
-// Gamepad api using libstemgamepad
+#pragma once
 
 #include "pen.h"
 #include "str/Str.h"
