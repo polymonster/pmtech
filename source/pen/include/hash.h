@@ -6,8 +6,9 @@
 
 #pragma once
 
-#include "str/Str.h"
 #include "types.h"
+
+#include "str/Str.h"
 
 namespace pen
 {
