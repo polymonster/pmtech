@@ -1633,6 +1633,9 @@ namespace put
             
             //..
             
+            // ..
+            // below can be refactored as write pmm
+            
             // array of offsets to cacluate size of a block
             std::vector<size_t> offsets;
             for(u32 i = 0; i < contents.num_scene; ++i)
@@ -1709,13 +1712,11 @@ namespace put
                     ofs.write((const c8*)&sm.num_joint_floats, sizeof(u32));
                     ofs.write((const c8*)&sm.bind_shape_matrix, sizeof(mat4));
                     // data buffers
-                    if(sm.joint_data_size > 0)
-                        ofs.write((const c8*)sm.joint_data, sm.joint_data_size);
+                    ofs.write((const c8*)sm.joint_data, sm.joint_data_size);
                     ofs.write((const c8*)sm.position_data, sm.position_data_size);
                     ofs.write((const c8*)sm.vertex_data, sm.vertex_data_size);
                     ofs.write((const c8*)sm.index_data, sm.index_data_size);
-                    if(sm.collision_data_size > 0)
-                        ofs.write((const c8*)sm.collision_data, sm.collision_data_size);
+                    ofs.write((const c8*)sm.collision_data, sm.collision_data_size);
                 }
             }
 
