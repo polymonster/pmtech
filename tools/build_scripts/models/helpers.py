@@ -44,8 +44,8 @@ class pmm_file:
         num_joints = len(self.joints)
 
         output.write(struct.pack("i", num_scene))
-        output.write(struct.pack("i", num_geom))
         output.write(struct.pack("i", num_material))
+        output.write(struct.pack("i", num_geom))
 
         offset = 0
         for s in self.scene:

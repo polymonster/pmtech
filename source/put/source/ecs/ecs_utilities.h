@@ -60,5 +60,6 @@ namespace put
         Str  read_parsable_string(const u32** data);
         Str  read_parsable_string(std::ifstream& ifs);
         void write_parsable_string(const Str& str, std::ofstream& ofs);
+        void write_parsable_string_u32(const Str& str, std::ofstream& ofs);
     } // namespace ecs
 } // namespace put

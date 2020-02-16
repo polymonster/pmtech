@@ -163,6 +163,8 @@ void pen_window_resize()
 
 void run()
 {
+    pen::renderer_init(_metal_view, false);
+    
     for (;;)
     {
         if (!pen::os_update())
@@ -634,8 +636,6 @@ int main(int argc, char** argv)
 
         // creates an opengl or metal rendering context
         create_renderer_context();
-        
-        pen::renderer_init(_metal_view, false);
     }
 
     // init systems
