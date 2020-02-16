@@ -2,11 +2,10 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#ifndef _thread_h
-#define _thread_h
-
-// Minimalist c-style thread wrapper api.
+// Minimalist cross platform thread wrapper api.
 // Includes functions to create jobs, threads, mutex and semaphore.
+
+#pragma once
 
 #include "pen.h"
 
@@ -82,5 +81,3 @@ namespace pen
     void        semaphore_post(semaphore* p_semaphore, u32 count);
 
 } // namespace pen
-
-#endif

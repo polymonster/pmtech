@@ -493,11 +493,9 @@ def write_geometry_file(geom_instance):
         mesh_data.append(struct.pack("i", int(num_joint_floats)))
         helpers.pack_corrected_4x4matrix(mesh_data, bind_shape_matrix)
 
-
         # now write data
         if num_joint_floats > 0:
             helpers.pack_corrected_4x4matrix(mesh_data, geom_instance.controller.joint_bind_matrix)
-
         # position only buffer
         for vertexfloat in mesh.vertex_elements[0].float_values:
             mesh_data.append(struct.pack("f", (float(vertexfloat))))
