@@ -38,13 +38,17 @@ namespace pen
         job*  job_info;
         void* user_data;
     };
-
-    enum thread_start_flags : u32
+    
+    namespace e_thread_start_flags
     {
-        THREAD_START_DETACHED = 1,
-        THREAD_START_JOINABLE = 2,
-        THREAD_CALL_FUNCTION = 3
-    };
+        enum thread_start_flags_t
+        {
+            detached = 1,
+            joinable = 1<<2,
+            call_function = 1<<3
+        };
+    }
+    typedef e_thread_start_flags::thread_start_flags_t thread_start_flags;
 
     struct default_thread_info
     {

@@ -494,7 +494,7 @@ namespace put
 {
     void init_hot_loader()
     {
-        pen::jobs_create_job(hot_loader_thread, 1024 * 1024, nullptr, pen::THREAD_START_DETACHED);
+        pen::jobs_create_job(hot_loader_thread, 1024 * 1024, nullptr, pen::e_thread_start_flags::detached);
         
         pen::json pmbuild_config = pen::json::load_from_file("data/pmbuild_config.json");
         s_pmbuild_cmd = pmbuild_config["pmbuild"].as_str();

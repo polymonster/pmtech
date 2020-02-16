@@ -67,7 +67,7 @@ void* pen::user_entry(void* params)
     pen::job*               p_thread_info = job_params->job_info;
     pen::semaphore_post(p_thread_info->p_sem_continue, 1);
 
-    pen::jobs_create_job(put::audio_thread_function, 1024 * 10, nullptr, pen::THREAD_START_DETACHED);
+    pen::jobs_create_job(put::audio_thread_function, 1024 * 10, nullptr, pen::e_thread_start_flags::detached);
 
     renderer_state_init();
 

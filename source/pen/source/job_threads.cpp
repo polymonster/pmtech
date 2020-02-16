@@ -43,7 +43,7 @@ namespace pen
 
     void jobs_create_default(const pen::default_thread_info& info)
     {
-        jobs_create_job(&pen::user_entry, 1024 * 1024, info.user_thread_params, pen::THREAD_START_DETACHED);
+        jobs_create_job(&pen::user_entry, 1024 * 1024, info.user_thread_params, pen::e_thread_start_flags::detached);
     }
 
     bool jobs_terminate_all()

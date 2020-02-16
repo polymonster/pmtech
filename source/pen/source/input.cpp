@@ -648,7 +648,7 @@ namespace pen
         static f32       detect_timer = detect_time;
         if (detect_timer <= 0)
         {
-            pen::jobs_create_job(detect_devices_async, 1024 * 1024, nullptr, pen::THREAD_START_DETACHED);
+            pen::jobs_create_job(detect_devices_async, 1024 * 1024, nullptr, pen::e_thread_start_flags::detached);
             detect_timer = detect_time;
         }
 

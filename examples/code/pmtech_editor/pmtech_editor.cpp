@@ -44,7 +44,7 @@ void* pen::user_entry(void* params)
     pen::job*               p_thread_info = job_params->job_info;
     pen::semaphore_post(p_thread_info->p_sem_continue, 1);
 
-    pen::jobs_create_job(physics::physics_thread_main, 1024 * 10, nullptr, pen::THREAD_START_DETACHED);
+    pen::jobs_create_job(physics::physics_thread_main, 1024 * 10, nullptr, pen::e_thread_start_flags::detached);
 
     // create the main scene and camera
     put::ecs::ecs_scene* main_scene = put::ecs::create_scene("main_scene");
