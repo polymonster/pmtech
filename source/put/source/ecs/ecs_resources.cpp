@@ -62,6 +62,7 @@ namespace
     
     struct pmm_submesh
     {
+        // pmm submesh header
         vec3f            min_extents;
         vec3f            max_extents;
         u32              num_verts;
@@ -72,8 +73,9 @@ namespace
         u32              num_collision_floats;
         u32              skinned;
         u32              num_joint_floats;
-        u32              vertex_size; // not written in file
         mat4             bind_shape_matrix;
+        // end of header
+        u32              vertex_size;
         void*            joint_data;
         size_t           joint_data_size;
         void*            position_data;
