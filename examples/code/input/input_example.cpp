@@ -134,9 +134,6 @@ void* pen::user_entry(void* params)
         }
         
         put::dbg::add_text_2f(10.0f, 40.0f, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "input text: %s", text_buffer.c_str());
-        
-        
-        pen::input_clear_unicode_input();
 
         // raw gamepad
         u32 num_gamepads = input_get_num_gamepads();

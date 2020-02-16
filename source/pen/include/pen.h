@@ -51,9 +51,8 @@ namespace pen
 
 #if PEN_ENTRY_FUNCTION
     extern pen_creation_params pen_entry(int argc, char** argv);
-#else
-    extern void* user_entry(void* params);
 #endif
+    extern void* user_entry(void* params);
     
 } // namespace pen
 
