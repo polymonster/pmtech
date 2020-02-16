@@ -154,17 +154,7 @@ namespace pen
 
         return inputs;
     }
-    
-    void input_clear_unicode_input()
-    {
 
-    }
-
-    void input_unicode_swap_buffers()
-    {
-
-    }
-    
     void input_set_unicode_key_down(u32 key_index)
     {
         s_unicode_state[key_index] = 1;
