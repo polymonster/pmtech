@@ -118,20 +118,20 @@ namespace pen
         s_shared_ctx.resize_index++;
     }
 
-    void _renderer_track_managed_render_target(const texture_creation_params& tcp, u32 texture_handle)
+    void _renderer_track_managed_render_target(const texture_creation_params& tcp, u32 render_target_handle)
     {
         // PEN_INVALID_HANDLE denotes a backbuffer ratio target
         if(tcp.width == PEN_INVALID_HANDLE)
         {
             managed_rt rt = {
                 new texture_creation_params(tcp),
-                texture_handle
+                render_target_handle
             };
             sb_push(s_shared_ctx.managed_rts, rt);
         }
     }
 
-    void _renderer_untrack_managed_render_target(u32 resource_handle)
+    void _renderer_untrack_managed_render_target(u32 render_target_handle)
     {
         if (s_shared_ctx.flags & e_shared_flags::realloc_managed_render_targets)
             return;
@@ -142,7 +142,7 @@ namespace pen
         u32 num_man_rt = sb_count(s_shared_ctx.managed_rts);
         for (s32 i = num_man_rt - 1; i >= 0; --i)
         {
-            if (s_shared_ctx.managed_rts[i].rt == resource_handle)
+            if (s_shared_ctx.managed_rts[i].rt == render_target_handle)
                 continue;
 
             sb_push(erased, s_shared_ctx.managed_rts[i]);

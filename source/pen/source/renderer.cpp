@@ -671,6 +671,10 @@ namespace pen
                     exec_cmd_safe(*cmd);
                     cmd = _cmd_buffer.get();
                 }
+                
+                renderer_cmd swap;
+                swap.command_index = CMD_PRESENT;
+                exec_cmd(swap);
             }
 
             direct::renderer_end_frame();

@@ -1115,7 +1115,11 @@ namespace pen
         
         bool renderer_frame_valid()
         {
+#if PEN_PLATFORM_IOS
             return _resize_sync.load() == _renderer_resize_index();
+#else
+            return true;
+#endif
         }
 
         void renderer_create_clear_state(const clear_state& cs, u32 resource_slot)
@@ -2159,6 +2163,7 @@ namespace pen
 
         void renderer_release_render_target(u32 render_target)
         {
+            _renderer_untrack_managed_render_target(render_target);
             renderer_release_texture(render_target);
         }
 
