@@ -8,19 +8,6 @@
 #include "hash.h"
 #include <vector>
 
-namespace
-{
-    hash_id ID_VERTEX_CLASS_INSTANCED = PEN_HASH("_instanced");
-    hash_id ID_VERTEX_CLASS_SKINNED = PEN_HASH("_skinned");
-    hash_id ID_VERTEX_CLASS_BASIC = PEN_HASH("");
-
-    enum e_shader_permutation
-    {
-        PERMUTATION_SKINNED = 1 << 31,
-        PERMUTATION_INSTANCED = 1 << 30
-    };
-} // namespace
-
 namespace put
 {
     namespace ecs
@@ -30,20 +17,24 @@ namespace put
             s32                     entity_index;
             std::vector<scene_tree> children;
         };
-
-        enum e_clone_mode
+        
+        namespace e_clone_mode
         {
-            CLONE_INSTANTIATE = 0, // clones entites and instantiates new entites (physics, cbuffer, etc),
-            CLONE_COPY = 1, // clones entites with a shallow copy and will not instantiate new physics or rendering entities
-            CLONE_MOVE = 2  // clones entites to the new location keeping physics and rendering entities and zeros the src
-        };
-
+            enum clone_mode_t
+            {
+                instantiate,
+                copy,
+                move
+            };
+        }
+        typedef e_clone_mode::clone_mode_t clone_mode;
+        
         u32  get_next_entity(ecs_scene* scene); // gets next entity index
         u32  get_new_entity(ecs_scene* scene);  // allocates a new entity at the next index o(1)
         void get_new_entities_contiguous(ecs_scene* scene, s32 num, s32& start, s32& end); // finds contiguous space o(n)
         void get_new_entities_append(ecs_scene* scene, s32 num, s32& start, s32& end);     // appends them on the end o(1)
-        u32  clone_entity(ecs_scene* scene, u32 src, s32 dst = -1, s32 parent = -1, u32 flags = CLONE_INSTANTIATE,
-                          vec3f offset = vec3f::zero(), const c8* suffix = "_cloned");
+        u32  clone_entity(ecs_scene* scene, u32 src, s32 dst = -1, s32 parent = -1,
+            clone_mode mode = e_clone_mode::instantiate, vec3f offset = vec3f::zero(), const c8* suffix = "_cloned");
         void swap_entities(ecs_scene* scene, u32 a, s32 b);
         void clone_selection_hierarchical(ecs_scene* scene, u32** selection_list, const c8* suffix);
         void instance_entity_range(ecs_scene* scene, u32 master_node, u32 num_nodes);

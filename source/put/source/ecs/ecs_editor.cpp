@@ -26,8 +26,14 @@ namespace put
 {
     namespace ecs
     {
-        static const hash_id k_primitives[] = {PEN_HASH("quad"),   PEN_HASH("cube"),    PEN_HASH("cylinder"),
-                                               PEN_HASH("sphere"), PEN_HASH("capsule"), PEN_HASH("cone")};
+        static const hash_id k_primitives[] = {
+            PEN_HASH("quad"),
+            PEN_HASH("cube"),
+            PEN_HASH("cylinder"),
+            PEN_HASH("sphere"),
+            PEN_HASH("capsule"),
+            PEN_HASH("cone")
+        };
 
         struct transform_undo
         {
@@ -324,7 +330,7 @@ namespace put
 
                 s32 nn = start;
                 for (int i = 0; i < sel_count; ++i)
-                    clone_entity(scene, scene->selection_list[i], nn++, start, CLONE_MOVE, vec3f::zero(), "");
+                    clone_entity(scene, scene->selection_list[i], nn++, start, e_clone_mode::move, vec3f::zero(), "");
             }
 
             scene->flags |= e_scene_flags::invalidate_scene_tree;
@@ -1307,7 +1313,8 @@ namespace put
 
             if (open_open)
             {
-                const c8* import = put::dev_ui::file_browser(open_open, dev_ui::e_file_browser_flags::open, 3, "**.pmm", "**.pms", "**.pmv");
+                const c8* import = put::dev_ui::file_browser(open_open,
+                    dev_ui::e_file_browser_flags::open, 3, "**.pmm", "**.pms", "**.pmv");
 
                 if (import)
                 {
@@ -3399,7 +3406,6 @@ namespace put
 } // namespace put
 
 #if 0 // code to calc tangents
-
 for (long i = 0; i < vertices.size(); i += 3)
 {
     if (i + 2 < vertices.size())

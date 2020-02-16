@@ -526,7 +526,7 @@ namespace
                     if (submesh > 0)
                     {
                         inserted_nodes++;
-                        clone_entity(scene, current_node, dest, current_node, CLONE_INSTANTIATE, vec3f::zero(),
+                        clone_entity(scene, current_node, dest, current_node, e_clone_mode::instantiate, vec3f::zero(),
                                      (const c8*)node_suffix.c_str());
                         scene->local_matrices[dest] = mat4::create_identity();
 
@@ -1107,14 +1107,14 @@ namespace put
 
         void permutation_flags_from_vertex_class(u32& permutation, hash_id vertex_class)
         {
-            u32 clear_vertex = ~(PERMUTATION_SKINNED | PERMUTATION_INSTANCED);
+            u32 clear_vertex = ~(e_shader_permutation::skinned | e_shader_permutation::instanced);
             permutation &= clear_vertex;
 
             if (vertex_class == ID_VERTEX_CLASS_SKINNED)
-                permutation |= PERMUTATION_SKINNED;
+                permutation |= e_shader_permutation::skinned;
 
             if (vertex_class == ID_VERTEX_CLASS_INSTANCED)
-                permutation |= PERMUTATION_INSTANCED;
+                permutation |= e_shader_permutation::instanced;
         }
 
         void bake_material_handles(ecs_scene* scene, u32 node_index)

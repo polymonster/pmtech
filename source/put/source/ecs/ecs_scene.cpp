@@ -227,7 +227,7 @@ namespace put
             zero_entity_components(scene, temp);
         }
 
-        u32 clone_entity(ecs_scene* scene, u32 src, s32 dst, s32 parent, u32 flags, vec3f offset, const c8* suffix)
+        u32 clone_entity(ecs_scene* scene, u32 src, s32 dst, s32 parent, clone_mode mode, vec3f offset, const c8* suffix)
         {
             if (dst == -1)
             {
@@ -274,7 +274,7 @@ namespace put
             vec3f translation = p_sn->local_matrices[dst].get_translation();
             p_sn->local_matrices[dst].set_translation(translation + offset);
 
-            if (flags == CLONE_INSTANTIATE)
+            if (mode == e_clone_mode::instantiate)
             {
                 // todo, clone / instantiate constraint
 
@@ -290,7 +290,7 @@ namespace put
                     instantiate_material_cbuffer(scene, dst, p_sn->materials[dst].material_cbuffer_size);
                 }
             }
-            else if (flags == CLONE_MOVE)
+            else if (mode == e_clone_mode::move)
             {
                 zero_entity_components(scene, src);
             }

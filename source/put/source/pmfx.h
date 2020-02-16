@@ -5,8 +5,14 @@
 #pragma once
 
 #include "renderer.h"
-#include "str/Str.h"
 #include "types.h"
+#include "hash.h"
+
+#include "str/Str.h"
+
+static const hash_id ID_VERTEX_CLASS_INSTANCED = PEN_HASH("_instanced");
+static const hash_id ID_VERTEX_CLASS_SKINNED = PEN_HASH("_skinned");
+static const hash_id ID_VERTEX_CLASS_BASIC = PEN_HASH("");
 
 namespace put
 {
@@ -40,6 +46,16 @@ namespace put
             max_sampler_bindings = 16
         };
     }
+    
+    namespace e_shader_permutation
+    {
+        enum shader_permutation_t
+        {
+            skinned = 1<<31,
+            instanced = 1<<30
+        };
+    }
+    typedef u32 shader_permutation;
 
     struct scene_view
     {
