@@ -358,8 +358,8 @@ namespace pen
     };
 
     //
-
-    void*              renderer_thread_function(void* params);
+	void				 renderer_init(void* user_data, bool wait_for_jobs);
+    void*				 renderer_thread_function(void* params);
     const c8*            renderer_get_shader_platform();
     bool                 renderer_viewport_vup();
     const renderer_info& renderer_get_info();

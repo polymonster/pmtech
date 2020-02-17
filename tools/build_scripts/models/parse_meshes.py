@@ -488,7 +488,6 @@ def write_geometry_file(geom_instance):
             skinned = 1
             num_joint_floats = len(geom_instance.controller.joint_bind_matrix)
             bind_shape_matrix = geom_instance.controller.bind_shape_matrix
-            print(bind_shape_matrix)
         mesh_data.append(struct.pack("i", int(skinned)))
         mesh_data.append(struct.pack("i", int(num_joint_floats)))
         helpers.pack_corrected_4x4matrix(mesh_data, bind_shape_matrix)

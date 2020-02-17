@@ -693,7 +693,7 @@ namespace pen
         for (;;)
         {
             if (!renderer_dispatch())
-                pen::thread_sleep_us(100);
+                pen::thread_sleep_ms(1);
 
             if (!pen::os_update())
                 break;

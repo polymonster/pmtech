@@ -7,6 +7,8 @@
 
 #include "types.h"
 
+#define PEN_ENTRY_FUNCTION 0
+
 namespace pen
 {
     // Structs for user to setup, make sure to define:
@@ -28,25 +30,24 @@ namespace pen
         const c8* working_directory = nullptr;
     };
     
-    namespace e_pmtech_create_flags
+    namespace e_pen_create_flags
     {
-        enum pmtech_create_flags_t
+        enum pen_create_flags_t
         {
             renderer = 1<<1,
-            physics = 1<<2,
-            audio = 1<<3
+			console_app = 1<<2
         };
     }
-    typedef e_pmtech_create_flags::pmtech_create_flags_t pmtech_create_flags;
+    typedef e_pen_create_flags::pen_create_flags_t pen_create_flags;
     
     struct pen_creation_params
     {
-        volatile u32        window_width;
-        volatile u32        window_height;
-        u32                 window_sample_count;
-        const c8*           window_title;
-        pmtech_create_flags flags;
-        void*               (*user_thread_function)(void*);
+		volatile u32        window_width = 1280;
+		volatile u32        window_height = 720;
+		u32                 window_sample_count = 1;
+		const c8*           window_title = "pen_app";
+		pen_create_flags	flags = e_pen_create_flags::renderer;
+		void*               (*user_thread_function)(void*) = nullptr;
     };
 
 #if PEN_ENTRY_FUNCTION

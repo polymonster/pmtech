@@ -2,9 +2,11 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#include <Windows.h>
 #include "threads.h"
 #include "memory.h"
+#include "console.h"
+
+#include <Windows.h>
 
 namespace pen
 {
@@ -128,5 +130,7 @@ namespace pen
 
     void thread_sleep_us(u32 microseconds)
     {
+		// windows cannot sleep micros
+		PEN_ASSERT(0);
     }
 } // namespace pen
