@@ -15,16 +15,9 @@
 #include "str_utilities.h"
 #include "renderer_shared.h"
 
-// slowly I am removing this junk to make a nicer api
+// the last 2 global externs! \o/
 pen::user_info                      pen_user_info;
 extern pen::window_creation_params  pen_window;
-static u32                          s_return_code = 0;
-
-struct window_params
-{
-    HINSTANCE hinstance;
-    int       cmdshow;
-};
 
 //
 // OpenGL Render Context
@@ -102,12 +95,6 @@ extern void pen_gl_swap_buffers()
 {
 	SwapBuffers(s_glctx.dc);
 }
-
-extern void pen_window_resize()
-{
-	u32 a = 0;
-}
-
 #define create_ctx(wnd) create_gl_context(wnd)
 #else
 #define create_ctx(wnd) (void)wnd
@@ -136,10 +123,17 @@ namespace
 		};
 	};
 
+	struct window_params
+	{
+		HINSTANCE hinstance;
+		int       cmdshow;
+	};
+
 	pen::ring_buffer<os_cmd> s_cmd_buffer;
 	HWND					 s_hwnd = nullptr;
 	HINSTANCE				 s_hinstance = nullptr;
 	bool					 s_terminate_app = false;
+	u32						 s_return_code = 0;
 
 	void pen_window_resize(u32 w, u32 h)
 	{
