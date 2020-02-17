@@ -4,11 +4,6 @@
 
 // This file contains gl and metal context creation, input handling and os events.
 
-#define GL_SILENCE_DEPRECATION
-
-#import <AppKit/NSPasteboard.h>
-#import <Cocoa/Cocoa.h>
-
 #include "renderer_shared.h"
 #include "console.h"
 #include "data_struct.h"
@@ -21,11 +16,13 @@
 #include "threads.h"
 #include "timer.h"
 
+#import <AppKit/NSPasteboard.h>
+#import <Cocoa/Cocoa.h>
+
 #include <map>
 
 // pen required externs / globals.. trying to remove these
 pen::user_info                      pen_user_info;
-// extern PEN_TRV                      pen::user_entry(void* params);
 extern pen::window_creation_params  pen_window;
 
 namespace pen
@@ -178,7 +175,7 @@ void run()
 //
 // OpenGL Context
 //
-
+#define GL_SILENCE_DEPRECATION
 #import <OpenGL/gl3.h>
 #define PEN_GL_PROFILE_VERSION NSOpenGLProfileVersion4_1Core
 #define create_renderer_context create_gl_context
@@ -561,98 +558,68 @@ namespace
 
         return false;
     }
-}
-
-pen::pen_creation_params pc;
-int main(int argc, char** argv)
-{
-    // call pmtech entry first
-#if PEN_ENTRY_FUNCTION
-    pc = pen::pen_entry(argc, argv);
-#endif
     
-    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
-    
-    // get working dir
-    Str working_dir = argv[0];
-    working_dir = pen::str_normalise_filepath(working_dir);
-
-    s_cmd_buffer.create(32);
-
-    // strip exe and go back 2 \contents\macos\exe
-    for (u32 i = 0, pos = 0; i < 4; ++i)
+    void pen_run_windowed(int argc, char** argv)
     {
-        pos = pen::str_find_reverse(working_dir, "/", pos - 1);
-        if (i == 3)
-            working_dir = pen::str_substr(working_dir, 0, pos + 1);
+        // args
+        @autoreleasepool {
+            if (argc > 1)
+            {
+                if (strcmp(argv[1], "-test") == 0)
+                {
+                    // enter test
+                    pen::renderer_test_enable();
+                }
+            }
+            
+            [NSApplication sharedApplication];
+
+            id dg = [app_delegate shared_delegate];
+            [NSApp setDelegate:dg];
+            [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
+            [NSApp activateIgnoringOtherApps:YES];
+            [NSApp finishLaunching];
+
+            [[NSNotificationCenter defaultCenter] postNotificationName:NSApplicationWillFinishLaunchingNotification object:NSApp];
+            [[NSNotificationCenter defaultCenter] postNotificationName:NSApplicationDidFinishLaunchingNotification object:NSApp];
+
+            NSRect frame = NSMakeRect(0, 0, pen_window.width, pen_window.height);
+
+            NSUInteger style_mask =
+                NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable;
+
+            _window = [[NSWindow alloc] initWithContentRect:frame styleMask:style_mask backing:NSBackingStoreBuffered defer:NO];
+
+            [_window makeKeyAndOrderFront:_window];
+
+            id wd = [window_delegate shared_delegate];
+            [_window setDelegate:wd];
+            [_window setTitle:[NSString stringWithUTF8String:pen_window.window_title]];
+            [_window setAcceptsMouseMovedEvents:YES];
+            [_window center];
+
+            [_window registerForDraggedTypes:[NSArray arrayWithObjects:NSFilenamesPboardType, nil]];
+            _update_window_frame();
+
+            // creates an opengl or metal rendering context
+            create_renderer_context();
+        }
+        
+        // invoke renderer specific update for main thread
+        run();
     }
-
-    pen_user_info.working_directory = working_dir.c_str();
-
-    // args
-    if (argc > 1)
+    
+    void pen_run_console_app(int argc, char** argv)
     {
-        if (strcmp(argv[1], "-test") == 0)
+        for (;;)
         {
-            // enter test
-            pen::renderer_test_enable();
+            if (!pen::os_update())
+                break;
+
+            pen::thread_sleep_us(100);
         }
     }
-    
-    // os stuff
-    users();
-
-    // window creation
-    if(1) // this will be conditional based on pen_create_params
-    {
-        [NSApplication sharedApplication];
-
-        id dg = [app_delegate shared_delegate];
-        [NSApp setDelegate:dg];
-        [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
-        [NSApp activateIgnoringOtherApps:YES];
-        [NSApp finishLaunching];
-
-        [[NSNotificationCenter defaultCenter] postNotificationName:NSApplicationWillFinishLaunchingNotification object:NSApp];
-        [[NSNotificationCenter defaultCenter] postNotificationName:NSApplicationDidFinishLaunchingNotification object:NSApp];
-
-        NSRect frame = NSMakeRect(0, 0, pen_window.width, pen_window.height);
-
-        NSUInteger style_mask =
-            NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable;
-
-        _window = [[NSWindow alloc] initWithContentRect:frame styleMask:style_mask backing:NSBackingStoreBuffered defer:NO];
-
-        [_window makeKeyAndOrderFront:_window];
-
-        id wd = [window_delegate shared_delegate];
-        [_window setDelegate:wd];
-        [_window setTitle:[NSString stringWithUTF8String:pen_window.window_title]];
-        [_window setAcceptsMouseMovedEvents:YES];
-        [_window center];
-
-        [_window registerForDraggedTypes:[NSArray arrayWithObjects:NSFilenamesPboardType, nil]];
-        _update_window_frame();
-
-        // creates an opengl or metal rendering context
-        create_renderer_context();
-    }
-
-    // init systems
-    pen::timer_system_intialise();
-    pen::input_gamepad_init();
-    
-    [pool drain];
-
-    // invoke renderer specific update for main thread
-    run();
-        
-    return s_ctx.return_code;
 }
-
-//
-// pen os api
-//
 
 namespace pen
 {
@@ -931,3 +898,47 @@ namespace pen
     return NO;
 }
 @end
+
+int main(int argc, char** argv)
+{
+    @autoreleasepool {
+        s_cmd_buffer.create(32);
+                
+        // get working dir
+        Str working_dir = argv[0];
+        working_dir = pen::str_normalise_filepath(working_dir);
+
+        // strip exe and go back 2 \contents\macos\exe
+        for (u32 i = 0, pos = 0; i < 4; ++i)
+        {
+            pos = pen::str_find_reverse(working_dir, "/", pos - 1);
+            if (i == 3)
+                working_dir = pen::str_substr(working_dir, 0, pos + 1);
+        }
+
+        pen_user_info.working_directory = working_dir.c_str();
+        
+        // init systems
+        users();
+        pen::timer_system_intialise();
+        pen::input_gamepad_init();
+        
+        // call pmtech entry first
+        pen::pen_creation_params pc = { };
+        #if PEN_ENTRY_FUNCTION
+        pc = pen::pen_entry(argc, argv);
+        #endif
+
+        // window creation
+        if(pc.flags & pen::e_pen_create_flags::renderer)
+        {
+            pen_run_windowed(argc, argv);
+        }
+        else
+        {
+            pen_run_console_app(argc, argv);
+        }
+    }
+        
+    return s_ctx.return_code;
+}
