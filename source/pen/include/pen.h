@@ -2,8 +2,7 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#ifndef _pen_h
-#define _pen_h
+#pragma once
 
 #include "types.h"
 
@@ -71,5 +70,4 @@ namespace pen
 #define PEN_HOTLOADING_ENABLED return
 #else
 #define PEN_HOTLOADING_ENABLED
-#endif
 #endif

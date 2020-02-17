@@ -26,10 +26,10 @@ inline void output_debug(const c8* format, ...)
     static c8* buf = new c8[s_buffer_size];
 
 	// adding 2 to stick \n\0 on windows
-    u32 n = vsnprintf(buf, s_buffer_size, format, va) + 2;
+    u32 n = vsnprintf(buf, s_buffer_size, format, va);
     va_end(va);
 
-    if (n > s_buffer_size)
+    if (n + 2 > s_buffer_size)
     {
         va_start(va, format);
 

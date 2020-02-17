@@ -404,13 +404,6 @@ namespace pen
     };
     static shader_program* s_shader_programs;
 
-    struct managed_render_target
-    {
-        texture_creation_params tcp;
-        u32                     render_target_handle;
-    };
-    static managed_render_target* s_managed_render_targets;
-
     struct resource_allocation
     {
         u8     asigned_flag;
@@ -2012,20 +2005,7 @@ namespace pen
 
     void direct::renderer_release_render_target(u32 render_target)
     {
-        // remove from managed rt
-        managed_render_target* erased = nullptr;
-
-        u32 num_man_rt = sb_count(s_managed_render_targets);
-        for (s32 i = num_man_rt - 1; i >= 0; --i)
-        {
-            if (s_managed_render_targets[i].render_target_handle == render_target)
-                continue;
-
-            sb_push(erased, s_managed_render_targets[i]);
-        }
-
-        sb_free(s_managed_render_targets);
-        s_managed_render_targets = erased;
+		_renderer_untrack_managed_render_target(render_target);
 
         resource_allocation& res = _res_pool[render_target];
 
