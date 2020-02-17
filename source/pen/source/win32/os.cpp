@@ -115,6 +115,32 @@ extern void pen_window_resize()
 
 namespace
 {
+	namespace e_os_cmd
+	{
+		enum os_cmd_t
+		{
+			null = 0,
+			set_window_frame
+		};
+	}
+
+	struct os_cmd
+	{
+		u32 cmd_index;
+
+		union {
+			struct
+			{
+				pen::window_frame frame;
+			};
+		};
+	};
+
+	pen::ring_buffer<os_cmd> s_cmd_buffer;
+	HWND					 s_hwnd = nullptr;
+	HINSTANCE				 s_hinstance = nullptr;
+	bool					 s_terminate_app = false;
+
 	void pen_window_resize(u32 w, u32 h)
 	{
 		pen::_renderer_resize_backbuffer(w, h);
@@ -154,86 +180,9 @@ namespace
 	}
 }
 
-INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, INT nCmdShow)
-{
-	// initilaise any generic systems
-	pen::timer_system_intialise();
-	pen::input_gamepad_init();
-
-    // get working directory name
-    char module_filename[MAX_PATH];
-    GetModuleFileNameA(hInstance, module_filename, MAX_PATH);
-
-    static Str working_directory = module_filename;
-    working_directory = pen::str_normalise_filepath(working_directory);
-
-    // remove exe
-    u32 dir = pen::str_find_reverse(working_directory, "/");
-    working_directory = pen::str_substr(working_directory, 0, dir + 1);
-
-    pen_user_info.working_directory = working_directory.c_str();
-
-	// call user entry / setup
-	pen::pen_creation_params pc = {};
-
-#if PEN_ENTRY_FUNCTION
-	pc = pen::pen_entry(0, nullptr);
-#endif
-
-	if (pc.flags & pen::e_pen_create_flags::renderer)
-	{
-		// console for std output.. 
-		if (!AttachConsole(ATTACH_PARENT_PROCESS))
-		{
-			AllocConsole();
-		}
-
-		freopen("CONIN$", "r", stdin);
-		freopen("CONOUT$", "w", stdout);
-		freopen("CONOUT$", "w", stderr);
-
-		// windowed mode with renderer
-		pen_run_windowed(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
-	}
-	else
-	{
-		// headless mode
-		pen_run_console();
-	}
-
-    // exit program
-    return s_return_code;
-}
-
-namespace
-{
-    enum os_cmd_id
-    {
-        OS_CMD_NULL = 0,
-        OS_CMD_SET_WINDOW_FRAME
-    };
-
-    struct os_cmd
-    {
-        u32 cmd_index;
-
-        union {
-            struct
-            {
-                pen::window_frame frame;
-            };
-        };
-    };
-
-    pen::ring_buffer<os_cmd> s_cmd_buffer;
-} // namespace
-
 namespace pen
 {
-    LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-    HWND             g_hwnd = nullptr;
-    HINSTANCE        g_hinstance = nullptr;
-    static bool      terminate_app = false;
+	LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
     bool os_update()
     {
@@ -259,11 +208,11 @@ namespace pen
             // process cmd
             switch (cmd->cmd_index)
             {
-                case OS_CMD_SET_WINDOW_FRAME:
+				case e_os_cmd::set_window_frame:
                 {
 					RECT r;
-                    SetWindowPos(g_hwnd, HWND_TOP, cmd->frame.x, cmd->frame.y, cmd->frame.width, cmd->frame.height, 0);
-                    GetClientRect(g_hwnd, &r);
+                    SetWindowPos(s_hwnd, HWND_TOP, cmd->frame.x, cmd->frame.y, cmd->frame.width, cmd->frame.height, 0);
+                    GetClientRect(s_hwnd, &r);
 					pen_window_resize(r.right - r.left, r.bottom - r.top);
                 }
                 break;
@@ -278,9 +227,9 @@ namespace pen
         pen::input_gamepad_update();
 
         if (WM_QUIT == msg.message)
-            terminate_app = true;
+            s_terminate_app = true;
 
-        if (terminate_app)
+        if (s_terminate_app)
         {
             if (pen::jobs_terminate_all())
                 return false;
@@ -293,7 +242,7 @@ namespace pen
     void os_terminate(u32 return_code)
     {
         s_return_code = return_code;
-        terminate_app = true;
+        s_terminate_app = true;
     }
 
     u32 window_init(void* params)
@@ -322,7 +271,7 @@ namespace pen
             return E_FAIL;
 
         // Create window
-        g_hinstance = wp->hinstance;
+        s_hinstance = wp->hinstance;
 
         // pass in as params
         RECT rc = {0, 0, (LONG)pen_window.width, (LONG)pen_window.height};
@@ -337,18 +286,18 @@ namespace pen
         LONG half_window_x = (rc.right - rc.left) / 2;
         LONG half_window_y = (rc.bottom - rc.top) / 2;
 
-        g_hwnd = CreateWindowA(pen_window.window_title, pen_window.window_title, WS_OVERLAPPEDWINDOW,
+        s_hwnd = CreateWindowA(pen_window.window_title, pen_window.window_title, WS_OVERLAPPEDWINDOW,
                                screen_mid_x - half_window_x, screen_mid_y - half_window_y, rc.right - rc.left,
                                rc.bottom - rc.top, nullptr, nullptr, wp->hinstance, nullptr);
 
         DWORD lasterror = GetLastError();
 
-        if (!g_hwnd)
+        if (!s_hwnd)
             return E_FAIL;
 
-        ShowWindow(g_hwnd, wp->cmdshow);
+        ShowWindow(s_hwnd, wp->cmdshow);
 
-        SetForegroundWindow(g_hwnd);
+        SetForegroundWindow(s_hwnd);
 
         return S_OK;
     }
@@ -460,13 +409,13 @@ namespace pen
 
     void* window_get_primary_display_handle()
     {
-        return g_hwnd;
+        return s_hwnd;
     }
 
     void window_get_frame(window_frame& f)
     {
         RECT r;
-        GetWindowRect(g_hwnd, &r);
+        GetWindowRect(s_hwnd, &r);
 
         f.x = r.left;
         f.y = r.top;
@@ -478,7 +427,7 @@ namespace pen
     void window_set_frame(const window_frame& f)
     {
         os_cmd cmd;
-        cmd.cmd_index = OS_CMD_SET_WINDOW_FRAME;
+        cmd.cmd_index = e_os_cmd::set_window_frame;
         cmd.frame = f;
 
         s_cmd_buffer.put(cmd);
@@ -513,3 +462,54 @@ namespace pen
         return filename;
     }
 } // namespace pen
+
+INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, INT nCmdShow)
+{
+	// initilaise any generic systems
+	pen::timer_system_intialise();
+	pen::input_gamepad_init();
+
+	// get working directory name
+	char module_filename[MAX_PATH];
+	GetModuleFileNameA(hInstance, module_filename, MAX_PATH);
+
+	static Str working_directory = module_filename;
+	working_directory = pen::str_normalise_filepath(working_directory);
+
+	// remove exe
+	u32 dir = pen::str_find_reverse(working_directory, "/");
+	working_directory = pen::str_substr(working_directory, 0, dir + 1);
+
+	pen_user_info.working_directory = working_directory.c_str();
+
+	// call user entry / setup
+	pen::pen_creation_params pc = {};
+
+#if PEN_ENTRY_FUNCTION
+	pc = pen::pen_entry(0, nullptr);
+#endif
+
+	if (pc.flags & pen::e_pen_create_flags::renderer)
+	{
+		// console for std output.. 
+		if (!AttachConsole(ATTACH_PARENT_PROCESS))
+		{
+			AllocConsole();
+		}
+
+		freopen("CONIN$", "r", stdin);
+		freopen("CONOUT$", "w", stdout);
+		freopen("CONOUT$", "w", stderr);
+
+		// windowed mode with renderer
+		pen_run_windowed(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
+	}
+	else
+	{
+		// headless mode
+		pen_run_console();
+	}
+
+	// exit program
+	return s_return_code;
+}
