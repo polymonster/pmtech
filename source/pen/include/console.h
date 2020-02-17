@@ -44,6 +44,8 @@ inline void output_debug(const c8* format, ...)
     va_end(va);
 
 #ifdef _WIN32
+	buf[n] = '\n';
+	buf[n + 1] = '\0';
     OutputDebugStringA(buf);
 #else
     printf("%s\n", buf);
