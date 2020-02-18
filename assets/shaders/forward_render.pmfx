@@ -787,144 +787,144 @@ ps_output_depth ps_omni_shadow( vs_output_zonly_wp input )
 
 pmfx:
 {    
-    "single_light_directional":
+    single_light_directional:
     {
-        "vs": "vs_main",
-        "ps": "ps_single_light",
+        vs: vs_main,
+        ps: ps_single_light,
                 
-        "constants":
+        constants:
         {
-            "albedo"      : { "type": "float4", "widget": "colour", "default": [1.0, 1.0, 1.0, 1.0] },
-            "roughness"   : { "type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 },
-            "reflectivity": { "type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.3 }
+            albedo       : { type: float4, widget: colour, default: [1.0, 1.0, 1.0, 1.0] },
+            roughness    : { type: float, widget: slider, min: 0, max: 1, default: 0.5 },
+            reflectivity : { type: float, widget: slider, min: 0, max: 1, default: 0.3 }
         }
     },
     
-    "omni_shadow":
+    omni_shadow:
     {
-        "vs": "vs_main_zonly_wp",
-        "ps": "ps_omni_shadow",
+        vs: vs_main_zonly_wp,
+        ps: ps_omni_shadow,
         
-        "permutations":
+        permutations:
         {
             "SKINNED": [31, [0,1]],
             "INSTANCED": [30, [0,1]]
         }
     },
     
-    "forward_lit":
+    forward_lit:
     {
-        "vs": "vs_main",
-        "ps": "ps_forward_lit",
+        vs: vs_main,
+        ps: ps_forward_lit,
         
-        "permutations":
+        permutations:
         {
-            "SKINNED": [31, [0,1]],
-            "INSTANCED": [30, [0,1]],
-            "UV_SCALE": [1, [0,1]],
-            "SSS": [2, [0,1]],
-            "SDF_SHADOW": [3, [0,1]]
+            SKINNED: [31, [0,1]],
+            INSTANCED: [30, [0,1]],
+            UV_SCALE: [1, [0,1]],
+            SSS: [2, [0,1]],
+            SDF_SHADOW: [3, [0,1]]
         },
         
-        "constants":
+        constants:
         {
-            "albedo"      : { "type": "float4", "widget": "colour", "default": [1.0, 1.0, 1.0, 1.0] },
-            "roughness"   : { "type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.5 },
-            "reflectivity": { "type": "float", "widget": "slider", "min": 0, "max": 1, "default": 0.3 },
+            albedo      : { type: float4, widget: colour, default: [1.0, 1.0, 1.0, 1.0] },
+            roughness   : { type: float, widget: slider, min: 0, max: 1, default: 0.5 },
+            reflectivity: { type: float, widget: slider, min: 0, max: 1, default: 0.3 },
             
             "permutation(SSS)":
             {
-                "sss_scale": { "type": "float", "widget": "slider", "min": 0, "max": 500, "default": 1.0 }   
+                sss_scale: { type: float, widget: slider, min: 0, max: 500, default: 1.0 }   
             },
             
             "permutation(SDF_SHADOW)":
             {
-                "surface_offset": { "type": "float", "widget": "slider", "min": 0, "max": 1, "default": 1.0 }   
+                surface_offset: { type: float, widget: slider, min: 0, max: 1, default: 1.0 }   
             },
             
             "permutation(UV_SCALE)":
             {
-                "uv_scale": { "type": "float2", "widget": "slider", "min": 0, "max": 100, "default": 1.0 }   
+                uv_scale: { type: float2, widget: slider, min: 0, max: 100, default: 1.0 }   
             }
         },
         
-        "texture_samplers": 
+        texture_samplers: 
         {
-            "albedo":
+            albedo:
             {
-                "type"   : "texture_2d",
-                "unit"   : 0,
-                "bind_flags" : ["ps"],
-                "sampler": "wrap_linear",
-                "default": "data/textures/defaults/albedo.dds"
+                type   : texture_2d,
+                unit   : 0,
+                bind_flags : [ps],
+                sampler: wrap_linear,
+                default: data/textures/defaults/albedo.dds
             },
             
-            "normals":
+            normals:
             {
-                "type"   : "texture_2d",
-                "unit"   : 1,
-                "bind_flags" : ["ps"],
-                "sampler": "wrap_linear",
-                "default": "data/textures/defaults/normal.dds"
+                type   : texture_2d,
+                unit   : 1,
+                bind_flags : [ps],
+                sampler: wrap_linear,
+                default: data/textures/defaults/normal.dds
             },
             
-            "roughness":
+            roughness:
             {
-                "type"   : "texture_2d",
-                "unit"   : 2,
-                "bind_flags" : ["ps"],
-                "sampler": "wrap_linear",
-                "default": "data/textures/defaults/spec.dds"
+                type   : texture_2d,
+                unit   : 2,
+                bind_flags : [ps],
+                sampler: wrap_linear,
+                default: data/textures/defaults/spec.dds
             },
             
-            "metalness":
+            metalness:
             {
-                "type"   : "texture_2d",
-                "unit"   : 3,
-                "bind_flags" : ["ps"],
-                "sampler": "wrap_linear",
-                "default": "data/textures/defaults/black.dds"
+                type   : texture_2d,
+                unit   : 3,
+                bind_flags : [ps],
+                sampler: wrap_linear,
+                default: data/textures/defaults/black.dds
             }
         }
     },
     
-    "gbuffer":
+    gbuffer:
     {
-        "vs": "vs_main",
-        "ps": "ps_gbuffer",
+        vs: vs_main,
+        ps: ps_gbuffer,
         
-        "permutations":
+        permutations:
         {
-            "SKINNED": [31, [0,1]],
-            "INSTANCED": [30, [0,1]],
-            "UV_SCALE": [1, [0,1]]
+            SKINNED: [31, [0,1]],
+            INSTANCED: [30, [0,1]],
+            UV_SCALE: [1, [0,1]]
         },
         
-        "inherit_constants": ["forward_lit"]
+        inherit_constants: [forward_lit]
     },
         
-    "zonly":
+    zonly:
     {
-        "vs": "vs_main_zonly",
-        "ps": "ps_null",
+        vs: vs_main_zonly,
+        ps: ps_null,
         
-        "permutations":
+        permutations:
         {
-            "SKINNED": [31, [0,1]],
-            "INSTANCED": [30, [0,1]]
+            SKINNED: [31, [0,1]],
+            INSTANCED: [30, [0,1]]
         }
     },
     
-    "pre_skin":
+    pre_skin:
     {
-        "vs"        : "vs_main_pre_skin",
-        "stream_out": "true"
+        vs: vs_main_pre_skin,
+        stream_out: true
     },
     
-    "shadow_extrude":
+    shadow_extrude:
     {
-        "vs": "vs_main_extrude",
-        "ps": "ps_dbg"
+        vs: vs_main_extrude,
+        ps: ps_dbg
     }
 }
 
