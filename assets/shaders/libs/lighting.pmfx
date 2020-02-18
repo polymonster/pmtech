@@ -1,15 +1,3 @@
-float omni_shadow( float4 light_pos_inv_radius, float3 world_pos )
-{
-    //point shadow
-    /*    
-    float4 light_pos_inv_radius = float4(0.0f, 80.0f, 0.0f, 150.0f);
-    float3 to_light = (world_pos.xyz - light_pos_inv_radius.xyz) / light_pos_inv_radius.w;
-    float d = length(to_light);
-    float cube_d = cubemap.Sample(cube_samp,normalize(to_light)*float3(1.0f,1.0f,-1.0f)).r;
-    return d > cube_d + 0.001f ? 0.0f : 1.0f;
-    */    
-}
-
 float3 lambert( 
     float4 light_pos_radius, 
     float3 light_colour, 
