@@ -1548,6 +1548,7 @@ namespace put
                             if (r.collection == pen::TEXTURE_COLLECTION_CUBE_ARRAY)
                             {
                                 new_view.num_arrays = r.num_arrays;
+                                new_view.view_flags |= VF_CUBEMAP_ARRAY;
                             }
 
                             if (cur_rt == 0)
