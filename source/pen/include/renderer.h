@@ -24,6 +24,7 @@
 #define PEN_CAPS_DEPTH_CLAMP (1 << 1)
 #define PEN_CAPS_GPU_TIMER (1 << 2)
 #define PEN_CAPS_COMPUTE (1 << 3)
+#define PEN_CAPS_TEXTURE_CUBE_ARRAY (1 << 4)
 
 // Texture format caps
 #define PEN_CAPS_TEX_FORMAT_BC1 (1 << 31)

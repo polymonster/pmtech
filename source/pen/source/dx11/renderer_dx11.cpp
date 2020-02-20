@@ -2059,10 +2059,10 @@ namespace pen
         s_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC5;
         s_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC6;
         s_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC7;
-
         s_renderer_info.caps |= PEN_CAPS_GPU_TIMER;
         s_renderer_info.caps |= PEN_CAPS_DEPTH_CLAMP;
         s_renderer_info.caps |= PEN_CAPS_COMPUTE;
+        s_renderer_info.caps |= PEN_CAPS_TEXTURE_CUBE_ARRAY;
     }
 
     const renderer_info& renderer_get_info()

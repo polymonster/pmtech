@@ -50,7 +50,7 @@ namespace // internal structs and static vars
     {
         hash_id hash;
         id<MTLRenderPipelineState> pipeline;
-    };
+    };PEN_CAPS_TEXTURE_CUBE_ARRAY
 
     struct current_state
     {
@@ -1031,6 +1031,7 @@ namespace pen
         info.caps |= PEN_CAPS_TEX_FORMAT_BC4;
         info.caps |= PEN_CAPS_TEX_FORMAT_BC5;
         info.caps |= PEN_CAPS_COMPUTE;
+        info.caps |= PEN_CAPS_TEXTURE_CUBE_ARRAY;
 
         return info;
     }
