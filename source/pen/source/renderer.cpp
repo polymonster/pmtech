@@ -1310,6 +1310,9 @@ namespace pen
     {
         renderer_cmd cmd;
         
+        if(buffer_index == -1)
+            u32 a = 0;
+        
         cmd.command_index = CMD_SET_CONSTANT_BUFFER;
 
         cmd.set_buffer.buffer_index = buffer_index;

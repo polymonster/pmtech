@@ -50,7 +50,7 @@ namespace // internal structs and static vars
     {
         hash_id hash;
         id<MTLRenderPipelineState> pipeline;
-    };PEN_CAPS_TEXTURE_CUBE_ARRAY
+    };
 
     struct current_state
     {
