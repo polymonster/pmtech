@@ -455,6 +455,11 @@ namespace pen
     {
         return filename;
     }
+
+    const user_info& os_get_user_info()
+    {
+        return pen_user_info;
+    }
 } // namespace pen
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, INT nCmdShow)

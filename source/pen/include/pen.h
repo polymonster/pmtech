@@ -21,13 +21,6 @@ namespace pen
         u32             sample_count;
         const c8*       window_title;
     };
-
-    struct user_info
-    {
-        const c8* user_name = nullptr;
-        const c8* full_user_name = nullptr;
-        const c8* working_directory = nullptr;
-    };
     
     namespace e_pen_create_flags
     {

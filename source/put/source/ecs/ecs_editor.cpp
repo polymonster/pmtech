@@ -21,8 +21,7 @@
 #include "os.h"
 #include "pen_string.h"
 
-extern pen::user_info pen_user_info;
-
+using namespace pen;
 using namespace put;
 using namespace ecs;
 
@@ -3422,7 +3421,7 @@ namespace put
 
         Str strip_project_dir(const Str& filename)
         {
-            Str project_dir = dev_ui::get_program_preference_filename("project_dir", pen_user_info.working_directory);
+            Str project_dir = dev_ui::get_program_preference_filename("project_dir", os_get_user_info().working_directory);
             Str stripped = pen::str_replace_string(filename, project_dir.c_str(), "");
             return stripped;
         }

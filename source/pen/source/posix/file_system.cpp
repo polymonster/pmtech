@@ -16,8 +16,6 @@
 #include "pen.h"
 #include "pen_string.h"
 
-extern pen::user_info pen_user_info;
-
 #ifdef __linux__
 #define get_mtime(s) s.st_mtime
 #define HOME_DIR "home"
@@ -257,7 +255,7 @@ namespace pen
     const c8* filesystem_get_user_directory()
     {
         static c8 default_dir[1024];
-        pen::string_format(default_dir, 1024, "/%s/%s/", HOME_DIR, pen_user_info.user_name);
+        pen::string_format(default_dir, 1024, "/%s/%s/", HOME_DIR, os_get_user_info().user_name);
         return &default_dir[0];
     }
 
@@ -272,7 +270,7 @@ namespace pen
 
         pen::string_format(default_dir[0], 1024, "/");
         pen::string_format(default_dir[1], 1024, HOME_DIR);
-        pen::string_format(default_dir[2], 1024, "%s", pen_user_info.user_name);
+        pen::string_format(default_dir[2], 1024, "%s", os_get_user_info().user_name);
 
         for (s32 i = 0; i < max_dir_depth; ++i)
         {

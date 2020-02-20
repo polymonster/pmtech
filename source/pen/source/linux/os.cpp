@@ -75,14 +75,12 @@ namespace
     {
         static struct passwd* pw = getpwuid(getuid());
         const char*           homedir = pw->pw_dir;
-
         pen_user_info.user_name = &homedir[6];
-        PEN_LOG(pen_user_info.user_name);
     }
 
     int ctx_error_handler(Display* dpy, XErrorEvent* ev)
     {
-        PEN_LOG("context error %i", ev->error_code);
+        PEN_LOG("CONTEXT ERROR %i", ev->error_code);
         ctx_error_occured = true;
         return 0;
     }
@@ -151,15 +149,29 @@ namespace
         glXCreateContextAttribsARB =
             (glXCreateContextAttribsARBProc)glXGetProcAddressARB((const GLubyte*)"glXCreateContextAttribsARB");
 
-        int context_attribs[] = {GLX_CONTEXT_MAJOR_VERSION_ARB, 3, GLX_CONTEXT_MINOR_VERSION_ARB, 1, None};
+        // Pmtech supports minimum OpenGL 3.1, just try brute force in reverse order to get the highest
+        for(s32 major = 4; major > 2; --major)
+        {
+            for(s32 minor = 6; minor >=0; --minor)
+            {
+                int context_attribs[] = {
+                    GLX_CONTEXT_MAJOR_VERSION_ARB, major, 
+                    GLX_CONTEXT_MINOR_VERSION_ARB, minor, 
+                    None
+                };
 
-        _gl_context = glXCreateContextAttribsARB(_display, best_fbc, 0, True, context_attribs);
-
+                _gl_context = glXCreateContextAttribsARB(_display, best_fbc, 0, True, context_attribs);
+                if (_gl_context)
+                    goto found_context;
+            }
+        }
         if (ctx_error_occured || !_gl_context)
         {
-            PEN_LOG("Error: OpenGL 3.1 Context Failed to create");
+            PEN_LOG("ERROR: OpenGL 3.1+ Context Failed to create");
             return 1;
         }
+        found_context:
+
 
         XMapWindow(_display, _window);
 
@@ -167,7 +179,7 @@ namespace
         _xim = XOpenIM(_display, NULL, NULL, NULL);
         if (_xim == NULL) 
         {
-            PEN_LOG("Error: Could not open input method\n");
+            PEN_LOG("ERROR: Could not open input method\n");
             return 1;
         }
 
@@ -197,7 +209,7 @@ namespace
         GLenum err = glewInit();
         if (err != GLEW_OK)
         {
-            PEN_LOG("Error: glewInit failed: %s\n", glewGetErrorString(err));
+            PEN_LOG("ERROR: glewInit failed: %s\n", glewGetErrorString(err));
             return 1;
         }
 
@@ -582,5 +594,10 @@ namespace pen
     bool input_redo_pressed()
     {
         return pen::input_key(PK_CONTROL) && pen::input_get_unicode_key('Y');
+    }
+
+    const user_info& os_get_user_info()
+    {
+        return pen_user_info;
     }
 } // namespace pen

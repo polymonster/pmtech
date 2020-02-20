@@ -771,6 +771,11 @@ namespace pen
     {
         return (void*)_window;
     }
+
+    const user_info& os_get_user_info()
+    {
+        return pen_user_info;
+    }
 }
 
 //

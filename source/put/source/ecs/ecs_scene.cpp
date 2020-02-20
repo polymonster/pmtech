@@ -23,8 +23,6 @@
 
 using namespace put;
 
-extern pen::user_info pen_user_info;
-
 namespace put
 {
     namespace ecs
@@ -1763,7 +1761,8 @@ namespace put
 
         void save_scene(const c8* filename, ecs_scene* scene)
         {
-            Str project_dir = dev_ui::get_program_preference_filename("project_dir", pen_user_info.working_directory);
+            const c8* wd = pen::os_get_user_info().working_directory;
+            Str project_dir = dev_ui::get_program_preference_filename("project_dir", wd);
 
             std::ofstream ofs(filename, std::ofstream::binary);
 
@@ -1952,7 +1951,8 @@ namespace put
         {
             scene->flags |= e_scene_flags::invalidate_scene_tree;
             bool error = false;
-            Str  project_dir = dev_ui::get_program_preference_filename("project_dir", pen_user_info.working_directory);
+            const c8* wd = pen::os_get_user_info().working_directory;
+            Str  project_dir = dev_ui::get_program_preference_filename("project_dir", wd);
 
             std::ifstream ifs(pen::os_path_for_resource(filename), std::ofstream::binary);
 
