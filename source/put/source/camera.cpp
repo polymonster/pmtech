@@ -4,9 +4,12 @@
 
 #include "camera.h"
 #include "debug_render.h"
+
 #include "input.h"
-#include "maths/maths.h"
 #include "renderer.h"
+#include "os.h"
+
+#include "maths/maths.h"
 
 using namespace pen;
 
@@ -27,9 +30,8 @@ namespace put
 
         if (aspect_ratio == -1)
         {
-            f32 window_aspect = (f32)pen_window.width / (f32)pen_window.height;
             p_camera->flags |= e_camera_flags::window_aspect;
-            p_camera->aspect = window_aspect;
+            p_camera->aspect = pen::window_get_aspect();
         }
         else
         {
@@ -270,7 +272,7 @@ namespace put
         // auto detect window aspect
         if (p_camera->flags & e_camera_flags::window_aspect)
         {
-            f32 cur_aspect = (f32)pen_window.width / (f32)pen_window.height;
+            f32 cur_aspect = pen::window_get_aspect();
             if (cur_aspect != p_camera->aspect)
             {
                 p_camera->aspect = cur_aspect;

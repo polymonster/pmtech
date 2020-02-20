@@ -519,8 +519,10 @@ namespace put
                 return;
             }
 
+            s32 w, h;
+            pen::window_get_size(w, h);
             pen::mouse_state ms = pen::input_get_mouse_state();
-            f32              corrected_y = pen_window.height - ms.y;
+            f32              corrected_y = h - ms.y;
 
             static s32   drag_timer = 0;
             static vec2f drag_start;
@@ -688,7 +690,8 @@ namespace put
                         picking_state = e_picking_state::multi;
 
                         // todo this should really be passed in, incase we want non window sized viewports
-                        vec2i vpi = vec2i(pen_window.width, pen_window.height);
+                        vec2i vpi;
+                        pen::window_get_size(vpi.x, vpi.y);
 
                         for (s32 i = 0; i < 4; ++i)
                         {

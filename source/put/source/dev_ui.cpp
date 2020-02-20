@@ -21,8 +21,6 @@
 #include "pmfx.h"
 #include "timer.h"
 
-extern pen::window_creation_params pen_window;
-
 using namespace pen;
 using namespace put;
 
@@ -535,7 +533,9 @@ namespace put
             io.DeltaTime = max((cur_time - prev_time) / 1000.0f, 0.0f);
             prev_time = cur_time;
 
-            io.DisplaySize = ImVec2((f32)pen_window.width, (f32)pen_window.height);
+            s32 w, h;
+            pen::window_get_size(w, h);
+            io.DisplaySize = ImVec2((f32)w, (f32)h);
 
             // Hide OS mouse cursor if ImGui is drawing it
             if (io.MouseDrawCursor)
@@ -572,7 +572,7 @@ namespace put
 
         void load_program_preferences()
         {
-            s_program_prefs_filename = pen_window.window_title;
+            s_program_prefs_filename = pen::window_get_title();
             s_program_prefs_filename.append("_prefs.jsn");
 
             s_program_preferences = pen::json::load_from_file(s_program_prefs_filename.c_str());

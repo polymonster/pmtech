@@ -29,6 +29,8 @@ namespace pen
     void             window_set_frame(const window_frame& f);
     void             window_get_size(s32& width, s32& height);
     void             window_set_size(s32 width, s32 height);
+    f32              window_get_aspect();
+    const c8*        window_get_title();
 
     // OS
     void             os_terminate(u32 return_code);

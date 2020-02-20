@@ -739,8 +739,18 @@ namespace pen
 
     void window_get_size(s32& width, s32& height)
     {
-        width = s_ctx.frame.width;
-        height = s_ctx.frame.height;
+        width = pen_window.width;
+        height = pen_window.height;
+    }
+
+    f32 window_get_aspect()
+    {
+        return (f32)pen_window.width / (f32)pen_window.height;
+    }
+
+    const c8* window_get_title()
+    {
+        return pen_window.window_title;
     }
 
     void window_set_size(s32 width, s32 height)

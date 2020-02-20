@@ -567,6 +567,16 @@ namespace pen
         height = pen_window.height;
     }
 
+    const c8* window_get_title()
+    {
+        return pen_window.window_title;
+    }
+
+    f32 window_get_aspect()
+    {
+        return (f32)pen_window.width / (f32)pen_window.height;
+    }
+
     void window_get_frame(window_frame& f)
     {
         f = _window_frame;

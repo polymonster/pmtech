@@ -460,6 +460,22 @@ namespace pen
     {
         return pen_user_info;
     }
+
+    void window_get_size(s32& width, s32& height)
+    {
+        width = pen_window.width;
+        height = pen_window.height;
+    }
+
+    f32 window_get_aspect()
+    {
+        return (f32)pen_window.width / (f32)pen_window.height;
+    }
+
+    const c8* window_get_title()
+    {
+        return pen_window.window_title;
+    }
 } // namespace pen
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, INT nCmdShow)

@@ -12,8 +12,6 @@
 #include "pmfx.h"
 #include "stb/stb_easy_font.h"
 
-extern pen::window_creation_params pen_window;
-
 using namespace put;
 using namespace pmfx;
 
