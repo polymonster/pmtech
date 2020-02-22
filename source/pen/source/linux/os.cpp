@@ -27,7 +27,7 @@
 using namespace pen;
 
 // pen required externs
-extern window_creation_params pen_window;
+window_creation_params        pen_window;
 pen::user_info                pen_user_info;
 
 // glx / gl stuff
