@@ -16,8 +16,8 @@ struct ps_output
 
 cbuffer draw_call : register(b0)
 {
-	float4 pos;
-	float4 colour;
+    float4 pos;
+    float4 colour;
 };
 
 vs_output vs_main( vs_input input )

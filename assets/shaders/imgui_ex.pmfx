@@ -51,9 +51,9 @@ declare_texture_samplers
     texture_cube( tex_cube, 0 );
     texture_3d( tex_3d, 0 );
     texture_2d_array( tex_array, 0 );
-	if:(PMFX_TEXTURE_CUBE_ARRAY) {
-		texture_cube_array( tex_cube_array, 0 );
-	}
+    if:(PMFX_TEXTURE_CUBE_ARRAY) {
+        texture_cube_array( tex_cube_array, 0 );
+    }
 };
 
 ps_output ps_tex_cube( vs_output input )
@@ -356,14 +356,14 @@ ps_output ps_tex_cube_array( vs_output input )
     
     float3 r = reflect(rd, n);
     
-	output.colour = float4(1.0, 0.0, 0.0, 1.0);
-	if:(PMFX_TEXTURE_CUBE_ARRAY)
-	{
-		output.colour = sample_texture_cube_array(tex_cube_array, rd, params.y);
-		
-		if(length(n) > 0.0)
-			output.colour = sample_texture_cube_array(tex_cube_array, r, params.y);
-	}
+    output.colour = float4(1.0, 0.0, 0.0, 1.0);
+    if:(PMFX_TEXTURE_CUBE_ARRAY)
+    {
+        output.colour = sample_texture_cube_array(tex_cube_array, rd, params.y);
+        
+        if(length(n) > 0.0)
+            output.colour = sample_texture_cube_array(tex_cube_array, r, params.y);
+    }
 
     return output;
 }

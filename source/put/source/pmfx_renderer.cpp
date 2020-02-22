@@ -302,16 +302,13 @@ namespace
         hash_id id_name;
     };
 
-    // Views / Sets
-    std::vector<Str>                 s_post_process_names;    // List of post process names (ie bloom, dof.. etc)
-    std::vector<view_params>         s_views;                 // List of all view parameters
-    std::vector<Str>                 s_view_sets;             // list of view set names (ie. forward, deferred.. etc)
-    std::vector<Str>                 s_view_set;              // list of view names in the current set
-    Str                              s_view_set_name;         // Name of the current view set
-    Str                              s_edited_view_set_name;  // Name of the user selected view
-    std::vector<edited_post_process> s_edited_post_processes; // User edited post processes
-
-    // Render Resources
+    std::vector<Str>                     s_post_process_names;    // List of post process names (ie bloom, dof.. etc)
+    std::vector<view_params>             s_views;                 // List of all view parameters
+    std::vector<Str>                     s_view_sets;             // list of view set names (ie. forward, deferred.. etc)
+    std::vector<Str>                     s_view_set;              // list of view names in the current set
+    Str                                  s_view_set_name;         // Name of the current view set
+    Str                                  s_edited_view_set_name;  // Name of the user selected view
+    std::vector<edited_post_process>     s_edited_post_processes; // User edited post processes
     std::vector<reg_scene>               s_scenes;
     std::vector<reg_camera>              s_cameras;
     std::vector<scene_view_renderer>     s_scene_view_renderers;
