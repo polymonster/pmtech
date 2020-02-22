@@ -430,11 +430,11 @@ namespace put
 
         void render(ImDrawData* draw_data)
         {
+            const ImGuiIO& io = ImGui::GetIO();
+            
             update_dynamic_buffers(draw_data);
 
             // set to main viewport
-            s32 iw, ih;
-            pen::window_get_size(iw, ih);
             pen::viewport vp = {0.0f, 0.0f, PEN_BACK_BUFFER_RATIO, 1.0f, 0.0f, 1.0};
 
             pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
@@ -467,10 +467,10 @@ namespace put
                         pen::rect r = {pcmd->ClipRect.x, pcmd->ClipRect.y, pcmd->ClipRect.z, pcmd->ClipRect.w};
                         
                         // convert scissor to ratios, for safe window resizing
-                        r.left /= (f32)iw;
-                        r.top /= (f32)ih;
-                        r.right /= (f32)iw;
-                        r.bottom /= (f32)ih;
+                        r.left /= io.DisplaySize.x;
+                        r.top /= io.DisplaySize.y;
+                        r.right /= io.DisplaySize.x;
+                        r.bottom /= io.DisplaySize.y;
 
                         pen::renderer_set_scissor_rect_ratio(r);
 
