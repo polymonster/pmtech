@@ -35,25 +35,31 @@ namespace
     const hash_id k_id_default = PEN_HASH("default");
     const hash_id k_id_disabled = PEN_HASH("disabled");
     
-    enum e_post_process_flags
+    namespace e_pp_flags
     {
-        PP_NONE = 0,
-        PP_ENABLED = (1 << 0),
-        PP_EDITED = (1 << 1),
-        PP_WRITE_NON_AUX = (1 << 2) // writes directly to the specified target bypassing aux / virtual buffers
-    };
+        enum pp_flags
+        {
+            none,
+            enabled = 1<<0,
+            edited = 1<<1,
+            write_non_aux = 1<<2
+        };
+    }
     
-    enum e_view_flags
+    namespace e_view_flags
     {
-        VF_SCENE_VIEW = (1<<0),     // view has scene view to dispatch, if not we may just want to clear or abstract render..
-        VF_CUBEMAP = (1<<1),        // view will be dispatched into a cubemap texture array, 6 times. 1 per face.
-        VF_TEMPLATE = (1<<2),       // dont automatically render. but build the view to be rendered from elsewhere.
-        VF_ABSTRACT = (1<<3),       // abstract views can be used to render view templates, to perform multi-pass rendering.
-        VF_RESOLVE = (1<<4),        // after view has completed, render targets are resolved.
-        VF_GENERATE_MIPS = (1 << 5),// generate mip maps for the render target after resolving
-        VF_COMPUTE = (1<<6),        // runs a compute job instead of render job
-        VF_CUBEMAP_ARRAY = (1<<7)
-    };
+        enum view_flags
+        {
+            scene_view = (1<<0),        // view has scene view to dispatch, if not we may just want to clear or abstract render..
+            cubemap = (1<<1),           // view will be dispatched into a cubemap texture array, 6 times. 1 per face.
+            template_view = (1<<2),     // dont automatically render. but build the view to be rendered from elsewhere.
+            abstract = (1<<3),          // abstract views can be used to render view templates, to perform multi-pass rendering.
+            resolve = (1<<4),           // after view has completed, render targets are resolved.
+            generate_mips = (1 << 5),   // generate mip maps for the render target after resolving
+            compute = (1<<6),           // runs a compute job instead of render job
+            cubemap_array = (1<<7)
+        };
+    }
 
     struct mode_map
     {
@@ -169,9 +175,9 @@ namespace
     
     const mode_map k_view_types[] = {
         "normal", 0,
-        "template", VF_TEMPLATE,
-        "abstract", VF_ABSTRACT,
-        "compute", VF_COMPUTE
+        "template", e_view_flags::template_view,
+        "abstract", e_view_flags::abstract,
+        "compute", e_view_flags::compute
     };
     // clang-format on
 
@@ -232,7 +238,7 @@ namespace
         vec4f*                       sampler_info;
 
         // post process
-        u32                      post_process_flags = PP_NONE;
+        u32                      post_process_flags = e_pp_flags::none;
         Str                      post_process_name;
         std::vector<Str>         post_process_chain;
         std::vector<view_params> post_process_views;
@@ -1550,13 +1556,13 @@ namespace put
                             if (r.collection == pen::TEXTURE_COLLECTION_CUBE)
                             {
                                 new_view.num_arrays = 6;
-                                new_view.view_flags |= VF_CUBEMAP;
+                                new_view.view_flags |= e_view_flags::cubemap;
                             }
                             
                             if (r.collection == pen::TEXTURE_COLLECTION_CUBE_ARRAY)
                             {
                                 new_view.num_arrays = r.num_arrays;
-                                new_view.view_flags |= VF_CUBEMAP_ARRAY;
+                                new_view.view_flags |= e_view_flags::cubemap_array;
                             }
 
                             if (cur_rt == 0)
@@ -1622,7 +1628,7 @@ namespace put
 
                 if (num_resolve > 0)
                 {
-                    new_view.view_flags |= VF_RESOLVE;
+                    new_view.view_flags |= e_view_flags::resolve;
 
                     if (num_resolve != num_targets)
                         dev_console_log_level(
@@ -1632,7 +1638,7 @@ namespace put
                 }
                 
                 if(view["generate_mip_maps"].as_bool())
-                    new_view.view_flags |= VF_GENERATE_MIPS;
+                    new_view.view_flags |= e_view_flags::generate_mips;
 
                 // viewport
                 pen::json viewport = view["viewport"];
@@ -1785,17 +1791,17 @@ namespace put
                 }
 
                 if (scene_views.size() > 0)
-                    new_view.view_flags |= VF_SCENE_VIEW;
+                    new_view.view_flags |= e_view_flags::scene_view;
 
                 // sampler bindings
                 parse_sampler_bindings(view, new_view);
 
                 new_view.post_process_name = view["post_process"].as_cstr();
                 if (!new_view.post_process_name.empty())
-                    new_view.post_process_flags |= PP_ENABLED;
+                    new_view.post_process_flags |= e_pp_flags::enabled;
 
                 if (view["pp_write_non_aux"].as_bool())
-                    new_view.post_process_flags |= PP_WRITE_NON_AUX;
+                    new_view.post_process_flags |= e_pp_flags::write_non_aux;
 
                 // filter id for post process passes
                 Str fk = view["filter_kernel"].as_str();
@@ -2085,7 +2091,7 @@ namespace put
                 u32 pass_counter = 0;
                 for (auto& p : pp_views)
                 {
-                    bool non_aux = p.post_process_flags & PP_WRITE_NON_AUX;
+                    bool non_aux = p.post_process_flags & e_pp_flags::write_non_aux;
                     for (u32 i = 0; i < p.num_colour_targets; ++i)
                         p.render_targets[i] = get_virtual_target(p.id_render_target[i], e_vrt_mode::write, non_aux);
 
@@ -2451,7 +2457,7 @@ namespace put
             // per view post processes
             for (auto& v : s_views)
             {
-                if (v.post_process_flags & PP_ENABLED)
+                if (v.post_process_flags & e_pp_flags::enabled)
                 {
                     if (!load_edited_post_process(render_config, pp_config, j_views, v))
                         load_post_process(render_config, pp_config, j_views, v);
@@ -2700,7 +2706,7 @@ namespace put
             pen::renderer_set_rasterizer_state(get_render_state(k_id_disabled, e_render_state::rasterizer));
 
             // resolve colour
-            if(v.view_flags & VF_RESOLVE)
+            if(v.view_flags & e_view_flags::resolve)
             {
                 for (u32 i = 0; i < v.num_colour_targets; ++i)
                 {
@@ -2720,7 +2726,7 @@ namespace put
             }
 
             // generate mips
-            if(v.view_flags & VF_GENERATE_MIPS)
+            if(v.view_flags & e_view_flags::generate_mips)
             {
                 for (u32 i = 0; i < v.num_colour_targets; ++i)
                     pen::renderer_resolve_target(v.render_targets[i], pen::RESOLVE_GENERATE_MIPS);
@@ -2738,7 +2744,7 @@ namespace put
         void render_view(view_params& v)
         {
             // compute doesnt need render pipeline setup
-            if(v.view_flags & VF_COMPUTE)
+            if(v.view_flags & e_view_flags::compute)
             {
                 scene_view sv;
                 sv.scene = v.scene;
@@ -2756,7 +2762,7 @@ namespace put
             
             // caps based exclusion
             const pen::renderer_info& ri = pen::renderer_get_info();
-            if(v.view_flags & VF_CUBEMAP_ARRAY)
+            if(v.view_flags & e_view_flags::cubemap_array)
                 if(!(ri.caps & PEN_CAPS_TEXTURE_CUBE_ARRAY))
                     return;
             
@@ -2827,7 +2833,7 @@ namespace put
                 // generate 3d view proj matrix
                 if (v.camera)
                 {
-                    if (v.view_flags & VF_CUBEMAP)
+                    if (v.view_flags & e_view_flags::cubemap)
                         put::camera_set_cubemap_face(v.camera, a);
 
                     put::camera_update_shader_constants(v.camera);
@@ -2890,7 +2896,7 @@ namespace put
                     v.render_functions[rf](sv);
             }
 
-            if (v.view_flags & (VF_RESOLVE | VF_GENERATE_MIPS))
+            if (v.view_flags & (e_view_flags::resolve | e_view_flags::generate_mips))
                 resolve_view_targets(v);
 
             // for debug
@@ -2926,10 +2932,10 @@ namespace put
         {
             for (auto& v : s_views)
             {
-                if (v.view_flags & VF_TEMPLATE)
+                if (v.view_flags & e_view_flags::template_view)
                     continue;
 
-                if (v.view_flags & VF_ABSTRACT)
+                if (v.view_flags & e_view_flags::abstract)
                 {
                     render_abstract_view(v);
                 }
@@ -2937,7 +2943,7 @@ namespace put
                 {
                     render_view(v);
 
-                    if (v.post_process_flags & PP_ENABLED)
+                    if (v.post_process_flags & e_pp_flags::enabled)
                         render_post_process(v);
                 }
             }
@@ -3202,7 +3208,7 @@ namespace put
                     s32 c = 0;
                     for (auto& v : s_views)
                     {
-                        if (v.post_process_flags & PP_ENABLED)
+                        if (v.post_process_flags & e_pp_flags::enabled)
                         {
                             view_items.push_back(v.name.c_str());
                             pp_view_indices.push_back(c);
