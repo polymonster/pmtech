@@ -500,131 +500,6 @@ namespace pen
                 break;
         }
     }
-    
-    // only execute create / destroy functions, and free memory... so we can safely call these on a commandbuffer
-    // that has been resized
-    void exec_cmd_safe(const renderer_cmd& cmd)
-    {
-        switch (cmd.command_index)
-        {
-            case CMD_LOAD_SHADER:
-                direct::renderer_load_shader(cmd.shader_load, cmd.resource_slot);
-                memory_free(cmd.shader_load.byte_code);
-                memory_free(cmd.shader_load.so_decl_entries);
-                break;
-
-            case CMD_LINK_SHADER:
-                direct::renderer_link_shader_program(cmd.link_params, cmd.resource_slot);
-                for (u32 i = 0; i < cmd.link_params.num_constants; ++i)
-                    memory_free(cmd.link_params.constants[i].name);
-                memory_free(cmd.link_params.constants);
-                if (cmd.link_params.stream_out_names)
-                    for (u32 i = 0; i < cmd.link_params.num_stream_out_names; ++i)
-                        memory_free(cmd.link_params.stream_out_names[i]);
-                memory_free(cmd.link_params.stream_out_names);
-                break;
-
-            case CMD_CREATE_INPUT_LAYOUT:
-                direct::renderer_create_input_layout(cmd.create_input_layout, cmd.resource_slot);
-                memory_free(cmd.create_input_layout.vs_byte_code);
-                memory_free(cmd.create_input_layout.input_layout);
-                break;
-
-            case CMD_CREATE_BUFFER:
-                direct::renderer_create_buffer(cmd.create_buffer, cmd.resource_slot);
-                memory_free(cmd.create_buffer.data);
-                break;
-
-            case CMD_SET_VERTEX_BUFFER:
-                memory_free(cmd.set_vertex_buffer.buffer_indices);
-                memory_free(cmd.set_vertex_buffer.strides);
-                memory_free(cmd.set_vertex_buffer.offsets);
-                break;
-
-            case CMD_CREATE_TEXTURE:
-                direct::renderer_create_texture(cmd.create_texture, cmd.resource_slot);
-                memory_free(cmd.create_texture.data);
-                break;
-
-            case CMD_CREATE_SAMPLER:
-                direct::renderer_create_sampler(cmd.create_sampler, cmd.resource_slot);
-                break;
-
-            case CMD_CREATE_RASTER_STATE:
-                direct::renderer_create_rasterizer_state(cmd.create_raster_state, cmd.resource_slot);
-                break;
-
-            case CMD_RELEASE_SHADER:
-                direct::renderer_release_shader(cmd.set_shader.shader_index, cmd.set_shader.shader_type);
-                break;
-
-            case CMD_RELEASE_BUFFER:
-                direct::renderer_release_buffer(cmd.command_data_index);
-                break;
-
-            case CMD_RELEASE_TEXTURE_2D:
-                direct::renderer_release_texture(cmd.command_data_index);
-                break;
-
-            case CMD_RELEASE_RASTER_STATE:
-                direct::renderer_release_raster_state(cmd.command_data_index);
-                break;
-
-            case CMD_CREATE_BLEND_STATE:
-                direct::renderer_create_blend_state(cmd.create_blend_state, cmd.resource_slot);
-                memory_free(cmd.create_blend_state.render_targets);
-                break;
-
-            case CMD_UPDATE_BUFFER:
-                direct::renderer_update_buffer(cmd.update_buffer.buffer_index, cmd.update_buffer.data,
-                                               cmd.update_buffer.data_size, cmd.update_buffer.offset);
-                memory_free(cmd.update_buffer.data);
-                break;
-
-            case CMD_CREATE_DEPTH_STENCIL_STATE:
-                direct::renderer_create_depth_stencil_state(*cmd.p_create_depth_stencil_state, cmd.resource_slot);
-                memory_free(cmd.p_create_depth_stencil_state);
-                break;
-
-            case CMD_CREATE_RENDER_TARGET:
-                direct::renderer_create_render_target(cmd.create_render_target, cmd.resource_slot);
-                break;
-
-            case CMD_RELEASE_BLEND_STATE:
-                direct::renderer_release_blend_state(cmd.command_data_index);
-                break;
-
-            case CMD_RELEASE_CLEAR_STATE:
-                direct::renderer_release_clear_state(cmd.command_data_index);
-                break;
-
-            case CMD_RELEASE_RENDER_TARGET:
-                direct::renderer_release_render_target(cmd.command_data_index);
-                break;
-
-            case CMD_RELEASE_INPUT_LAYOUT:
-                direct::renderer_release_input_layout(cmd.command_data_index);
-                break;
-
-            case CMD_RELEASE_SAMPLER:
-                direct::renderer_release_sampler(cmd.command_data_index);
-                break;
-
-            case CMD_RELEASE_DEPTH_STENCIL_STATE:
-                direct::renderer_release_depth_stencil_state(cmd.command_data_index);
-                break;
-
-
-            case CMD_REPLACE_RESOURCE:
-                direct::renderer_replace_resource(cmd.replace_resource_params.dest_handle,
-                                                  cmd.replace_resource_params.src_handle, cmd.replace_resource_params.type);
-                break;
-
-            case CMD_CREATE_CLEAR_STATE:
-                direct::renderer_create_clear_state(cmd.clear_state_params, cmd.resource_slot);
-                break;
-        }
-    }
 
     //-----------------------------------------------------------------------------------------------------------------------
     //  THREAD SYNCRONISATION
@@ -665,27 +540,11 @@ namespace pen
 
             renderer_cmd* cmd = _cmd_buffer.get();
 
-            if(direct::renderer_frame_valid())
+            // consume and execute commands
+            while (cmd)
             {
-                // consume and execute commands
-                while (cmd)
-                {
-                    exec_cmd(*cmd);
-                    cmd = _cmd_buffer.get();
-                }
-            }
-            else
-            {
-                // frame may be invalid if we resized in the middle of generating a command buffer
-                while (cmd)
-                {
-                    exec_cmd_safe(*cmd);
-                    cmd = _cmd_buffer.get();
-                }
-                
-                renderer_cmd swap;
-                swap.command_index = CMD_PRESENT;
-                exec_cmd(swap);
+                exec_cmd(*cmd);
+                cmd = _cmd_buffer.get();
             }
 
             direct::renderer_end_frame();

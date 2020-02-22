@@ -1114,15 +1114,6 @@ namespace pen
             _resize_sync = _renderer_resize_index();
         }
         
-        bool renderer_frame_valid()
-        {
-#if PEN_PLATFORM_IOS
-            return _resize_sync.load() == _renderer_resize_index();
-#else
-            return true;
-#endif
-        }
-
         void renderer_create_clear_state(const clear_state& cs, u32 resource_slot)
         {
             _res_pool.insert(resource(), resource_slot);

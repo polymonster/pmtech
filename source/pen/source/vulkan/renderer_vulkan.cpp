@@ -1971,11 +1971,6 @@ namespace pen
             // unused on this platform
         }
         
-        bool renderer_frame_valid()
-        {
-            return true;
-        }
-
         void renderer_create_clear_state(const clear_state& cs, u32 resource_slot)
         {
             _res_pool.insert({}, resource_slot);

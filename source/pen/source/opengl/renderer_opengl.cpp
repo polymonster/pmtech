@@ -619,12 +619,7 @@ namespace pen
     {
         // unused on this platform
     }
-    
-    bool direct::renderer_frame_valid()
-    {
-        return true;
-    }
-    
+
     void direct::renderer_clear(u32 clear_state_index, u32 colour_face, u32 depth_face)
     {
         resource_allocation&  rc = _res_pool[clear_state_index];
