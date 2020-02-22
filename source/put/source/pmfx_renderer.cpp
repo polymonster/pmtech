@@ -17,6 +17,7 @@
 #include "pmfx.h"
 #include "str_utilities.h"
 #include "timer.h"
+#include "renderer_shared.h"
 
 #include <fstream>
 
@@ -374,7 +375,7 @@ namespace put
             
             if(rt_r != 0)
             {
-                vp_out = {vp_in[0], vp_in[1], PEN_BACK_BUFFER_RATIO, rt_r, 0.0f, 1.0f};
+                vp_out = {vp_in[0], vp_in[1], PEN_BACK_BUFFER_RATIO, 1.0f/rt_r, 0.0f, 1.0f};
             }
             else
             {
@@ -2793,10 +2794,13 @@ namespace put
             pen::renderer_set_stencil_ref(v.stencil_ref);
             pen::renderer_set_rasterizer_state(v.raster_state);
             pen::renderer_set_blend_state(v.blend_state);
+            
+            // we need the literal size not ratio
+            pen::viewport vvp = _renderer_resolve_viewport_ratio(vp);
 
             // create 2d view proj matrix
-            f32 W = 2.0f / vp.width;
-            f32 H = 2.0f / vp.height;
+            f32 W = 2.0f / vvp.width;
+            f32 H = 2.0f / vvp.height;
             f32 mvp[4][4] = {{W, 0.0, 0.0, 0.0}, {0.0, H, 0.0, 0.0}, {0.0, 0.0, 1.0, 0.0}, {-1.0, -1.0, 0.0, 1.0}};
             pen::renderer_update_buffer(cb_2d, mvp, sizeof(mvp), 0);
 
@@ -2833,7 +2837,7 @@ namespace put
                 {
                     // this code path is untested.
                     static put::camera c;
-                    put::camera_create_orthographic(&c, vp.x, vp.width, vp.y, vp.height, 0.0f, 1.0f);
+                    put::camera_create_orthographic(&c, vvp.x, vvp.width, vvp.y, vvp.height, 0.0f, 1.0f);
                     put::camera_update_shader_constants(&c);
                     sv.cb_view = c.cbuffer;
                 }
