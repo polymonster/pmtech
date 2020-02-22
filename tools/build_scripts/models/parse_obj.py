@@ -263,6 +263,21 @@ def write_geometry(file, root):
             generated_vb = calc_tangents(generated_vb)
 
         mesh_data = []
+        skinned = 0
+        num_joint_floats = 0
+        bind_shape_matrix = [
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 1.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, 0.0, 1.0
+        ]
+
+        num_verts = len(mesh[pb])/4
+        index_type = "i"
+        index_size = 4
+        if num_verts < 65535:
+            index_type = "H"
+            index_size = 2
 
         # write min / max extents
         for i in range(0, 3, 1):
@@ -271,17 +286,16 @@ def write_geometry(file, root):
             mesh_data.append(struct.pack("f", (float(max_extents[i]))))
 
         # write vb and ib
+        mesh_data.append(struct.pack("i", int(num_verts)))
+        mesh_data.append(struct.pack("i", int(index_size)))
         mesh_data.append(struct.pack("i", (len(mesh[pb]))))
         mesh_data.append(struct.pack("i", (len(generated_vb))))
         mesh_data.append(struct.pack("i", (len(mesh[ib]))))
         mesh_data.append(struct.pack("i", (len(mesh[cb]))))
-
-        index_type = "i"
-        if len(mesh[ib]) < 65535:
-            index_type = "H"
-
-        # obj always non-skinned
-        mesh_data.append(struct.pack("i", int(0)))
+        # skinning is not supported in obj, but write any fixed length data anyway
+        mesh_data.append(struct.pack("i", int(skinned)))
+        mesh_data.append(struct.pack("i", int(num_joint_floats)))
+        helpers.pack_corrected_4x4matrix(mesh_data, bind_shape_matrix)
 
         for vf in mesh[pb]:
             # position only buffer

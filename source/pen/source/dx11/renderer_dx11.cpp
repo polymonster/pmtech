@@ -1366,7 +1366,8 @@ namespace pen
 
     void direct::renderer_set_viewport(const viewport& vp)
     {
-        s_immediate_context->RSSetViewports(1, (D3D11_VIEWPORT*)&vp);
+        viewport _vp = _renderer_resolve_viewport_ratio(vp);
+        s_immediate_context->RSSetViewports(1, (D3D11_VIEWPORT*)&_vp);
     }
 
     void direct::renderer_create_blend_state(const blend_creation_params& bcp, u32 resource_slot)
@@ -1747,7 +1748,8 @@ namespace pen
 
     void direct::renderer_set_scissor_rect(const rect& r)
     {
-        const D3D11_RECT rd3d = {(LONG)r.left, (LONG)r.top, (LONG)r.right, (LONG)r.bottom};
+        rect _r = _renderer_resolve_scissor_ratio(r);
+        const D3D11_RECT rd3d = {(LONG)_r.left, (LONG)_r.top, (LONG)_r.right, (LONG)_r.bottom};
         s_immediate_context->RSSetScissorRects(1, &rd3d);
     }
 

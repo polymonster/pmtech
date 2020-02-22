@@ -2367,12 +2367,12 @@ namespace pen
 
         void renderer_set_viewport(const viewport& vp)
         {
-            _state.vp = vp;
+            _state.vp = _renderer_resolve_viewport_ratio(vp);
         }
 
         void renderer_set_scissor_rect(const rect& r)
         {
-            _state.sr = r;
+            _state.sr = _renderer_resolve_scissor_ratio(vp);
         }
 
         void renderer_create_blend_state(const blend_creation_params& bcp, u32 resource_slot)

@@ -1,4 +1,5 @@
 #include "debug_render.h"
+
 #include "file_system.h"
 #include "loader.h"
 #include "memory.h"
@@ -7,13 +8,23 @@
 #include "renderer.h"
 #include "threads.h"
 #include "timer.h"
+#include "os.h"
 
-pen::window_creation_params pen_window{
-    1280,        // width
-    720,         // height
-    4,           // MSAA samples
-    "debug_text" // window title / process name
-};
+void* pen::user_entry(void* params);
+namespace pen
+{
+    pen_creation_params pen_entry(int argc, char** argv)
+    {
+        pen::pen_creation_params p;
+        p.window_width = 1280;
+        p.window_height =  720;
+        p.window_title = "debug_text";
+        p.window_sample_count = 4;
+        p.user_thread_function = user_entry;
+        p.flags = pen::e_pen_create_flags::renderer;
+        return p;
+    }
+}
 
 struct vertex
 {
@@ -72,7 +83,7 @@ void* pen::user_entry(void* params)
         pen::timer_start(frame_timer);
 
         // viewport
-        pen::viewport vp = {0.0f, 0.0f, (f32)pen_window.width, (f32)pen_window.height, 0.0f, 1.0f};
+        pen::viewport vp = {0.0f, 0.0f, PEN_BACK_BUFFER_RATIO, 1.0f, 0.0f, 1.0f};
 
         pen::timer_start(timer_test);
 
@@ -85,15 +96,19 @@ void* pen::user_entry(void* params)
         pen::renderer_set_viewport(vp);
         pen::renderer_set_rasterizer_state(raster_state);
         pen::renderer_set_scissor_rect(rect{vp.x, vp.y, vp.width, vp.height});
+        
+        s32 iw, ih;
+        pen::window_get_size(iw, ih);
+        pen::viewport vvp = {0.0f, 0.0f, (f32)iw, (f32)ih, 0.0f, 1.0f};
 
-        put::dbg::add_text_2f(10.0f, 10.0f, vp, vec4f(0.0f, 1.0f, 0.0f, 1.0f), "%s", "Debug Text");
-        put::dbg::add_text_2f(10.0f, 20.0f, vp, vec4f(1.0f, 0.0f, 1.0f, 1.0f), "%s", "Magenta");
-        put::dbg::add_text_2f(10.0f, 30.0f, vp, vec4f(0.0f, 1.0f, 1.0f, 1.0f), "%s", "Cyan");
-        put::dbg::add_text_2f(10.0f, 40.0f, vp, vec4f(1.0f, 1.0f, 0.0f, 1.0f), "%s", "Yellow");
+        put::dbg::add_text_2f(10.0f, 10.0f, vvp, vec4f(0.0f, 1.0f, 0.0f, 1.0f), "%s", "Debug Text");
+        put::dbg::add_text_2f(10.0f, 20.0f, vvp, vec4f(1.0f, 0.0f, 1.0f, 1.0f), "%s", "Magenta");
+        put::dbg::add_text_2f(10.0f, 30.0f, vvp, vec4f(0.0f, 1.0f, 1.0f, 1.0f), "%s", "Cyan");
+        put::dbg::add_text_2f(10.0f, 40.0f, vvp, vec4f(1.0f, 1.0f, 0.0f, 1.0f), "%s", "Yellow");
 
         // create 2d view proj matrix
-        float W = 2.0f / vp.width;
-        float H = 2.0f / vp.height;
+        float W = 2.0f / iw;
+        float H = 2.0f / ih;
         float mvp[4][4] = {{W, 0.0, 0.0, 0.0}, {0.0, H, 0.0, 0.0}, {0.0, 0.0, 1.0, 0.0}, {-1.0, -1.0, 0.0, 1.0}};
         pen::renderer_update_buffer(cb_2d_view, mvp, sizeof(mvp), 0);
 
@@ -108,7 +123,7 @@ void* pen::user_entry(void* params)
         pen::renderer_consume_cmd_buffer();
 
         f32 time_ms = pen::timer_elapsed_ms(frame_timer);
-        put::dbg::add_text_2f(10.0f, 50.0f, vp, vec4f(0.0f, 0.0f, 1.0f, 1.0f), "%s%f", "Timer", time_ms);
+        put::dbg::add_text_2f(10.0f, 50.0f, vvp, vec4f(0.0f, 0.0f, 1.0f, 1.0f), "%s%f", "Timer", time_ms);
 
         // msg from the engine we want to terminate
         if (pen::semaphore_try_wait(p_thread_info->p_sem_exit))

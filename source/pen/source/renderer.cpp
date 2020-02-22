@@ -16,6 +16,7 @@
 #include "str/Str.h"
 #include "threads.h"
 #include "timer.h"
+#include "renderer_shared.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb/stb_image_write.h"
@@ -55,6 +56,8 @@ namespace
         CMD_SET_RASTER_STATE,
         CMD_SET_VIEWPORT,
         CMD_SET_SCISSOR_RECT,
+        CMD_SET_VIEWPORT_RATIO,
+        CMD_SET_SCISSOR_RECT_RATIO,
         CMD_RELEASE_RASTER_STATE,
         CMD_CREATE_BLEND_STATE,
         CMD_SET_BLEND_STATE,
@@ -357,6 +360,14 @@ namespace pen
 
             case CMD_SET_SCISSOR_RECT:
                 direct::renderer_set_scissor_rect(cmd.set_rect);
+                break;
+                
+            case CMD_SET_VIEWPORT_RATIO:
+                _renderer_set_viewport_ratio(cmd.set_viewport);
+                break;
+
+            case CMD_SET_SCISSOR_RECT_RATIO:
+                _renderer_set_scissor_ratio(cmd.set_rect);
                 break;
 
             case CMD_RELEASE_SHADER:
@@ -1239,22 +1250,32 @@ namespace pen
     void renderer_set_viewport(const viewport& vp)
     {
         renderer_cmd cmd;
-
         cmd.command_index = CMD_SET_VIEWPORT;
-
         memcpy(&cmd.set_viewport, (void*)&vp, sizeof(viewport));
-
         _cmd_buffer.put(cmd);
     }
 
     void renderer_set_scissor_rect(const rect& r)
     {
         renderer_cmd cmd;
-
         cmd.command_index = CMD_SET_SCISSOR_RECT;
-
         memcpy(&cmd.set_rect, (void*)&r, sizeof(rect));
-
+        _cmd_buffer.put(cmd);
+    }
+    
+    void renderer_set_viewport_ratio(const viewport& vp)
+    {
+        renderer_cmd cmd;
+        cmd.command_index = CMD_SET_VIEWPORT_RATIO;
+        memcpy(&cmd.set_viewport, (void*)&vp, sizeof(viewport));
+        _cmd_buffer.put(cmd);
+    }
+    
+    void renderer_set_scissor_rect_ratio(const rect& r)
+    {
+        renderer_cmd cmd;
+        cmd.command_index = CMD_SET_SCISSOR_RECT_RATIO;
+        memcpy(&cmd.set_rect, (void*)&r, sizeof(rect));
         _cmd_buffer.put(cmd);
     }
 
@@ -1309,10 +1330,7 @@ namespace pen
     void renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
     {
         renderer_cmd cmd;
-        
-        if(buffer_index == -1)
-            u32 a = 0;
-        
+                
         cmd.command_index = CMD_SET_CONSTANT_BUFFER;
 
         cmd.set_buffer.buffer_index = buffer_index;
@@ -1611,7 +1629,7 @@ namespace pen
     static void renderer_test_read_complete(void* data, u32 row_pitch, u32 depth_pitch, u32 block_size)
     {
         Str reference_filename = "data/textures/";
-        reference_filename.appendf("%s%s", pen_window.window_title, ".dds");
+        reference_filename.appendf("%s%s", pen::window_get_title(), ".dds");
 
         void* file_data = nullptr;
         u32   file_data_size = 0;

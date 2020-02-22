@@ -3,12 +3,20 @@
 using namespace put;
 using namespace ecs;
 
-pen::window_creation_params pen_window{
-    1280,                    // width
-    720,                     // height
-    4,                       // MSAA samples
-    "msaa_resolve"           // window title / process name
-};
+namespace pen
+{
+    pen_creation_params pen_entry(int argc, char** argv)
+    {
+        pen::pen_creation_params p;
+        p.window_width = 1280;
+        p.window_height =  720;
+        p.window_title = "msaa_resolve";
+        p.window_sample_count = 4;
+        p.user_thread_function = user_entry;
+        p.flags = pen::e_pen_create_flags::renderer;
+        return p;
+    }
+}
 
 void mip_ui()
 {
@@ -44,6 +52,9 @@ void mip_ui()
 
 void example_setup(ecs::ecs_scene* scene, camera& cam)
 {
+    scene->view_flags &= ~e_scene_view_flags::hide_debug;
+    put::dev_ui::enable(true);
+    
     pmfx::init("data/configs/msaa_resolve.jsn");
 
     clear_scene(scene);

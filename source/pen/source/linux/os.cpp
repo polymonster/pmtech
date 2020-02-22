@@ -248,10 +248,11 @@ int main(int argc, char* argv[])
     timer_system_intialise();
     input_gamepad_init();
 
-    pen_creation_params pc = {};
-#if PEN_ENTRY_FUNCTION
-    pc = pen_entry(argc, argv);
-#endif
+    pen::pen_creation_params pc  = pen::pen_entry(argc, argv);
+    pen_window.width = pc.window_width;
+    pen_window.height = pc.window_height;
+    pen_window.window_title = pc.window_title;
+    pen_window.sample_count = pc.window_sample_count;
 
     if(pc.flags & e_pen_create_flags::renderer)
     {
@@ -570,6 +571,12 @@ namespace pen
     const c8* window_get_title()
     {
         return pen_window.window_title;
+    }
+
+    hash_id window_get_id()
+    {
+        static hash_id window_id = PEN_HASH(pen_window.window_title);
+        return window_id;
     }
 
     f32 window_get_aspect()

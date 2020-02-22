@@ -20,8 +20,6 @@
 
 #include <fstream>
 
-extern pen::window_creation_params pen_window;
-
 using namespace put;
 using namespace pmfx;
 using namespace pen;
@@ -352,9 +350,11 @@ namespace put
 
         void get_rt_dimensions(s32 rt_w, s32 rt_h, f32 rt_r, f32& w, f32& h)
         {
-            w = (f32)pen_window.width;
-            h = (f32)pen_window.height;
-
+            s32 iw, ih;
+            pen::window_get_size(iw, ih);
+            w = (f32)iw;
+            h = (f32)ih;
+            
             if (rt_r != 0)
             {
                 w /= (f32)rt_r;
@@ -371,8 +371,15 @@ namespace put
         {
             f32 w, h;
             get_rt_dimensions(rt_w, rt_h, rt_r, w, h);
-
-            vp_out = {vp_in[0] * w, vp_in[1] * h, vp_in[2] * w, vp_in[3] * h, 0.0f, 1.0f};
+            
+            if(rt_r != 0)
+            {
+                vp_out = {vp_in[0], vp_in[1], PEN_BACK_BUFFER_RATIO, rt_r, 0.0f, 1.0f};
+            }
+            else
+            {
+                vp_out = {vp_in[0] * w, vp_in[1] * h, vp_in[2] * w, vp_in[3] * h, 0.0f, 1.0f};
+            }
         }
 
         u32 mode_from_string(const mode_map* map, const c8* str, u32 default_value)
@@ -2470,11 +2477,13 @@ namespace put
         void pmfx_config_hotload()
         {
             // wait a bit and flush the gpu
+            /*
             for (u32 i = 0; i < 6; ++i)
             {
                 pen::renderer_present();
                 pen::renderer_consume_cmd_buffer();
             }
+            */
 
             release_script_resources();
 
@@ -2638,6 +2647,7 @@ namespace put
             static ecs::geometry_resource* quad = ecs::get_geometry_resource(PEN_HASH("full_screen_quad"));
 
             pen::renderer_set_targets(&v.stashed_output_rt, 1, PEN_NULL_DEPTH_BUFFER);
+            
             pen::renderer_set_viewport(vp);
             pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
 
@@ -2671,7 +2681,10 @@ namespace put
 
             // rt texture may still be bound on output
             // todo.. remove this? need to check with d3d11 validation layer
-            pen::viewport vp = {0, 0, (f32)pen_window.width, (f32)pen_window.height};
+            
+            s32 w, h;
+            pen::window_get_size(w, h);
+            pen::viewport vp = {0, 0, (f32)w, (f32)h};
             pen::renderer_set_viewport(vp);
             pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
             pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);

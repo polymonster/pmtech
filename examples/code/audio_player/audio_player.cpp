@@ -11,18 +11,24 @@
 #include "timer.h"
 #include <vector>
 
-pen::window_creation_params pen_window{
-    1280,          // width
-    720,           // height
-    4,             // MSAA samples
-    "audio_player" // window title / process name
-};
+void* pen::user_entry(void* params);
+namespace pen
+{
+    pen_creation_params pen_entry(int argc, char** argv)
+    {
+        pen::pen_creation_params p;
+        p.window_width = 1280;
+        p.window_height =  720;
+        p.window_title = "audio_player";
+        p.window_sample_count = 4;
+        p.user_thread_function = user_entry;
+        p.flags = pen::e_pen_create_flags::renderer;
+        return p;
+    }
+}
 
 u32 clear_state_grey;
 u32 raster_state_cull_back;
-
-pen::viewport vp = {0.0f, 0.0f, 1280.0f, 720.0f, 0.0f, 1.0f};
-
 u32 default_depth_stencil_state;
 
 using namespace put;
@@ -82,6 +88,7 @@ void* pen::user_entry(void* params)
         // bind back buffer and clear
         pen::renderer_set_depth_stencil_state(default_depth_stencil_state);
 
+        viewport vp = {0.0f, 0.0f, PEN_BACK_BUFFER_RATIO, 1.0f, 0.0f, 1.0f};
         pen::renderer_set_viewport(vp);
         pen::renderer_set_scissor_rect(rect{vp.x, vp.y, vp.width, vp.height});
         pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);

@@ -1772,16 +1772,17 @@ namespace pen
 
     void direct::renderer_set_viewport(const viewport& vp)
     {
-        g_current_vp = vp;
-
-        CHECK_CALL(glViewport(vp.x, vp.y, vp.width, vp.height));
-        CHECK_CALL(glDepthRangef(vp.min_depth, vp.max_depth));
+        viewport _vp = _renderer_resolve_viewport_ratio(vp);
+        g_current_vp = _vp;
+        CHECK_CALL(glViewport(_vp.x, _vp.y, _vp.width, _vp.height));
+        CHECK_CALL(glDepthRangef(_vp.min_depth, _vp.max_depth));
     }
 
     void direct::renderer_set_scissor_rect(const rect& r)
     {
-        f32 top = g_current_vp.height - r.bottom;
-        CHECK_CALL(glScissor(r.left, top, r.right - r.left, r.bottom - r.top));
+        rect _r = _renderer_resolve_scissor_ratio(r);
+        f32 top = g_current_vp.height - _r.bottom;
+        CHECK_CALL(glScissor(_r.left, top, _r.right - _r.left, _r.bottom - _r.top));
     }
 
     void direct::renderer_create_blend_state(const blend_creation_params& bcp, u32 resource_slot)

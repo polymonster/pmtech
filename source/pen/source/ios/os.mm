@@ -22,10 +22,9 @@
 #import <QuartzCore/QuartzCore.h>
 #import <UIKit/UIKit.h>
 
-// global externs
-pen::user_info pen_user_info;
-
-extern pen::window_creation_params pen_window;
+// the last 2 global externs \o/
+pen::user_info               pen_user_info;
+pen::window_creation_params  pen_window;
 
 // objc interfaces
 @interface pen_mtk_renderer : NSObject<MTKViewDelegate>
@@ -218,6 +217,13 @@ namespace pen
 int main(int argc, char* argv[])
 {
     NSString* str = NSStringFromClass([pen_app_delegate class]);
+
+    pen::pen_creation_params pc  = pen::pen_entry(argc, argv);
+    pen_window.width = pc.window_width;
+    pen_window.height = pc.window_height;
+    pen_window.window_title = pc.window_title;
+    pen_window.sample_count = pc.window_sample_count;
+
     @autoreleasepool {
         return UIApplicationMain(argc, argv, nil, str);
     }
@@ -233,11 +239,8 @@ namespace pen
     const c8* os_path_for_resource(const c8* filename)
     {
         NSString* ns_filename = [[NSString alloc] initWithUTF8String:filename];
-
         NSString* test = [[NSBundle mainBundle] pathForResource:ns_filename ofType:nil];
-
         [ns_filename release];
-
         return test.UTF8String;
     }
 
@@ -248,7 +251,6 @@ namespace pen
         {
             // audio, user thread etc
             pen::default_thread_info thread_info;
-            thread_info.flags = pen::PEN_CREATE_AUDIO_THREAD;
             pen::jobs_create_default(thread_info);
             thread_started = true;
         }
@@ -305,5 +307,11 @@ namespace pen
     const c8* window_get_title()
     {
         return pen_window.window_title;
+    }
+    
+    hash_id window_get_id()
+    {
+        static hash_id window_id = PEN_HASH(pen_window.window_title);
+        return window_id;
     }
 }

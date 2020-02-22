@@ -15,9 +15,9 @@
 #pragma once
 
 #include "pen.h"
-#include "str/Str.h"
+#include "os.h"
 
-extern pen::window_creation_params pen_window;
+#include "str/Str.h"
 
 enum gamepad_button
 {
@@ -121,7 +121,9 @@ namespace pen
 
     inline bool mouse_coords_valid(u32 x, u32 y)
     {
-        return x < pen_window.width && y < pen_window.height;
+        s32 w, h;
+        window_get_size(w, h);
+        return x < w && y < h;
     }
 
     inline bool input_key(u32 key_index)

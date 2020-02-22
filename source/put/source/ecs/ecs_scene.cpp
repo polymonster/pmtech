@@ -564,9 +564,17 @@ namespace put
 
             pen::renderer_set_constant_buffer(view.cb_view, 0, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
 
-            static hash_id id_volume[] = {PEN_HASH("full_screen_quad"), PEN_HASH("sphere"), PEN_HASH("cone")};
+            static hash_id id_volume[] = {
+                PEN_HASH("full_screen_quad"),
+                PEN_HASH("sphere"),
+                PEN_HASH("cone")
+            };
 
-            static hash_id id_technique[] = {PEN_HASH("directional_light"), PEN_HASH("point_light"), PEN_HASH("spot_light")};
+            static hash_id id_technique[] = {
+                PEN_HASH("directional_light"),
+                PEN_HASH("point_light"),
+                PEN_HASH("spot_light")
+            };
 
             static u32 shader = pmfx::load_shader("deferred_render");
 
@@ -583,6 +591,9 @@ namespace put
             for (u32 n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & e_cmp::light))
+                    continue;
+                    
+                if(!scene->cbuffer[n])
                     continue;
 
                 u32                t = scene->lights[n].type;
@@ -641,7 +652,7 @@ namespace put
                     pen::renderer_set_rasterizer_state(cull_front);
                     pen::renderer_set_depth_stencil_state(depth_disabled);
                 }
-
+                
                 pen::renderer_update_buffer(scene->cbuffer[n], &dc, sizeof(cmp_draw_call));
                 pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
                 pen::renderer_set_vertex_buffer(vol->vertex_buffer, 0, vol->vertex_size, 0);

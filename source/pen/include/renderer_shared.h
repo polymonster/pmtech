@@ -3,7 +3,8 @@
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
 // API for shared renderer functionality across multiple rendering backends.
-// all functions must be called on the render thread and inside the rendering backend implementation.
+// most of these functions must be called from the render thread and are not intended for public us,
+// there are a few exceptions to this rule.. commented as "thread safe"
 
 #pragma once
 
@@ -45,8 +46,13 @@ namespace pen
     u64                         _renderer_frame_index();
     u64                         _renderer_resize_index();
 	shared_flags				_renderer_flags();
-    
+    void                        _renderer_set_viewport_ratio(const viewport& v);
+    void                        _renderer_set_scissor_ratio(const rect& r);
     void                        _renderer_commit_stretchy_dynamic_buffers();
     size_t                      _renderer_buffer_multi_update(stretchy_dynamic_buffer* buf, const void* data, size_t size);
     stretchy_dynamic_buffer*    _renderer_get_stretchy_dynamic_buffer(u32 bind_flags);
+    
+    // thread safe utilities
+    viewport                    _renderer_resolve_viewport_ratio(const viewport& v);
+    rect                        _renderer_resolve_scissor_ratio(const rect& r);
 }

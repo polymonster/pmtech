@@ -35,6 +35,8 @@
 #define PEN_CAPS_TEX_FORMAT_BC6 (1 << 26)
 #define PEN_CAPS_TEX_FORMAT_BC7 (1 << 25)
 
+#define PEN_BACK_BUFFER_RATIO -1.0f
+
 namespace pen
 {
     struct renderer_info
@@ -406,6 +408,8 @@ namespace pen
     void renderer_set_rasterizer_state(u32 rasterizer_state_index);
     void renderer_set_viewport(const viewport& vp);
     void renderer_set_scissor_rect(const rect& r);
+    void renderer_set_viewport_ratio(const viewport& vp);
+    void renderer_set_scissor_rect_ratio(const rect& r);
 
     // blending
     u32  renderer_create_blend_state(const blend_creation_params& bcp);

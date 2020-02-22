@@ -11,19 +11,20 @@
 #include "os.h"
 #include "pen.h"
 #include "renderer.h"
-#include "str/Str.h"
 #include "str_utilities.h"
 #include "threads.h"
 #include "timer.h"
+#include "hash.h"
+
+#include "str/Str.h"
 
 #import <AppKit/NSPasteboard.h>
 #import <Cocoa/Cocoa.h>
 
 #include <map>
 
-// pen required externs / globals.. trying to remove these
-pen::user_info                      pen_user_info;
-extern pen::window_creation_params  pen_window;
+// 1 final global extern to remove :)
+pen::window_creation_params  pen_window;
 
 namespace pen
 {
@@ -36,6 +37,7 @@ namespace
     {
         pen::window_frame frame;
         u32               return_code = 0;
+        pen::user_info    pen_user_info;
     };
     os_context s_ctx;
     
@@ -397,10 +399,10 @@ namespace
     void users()
     {
         NSString* ns_full_user_name = NSFullUserName();
-        pen_user_info.full_user_name = [ns_full_user_name UTF8String];
+        s_ctx.pen_user_info.full_user_name = [ns_full_user_name UTF8String];
 
         NSString* ns_user_name = NSUserName();
-        pen_user_info.user_name = [ns_user_name UTF8String];
+        s_ctx.pen_user_info.user_name = [ns_user_name UTF8String];
     }
 
     void get_mouse_pos(f32& x, f32& y)
@@ -748,6 +750,12 @@ namespace pen
         return (f32)pen_window.width / (f32)pen_window.height;
     }
 
+    hash_id window_get_id()
+    {
+        static hash_id window_id = PEN_HASH(pen_window.window_title);
+        return window_id;
+    }
+
     const c8* window_get_title()
     {
         return pen_window.window_title;
@@ -784,7 +792,7 @@ namespace pen
 
     const user_info& os_get_user_info()
     {
-        return pen_user_info;
+        return s_ctx.pen_user_info;
     }
 }
 
@@ -931,7 +939,7 @@ int main(int argc, char** argv)
                 working_dir = pen::str_substr(working_dir, 0, pos + 1);
         }
 
-        pen_user_info.working_directory = working_dir.c_str();
+        s_ctx.pen_user_info.working_directory = working_dir.c_str();
         
         // init systems
         users();
@@ -939,10 +947,11 @@ int main(int argc, char** argv)
         pen::input_gamepad_init();
         
         // call pmtech entry first
-        pen::pen_creation_params pc = { };
-        #if PEN_ENTRY_FUNCTION
-        pc = pen::pen_entry(argc, argv);
-        #endif
+        pen::pen_creation_params pc = pen::pen_entry(argc, argv);
+        pen_window.width = pc.window_width;
+        pen_window.height = pc.window_height;
+        pen_window.window_title = pc.window_title;
+        pen_window.sample_count = pc.window_sample_count;
 
         // window creation
         if(pc.flags & pen::e_pen_create_flags::renderer)

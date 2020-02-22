@@ -6,12 +6,20 @@ using namespace ecs;
 
 put::camera main_camera;
 
-pen::window_creation_params pen_window{
-    1280,             // width
-    720,              // height
-    4,                // MSAA samples
-    "maths_functions" // window title / process name
-};
+namespace pen
+{
+    pen_creation_params pen_entry(int argc, char** argv)
+    {
+        pen::pen_creation_params p;
+        p.window_width = 1280;
+        p.window_height =  720;
+        p.window_title = "maths_functions";
+        p.window_sample_count = 4;
+        p.user_thread_function = user_entry;
+        p.flags = pen::e_pen_create_flags::renderer;
+        return p;
+    }
+}
 
 // Small structs for debug maths rendering and test primitives
 struct debug_ray
@@ -546,7 +554,8 @@ void test_project(ecs_scene* scene, bool initialise)
         ecs::update_scene(scene, 1.0f/60.0f);
     }
 
-    vec2i vp = vec2i(pen_window.width, pen_window.height);
+    vec2i vp;
+    pen::window_get_size(vp.x, vp.y);
 
     mat4  view_proj = main_camera.proj * main_camera.view;
     vec3f screen_point = maths::project_to_sc(point.point, view_proj, vp);

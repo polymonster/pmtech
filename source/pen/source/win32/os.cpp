@@ -16,8 +16,8 @@
 #include "renderer_shared.h"
 
 // the last 2 global externs! \o/
-pen::user_info                      pen_user_info;
-extern pen::window_creation_params  pen_window;
+pen::user_info pen_user_info;
+pen::window_creation_params  pen_window;
 
 //
 // OpenGL Render Context
@@ -476,6 +476,12 @@ namespace pen
     {
         return pen_window.window_title;
     }
+
+    hash_id window_get_id()
+    {
+        static hash_id window_id = PEN_HASH(pen_window.window_title);
+        return window_id;
+    }
 } // namespace pen
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, INT nCmdShow)
@@ -498,11 +504,11 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 	pen_user_info.working_directory = working_directory.c_str();
 
 	// call user entry / setup
-	pen::pen_creation_params pc = {};
-
-#if PEN_ENTRY_FUNCTION
-	pc = pen::pen_entry(0, nullptr);
-#endif
+    pen::pen_creation_params pc  = pen::pen_entry(0, nullptr);
+    pen_window.width = pc.window_width;
+    pen_window.height = pc.window_height;
+    pen_window.window_title = pc.window_title;
+    pen_window.sample_count = pc.window_sample_count;
 
 	if (pc.flags & pen::e_pen_create_flags::renderer)
 	{

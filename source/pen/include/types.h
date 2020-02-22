@@ -85,17 +85,6 @@ enum pen_error
     PEN_ERR_FAILED = 3
 };
 
-// Minimal amount of macros that are handy to have evrywhere
-// For making texture formats ('D' 'X' 'T' '1') etc
-
-#define PEN_FOURCC(ch0, ch1, ch2, ch3)                                                                                       \
-    ((ulong)(c8)(ch0) | ((ulong)(c8)(ch1) << 8) | ((ulong)(c8)(ch2) << 16) | ((ulong)(c8)(ch3) << 24))
-
-#define PEN_ARRAY_SIZE(A) (sizeof(A) / sizeof(A[0]))
-#define PEN_UNUSED (void)
-#define PEN_ALIGN(val, align) ((val) + ((val) % align ? align - (val) % align : 0))
-#define PEN_ALIGN_PO2(val, align) (((val)+(align-1)) & align)
-
 inline f16 float_to_half(f32 f)
 {
     union bits {
@@ -134,3 +123,28 @@ inline f16 float_to_half(f32 f)
     v.si ^= ((v.si - minD) ^ v.si) & -(v.si > subC);
     return v.ui | sign;
 }
+
+// Minimal amount of macros that are handy to have evrywhere
+// For making texture formats ('D' 'X' 'T' '1') etc
+#define PEN_FOURCC(ch0, ch1, ch2, ch3)                                                                                       \
+    ((ulong)(c8)(ch0) | ((ulong)(c8)(ch1) << 8) | ((ulong)(c8)(ch2) << 16) | ((ulong)(c8)(ch3) << 24))
+
+// compiler
+#ifdef _MSC_VER
+#define pen_inline __forceinline
+#define pen_deprecated __declspec(deprecated)
+#define pen_debug_break __debug_break()
+#else
+#define pen_inline inline __attribute__((always_inline))
+#define pen_deprecated __attribute__((deprecated))
+#define pen_debug_break __builtin_trap()
+#endif
+#ifdef PEN_PLATFORM_IOS
+#define PEN_HOTLOADING_ENABLED return
+#else
+#define PEN_HOTLOADING_ENABLED
+#endif
+#define PEN_ARRAY_SIZE(A) (sizeof(A) / sizeof(A[0]))
+#define PEN_UNUSED (void)
+#define PEN_ALIGN(val, align) ((val) + ((val) % align ? align - (val) % align : 0))
+#define PEN_ALIGN_PO2(val, align) (((val)+(align-1)) & align)

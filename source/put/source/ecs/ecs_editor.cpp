@@ -20,6 +20,7 @@
 #include "timer.h"
 #include "os.h"
 #include "pen_string.h"
+#include "renderer_shared.h"
 
 using namespace pen;
 using namespace put;
@@ -2657,7 +2658,9 @@ namespace put
             s_select_flags &= ~(e_select_flags::widget_selected);
 
             ecs_scene* scene = view.scene;
-            vec2i      vpi = vec2i(view.viewport->width, view.viewport->height);
+            
+            viewport vp = _renderer_resolve_viewport_ratio(*view.viewport);
+            vec2i vpi = vec2i(vp.width, vp.height);
 
             static vec3f widget_points[4];
             static vec3f pre_click_axis_pos[3];
@@ -2665,7 +2668,7 @@ namespace put
             static f32   selection_radius = 5.0f;
 
             const pen::mouse_state& ms = pen::input_get_mouse_state();
-            vec3f                   mousev3 = vec3f(ms.x, view.viewport->height - ms.y, 0.0f);
+            vec3f                   mousev3 = vec3f(ms.x, vpi.y - ms.y, 0.0f);
 
             mat4  view_proj = view.camera->proj * view.camera->view;
             vec3f r0 = maths::unproject_sc(vec3f(mousev3.x, mousev3.y, 0.0f), view_proj, vpi);

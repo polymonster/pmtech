@@ -12,12 +12,21 @@
 
 using namespace put;
 
-pen::window_creation_params pen_window{
-    1280,           // width
-    720,            // height
-    4,              // MSAA samples
-    "basic_compute" // window title / process name
-};
+void* pen::user_entry(void* params);
+namespace pen
+{
+    pen_creation_params pen_entry(int argc, char** argv)
+    {
+        pen::pen_creation_params p;
+        p.window_width = 1280;
+        p.window_height =  720;
+        p.window_title = "basic_compute";
+        p.window_sample_count = 4;
+        p.user_thread_function = user_entry;
+        p.flags = pen::e_pen_create_flags::renderer;
+        return p;
+    }
+}
 
 struct vertex
 {
@@ -73,7 +82,7 @@ void* pen::user_entry(void* params)
     u32 test_output = pen::renderer_create_texture(ti);
 
     // manually scale 16:9 to 1:1
-    f32 x_size = 0.5f / ((f32)pen_window.width / pen_window.height);
+    f32 x_size = 0.5f / pen::window_get_aspect();
 
     f32 uv_y_a = 1.0f;
     f32 uv_y_b = 0.0f;
@@ -146,7 +155,10 @@ void* pen::user_entry(void* params)
         pen::renderer_set_rasterizer_state(raster_state);
 
         // bind back buffer and clear
-        pen::viewport vp = {0.0f, 0.0f, (f32)pen_window.width, (f32)pen_window.height, 0.0f, 1.0f};
+        s32 w, h;
+        pen::window_get_size(w, h);
+        pen::viewport vp = {0.0f, 0.0f, (f32)w, (f32)h, 0.0f, 1.0f};
+        
         pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
         pen::renderer_set_viewport(vp);
         pen::renderer_set_scissor_rect(rect{vp.x, vp.y, vp.width, vp.height});

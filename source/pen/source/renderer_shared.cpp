@@ -67,7 +67,7 @@ namespace pen
         // create a stretchy buffer for dynamic draw data on vertices
         
         // resizing can cause a flicker
-        static const size_t mb = 1024*1024;
+        static const size_t mb = 1024*1024*10;
         _create_stretchy_dynamic_buffer(&s_shared_ctx.dynamic_cbuffer, 6, mb, CBUFFER_ALIGNMENT);
         _create_stretchy_dynamic_buffer(&s_shared_ctx.dynamic_vbuffer, 7, mb, VBUFFER_ALIGNMENT);
     }
@@ -230,5 +230,59 @@ namespace pen
         {
             return &s_shared_ctx.dynamic_vbuffer;
         }
+    }
+    
+    viewport _renderer_resolve_viewport_ratio(const viewport& v)
+    {
+        // ratio specifier is packed into v.width
+        if(v.width != PEN_BACK_BUFFER_RATIO)
+            return v;
+        
+        // ratio (0-1 float) is packed into v.height
+        f32 ratio = v.height;
+        viewport _v = v;
+        _v.x = v.x * pen_window.width;
+        _v.y = v.y * pen_window.height;
+        _v.width = pen_window.width * ratio;
+        _v.height = pen_window.height * ratio;
+        return _v;
+    }
+    
+    rect _renderer_resolve_scissor_ratio(const rect& r)
+    {
+        // ratio specifier is packed into r.right
+        if(r.right != PEN_BACK_BUFFER_RATIO)
+            return r;
+            
+        // ratio is packed into r.bottom
+        f32 ratio = r.bottom;
+        rect _r = r;
+        _r.left = r.left * pen_window.width;
+        _r.top = r.top * pen_window.height;
+        _r.right = pen_window.width * ratio;
+        _r.bottom = pen_window.height * ratio;
+        return _r;
+    }
+    
+    void _renderer_set_viewport_ratio(const viewport& v)
+    {
+        // all values in v are 0-1 ratio of backbuffer
+        viewport _v = v;
+        _v.x = pen_window.width * v.x;
+        _v.y = pen_window.height * v.y;
+        _v.width = pen_window.width * v.width;
+        _v.height = pen_window.height * v.height;
+        direct::renderer_set_viewport(_v);
+    }
+    
+    void _renderer_set_scissor_ratio(const rect& r)
+    {
+        // all values in r are 0-1 ratio of backbuffer
+        rect _r = r;
+        _r.left = pen_window.width * r.left;
+        _r.top = pen_window.height * r.top;
+        _r.right = pen_window.width * r.right;
+        _r.bottom = pen_window.height * r.bottom;
+        direct::renderer_set_scissor_rect(_r);
     }
 }

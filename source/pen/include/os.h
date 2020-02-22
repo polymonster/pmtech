@@ -31,6 +31,7 @@ namespace pen
     void             window_set_size(s32 width, s32 height);
     f32              window_get_aspect();
     const c8*        window_get_title();
+    hash_id          window_get_id();
 
     // OS
     void             os_terminate(u32 return_code);

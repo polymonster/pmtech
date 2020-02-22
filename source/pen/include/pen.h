@@ -6,8 +6,6 @@
 
 #include "types.h"
 
-#define PEN_ENTRY_FUNCTION 0
-
 namespace pen
 {
     // Structs for user to setup, make sure to define:
@@ -42,9 +40,7 @@ namespace pen
 		void*               (*user_thread_function)(void*) = nullptr;
     };
 
-#if PEN_ENTRY_FUNCTION
     extern pen_creation_params pen_entry(int argc, char** argv);
-#endif
     extern void* user_entry(void* params);
     
 } // namespace pen

@@ -28,6 +28,7 @@ namespace
 {
     struct render_handles
     {
+        u32 clear_state;
         u32 raster_state;
         u32 blend_state;
         u32 depth_stencil_state;
@@ -432,7 +433,9 @@ namespace put
             update_dynamic_buffers(draw_data);
 
             // set to main viewport
-            pen::viewport vp = {0.0f, 0.0f, (f32)ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y, 0.0f, 1.0};
+            s32 iw, ih;
+            pen::window_get_size(iw, ih);
+            pen::viewport vp = {0.0f, 0.0f, PEN_BACK_BUFFER_RATIO, 1.0f, 0.0f, 1.0};
 
             pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
             
@@ -462,8 +465,14 @@ namespace put
                                                   pen::TEXTURE_BIND_PS);
 
                         pen::rect r = {pcmd->ClipRect.x, pcmd->ClipRect.y, pcmd->ClipRect.z, pcmd->ClipRect.w};
+                        
+                        // convert scissor to ratios, for safe window resizing
+                        r.left /= (f32)iw;
+                        r.top /= (f32)ih;
+                        r.right /= (f32)iw;
+                        r.bottom /= (f32)ih;
 
-                        pen::renderer_set_scissor_rect(r);
+                        pen::renderer_set_scissor_rect_ratio(r);
 
                         pen::renderer_set_vertex_buffer(s_imgui_rs.vertex_buffer, 0, sizeof(ImDrawVert), 0);
                         pen::renderer_set_index_buffer(s_imgui_rs.index_buffer, PEN_FORMAT_R16_UINT, 0);

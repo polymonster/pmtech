@@ -10,23 +10,31 @@
 #include "threads.h"
 #include "timer.h"
 
-pen::window_creation_params pen_window{
-    1280,   // width
-    720,    // height
-    4,      // MSAA samples
-    "input" // window title / process name
-};
+namespace pen
+{
+    pen_creation_params pen_entry(int argc, char** argv)
+    {
+        pen::pen_creation_params p;
+        p.window_width = 1280;
+        p.window_height =  720;
+        p.window_title = "input_example";
+        p.window_sample_count = 4;
+        p.user_thread_function = user_entry;
+        p.flags = pen::e_pen_create_flags::renderer;
+        return p;
+    }
+}
 
-typedef struct vertex
+struct vertex
 {
     float x, y, z, w;
-} vertex;
+};
 
-typedef struct textured_vertex
+struct textured_vertex
 {
     float x, y, z, w;
     float u, v;
-} textured_vertex;
+};
 
 void* pen::user_entry(void* params)
 {
@@ -69,7 +77,11 @@ void* pen::user_entry(void* params)
     while (1)
     {
         // viewport
-        pen::viewport vp = {0.0f, 0.0f, (f32)pen_window.width, (f32)pen_window.height, 0.0f, 1.0f};
+        pen::viewport vp = {0.0f, 0.0f, PEN_BACK_BUFFER_RATIO, 1.0f, 0.0f, 1.0f};
+        
+        s32 iw, ih;
+        pen::window_get_size(iw, ih);
+        pen::viewport vvp = {0.0f, 0.0f, (f32)iw, (f32)ih, 0.0f, 1.0f};
 
         // bind back buffer and clear
         pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
@@ -80,16 +92,16 @@ void* pen::user_entry(void* params)
 
         pen::renderer_clear(clear_state);
 
-        put::dbg::add_text_2f(10.0f, 10.0f, vp, vec4f(0.0f, 1.0f, 0.0f, 1.0f), "%s", "Input Test");
+        put::dbg::add_text_2f(10.0f, 10.0f, vvp, vec4f(0.0f, 1.0f, 0.0f, 1.0f), "%s", "Input Test");
 
         const pen::mouse_state& ms = pen::input_get_mouse_state();
 
         // mouse
-        vec2f mouse_pos = vec2f((f32)ms.x, vp.height - (f32)ms.y);
+        vec2f mouse_pos = vec2f((f32)ms.x, vvp.height - (f32)ms.y);
         vec2f mouse_quad_size = vec2f(5.0f, 5.0f);
         put::dbg::add_quad_2f(mouse_pos, mouse_quad_size, vec4f::cyan());
 
-        put::dbg::add_text_2f(10.0f, 20.0f, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f),
+        put::dbg::add_text_2f(10.0f, 20.0f, vvp, vec4f(1.0f, 1.0f, 1.0f, 1.0f),
                               "mouse down : left %i, middle %i, right %i: mouse_wheel %i", ms.buttons[PEN_MOUSE_L],
                               ms.buttons[PEN_MOUSE_M], ms.buttons[PEN_MOUSE_R], ms.wheel);
 
@@ -107,7 +119,7 @@ void* pen::user_entry(void* params)
         }
         key_msg.append("\n");
 
-        put::dbg::add_text_2f(10.0f, 30.0f, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "%s", key_msg.c_str());
+        put::dbg::add_text_2f(10.0f, 30.0f, vvp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "%s", key_msg.c_str());
 
         Str ascii_msg = "character down: ";
         for (s32 key = 0; key < PK_COUNT; ++key)
@@ -133,11 +145,11 @@ void* pen::user_entry(void* params)
             text_buffer.append(unicode.c_str());
         }
         
-        put::dbg::add_text_2f(10.0f, 40.0f, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "input text: %s", text_buffer.c_str());
+        put::dbg::add_text_2f(10.0f, 40.0f, vvp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "input text: %s", text_buffer.c_str());
 
         // raw gamepad
         u32 num_gamepads = input_get_num_gamepads();
-        put::dbg::add_text_2f(10.0f, 60.0f, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "Gamepads: %i", num_gamepads);
+        put::dbg::add_text_2f(10.0f, 60.0f, vvp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "Gamepads: %i", num_gamepads);
 
         f32 ypos = 70.0f;
         for (u32 i = 0; i < num_gamepads; ++i)
@@ -146,13 +158,13 @@ void* pen::user_entry(void* params)
             raw_gamepad_state gs;
             pen::input_get_raw_gamepad_state(i, gs);
 
-            put::dbg::add_text_2f(10.0f, ypos, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "Vendor ID: [%i] : Product ID [%i]",
+            put::dbg::add_text_2f(10.0f, ypos, vvp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "Vendor ID: [%i] : Product ID [%i]",
                                   gs.vendor_id, gs.product_id);
             ypos += 10.0f;
 
             for (u32 b = 0; b < 16; ++b)
             {
-                put::dbg::add_text_2f(10.0f, ypos, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "Button: %i : [%i]", b, gs.button[b]);
+                put::dbg::add_text_2f(10.0f, ypos, vvp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "Button: %i : [%i]", b, gs.button[b]);
                 ypos += 10.0f;
             }
 
@@ -163,7 +175,7 @@ void* pen::user_entry(void* params)
                 for (u32 a = 0; a < 16; ++a)
                 {
                     u32 ai = r * 16 + a;
-                    put::dbg::add_text_2f(xpos, ypos, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "Axis: %i : [%f]", ai, gs.axis[ai]);
+                    put::dbg::add_text_2f(xpos, ypos, vvp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "Axis: %i : [%f]", ai, gs.axis[ai]);
                     ypos += 10.0f;
                 }
 
@@ -181,14 +193,14 @@ void* pen::user_entry(void* params)
 
             if (rgs.mapping == PEN_INVALID_HANDLE)
             {
-                put::dbg::add_text_2f(10.0f, ypos, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "Initialising Mapping...");
+                put::dbg::add_text_2f(10.0f, ypos, vvp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "Initialising Mapping...");
                 continue;
             }
 
             gamepad_state gs;
             pen::input_get_gamepad_state(i, gs);
 
-            put::dbg::add_text_2f(10.0f, ypos, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "Mapped Gamepad: %s",
+            put::dbg::add_text_2f(10.0f, ypos, vvp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "Mapped Gamepad: %s",
                                   mappings[rgs.mapping]);
             ypos += 10.0f;
 
@@ -201,7 +213,7 @@ void* pen::user_entry(void* params)
 
             for (u32 b = 0; b < PGP_BUTTON_COUNT; ++b)
             {
-                put::dbg::add_text_2f(10.0f, ypos, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "%s: %i", button_names[b],
+                put::dbg::add_text_2f(10.0f, ypos, vvp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "%s: %i", button_names[b],
                                       gs.button[b]);
                 ypos += 10.0f;
             }
@@ -214,14 +226,14 @@ void* pen::user_entry(void* params)
             f32 xpos = 150.0f;
             for (u32 a = 0; a < PGP_BUTTON_COUNT; ++a)
             {
-                put::dbg::add_text_2f(xpos, ypos, vp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "%s: %f", axis_names[a], gs.axis[a]);
+                put::dbg::add_text_2f(xpos, ypos, vvp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "%s: %f", axis_names[a], gs.axis[a]);
                 ypos += 10.0f;
             }
         }
 
         // create 2d view proj matrix
-        float W = 2.0f / vp.width;
-        float H = 2.0f / vp.height;
+        float W = 2.0f / vvp.width;
+        float H = 2.0f / vvp.height;
         float mvp[4][4] = {{W, 0.0, 0.0, 0.0}, {0.0, H, 0.0, 0.0}, {0.0, 0.0, 1.0, 0.0}, {-1.0, -1.0, 0.0, 1.0}};
         pen::renderer_update_buffer(cb_2d_view, mvp, sizeof(mvp), 0);
 

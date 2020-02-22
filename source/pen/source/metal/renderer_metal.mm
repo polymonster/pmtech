@@ -1676,13 +1676,15 @@ namespace pen
 
         void renderer_set_viewport(const viewport& vp)
         {
-            _state.viewport = (MTLViewport){vp.x, vp.y, vp.width, vp.height, vp.min_depth, vp.max_depth};
+            viewport _vp = _renderer_resolve_viewport_ratio(vp);
+            _state.viewport = (MTLViewport){_vp.x, _vp.y, _vp.width, _vp.height, _vp.min_depth, _vp.max_depth};
         }
 
         void renderer_set_scissor_rect(const rect& r)
         {
+            rect _r = _renderer_resolve_scissor_ratio(r);
             _state.scissor =
-                (MTLScissorRect){(u32)r.left, (u32)r.top, (u32)r.right - (u32)r.left, (u32)r.bottom - (u32)r.top};
+                (MTLScissorRect){(u32)_r.left, (u32)_r.top, (u32)_r.right - (u32)_r.left, (u32)_r.bottom - (u32)_r.top};
         }
 
         void renderer_create_blend_state(const blend_creation_params& bcp, u32 resource_slot)
@@ -1854,6 +1856,7 @@ namespace pen
             _state.depth_target = depth_target;
             _state.colour_slice = colour_slice;
             _state.depth_slice =  depth_slice;
+            _state.clear_state = 0;
         }
 
         void renderer_set_resolve_targets(u32 colour_target, u32 depth_target)
