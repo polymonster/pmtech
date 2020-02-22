@@ -1,5 +1,6 @@
-#include "../../shader_structs/compute_demo.h"
 #include "../example_common.h"
+
+#include "../../shader_structs/compute_demo.h"
 
 using namespace put;
 using namespace ecs;
