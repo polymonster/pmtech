@@ -14,6 +14,7 @@
 #include "data_struct.h"
 #include "str_utilities.h"
 #include "renderer_shared.h"
+#include "hash.h"
 
 // the last 2 global externs! \o/
 pen::user_info pen_user_info;

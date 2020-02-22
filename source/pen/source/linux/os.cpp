@@ -11,6 +11,7 @@
 #include "threads.h"
 #include "timer.h"
 #include "types.h"
+#include "hash.h"
 
 #include <stdio.h>
 #include <stdlib.h>

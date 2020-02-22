@@ -10,6 +10,7 @@
 #include "timer.h"
 #include "console.h"
 #include "input.h"
+#include "hash.h"
 
 #ifdef PEN_RENDERER_METAL
 #import <MetalKit/MetalKit.h>
