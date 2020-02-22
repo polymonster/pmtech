@@ -101,7 +101,7 @@ void* pen::user_entry(void* params)
     example_setup(main_scene, main_camera);
 
     f32 frame_time = 0.0f;
-    
+
     while (1)
     {
         static pen::timer* frame_timer = pen::timer_create();

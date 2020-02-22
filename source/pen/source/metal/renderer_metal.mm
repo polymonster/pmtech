@@ -2,24 +2,24 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#include "renderer.h"
-#include "renderer_shared.h"
 #include "console.h"
 #include "data_struct.h"
 #include "hash.h"
+#include "renderer.h"
+#include "renderer_shared.h"
 #include "str/Str.h"
 #include "threads.h"
 
+#import <Availability.h>
 #import <Metal/Metal.h>
 #import <MetalKit/MetalKit.h>
-#import <Availability.h>
 
 using namespace pen;
 
 extern window_creation_params pen_window;
 
-#define NBB 3                 // buffers to prevent locking gpu / cpu on dynamic buffers.
-#define CBUF_OFFSET 4         // from pmfx.. offset of cbuffers to prevent collisions with vertex buffers
+#define NBB 3         // buffers to prevent locking gpu / cpu on dynamic buffers.
+#define CBUF_OFFSET 4 // from pmfx.. offset of cbuffers to prevent collisions with vertex buffers
 
 namespace // internal structs and static vars
 {
@@ -45,10 +45,10 @@ namespace // internal structs and static vars
         MTLPixelFormat depth_attachment;
         u32            sample_count;
     };
-    
+
     struct cached_pipeline
     {
-        hash_id hash;
+        hash_id                    hash;
         id<MTLRenderPipelineState> pipeline;
     };
 
@@ -66,34 +66,34 @@ namespace // internal structs and static vars
         dispatch_semaphore_t         completion;
         index_buffer_cmd             index_buffer;
         u32                          input_layout;
-        
+
         // hashable for pass
-        u32*                         colour_targets = nullptr;
-        u32                          depth_target;
-        u32                          colour_slice;
-        u32                          depth_slice;
-        u32                          clear_state;
+        u32* colour_targets = nullptr;
+        u32  depth_target;
+        u32  colour_slice;
+        u32  depth_slice;
+        u32  clear_state;
 
         // hashable to set on command encoder
-        MTLViewport                 viewport;
-        MTLScissorRect              scissor;
-        id<MTLDepthStencilState>    depth_stencil;
-        u32                         raster_state;
-        u8                          stencil_ref;
+        MTLViewport              viewport;
+        MTLScissorRect           scissor;
+        id<MTLDepthStencilState> depth_stencil;
+        u32                      raster_state;
+        u8                       stencil_ref;
 
         // hashable to rebuild pipe
-        pixel_formats               formats;
-        MTLVertexDescriptor*        vertex_descriptor;
-        id<MTLFunction>             vertex_shader;
-        id<MTLFunction>             fragment_shader;
-        id<MTLFunction>             compute_shader;
-        u32                         blend_state;
-        bool                        stream_out;
+        pixel_formats        formats;
+        MTLVertexDescriptor* vertex_descriptor;
+        id<MTLFunction>      vertex_shader;
+        id<MTLFunction>      fragment_shader;
+        id<MTLFunction>      compute_shader;
+        u32                  blend_state;
+        bool                 stream_out;
 
         // cache
-        hash_id pipeline_hash = 0;
-        hash_id encoder_hash = 0;
-        hash_id target_hash = 0;
+        hash_id          pipeline_hash = 0;
+        hash_id          encoder_hash = 0;
+        hash_id          target_hash = 0;
         cached_pipeline* cached_pipelines = nullptr;
     };
 
@@ -156,9 +156,9 @@ namespace // internal structs and static vars
 
     struct dynamic_buffer
     {
-        id<MTLBuffer>                         static_buffer;    // static data never updated
-        pen::multi_buffer<id<MTLBuffer>, NBB> dynamic_buffers;  // data updated once per frame
-        stretchy_dynamic_buffer*              stretchy_buffer;  // data updated multiple times per frame
+        id<MTLBuffer>                         static_buffer;   // static data never updated
+        pen::multi_buffer<id<MTLBuffer>, NBB> dynamic_buffers; // data updated once per frame
+        stretchy_dynamic_buffer*              stretchy_buffer; // data updated multiple times per frame
         size_t                                _dynamic_read_offset = 0;
         u32                                   _frame_writes;
         u32                                   _buffer_size;
@@ -166,11 +166,11 @@ namespace // internal structs and static vars
         u32                                   _static;
         u32                                   frame;
 
-        id<MTLBuffer>   read(size_t& offset);
-        id<MTLBuffer>   read();
-        void            init(id<MTLBuffer>* bufs, u32 num_buffers, u32 buffer_size, u32 options, u32 bind_flags);
-        void            release();
-        void            update(const void* data, u32 data_size, u32 offset);
+        id<MTLBuffer> read(size_t& offset);
+        id<MTLBuffer> read();
+        void          init(id<MTLBuffer>* bufs, u32 num_buffers, u32 buffer_size, u32 options, u32 bind_flags);
+        void          release();
+        void          update(const void* data, u32 data_size, u32 offset);
     };
 
     struct resource
@@ -199,35 +199,35 @@ namespace // internal structs and static vars
     current_state      _state;
     a_u64              _frame_sync;
     a_u64              _resize_sync;
-    
+
     // dynamic buffer impl
     id<MTLBuffer> dynamic_buffer::read()
     {
         if (_static)
             return static_buffer;
-            
-        if(_frame_writes > 1)
+
+        if (_frame_writes > 1)
         {
             _res_pool.get(stretchy_buffer->_gpu_buffer).buffer.dynamic_buffers.backbuffer();
         }
-            
+
         return dynamic_buffers.backbuffer();
     }
-    
+
     id<MTLBuffer> dynamic_buffer::read(size_t& offset)
     {
         offset = 0;
-        
+
         // bind a static buffer that is never updated
         if (_static)
             return static_buffer;
-            
-        if(_frame_writes > 1)
+
+        if (_frame_writes > 1)
         {
             offset = _dynamic_read_offset;
             return _res_pool.get(stretchy_buffer->_gpu_buffer).buffer.dynamic_buffers.frontbuffer();
         }
-            
+
         return dynamic_buffers.backbuffer();
     }
 
@@ -237,7 +237,7 @@ namespace // internal structs and static vars
         _options = options;
         _static = 0;
         _frame_writes = 0;
-        
+
         stretchy_buffer = _renderer_get_stretchy_dynamic_buffer(bind_flags);
 
         if (num_buffers == 1)
@@ -269,14 +269,14 @@ namespace // internal structs and static vars
     void dynamic_buffer::update(const void* data, u32 data_size, u32 offset)
     {
         u32 cur_frame = _renderer_frame_index();
-        
+
         if (frame != cur_frame)
         {
             frame = cur_frame;
             _frame_writes = 0;
         }
-        
-        if(_frame_writes > 0)
+
+        if (_frame_writes > 0)
         {
             // multiple updates per frame
             _dynamic_read_offset = _renderer_buffer_multi_update(stretchy_buffer, data, (size_t)data_size);
@@ -285,7 +285,7 @@ namespace // internal structs and static vars
         {
             // single update per frame
             auto& db = dynamic_buffers;
-            u32 c = db._swaps == 0 ? NBB : 1;
+            u32   c = db._swaps == 0 ? NBB : 1;
 
             // swap once a frame
             if (cur_frame != db._frame)
@@ -308,7 +308,7 @@ namespace // internal structs and static vars
                     db.swap_buffers();
             }
         }
-        
+
         _frame_writes++;
     }
 }
@@ -339,7 +339,7 @@ namespace // pen consts -> metal consts
         PEN_ASSERT(0);
         return MTLVertexFormatInvalid;
     }
-    
+
     pen_inline MTLIndexType to_metal_index_format(u32 pen_index_format)
     {
         return pen_index_format == PEN_FORMAT_R16_UINT ? MTLIndexTypeUInt16 : MTLIndexTypeUInt32;
@@ -676,30 +676,30 @@ namespace // pen consts -> metal consts
         PEN_ASSERT(0);
         return MTLStencilOperationKeep;
     }
-    
+
     void bind_render_pass()
     {
         u32 num_colour_targets = sb_count(_state.colour_targets);
-        if(num_colour_targets == 0 && _state.depth_target == PEN_INVALID_HANDLE)
+        if (num_colour_targets == 0 && _state.depth_target == PEN_INVALID_HANDLE)
             return;
-        
+
         HashMurmur2A hh;
         hh.begin();
         hh.add(num_colour_targets);
         hh.add(_state.depth_target);
         hh.add(_state.colour_slice);
         hh.add(_state.depth_slice);
-        hh.add(&_state.colour_targets[0], sizeof(u32)*num_colour_targets);
+        hh.add(&_state.colour_targets[0], sizeof(u32) * num_colour_targets);
         hh.add(_state.clear_state);
         hash_id cur = hh.end();
         if (cur == _state.target_hash)
             return;
         _state.target_hash = cur;
-        
+
         // create new cmd buffer
         if (_state.cmd_buffer == nil)
             _state.cmd_buffer = [_state.command_queue commandBuffer];
-                            
+
         // finish render encoding
         if (_state.render_encoder)
         {
@@ -711,7 +711,7 @@ namespace // pen consts -> metal consts
         // create new cmd buffer
         if (_state.cmd_buffer == nil)
             _state.cmd_buffer = [_state.command_queue commandBuffer];
-                            
+
         // finish render encoding
         if (_state.render_encoder)
         {
@@ -719,11 +719,11 @@ namespace // pen consts -> metal consts
             _state.render_encoder = nil;
             _state.pipeline_hash = 0;
         }
-        
+
         u32* colour_targets = _state.colour_targets;
-        u32 colour_slice = _state.colour_slice;
-        u32 depth_target = _state.depth_target;
-        u32 depth_slice = _state.depth_slice;
+        u32  colour_slice = _state.colour_slice;
+        u32  depth_target = _state.depth_target;
+        u32  depth_slice = _state.depth_slice;
 
         _state.pass = [MTLRenderPassDescriptor renderPassDescriptor];
 
@@ -731,16 +731,16 @@ namespace // pen consts -> metal consts
         _state.formats.depth_attachment = MTLPixelFormatInvalid;
         _state.formats.sample_count = 1;
         _state.formats.num_targets = num_colour_targets;
-        
-        bool backbuffer = ((num_colour_targets == 1 && colour_targets[0] == PEN_BACK_BUFFER_COLOUR)
-                           || depth_target == PEN_BACK_BUFFER_DEPTH);
+
+        bool backbuffer = ((num_colour_targets == 1 && colour_targets[0] == PEN_BACK_BUFFER_COLOUR) ||
+                           depth_target == PEN_BACK_BUFFER_DEPTH);
 
         if (backbuffer)
         {
             _state.drawable = _metal_view.currentDrawable;
             _state.formats.sample_count = (u32)_metal_view.sampleCount;
-            
-            if((num_colour_targets == 1 && colour_targets[0] == PEN_BACK_BUFFER_COLOUR))
+
+            if ((num_colour_targets == 1 && colour_targets[0] == PEN_BACK_BUFFER_COLOUR))
             {
                 if (_state.formats.sample_count > 1)
                 {
@@ -757,18 +757,18 @@ namespace // pen consts -> metal consts
                     _state.pass.colorAttachments[0].texture = _state.drawable.texture;
                     _state.pass.colorAttachments[0].storeAction = MTLStoreActionStore;
                 }
-                
+
                 _state.formats.colour_attachments[0] = _metal_view.colorPixelFormat;
             }
 
-            if(depth_target == PEN_BACK_BUFFER_DEPTH)
+            if (depth_target == PEN_BACK_BUFFER_DEPTH)
             {
                 _state.formats.depth_attachment = _metal_view.depthStencilPixelFormat;
-                
+
                 _state.pass.depthAttachment.texture = _metal_view.depthStencilTexture;
                 _state.pass.depthAttachment.loadAction = MTLLoadActionLoad;
                 _state.pass.depthAttachment.storeAction = MTLStoreActionStore;
-                
+
                 _state.pass.stencilAttachment.texture = _metal_view.depthStencilTexture;
                 _state.pass.stencilAttachment.loadAction = MTLLoadActionLoad;
                 _state.pass.stencilAttachment.storeAction = MTLStoreActionStore;
@@ -782,22 +782,22 @@ namespace // pen consts -> metal consts
                 resource& r = _res_pool.get(colour_targets[i]);
                 if (r.texture.num_mips > 1)
                     r.texture.invalidate = 1;
-                
+
                 id<MTLTexture> texture = r.texture.tex;
                 if (r.texture.samples > 1)
                     texture = r.texture.tex_msaa;
-                
+
                 _state.formats.sample_count = r.texture.samples;
-                
+
                 _state.pass.colorAttachments[i].slice = colour_slice;
                 _state.pass.colorAttachments[i].texture = texture;
                 _state.pass.colorAttachments[i].loadAction = MTLLoadActionLoad;
                 _state.pass.colorAttachments[i].storeAction = MTLStoreActionStore;
-                
+
                 _state.formats.colour_attachments[i] = r.texture.fmt;
             }
             _state.formats.num_targets = num_colour_targets;
-            
+
             if (is_valid(depth_target))
             {
                 resource&      r = _res_pool.get(depth_target);
@@ -823,10 +823,10 @@ namespace // pen consts -> metal consts
                 _state.formats.depth_attachment = r.texture.fmt;
             }
         }
-        
+
         // clear
         metal_clear_state& clear = _res_pool.get(_state.clear_state).clear;
-        
+
         for (u32 c = 0; c < clear.num_colour_targets; ++c)
         {
             _state.pass.colorAttachments[c].loadAction = clear.colour_load_action[c];
@@ -841,7 +841,7 @@ namespace // pen consts -> metal consts
             _state.pass.stencilAttachment.clearStencil = clear.stencil_clear;
         }
     }
-    
+
     void validate_blit_encoder()
     {
         if (_state.cmd_buffer == nil)
@@ -856,7 +856,7 @@ namespace // pen consts -> metal consts
     void validate_render_encoder()
     {
         bind_render_pass();
-        
+
         if (!_state.render_encoder)
         {
             _state.render_encoder = [_state.cmd_buffer renderCommandEncoderWithDescriptor:_state.pass];
@@ -877,22 +877,21 @@ namespace // pen consts -> metal consts
 
         // vp
         [_state.render_encoder setViewport:_state.viewport];
-        
+
         // dss
         if (_state.depth_stencil && _state.formats.depth_attachment != MTLPixelFormatInvalid)
         {
             [_state.render_encoder setDepthStencilState:_state.depth_stencil];
             [_state.render_encoder setStencilReferenceValue:_state.stencil_ref];
-            [_state.render_encoder setStencilFrontReferenceValue:_state.stencil_ref
-                                              backReferenceValue:_state.stencil_ref];
+            [_state.render_encoder setStencilFrontReferenceValue:_state.stencil_ref backReferenceValue:_state.stencil_ref];
         }
-        
+
         // raster
         metal_raster_state& rs = _res_pool.get(_state.raster_state).raster_state;
         [_state.render_encoder setCullMode:rs.cull_mode];
         [_state.render_encoder setTriangleFillMode:rs.fill_mode];
         [_state.render_encoder setFrontFacingWinding:rs.winding];
-        
+
         // scissor
         if (rs.scissor_enabled)
             [_state.render_encoder setScissorRect:_state.scissor];
@@ -918,15 +917,15 @@ namespace // pen consts -> metal consts
         hash_id cur = hh.end();
         if (cur == _state.pipeline_hash)
             return;
-        
+
         // set current hash
         _state.pipeline_hash = cur;
-        
+
         // look for exisiting
         u32 num_chached = sb_count(_state.cached_pipelines);
-        for(u32 i = 0; i < num_chached; ++i)
+        for (u32 i = 0; i < num_chached; ++i)
         {
-            if(_state.cached_pipelines[i].hash == cur)
+            if (_state.cached_pipelines[i].hash == cur)
             {
                 [_state.render_encoder setRenderPipelineState:_state.cached_pipelines[i].pipeline];
                 return;
@@ -974,9 +973,8 @@ namespace // pen consts -> metal consts
         pipeline_desc.vertexDescriptor = _state.vertex_descriptor;
 
         NSError*                   error = nil;
-        id<MTLRenderPipelineState> pipeline =
-            [_metal_device newRenderPipelineStateWithDescriptor:pipeline_desc error:&error];
-        
+        id<MTLRenderPipelineState> pipeline = [_metal_device newRenderPipelineStateWithDescriptor:pipeline_desc error:&error];
+
         //add to cache
         cached_pipeline cp;
         cp.hash = cur;
@@ -989,8 +987,8 @@ namespace // pen consts -> metal consts
     void bind_compute_pipeline()
     {
         NSError*                    error = nil;
-        id<MTLComputePipelineState> pipeline =
-            [_metal_device newComputePipelineStateWithFunction:_state.compute_shader error:&error];
+        id<MTLComputePipelineState> pipeline = [_metal_device newComputePipelineStateWithFunction:_state.compute_shader
+                                                                                            error:&error];
 
         [_state.compute_encoder setComputePipelineState:pipeline];
     }
@@ -1051,7 +1049,7 @@ namespace pen
             _res_pool.init(128);
             _frame_sync = 0;
             _resize_sync = 1;
-            
+
             // create a backbuffer / swap chain, this will be blittled to the drawable on present
             pen::texture_creation_params tcp = {0};
             tcp.width = (u32)pen_window.width;
@@ -1067,10 +1065,10 @@ namespace pen
             tcp.block_size = 32;
             tcp.usage = PEN_USAGE_DEFAULT;
             tcp.flags = 0;
-            
+
             // colour buffer
             renderer_create_render_target(tcp, bb_res);
-                        
+
             // depth buffer
             tcp.format = PEN_TEX_FORMAT_D24_UNORM_S8_UINT;
             renderer_create_render_target(tcp, bb_depth_res);
@@ -1078,7 +1076,7 @@ namespace pen
             // frame completion sem
             _state.completion = dispatch_semaphore_create(NBB);
             dispatch_semaphore_signal(_state.completion);
-            
+
             // shared init (stretchy buffer, resolve resources etc)
             _renderer_shared_init();
 
@@ -1094,13 +1092,13 @@ namespace pen
         {
             // to remove
         }
-        
+
         void renderer_new_frame()
         {
             _frame_sync = _renderer_frame_index();
             _renderer_new_frame();
         }
-        
+
         void renderer_end_frame()
         {
             _renderer_end_frame();
@@ -1110,10 +1108,10 @@ namespace pen
         {
             while (_frame_sync == _renderer_frame_index())
                 thread_sleep_us(100);
-                
+
             _resize_sync = _renderer_resize_index();
         }
-        
+
         void renderer_create_clear_state(const clear_state& cs, u32 resource_slot)
         {
             _res_pool.insert(resource(), resource_slot);
@@ -1177,20 +1175,22 @@ namespace pen
         void renderer_load_shader(const pen::shader_load_params& params, u32 resource_slot)
         {
             id<MTLLibrary> lib;
-            
+
             static const c8* c = "MTLB";
-            bool bin = memcmp(params.byte_code, &c[0], 4) == 0;
-            if(!bin) // compile source
+            bool             bin = memcmp(params.byte_code, &c[0], 4) == 0;
+            if (!bin) // compile source
             {
                 const c8* csrc = (const c8*)params.byte_code;
-                NSString* str = [[NSString alloc] initWithBytes:csrc length:params.byte_code_size encoding:NSASCIIStringEncoding];
-                
+                NSString* str = [[NSString alloc] initWithBytes:csrc
+                                                         length:params.byte_code_size
+                                                       encoding:NSASCIIStringEncoding];
+
                 NSError*           err = nil;
                 MTLCompileOptions* opts = [MTLCompileOptions alloc];
                 opts.fastMathEnabled = YES;
-                
+
                 lib = [_metal_device newLibraryWithSource:str options:opts error:&err];
-                
+
                 if (err)
                 {
                     if (err.code == 3)
@@ -1201,15 +1201,16 @@ namespace pen
             }
             else
             {
-                u8* new_data = new u8[params.byte_code_size+1];
+                u8* new_data = new u8[params.byte_code_size + 1];
                 memcpy(new_data, params.byte_code, params.byte_code_size);
                 new_data[params.byte_code_size] = '\0';
-                
-                
-                NSError* err = nil;
-                dispatch_data_t dd = dispatch_data_create(new_data, params.byte_code_size, dispatch_get_main_queue(), ^{});
+
+                NSError*        err = nil;
+                dispatch_data_t dd = dispatch_data_create(new_data, params.byte_code_size, dispatch_get_main_queue(),
+                                                          ^{
+                                                          });
                 lib = [_metal_device newLibraryWithData:dd error:&err];
-                
+
                 if (err)
                 {
                     NSLog(@" error => %@ ", err);
@@ -1292,7 +1293,7 @@ namespace pen
 
             u32 options = 0;
             u32 num_bufs = 1;
-            
+
             if (params.cpu_access_flags & PEN_CPU_ACCESS_READ)
             {
                 options |= MTLResourceOptionCPUCacheModeDefault;
@@ -1327,21 +1328,17 @@ namespace pen
                                          const u32* offsets)
         {
             validate_render_encoder();
-            
-            static MTLVertexBufferLayoutDescriptor* s_layouts[4] = {
-                nil
-            };
+
+            static MTLVertexBufferLayoutDescriptor* s_layouts[4] = {nil};
 
             for (u32 i = 0; i < num_buffers; ++i)
             {
                 u32 ri = buffer_indices[i];
                 u32 stride = strides[i];
-                
+
                 auto& bb = _res_pool.get(ri).buffer;
 
-                [_state.render_encoder setVertexBuffer:bb.read()
-                                                offset:offsets[i]
-                                               atIndex:start_slot + i];
+                [_state.render_encoder setVertexBuffer:bb.read() offset:offsets[i] atIndex:start_slot + i];
 
                 MTLVertexBufferLayoutDescriptor* layout = [MTLVertexBufferLayoutDescriptor new];
 
@@ -1350,14 +1347,14 @@ namespace pen
                 layout.stepRate = 1;
 
                 [_state.vertex_descriptor.layouts setObject:layout atIndexedSubscript:start_slot + i];
-                
+
                 u32 si = start_slot + i;
-                if(s_layouts[si])
+                if (s_layouts[si])
                 {
                     [s_layouts[si] release];
                     s_layouts[si] = nil;
                 }
-                
+
                 s_layouts[si] = layout;
             }
         }
@@ -1370,46 +1367,40 @@ namespace pen
             ib.offset = offset;
             ib.size_bytes = index_size_bytes(format);
         }
-        
+
         inline void _set_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
         {
-            if(buffer_index == 0)
+            if (buffer_index == 0)
                 return;
-                            
-            size_t bind_offset = 0;
+
+            size_t        bind_offset = 0;
             id<MTLBuffer> buf = _res_pool.get(buffer_index).buffer.read(bind_offset);
 
             if (flags & pen::CBUFFER_BIND_VS)
             {
                 validate_render_encoder();
-                [_state.render_encoder setVertexBuffer:buf
-                                                offset:bind_offset
-                                               atIndex:resource_slot + CBUF_OFFSET];
+                [_state.render_encoder setVertexBuffer:buf offset:bind_offset atIndex:resource_slot + CBUF_OFFSET];
             }
 
             if (flags & pen::CBUFFER_BIND_PS)
             {
                 validate_render_encoder();
-                [_state.render_encoder setFragmentBuffer:buf
-                                                  offset:bind_offset
-                                                 atIndex:resource_slot + CBUF_OFFSET];
+                [_state.render_encoder setFragmentBuffer:buf offset:bind_offset atIndex:resource_slot + CBUF_OFFSET];
             }
 
             // compute command encoder
             if (flags & pen::CBUFFER_BIND_CS)
             {
                 validate_compute_encoder();
-                [_state.compute_encoder setBuffer:buf
-                                           offset:bind_offset
-                                          atIndex:resource_slot + CBUF_OFFSET];
+                [_state.compute_encoder setBuffer:buf offset:bind_offset atIndex:resource_slot + CBUF_OFFSET];
             }
         }
-        
+
         void renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
         {
             _set_buffer(buffer_index, resource_slot, flags);
         }
-        
+
         void renderer_set_structured_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
         {
             _set_buffer(buffer_index, resource_slot, flags);
@@ -1619,7 +1610,7 @@ namespace pen
             if (texture_index == 0)
                 return;
 
-            id<MTLTexture>    tex = _res_pool.get(texture_index).texture.tex;
+            id<MTLTexture> tex = _res_pool.get(texture_index).texture.tex;
             if (bind_flags & pen::TEXTURE_BIND_MSAA)
                 tex = _res_pool.get(texture_index).texture.tex_msaa;
 
@@ -1835,18 +1826,18 @@ namespace pen
         void renderer_set_targets(const u32* const colour_targets, u32 num_colour_targets, u32 depth_target, u32 colour_slice,
                                   u32 depth_slice)
         {
-            if(_state.colour_targets)
+            if (_state.colour_targets)
             {
                 sb_free(_state.colour_targets);
                 _state.colour_targets = nullptr;
             }
-                
-            for(u32 i = 0; i < num_colour_targets; ++i)
+
+            for (u32 i = 0; i < num_colour_targets; ++i)
                 sb_push(_state.colour_targets, colour_targets[i]);
-                
+
             _state.depth_target = depth_target;
             _state.colour_slice = colour_slice;
-            _state.depth_slice =  depth_slice;
+            _state.depth_slice = depth_slice;
             _state.clear_state = 0;
         }
 
@@ -1877,7 +1868,7 @@ namespace pen
             _state.pass.colorAttachments[0].storeAction = MTLStoreActionStore;
             _state.formats.colour_attachments[0] = r.texture.resolve_fmt;
             _state.formats.depth_attachment = MTLPixelFormatInvalid;
-            
+
             sb_free(_state.colour_targets);
             _state.colour_targets = nullptr;
             _state.depth_target = -1;
@@ -1887,17 +1878,17 @@ namespace pen
         {
             resource&         res_target = _res_pool.get(target);
             texture_resource& t = res_target.texture;
-            
-            if(type == RESOLVE_GENERATE_MIPS)
+
+            if (type == RESOLVE_GENERATE_MIPS)
             {
                 texture_resource& t = _res_pool.get(target).texture;
-                
+
                 if (t.num_mips <= 1)
                 {
                     PEN_LOG("[error] renderer : render target %i does not have mip maps", target);
                     return;
                 }
-                
+
                 if (t.num_mips > 1 && t.invalidate)
                 {
                     t.invalidate = 0;
@@ -2016,7 +2007,7 @@ namespace pen
                     texture_resource& tr = res.texture;
 
                     id<MTLBuffer> stage =
-                        [_metal_device newBufferWithLength:(rrbp.data_size)options:MTLResourceOptionCPUCacheModeDefault];
+                        [_metal_device newBufferWithLength:(rrbp.data_size) options:MTLResourceOptionCPUCacheModeDefault];
 
                     id<MTLBlitCommandEncoder> bce = [_state.cmd_buffer blitCommandEncoder];
 
@@ -2049,7 +2040,7 @@ namespace pen
                 }
             }
         }
-        
+
         void renderer_present()
         {
             if (_state.render_encoder)
@@ -2057,24 +2048,24 @@ namespace pen
                 [_state.render_encoder endEncoding];
                 _state.render_encoder = nil;
             }
-            
+
             _renderer_commit_stretchy_dynamic_buffers();
 
             // flush cmd buf and present
             [_state.cmd_buffer presentDrawable:_metal_view.currentDrawable];
             _state.drawable = nil;
             _state.target_hash = 0;
-            
-            static std::atomic<u32> waits = { 0 };
+
+            static std::atomic<u32> waits = {0};
             waits++;
-            
+
             [_state.cmd_buffer addCompletedHandler:^(id<MTLCommandBuffer> cb) {
-                waits--;
+              waits--;
             }];
 
             [_state.cmd_buffer commit];
-            
-            while(waits == NBB)
+
+            while (waits == NBB)
                 thread_sleep_us(100);
 
             // null state for next frame

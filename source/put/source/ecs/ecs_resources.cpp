@@ -8,12 +8,12 @@
 #include "debug_render.h"
 #include "dev_ui.h"
 
+#include "console.h"
+#include "data_struct.h"
 #include "file_system.h"
 #include "hash.h"
 #include "pen_string.h"
 #include "str_utilities.h"
-#include "console.h"
-#include "data_struct.h"
 
 #include "meshoptimizer.h"
 
@@ -28,11 +28,11 @@ namespace
     const hash_id ID_CONTROL_RIG = PEN_HASH("controlrig");
     const hash_id ID_JOINT = PEN_HASH("joint");
     const hash_id ID_TRAJECTORY = PEN_HASH("trajectoryshjnt");
-    
+
     // constants
     static const u32 k_matrix_floats = 16;
     static const u32 k_extent_floats = 3;
-    
+
     namespace e_pmm_transform
     {
         enum pmm_transform_t
@@ -44,7 +44,7 @@ namespace
         };
     }
     typedef e_pmm_transform::pmm_transform_t pmm_transform;
-    
+
     struct pmm_contents
     {
         u32              num_scene = 0;
@@ -59,43 +59,43 @@ namespace
         std::vector<u32> geometry_offsets;
         std::vector<Str> geometry_names;
     };
-    
+
     struct pmm_submesh
     {
         // pmm submesh header
-        vec3f            min_extents;
-        vec3f            max_extents;
-        u32              num_verts;
-        u32              index_size;
-        u32              num_pos_floats;
-        u32              num_vertex_floats;
-        u32              num_indices;
-        u32              num_collision_floats;
-        u32              skinned;
-        u32              num_joint_floats;
-        mat4             bind_shape_matrix;
+        vec3f min_extents;
+        vec3f max_extents;
+        u32   num_verts;
+        u32   index_size;
+        u32   num_pos_floats;
+        u32   num_vertex_floats;
+        u32   num_indices;
+        u32   num_collision_floats;
+        u32   skinned;
+        u32   num_joint_floats;
+        mat4  bind_shape_matrix;
         // end of header
-        u32              vertex_size;
-        void*            joint_data;
-        size_t           joint_data_size;
-        void*            position_data;
-        size_t           position_data_size;
-        void*            vertex_data;
-        size_t           vertex_data_size;
-        void*            index_data;
-        size_t           index_data_size;
-        void*            collision_data;
-        size_t           collision_data_size;
+        u32    vertex_size;
+        void*  joint_data;
+        size_t joint_data_size;
+        void*  position_data;
+        size_t position_data_size;
+        void*  vertex_data;
+        size_t vertex_data_size;
+        void*  index_data;
+        size_t index_data_size;
+        void*  collision_data;
+        size_t collision_data_size;
     };
-    
+
     struct pmm_geometry
     {
-        u32                             version;
-        u32                             num_meshes;
-        std::vector<Str>                mat_names;
-        std::vector<pmm_submesh>        submeshes;
+        u32                      version;
+        u32                      num_meshes;
+        std::vector<Str>         mat_names;
+        std::vector<pmm_submesh> submeshes;
     };
-    
+
     struct volume_instance
     {
         hash_id id;
@@ -103,11 +103,11 @@ namespace
         hash_id id_sampler_state;
         u32     cmp_flags;
     };
-    
+
     std::vector<geometry_resource*> s_geometry_resources;
     std::vector<material_resource*> s_material_resources;
     std::vector<animation_resource> s_animation_resources;
-    
+
     bool parse_pmm_contents(const c8* filename, pmm_contents& contents)
     {
         // read in file from disk
@@ -145,22 +145,22 @@ namespace
             contents.geometry_offsets.push_back(*p_u32reader++);
             contents.geometry_names.push_back(name);
         }
-        
+
         // start of sub resource data
         contents.data_start = (u8*)p_u32reader;
         return true;
     }
-    
+
     bool parse_pmm_geometry(pmm_contents& contents, std::vector<pmm_geometry>& geom)
     {
         // load geometry resources
         for (u32 g = 0; g < contents.num_geometry; ++g)
         {
             pmm_geometry og;
-            
+
             // read small header
             u32* p_reader = (u32*)(contents.data_start + contents.geometry_offsets[g]);
-            
+
             og.version = *p_reader++;
             og.num_meshes = *p_reader++;
 
@@ -175,13 +175,13 @@ namespace
             for (u32 s = 0; s < og.num_meshes; ++s)
             {
                 // extents
-                pmm_submesh sm = { 0 };
+                pmm_submesh sm = {0};
                 memcpy(&sm.min_extents, p_reader, sizeof(vec3f));
                 p_reader += k_extent_floats;
 
                 memcpy(&sm.max_extents, p_reader, sizeof(vec3f));
                 p_reader += k_extent_floats;
-                
+
                 // parse vertex and index data
                 sm.num_verts = *p_reader++;
                 sm.index_size = *p_reader++;
@@ -193,7 +193,7 @@ namespace
                 sm.num_joint_floats = *p_reader++;
                 memcpy(&sm.bind_shape_matrix, p_reader, sizeof(mat4));
                 p_reader += k_matrix_floats;
-                
+
                 sm.vertex_size = sizeof(vertex_model);
                 if (sm.skinned)
                 {
@@ -210,45 +210,45 @@ namespace
                 sm.position_data = pen::memory_alloc(sm.position_data_size);
                 memcpy(sm.position_data, p_reader, sm.position_data_size);
                 p_reader += sm.position_data_size / sizeof(f32);
-                
+
                 // second is model vertex buffer (skinned or unskinned)
                 sm.vertex_data_size = sm.vertex_size * sm.num_verts;
                 sm.vertex_data = pen::memory_alloc(sm.vertex_data_size);
                 memcpy(sm.vertex_data, p_reader, sm.vertex_data_size);
                 p_reader += sm.vertex_data_size / sizeof(f32);
-                
+
                 // index data
                 sm.index_data_size = sm.num_indices * sm.index_size;
                 sm.index_data = pen::memory_alloc(sm.index_data_size);
                 memcpy(sm.index_data, p_reader, sm.index_data_size);
                 p_reader = (u32*)((c8*)p_reader + sm.index_data_size);
-                
+
                 // collsion float data
                 sm.collision_data_size = sm.num_collision_floats * sizeof(f32);
                 sm.collision_data = pen::memory_alloc(sm.collision_data_size);
                 memcpy(sm.collision_data, p_reader, sm.collision_data_size);
                 p_reader += sm.num_collision_floats;
-                                                                    
+
                 og.submeshes.push_back(sm);
             }
-            
+
             geom.push_back(og);
         }
-        
+
         return true;
     }
-    
+
     void load_pmm_geometry(const c8* filename, pmm_contents& contents)
     {
         std::vector<pmm_geometry> geom;
         parse_pmm_geometry(contents, geom);
-        
+
         for (u32 g = 0; g < contents.num_geometry; ++g)
         {
             // generate hash
             pmm_geometry& gg = geom[g];
-            
-            const c8* gname = contents.geometry_names[g].c_str();
+
+            const c8*        gname = contents.geometry_names[g].c_str();
             pen::hash_murmur hm;
             hm.begin(0);
             hm.add(filename, pen::string_length(filename));
@@ -259,19 +259,19 @@ namespace
             for (s32 g = 0; g < s_geometry_resources.size(); ++g)
                 if (geom_hash == s_geometry_resources[g]->geom_hash)
                     return;
-            
-            for(u32 submesh = 0; submesh < geom[g].submeshes.size(); ++submesh)
+
+            for (u32 submesh = 0; submesh < geom[g].submeshes.size(); ++submesh)
             {
                 pmm_submesh& sm = gg.submeshes[submesh];
-                
+
                 hm.begin(0);
                 hm.add(filename, pen::string_length(filename));
                 hm.add(gname, pen::string_length(gname));
                 hm.add(submesh);
                 hash_id sub_hash = hm.end();
-                
+
                 geometry_resource* p_geometry = new geometry_resource;
-                
+
                 // assign info
                 p_geometry->p_skin = nullptr;
                 p_geometry->file_hash = PEN_HASH(filename);
@@ -288,9 +288,9 @@ namespace
                 p_geometry->num_indices = sm.num_indices;
                 p_geometry->vertex_size = sm.vertex_size;
                 p_geometry->index_type = sm.index_size == 2 ? PEN_FORMAT_R16_UINT : PEN_FORMAT_R32_UINT;
-                
+
                 // assign skinning
-                if(sm.skinned)
+                if (sm.skinned)
                 {
                     p_geometry->p_skin = (cmp_skin*)pen::memory_alloc(sizeof(cmp_skin));
                     p_geometry->p_skin->bone_cbuffer = PEN_INVALID_HANDLE;
@@ -299,13 +299,13 @@ namespace
                     memset(p_geometry->p_skin->joint_bind_matrices, 0x0, sizeof(p_geometry->p_skin->joint_bind_matrices));
                     memcpy(p_geometry->p_skin->joint_bind_matrices, sm.joint_data, sm.joint_data_size);
                 }
-                
+
                 // assign cpu data copies
                 p_geometry->cpu_position_buffer = sm.position_data;
                 p_geometry->cpu_vertex_buffer = sm.vertex_data;
                 p_geometry->cpu_index_buffer = sm.index_data;
                 // sm.collision_data if u want
-                
+
                 // gpu position buffer
                 pen::buffer_creation_params bcp;
                 bcp.usage_flags = PEN_USAGE_DEFAULT;
@@ -314,7 +314,7 @@ namespace
                 bcp.buffer_size = sm.position_data_size;
                 bcp.data = p_geometry->cpu_position_buffer;
                 p_geometry->position_buffer = pen::renderer_create_buffer(bcp);
-                
+
                 // gpu vertex buffer
                 bcp.usage_flags = PEN_USAGE_DEFAULT;
                 bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
@@ -322,7 +322,7 @@ namespace
                 bcp.buffer_size = sm.vertex_data_size;
                 bcp.data = p_geometry->cpu_vertex_buffer;
                 p_geometry->vertex_buffer = pen::renderer_create_buffer(bcp);
-                
+
                 // gpu index buffer
                 bcp.usage_flags = PEN_USAGE_DEFAULT;
                 bcp.bind_flags = PEN_BIND_INDEX_BUFFER;
@@ -330,12 +330,12 @@ namespace
                 bcp.buffer_size = sm.index_data_size;
                 bcp.data = p_geometry->cpu_index_buffer;
                 p_geometry->index_buffer = pen::renderer_create_buffer(bcp);
-                
+
                 s_geometry_resources.push_back(p_geometry);
             }
         }
     }
-    
+
     void load_material_resource(const c8* filename, const c8* material_name, const void* data)
     {
         pen::hash_murmur hm;
@@ -380,13 +380,9 @@ namespace
 
         // clear all maps to invalid
         static const u32 default_maps[] = {
-            put::load_texture("data/textures/defaults/albedo.dds"),
-            put::load_texture("data/textures/defaults/normal.dds"),
-            put::load_texture("data/textures/defaults/spec.dds"),
-            put::load_texture("data/textures/defaults/spec.dds"),
-            put::load_texture("data/textures/defaults/black.dds"),
-            put::load_texture("data/textures/defaults/black.dds")
-        };
+            put::load_texture("data/textures/defaults/albedo.dds"), put::load_texture("data/textures/defaults/normal.dds"),
+            put::load_texture("data/textures/defaults/spec.dds"),   put::load_texture("data/textures/defaults/spec.dds"),
+            put::load_texture("data/textures/defaults/black.dds"),  put::load_texture("data/textures/defaults/black.dds")};
         static_assert(e_texture::COUNT == PEN_ARRAY_SIZE(default_maps), "mismatched defaults size");
 
         for (u32 map = 0; map < e_texture::COUNT; ++map)
@@ -403,15 +399,15 @@ namespace
 
         return;
     }
-        
+
     s32 load_nodes_resource(const c8* filename, ecs_scene* scene, const void* data)
     {
         const u32* p_u32reader = (const u32*)data;
-        u32 version = *p_u32reader++;
-        u32 num_import_nodes = *p_u32reader++;
-        if(version < 1)
+        u32        version = *p_u32reader++;
+        u32        num_import_nodes = *p_u32reader++;
+        if (version < 1)
             return PEN_INVALID_HANDLE;
-        
+
         // scene nodes
         bool has_control_rig = false;
         s32  nodes_start, nodes_end;
@@ -445,7 +441,8 @@ namespace
 
             u32 num_meshes = *p_u32reader++;
 
-            struct mat_symbol_name {
+            struct mat_symbol_name
+            {
                 hash_id symbol;
                 Str     name;
             };
@@ -693,10 +690,10 @@ namespace
             if ((scene->entities[i] & e_cmp::geometry) && scene->geometries[i].p_skin)
                 instantiate_anim_controller_v2(scene, i);
         }
-        
+
         return nodes_start;
     }
-}
+} // namespace
 
 namespace put
 {
@@ -730,7 +727,7 @@ namespace put
 
             return nullptr;
         }
-        
+
         animation_resource* get_animation_resource(anim_handle h)
         {
             if (h >= s_animation_resources.size())
@@ -738,7 +735,7 @@ namespace put
 
             return &s_animation_resources[h];
         }
-        
+
         material_resource* get_material_resource(hash_id hash)
         {
             for (auto* m : s_material_resources)
@@ -1030,9 +1027,9 @@ namespace put
 
                     if (jnode > -1 && scene->entities[jnode] & e_cmp::bone)
                     {
-                        if(controller.joints_offset == -1)
+                        if (controller.joints_offset == -1)
                             controller.joints_offset = jnode;
-                        
+
                         sb_push(controller.joint_indices, jnode);
                     }
                 }
@@ -1264,7 +1261,8 @@ namespace put
             // bake ss handles
             for (u32 s = 0; s < e_pmfx_constants::max_technique_sampler_bindings; ++s)
                 if (samplers.sb[s].id_sampler_state != 0)
-                    samplers.sb[s].sampler_state = pmfx::get_render_state(samplers.sb[s].id_sampler_state, pmfx::e_render_state::sampler);
+                    samplers.sb[s].sampler_state =
+                        pmfx::get_render_state(samplers.sb[s].id_sampler_state, pmfx::e_render_state::sampler);
         }
 
         void bake_material_handles()
@@ -1603,126 +1601,126 @@ namespace put
 
             return (anim_handle)s_animation_resources.size() - 1;
         }
-        
+
         void optimise_pmm(const c8* input_filename, const c8* output_filename)
         {
             pmm_contents contents;
             parse_pmm_contents(input_filename, contents);
-            
+
             std::vector<pmm_geometry> geom;
             parse_pmm_geometry(contents, geom);
-            
+
             // perform optimisations on each submesh
             std::vector<intptr_t> reductions;
-            u32 mc = 0;
-            for(auto& g : geom)
+            u32                   mc = 0;
+            for (auto& g : geom)
             {
                 // reduction could be negative in theory..
                 // ... especially as index size goes from u16 > u32 so handle it with signed types
                 intptr_t reduction = 0;
-                for(auto& sm : g.submeshes)
+                for (auto& sm : g.submeshes)
                 {
                     // alloc space for indices
                     size_t _ib_size = sm.num_indices * sizeof(u32);
-                    u32* remap = (u32*)pen::memory_alloc(_ib_size);
-                    u32* ni = (u32*)pen::memory_alloc(_ib_size);
-                    
+                    u32*   remap = (u32*)pen::memory_alloc(_ib_size);
+                    u32*   ni = (u32*)pen::memory_alloc(_ib_size);
+
                     // generate efficient index buffer and reduce vertex count
-                    size_t vertex_count = meshopt_generateVertexRemap(
-                        &remap[0], nullptr, sm.num_indices, sm.vertex_data, sm.num_verts, sm.vertex_size);
-                        
+                    size_t vertex_count = meshopt_generateVertexRemap(&remap[0], nullptr, sm.num_indices, sm.vertex_data,
+                                                                      sm.num_verts, sm.vertex_size);
+
                     meshopt_remapIndexBuffer(ni, nullptr, sm.num_indices, &remap[0]);
 
                     // alloc new vertex buffer
-                    size_t _vb_size = sm.vertex_size*vertex_count; // optimised / reduced size
-                    void* nv = pen::memory_alloc(sm.vertex_size*vertex_count);
-                    
+                    size_t _vb_size = sm.vertex_size * vertex_count; // optimised / reduced size
+                    void*  nv = pen::memory_alloc(sm.vertex_size * vertex_count);
+
                     // todo, position only, collision
-                    
+
                     // remap
                     meshopt_remapVertexBuffer(nv, sm.vertex_data, sm.num_indices, sm.vertex_size, &remap[0]);
 
                     // swap winding..
-                    for(u32 i = 0; i < sm.num_indices; i+=3)
-                        std::swap(ni[i], ni[i+2]);
-                    
+                    for (u32 i = 0; i < sm.num_indices; i += 3)
+                        std::swap(ni[i], ni[i + 2]);
+
                     // reduce index size to u16?
                     sm.index_size = 4;
-                    
+
                     // cleanup the old / temp buffers
                     pen::memory_free(sm.vertex_data);
                     pen::memory_free(sm.index_data);
                     pen::memory_free(remap);
-                    
+
                     // track data reductions
                     intptr_t vbr = (intptr_t)_vb_size - (intptr_t)sm.vertex_data_size;
                     intptr_t ibr = (intptr_t)_ib_size - (intptr_t)sm.index_data_size;
-                    
+
                     reduction += vbr + ibr;
-                    
+
                     // reassign
                     sm.vertex_data = nv;
                     sm.vertex_data_size = _vb_size;
                     sm.index_data = ni;
                     sm.index_data_size = _ib_size;
                     sm.num_verts = vertex_count;
-                    sm.num_vertex_floats = _vb_size/sizeof(f32);
-                    
+                    sm.num_vertex_floats = _vb_size / sizeof(f32);
+
                     mc++;
                 }
                 reductions.push_back(reduction);
             }
-            
+
             // work out the offset adjustments, geom is at the end so we dont need to bother with the last one.
-            for(u32 g = 1; g < contents.num_geometry; ++g)
-                contents.geometry_offsets[g] += reductions[g-1];
-            
+            for (u32 g = 1; g < contents.num_geometry; ++g)
+                contents.geometry_offsets[g] += reductions[g - 1];
+
             // ..
             // below can be refactored as write pmm
-            
+
             // array of offsets to cacluate size of a block
             std::vector<size_t> offsets;
-            for(u32 i = 0; i < contents.num_scene; ++i)
+            for (u32 i = 0; i < contents.num_scene; ++i)
                 offsets.push_back(contents.scene_offsets[i]);
-            for(u32 i = 0; i < contents.num_materials; ++i)
+            for (u32 i = 0; i < contents.num_materials; ++i)
                 offsets.push_back(contents.material_offsets[i]);
-            for(u32 i = 0; i < contents.num_geometry; ++i)
+            for (u32 i = 0; i < contents.num_geometry; ++i)
                 offsets.push_back(contents.geometry_offsets[i]);
             offsets.push_back(contents.file_size);
-            
+
             // write the file back
             std::ofstream ofs(output_filename, std::ofstream::binary);
             ofs.write((const c8*)&contents.num_scene, sizeof(u32));
             ofs.write((const c8*)&contents.num_materials, sizeof(u32));
             ofs.write((const c8*)&contents.num_geometry, sizeof(u32));
-            
+
             // write strings and offsets
-            for(u32 s = 0; s < contents.num_scene; ++s)
+            for (u32 s = 0; s < contents.num_scene; ++s)
             {
                 ofs.write((const c8*)&contents.scene_offsets[s], sizeof(u32));
             }
-            
+
             for (u32 m = 0; m < contents.num_materials; ++m)
             {
                 write_parsable_string_u32(contents.material_names[m], ofs);
                 ofs.write((const c8*)&contents.material_offsets[m], sizeof(u32));
             }
-            
-            for(u32 g = 0; g < contents.num_geometry; ++g)
+
+            for (u32 g = 0; g < contents.num_geometry; ++g)
             {
                 write_parsable_string_u32(contents.geometry_names[g], ofs);
                 ofs.write((const c8*)&contents.geometry_offsets[g], sizeof(u32));
             }
-                        
+
             // scenes
             u32 cur_offset = 0;
-            for(u32 s = 0; s < contents.num_scene; ++s)
+            for (u32 s = 0; s < contents.num_scene; ++s)
             {
                 const c8* p_scene_data = (const c8*)(contents.data_start + contents.scene_offsets[s]);
                 ofs.write(p_scene_data, offsets[cur_offset + 1] - contents.scene_offsets[s]);
                 cur_offset++;
             }
-            
+
             // materials
             for (u32 m = 0; m < contents.num_materials; ++m)
             {
@@ -1730,18 +1728,18 @@ namespace put
                 ofs.write(p_mat_data, offsets[cur_offset + 1] - contents.material_offsets[m]);
                 cur_offset++;
             }
-            
+
             // finally optimised geom we needs to be properly written
-            for(u32 g = 0; g < contents.num_geometry; ++g)
+            for (u32 g = 0; g < contents.num_geometry; ++g)
             {
                 // header and material names
                 ofs.write((const c8*)&geom[g].version, sizeof(u32));
                 ofs.write((const c8*)&geom[g].num_meshes, sizeof(u32));
-                for(auto& mm : geom[g].mat_names)
+                for (auto& mm : geom[g].mat_names)
                     write_parsable_string_u32(mm, ofs);
-                    
+
                 // submeshes
-                for(auto& sm : geom[g].submeshes)
+                for (auto& sm : geom[g].submeshes)
                 {
                     // header
                     ofs.write((const c8*)&sm.min_extents, sizeof(vec3f));
@@ -1765,11 +1763,11 @@ namespace put
             }
 
             ofs.close();
-            
+
             // cleanup memory
-            for(auto& g : geom)
+            for (auto& g : geom)
             {
-                for(auto& sm : g.submeshes)
+                for (auto& sm : g.submeshes)
                 {
                     pen::memory_free(sm.vertex_data);
                     pen::memory_free(sm.position_data);
@@ -1780,7 +1778,7 @@ namespace put
             }
             pen::memory_free(contents.file_data);
         }
-        
+
         void optimise_pma(const c8* input_filename, const c8* output_filename)
         {
             // todo
@@ -1791,7 +1789,7 @@ namespace put
             // pmm contains scene node, material, and geometry resources
             pmm_contents contents;
             parse_pmm_contents(filename, contents);
-            
+
             // load material resources
             if (load_flags & e_pmm_load_flags::material)
             {
@@ -1805,25 +1803,25 @@ namespace put
             // load geometry resources
             if (load_flags & e_pmm_load_flags::geometry)
                 load_pmm_geometry(filename, contents);
-            
+
             // load nodes.. we need to do this last because they depend on the material and geometry resources.
             s32 root = PEN_INVALID_HANDLE;
             if (load_flags & e_pmm_load_flags::nodes)
             {
-                for(u32 s = 0; s < contents.num_scene; ++s)
+                for (u32 s = 0; s < contents.num_scene; ++s)
                 {
                     u32* p_scene_data = (u32*)(contents.data_start + contents.scene_offsets[s]);
-                    u32 scene_start = load_nodes_resource(filename, scene, p_scene_data);
-                    if(s == 0)
+                    u32  scene_start = load_nodes_resource(filename, scene, p_scene_data);
+                    if (s == 0)
                         root = scene_start;
                 }
-                
+
                 // invalidate trees to rebuild
-                if(contents.num_scene > 0)
+                if (contents.num_scene > 0)
                     if (scene)
                         scene->flags |= e_scene_flags::invalidate_scene_tree;
             }
-                        
+
             pen::memory_free(contents.file_data);
             return root;
         }
@@ -1878,7 +1876,8 @@ namespace put
 
             scene->samplers[v].sb[0].sampler_unit = e_texture::volume;
             scene->samplers[v].sb[0].handle = volume_texture;
-            scene->samplers[v].sb[0].sampler_state = pmfx::get_render_state(vi[i].id_sampler_state, pmfx::e_render_state::sampler);
+            scene->samplers[v].sb[0].sampler_state =
+                pmfx::get_render_state(vi[i].id_sampler_state, pmfx::e_render_state::sampler);
 
             instantiate_geometry(cube, scene, v);
             instantiate_material(material, scene, v);

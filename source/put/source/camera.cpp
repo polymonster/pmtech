@@ -6,8 +6,8 @@
 #include "debug_render.h"
 
 #include "input.h"
-#include "renderer.h"
 #include "os.h"
+#include "renderer.h"
 
 #include "maths/maths.h"
 

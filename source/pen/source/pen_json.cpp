@@ -331,12 +331,12 @@ namespace
     {
         if (jo->num_tokens <= 0 || jo->num_tokens > 1)
         {
-            if(type == JSON_STR && jo->data)
+            if (type == JSON_STR && jo->data)
             {
                 jv.str = jo->data;
                 return true;
             }
-            
+
             return false;
         }
 

@@ -9,9 +9,9 @@
 #include "threads.h"
 #include "timer.h"
 
-#include <math.h>
 #include <atomic>
 #include <map>
+#include <math.h>
 
 //
 // Keyboard and Mouse
@@ -19,116 +19,114 @@
 
 namespace
 {
-    u8                          s_keyboard_state[PK_COUNT];
-    u8                          s_unicode_state[PK_COUNT];
-    pen::mouse_state            s_mouse_state = {0};
-    std::atomic<bool>           s_show_cursor = {true};
-    Str                         s_unicode_text_input;
-    pen::ring_buffer<Str>       s_unicode_ring;
-    
-    std::map<u16, const c8*> k_key_names = {
-        { PK_0, "0" },
-        { PK_1, "1" },
-        { PK_2, "2" },
-        { PK_3, "3" },
-        { PK_4, "4" },
-        { PK_5, "5" },
-        { PK_6, "6" },
-        { PK_7, "7" },
-        { PK_8, "8" },
-        { PK_9, "9" },
-        { PK_A, "A" },
-        { PK_B, "B" },
-        { PK_C, "C" },
-        { PK_D, "D" },
-        { PK_E, "E" },
-        { PK_F, "F" },
-        { PK_G, "G" },
-        { PK_H, "H" },
-        { PK_I, "I" },
-        { PK_J, "J" },
-        { PK_K, "K" },
-        { PK_L, "L" },
-        { PK_M, "M" },
-        { PK_N, "N" },
-        { PK_O, "O" },
-        { PK_P, "P" },
-        { PK_Q, "Q" },
-        { PK_R, "R" },
-        { PK_S, "S" },
-        { PK_T, "T" },
-        { PK_U, "U" },
-        { PK_V, "V" },
-        { PK_W, "W" },
-        { PK_X, "X" },
-        { PK_Y, "Y" },
-        { PK_Z, "Z" },
-        { PK_NUMPAD0, "NUMPAD0" },
-        { PK_NUMPAD1, "NUMPAD1" },
-        { PK_NUMPAD2, "NUMPAD2" },
-        { PK_NUMPAD3, "NUMPAD3" },
-        { PK_NUMPAD4, "NUMPAD4" },
-        { PK_NUMPAD5, "NUMPAD5" },
-        { PK_NUMPAD6, "NUMPAD6" },
-        { PK_NUMPAD7, "NUMPAD7" },
-        { PK_NUMPAD8, "NUMPAD8" },
-        { PK_NUMPAD9, "NUMPAD9" },
-        { PK_MULTIPLY, "MULTIPLY" },
-        { PK_ADD, "ADD" },
-        { PK_SUBTRACT, "SUBTRACT" },
-        { PK_DECIMAL, "DECIMAL" },
-        { PK_DIVIDE, "DIVIDE" },
-        { PK_F1, "F1" },
-        { PK_F2, "F2" },
-        { PK_F3, "F3" },
-        { PK_F4, "F4" },
-        { PK_F5, "F5" },
-        { PK_F6, "F6" },
-        { PK_F7, "F7" },
-        { PK_F8, "F8" },
-        { PK_F9, "F9" },
-        { PK_F10, "F10" },
-        { PK_F11, "F11" },
-        { PK_F12, "F12" },
-        { PK_CANCEL, "CANCEL" },
-        { PK_BACK, "BACK" },
-        { PK_TAB, "TAB" },
-        { PK_CLEAR, "CLEAR" },
-        { PK_RETURN, "RETURN" },
-        { PK_SHIFT, "SHIFT" },
-        { PK_CONTROL, "CONTROL" },
-        { PK_MENU, "ALT" },
-        { PK_CAPITAL, "CAPITAL" },
-        { PK_ESCAPE, "ESCAPE" },
-        { PK_SPACE, "SPACE" },
-        { PK_PRIOR, "PAGE_UP" },
-        { PK_NEXT, "PAGE_DOWN" },
-        { PK_END, "END" },
-        { PK_HOME, "HOME" },
-        { PK_LEFT, "LEFT" },
-        { PK_UP, "UP" },
-        { PK_RIGHT, "RIGHT" },
-        { PK_DOWN, "DOWN" },
-        { PK_SELECT, "SELECT" },
-        { PK_INSERT, "INSERT" },
-        { PK_DELETE, "DELETE" },
-        { PK_COMMAND, "COMMAND" },
-        { PK_OPEN_BRACKET, "OPEN_BRACKET" },
-        { PK_CLOSE_BRACKET, "CLOSE_BRACKET" },
-        { PK_SEMICOLON, "SEMICOLON" },
-        { PK_APOSTRAPHE, "APOSTRAPHE" },
-        { PK_BACK_SLASH, "BACK_SLASH" },
-        { PK_FORWARD_SLASH, "FORWARD_SLASH" },
-        { PK_COMMA, "COMMA" },
-        { PK_PERIOD, "PERIOD" },
-        { PK_TILDE, "TILDE" },
-        { PK_MINUS, "MINUS" },
-        { PK_EQUAL, "EQUAL" },
-        { PK_NUMLOCK, "NUMLOCK" },
-        { PK_WINDOWS, "WINDOWS" },
-        { PK_GRAVE, "GRAVE" }
-    };
-}
+    u8                    s_keyboard_state[PK_COUNT];
+    u8                    s_unicode_state[PK_COUNT];
+    pen::mouse_state      s_mouse_state = {0};
+    std::atomic<bool>     s_show_cursor = {true};
+    Str                   s_unicode_text_input;
+    pen::ring_buffer<Str> s_unicode_ring;
+
+    std::map<u16, const c8*> k_key_names = {{PK_0, "0"},
+                                            {PK_1, "1"},
+                                            {PK_2, "2"},
+                                            {PK_3, "3"},
+                                            {PK_4, "4"},
+                                            {PK_5, "5"},
+                                            {PK_6, "6"},
+                                            {PK_7, "7"},
+                                            {PK_8, "8"},
+                                            {PK_9, "9"},
+                                            {PK_A, "A"},
+                                            {PK_B, "B"},
+                                            {PK_C, "C"},
+                                            {PK_D, "D"},
+                                            {PK_E, "E"},
+                                            {PK_F, "F"},
+                                            {PK_G, "G"},
+                                            {PK_H, "H"},
+                                            {PK_I, "I"},
+                                            {PK_J, "J"},
+                                            {PK_K, "K"},
+                                            {PK_L, "L"},
+                                            {PK_M, "M"},
+                                            {PK_N, "N"},
+                                            {PK_O, "O"},
+                                            {PK_P, "P"},
+                                            {PK_Q, "Q"},
+                                            {PK_R, "R"},
+                                            {PK_S, "S"},
+                                            {PK_T, "T"},
+                                            {PK_U, "U"},
+                                            {PK_V, "V"},
+                                            {PK_W, "W"},
+                                            {PK_X, "X"},
+                                            {PK_Y, "Y"},
+                                            {PK_Z, "Z"},
+                                            {PK_NUMPAD0, "NUMPAD0"},
+                                            {PK_NUMPAD1, "NUMPAD1"},
+                                            {PK_NUMPAD2, "NUMPAD2"},
+                                            {PK_NUMPAD3, "NUMPAD3"},
+                                            {PK_NUMPAD4, "NUMPAD4"},
+                                            {PK_NUMPAD5, "NUMPAD5"},
+                                            {PK_NUMPAD6, "NUMPAD6"},
+                                            {PK_NUMPAD7, "NUMPAD7"},
+                                            {PK_NUMPAD8, "NUMPAD8"},
+                                            {PK_NUMPAD9, "NUMPAD9"},
+                                            {PK_MULTIPLY, "MULTIPLY"},
+                                            {PK_ADD, "ADD"},
+                                            {PK_SUBTRACT, "SUBTRACT"},
+                                            {PK_DECIMAL, "DECIMAL"},
+                                            {PK_DIVIDE, "DIVIDE"},
+                                            {PK_F1, "F1"},
+                                            {PK_F2, "F2"},
+                                            {PK_F3, "F3"},
+                                            {PK_F4, "F4"},
+                                            {PK_F5, "F5"},
+                                            {PK_F6, "F6"},
+                                            {PK_F7, "F7"},
+                                            {PK_F8, "F8"},
+                                            {PK_F9, "F9"},
+                                            {PK_F10, "F10"},
+                                            {PK_F11, "F11"},
+                                            {PK_F12, "F12"},
+                                            {PK_CANCEL, "CANCEL"},
+                                            {PK_BACK, "BACK"},
+                                            {PK_TAB, "TAB"},
+                                            {PK_CLEAR, "CLEAR"},
+                                            {PK_RETURN, "RETURN"},
+                                            {PK_SHIFT, "SHIFT"},
+                                            {PK_CONTROL, "CONTROL"},
+                                            {PK_MENU, "ALT"},
+                                            {PK_CAPITAL, "CAPITAL"},
+                                            {PK_ESCAPE, "ESCAPE"},
+                                            {PK_SPACE, "SPACE"},
+                                            {PK_PRIOR, "PAGE_UP"},
+                                            {PK_NEXT, "PAGE_DOWN"},
+                                            {PK_END, "END"},
+                                            {PK_HOME, "HOME"},
+                                            {PK_LEFT, "LEFT"},
+                                            {PK_UP, "UP"},
+                                            {PK_RIGHT, "RIGHT"},
+                                            {PK_DOWN, "DOWN"},
+                                            {PK_SELECT, "SELECT"},
+                                            {PK_INSERT, "INSERT"},
+                                            {PK_DELETE, "DELETE"},
+                                            {PK_COMMAND, "COMMAND"},
+                                            {PK_OPEN_BRACKET, "OPEN_BRACKET"},
+                                            {PK_CLOSE_BRACKET, "CLOSE_BRACKET"},
+                                            {PK_SEMICOLON, "SEMICOLON"},
+                                            {PK_APOSTRAPHE, "APOSTRAPHE"},
+                                            {PK_BACK_SLASH, "BACK_SLASH"},
+                                            {PK_FORWARD_SLASH, "FORWARD_SLASH"},
+                                            {PK_COMMA, "COMMA"},
+                                            {PK_PERIOD, "PERIOD"},
+                                            {PK_TILDE, "TILDE"},
+                                            {PK_MINUS, "MINUS"},
+                                            {PK_EQUAL, "EQUAL"},
+                                            {PK_NUMLOCK, "NUMLOCK"},
+                                            {PK_WINDOWS, "WINDOWS"},
+                                            {PK_GRAVE, "GRAVE"}};
+} // namespace
 
 namespace pen
 {
@@ -139,7 +137,7 @@ namespace pen
 
         s_unicode_ring.put(Str(utf8));
     }
-    
+
     Str input_get_unicode_input()
     {
         Str inputs = "";
@@ -228,9 +226,9 @@ namespace pen
 
     const c8* input_get_key_str(u32 key_index)
     {
-        if(k_key_names.find(key_index) != k_key_names.end())
+        if (k_key_names.find(key_index) != k_key_names.end())
             return k_key_names[key_index];
-        
+
         static c8 buf[32];
         snprintf(buf, 32, "UNKNOWN %i", key_index);
         return &buf[0];
@@ -610,7 +608,7 @@ namespace pen
     }
 
     std::atomic<bool> a_detecting;
-    void*           detect_devices_async(void* params)
+    void*             detect_devices_async(void* params)
     {
         a_detecting = true;
 
@@ -634,8 +632,8 @@ namespace pen
 
         // detect devices
         static pen::timer* htimer = timer_create();
-        static const f32 detect_time = 10000.0f;
-        static f32       detect_timer = detect_time;
+        static const f32   detect_time = 10000.0f;
+        static f32         detect_timer = detect_time;
         if (detect_timer <= 0)
         {
             pen::jobs_create_job(detect_devices_async, 1024 * 1024, nullptr, pen::e_thread_start_flags::detached);
@@ -690,17 +688,34 @@ namespace pen
 namespace pen
 {
     // stub api
-    void gamepad_attach_func(struct Gamepad_device* device, void* context) {};
-    void gamepad_remove_func(struct Gamepad_device* device, void* context) {};
-    void gamepad_button_down_func(struct Gamepad_device* device, u32 button_id, f64 timestamp, void* context) {};
-    void gamepad_button_up_func(struct Gamepad_device* device, u32 button_id, f64 timestamp, void* context) {}
+    void gamepad_attach_func(struct Gamepad_device* device, void* context){};
+    void gamepad_remove_func(struct Gamepad_device* device, void* context){};
+    void gamepad_button_down_func(struct Gamepad_device* device, u32 button_id, f64 timestamp, void* context){};
+    void gamepad_button_up_func(struct Gamepad_device* device, u32 button_id, f64 timestamp, void* context)
+    {
+    }
     void gamepad_axis_move_func(struct Gamepad_device* device, u32 axis_id, f32 value, f32 last_value, f64 timestamp,
-                                void* context) {}
-    void input_gamepad_shutdown()  {}
-    void input_gamepad_update() {}
-    u32  input_get_num_gamepads() { return 0; }
-    void input_gamepad_init() {}
-    void input_get_gamepad_state(u32 device_index, gamepad_state& gs) {}
-    void input_get_raw_gamepad_state(u32 device_index, raw_gamepad_state& gs) {}
+                                void* context)
+    {
+    }
+    void input_gamepad_shutdown()
+    {
+    }
+    void input_gamepad_update()
+    {
+    }
+    u32 input_get_num_gamepads()
+    {
+        return 0;
+    }
+    void input_gamepad_init()
+    {
+    }
+    void input_get_gamepad_state(u32 device_index, gamepad_state& gs)
+    {
+    }
+    void input_get_raw_gamepad_state(u32 device_index, raw_gamepad_state& gs)
+    {
+    }
 } // namespace pen
 #endif

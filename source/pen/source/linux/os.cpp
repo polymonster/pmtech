@@ -3,15 +3,15 @@
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 #include "GL/glew.h"
 
-#include "renderer.h"
 #include "console.h"
+#include "hash.h"
 #include "input.h"
 #include "os.h"
 #include "pen.h"
+#include "renderer.h"
 #include "threads.h"
 #include "timer.h"
 #include "types.h"
-#include "hash.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,8 +27,8 @@
 using namespace pen;
 
 // pen required externs
-window_creation_params        pen_window;
-pen::user_info                pen_user_info;
+window_creation_params pen_window;
+pen::user_info         pen_user_info;
 
 // glx / gl stuff
 #define GLX_CONTEXT_MAJOR_VERSION_ARB 0x2091
@@ -39,18 +39,16 @@ pen::user_info                pen_user_info;
 
 typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
 
-static int visual_attribs[] = {
-    GLX_X_RENDERABLE, True, GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT, GLX_RENDER_TYPE, GLX_RGBA_BIT,
-    GLX_X_VISUAL_TYPE, GLX_TRUE_COLOR, GLX_RED_SIZE, 8, GLX_GREEN_SIZE, 8, GLX_BLUE_SIZE, 8,
-    GLX_ALPHA_SIZE, 8, GLX_DEPTH_SIZE, 24, GLX_STENCIL_SIZE, 8, GLX_DOUBLEBUFFER, True,
-    // GLX_SAMPLE_BUFFERS  , 1,
-    // GLX_SAMPLES         , 4,
-    None
-};
+static int visual_attribs[] = {GLX_X_RENDERABLE, True, GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT, GLX_RENDER_TYPE, GLX_RGBA_BIT,
+                               GLX_X_VISUAL_TYPE, GLX_TRUE_COLOR, GLX_RED_SIZE, 8, GLX_GREEN_SIZE, 8, GLX_BLUE_SIZE, 8,
+                               GLX_ALPHA_SIZE, 8, GLX_DEPTH_SIZE, 24, GLX_STENCIL_SIZE, 8, GLX_DOUBLEBUFFER, True,
+                               // GLX_SAMPLE_BUFFERS  , 1,
+                               // GLX_SAMPLES         , 4,
+                               None};
 
-GLXContext   _gl_context = 0;
-Display*     _display;
-Window       _window;
+GLXContext _gl_context = 0;
+Display*   _display;
+Window     _window;
 
 // externs for the gl implementation
 void pen_make_gl_context_current()
@@ -65,12 +63,12 @@ void pen_gl_swap_buffers()
 
 namespace
 {
-    XIM             _xim;
-    XIC             _xic;
-    u32             s_error_code = 0;
-    bool            ctx_error_occured = false;
-    window_frame    _window_frame;
-    bool            _invalidate_window_frame = false;
+    XIM          _xim;
+    XIC          _xic;
+    u32          s_error_code = 0;
+    bool         ctx_error_occured = false;
+    window_frame _window_frame;
+    bool         _invalidate_window_frame = false;
 
     void users()
     {
@@ -142,8 +140,8 @@ namespace
 
         XStoreName(_display, _window, pen_window.window_title);
         XSelectInput(_display, _window,
-                        ExposureMask | StructureNotifyMask | ButtonPressMask | ButtonReleaseMask | KeyPressMask | KeyReleaseMask |
-                            ConfigureNotify);
+                     ExposureMask | StructureNotifyMask | ButtonPressMask | ButtonReleaseMask | KeyPressMask |
+                         KeyReleaseMask | ConfigureNotify);
 
         // Create Gl Context
         glXCreateContextAttribsARBProc glXCreateContextAttribsARB = 0;
@@ -151,15 +149,11 @@ namespace
             (glXCreateContextAttribsARBProc)glXGetProcAddressARB((const GLubyte*)"glXCreateContextAttribsARB");
 
         // Pmtech supports minimum OpenGL 3.1, just try brute force in reverse order to get the highest
-        for(s32 major = 4; major > 2; --major)
+        for (s32 major = 4; major > 2; --major)
         {
-            for(s32 minor = 6; minor >=0; --minor)
+            for (s32 minor = 6; minor >= 0; --minor)
             {
-                int context_attribs[] = {
-                    GLX_CONTEXT_MAJOR_VERSION_ARB, major, 
-                    GLX_CONTEXT_MINOR_VERSION_ARB, minor, 
-                    None
-                };
+                int context_attribs[] = {GLX_CONTEXT_MAJOR_VERSION_ARB, major, GLX_CONTEXT_MINOR_VERSION_ARB, minor, None};
 
                 _gl_context = glXCreateContextAttribsARB(_display, best_fbc, 0, True, context_attribs);
                 if (_gl_context)
@@ -171,31 +165,30 @@ namespace
             PEN_LOG("ERROR: OpenGL 3.1+ Context Failed to create");
             return 1;
         }
-        found_context:
-
+    found_context:
 
         XMapWindow(_display, _window);
 
         // obtain input context
         _xim = XOpenIM(_display, NULL, NULL, NULL);
-        if (_xim == NULL) 
+        if (_xim == NULL)
         {
             PEN_LOG("ERROR: Could not open input method\n");
             return 1;
         }
 
         XIMStyles* styles;
-        XIMStyle xim_requested_style;
-        char* failed_arg;
+        XIMStyle   xim_requested_style;
+        char*      failed_arg;
         failed_arg = XGetIMValues(_xim, XNQueryInputStyle, &styles, NULL);
-        if (failed_arg != NULL) 
+        if (failed_arg != NULL)
         {
             PEN_LOG("ERROR: XIM Can't get styles\n");
             return 1;
         }
 
         _xic = XCreateIC(_xim, XNInputStyle, XIMPreeditNothing | XIMStatusNothing, XNClientWindow, _window, NULL);
-        if (_xic == NULL) 
+        if (_xic == NULL)
         {
             printf("ERROR: Could not open IC\n");
             return 1;
@@ -228,11 +221,11 @@ namespace
 
     int pen_run_console_app()
     {
-        for(;;)
+        for (;;)
         {
-            if(!pen::os_update())
+            if (!pen::os_update())
                 break;
-                
+
             pen::thread_sleep_us(100);
         }
 
@@ -240,7 +233,7 @@ namespace
 
         return s_error_code;
     }
-}
+} // namespace
 
 int main(int argc, char* argv[])
 {
@@ -249,13 +242,13 @@ int main(int argc, char* argv[])
     timer_system_intialise();
     input_gamepad_init();
 
-    pen::pen_creation_params pc  = pen::pen_entry(argc, argv);
+    pen::pen_creation_params pc = pen::pen_entry(argc, argv);
     pen_window.width = pc.window_width;
     pen_window.height = pc.window_height;
     pen_window.window_title = pc.window_title;
     pen_window.sample_count = pc.window_sample_count;
 
-    if(pc.flags & e_pen_create_flags::renderer)
+    if (pc.flags & e_pen_create_flags::renderer)
     {
         pen_run_windowed();
     }
@@ -329,7 +322,8 @@ namespace pen
                 return PK_UP;
             case XK_Right:
                 return PK_RIGHT;
-            case XK_Down:ERROR:
+            case XK_Down:
+            ERROR:
                 return PK_DOWN;
             case XK_Prior:
                 return PK_PRIOR;
@@ -382,7 +376,7 @@ namespace pen
             case XK_F7:
                 return PK_F7;
             case XK_F8:
-                return PK_F8;                
+                return PK_F8;
             case XK_F9:
                 return PK_F9;
             case XK_F10:
@@ -476,8 +470,8 @@ namespace pen
                 case KeyPress:
                 {
                     static c8 buf[255];
-                    KeySym k;
-                    Status status;
+                    KeySym    k;
+                    Status    status;
 
                     // todo for utf8
                     Xutf8LookupString(_xic, &event.xkey, buf, sizeof(buf) - 1, &k, &status);

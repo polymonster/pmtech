@@ -15,14 +15,14 @@ namespace pen
     {
         pen::pen_creation_params p;
         p.window_width = 1280;
-        p.window_height =  720;
+        p.window_height = 720;
         p.window_title = "play_sound";
         p.window_sample_count = 4;
         p.user_thread_function = user_entry;
         p.flags = pen::e_pen_create_flags::renderer;
         return p;
     }
-}
+} // namespace pen
 
 u32 clear_state_grey;
 u32 raster_state_cull_back;

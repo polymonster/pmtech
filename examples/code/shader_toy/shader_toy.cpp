@@ -2,13 +2,13 @@
 #include "file_system.h"
 #include "loader.h"
 #include "memory.h"
+#include "os.h"
 #include "pen.h"
 #include "pen_string.h"
 #include "pmfx.h"
 #include "renderer.h"
 #include "threads.h"
 #include "timer.h"
-#include "os.h"
 
 using namespace put;
 
@@ -18,14 +18,14 @@ namespace pen
     {
         pen::pen_creation_params p;
         p.window_width = 1280;
-        p.window_height =  720;
+        p.window_height = 720;
         p.window_title = "shader_toy";
         p.window_sample_count = 4;
         p.user_thread_function = user_entry;
         p.flags = pen::e_pen_create_flags::renderer;
         return p;
     }
-}
+} // namespace pen
 
 struct vertex
 {
@@ -275,7 +275,7 @@ void* pen::user_entry(void* params)
 
     put::dev_ui::init();
     put::init_hot_loader();
-    
+
     // load shaders now requiring dependency on put to make loading simpler.
     u32 shader_toy_pmfx = pmfx::load_shader("shader_toy");
 

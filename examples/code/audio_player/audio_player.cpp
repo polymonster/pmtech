@@ -18,14 +18,14 @@ namespace pen
     {
         pen::pen_creation_params p;
         p.window_width = 1280;
-        p.window_height =  720;
+        p.window_height = 720;
         p.window_title = "audio_player";
         p.window_sample_count = 4;
         p.user_thread_function = user_entry;
         p.flags = pen::e_pen_create_flags::renderer;
         return p;
     }
-}
+} // namespace pen
 
 u32 clear_state_grey;
 u32 raster_state_cull_back;
@@ -443,12 +443,12 @@ class spectrum_analyser
             ++frame_counter;
         }
     }
-    
+
     void show_panel()
     {
         u32 display_analysis_loc = new_anlysis_loc;
-        ImGui::PlotLines("Per Sample Differentiation", &raw_diff[display_analysis_loc][0], current_display_samples, 0,
-                     NULL, -1.0f, 1.0f, ImVec2(530, 100));
+        ImGui::PlotLines("Per Sample Differentiation", &raw_diff[display_analysis_loc][0], current_display_samples, 0, NULL,
+                         -1.0f, 1.0f, ImVec2(530, 100));
     }
 
     void show_window()
@@ -663,7 +663,7 @@ class playback_deck
         timestamp = pen::get_time_ms();
 
         fame_time = timestamp - prev_time;
-        
+
         sa.show_panel();
 
         // file info

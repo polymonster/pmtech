@@ -3,12 +3,12 @@
 #include "file_system.h"
 #include "loader.h"
 #include "memory.h"
+#include "os.h"
 #include "pen.h"
 #include "pen_string.h"
 #include "renderer.h"
 #include "threads.h"
 #include "timer.h"
-#include "os.h"
 
 void* pen::user_entry(void* params);
 namespace pen
@@ -17,14 +17,14 @@ namespace pen
     {
         pen::pen_creation_params p;
         p.window_width = 1280;
-        p.window_height =  720;
+        p.window_height = 720;
         p.window_title = "debug_text";
         p.window_sample_count = 4;
         p.user_thread_function = user_entry;
         p.flags = pen::e_pen_create_flags::renderer;
         return p;
     }
-}
+} // namespace pen
 
 struct vertex
 {
@@ -96,7 +96,7 @@ void* pen::user_entry(void* params)
         pen::renderer_set_viewport(vp);
         pen::renderer_set_rasterizer_state(raster_state);
         pen::renderer_set_scissor_rect(rect{vp.x, vp.y, vp.width, vp.height});
-        
+
         s32 iw, ih;
         pen::window_get_size(iw, ih);
         pen::viewport vvp = {0.0f, 0.0f, (f32)iw, (f32)ih, 0.0f, 1.0f};

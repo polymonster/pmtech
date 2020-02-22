@@ -937,7 +937,8 @@ namespace put
             if (s_rasteriser_job.combine_in_progress == 0)
             {
                 s_rasteriser_job.combine_in_progress = 1;
-                pen::jobs_create_job(raster_voxel_combine, 1024 * 1024 * 1024, &s_rasteriser_job, pen::e_thread_start_flags::detached);
+                pen::jobs_create_job(raster_voxel_combine, 1024 * 1024 * 1024, &s_rasteriser_job,
+                                     pen::e_thread_start_flags::detached);
                 return;
             }
             else

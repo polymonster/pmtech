@@ -2,26 +2,30 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#include "renderer.h"
-#include "renderer_shared.h"
 #include "console.h"
 #include "data_struct.h"
 #include "hash.h"
+#include "renderer.h"
+#include "renderer_shared.h"
 
 #include "vulkan/vulkan.h"
 #ifdef _WIN32
 #include "vulkan/vulkan_win32.h"
 #endif
 
-#define CHECK_CALL(C) { VkResult r = (C); PEN_ASSERT(r == VK_SUCCESS); }
+#define CHECK_CALL(C)                                                                                                        \
+    {                                                                                                                        \
+        VkResult r = (C);                                                                                                    \
+        PEN_ASSERT(r == VK_SUCCESS);                                                                                         \
+    }
 
 extern pen::window_creation_params pen_window;
 a_u8                               g_window_resize(0);
 
 using namespace pen;
 
-#define NBB 3 // num "back buffers" / swap chains / inflight command buffers
-#define GLSL_TEXTURE_BINDING_OFFSET 32 // set in pmfx shader, d3d style register(t0) binds to 32+ 
+#define NBB 3                          // num "back buffers" / swap chains / inflight command buffers
+#define GLSL_TEXTURE_BINDING_OFFSET 32 // set in pmfx shader, d3d style register(t0) binds to 32+
 
 namespace
 {
@@ -30,12 +34,12 @@ namespace
     {
         switch (pen_bind_flags)
         {
-        case PEN_BIND_VERTEX_BUFFER:
-            return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-        case PEN_BIND_INDEX_BUFFER:
-            return VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-        case PEN_BIND_CONSTANT_BUFFER:
-            return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+            case PEN_BIND_VERTEX_BUFFER:
+                return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+            case PEN_BIND_INDEX_BUFFER:
+                return VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+            case PEN_BIND_CONSTANT_BUFFER:
+                return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         }
         PEN_ASSERT(0);
         return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
@@ -45,10 +49,10 @@ namespace
     {
         switch (pen_polygon_mode)
         {
-        case PEN_FILL_SOLID:
-            return VK_POLYGON_MODE_FILL;
-        case PEN_FILL_WIREFRAME:
-            return VK_POLYGON_MODE_LINE;
+            case PEN_FILL_SOLID:
+                return VK_POLYGON_MODE_FILL;
+            case PEN_FILL_WIREFRAME:
+                return VK_POLYGON_MODE_LINE;
         }
         PEN_ASSERT(0);
         return VK_POLYGON_MODE_FILL;
@@ -58,12 +62,12 @@ namespace
     {
         switch (pen_cull_mode)
         {
-        case PEN_CULL_NONE:
-            return VK_CULL_MODE_NONE;
-        case PEN_CULL_FRONT:
-            return VK_CULL_MODE_FRONT_BIT;
-        case PEN_CULL_BACK:
-            return VK_CULL_MODE_BACK_BIT;
+            case PEN_CULL_NONE:
+                return VK_CULL_MODE_NONE;
+            case PEN_CULL_FRONT:
+                return VK_CULL_MODE_FRONT_BIT;
+            case PEN_CULL_BACK:
+                return VK_CULL_MODE_BACK_BIT;
         }
         PEN_ASSERT(0);
         return VK_CULL_MODE_NONE;
@@ -73,16 +77,16 @@ namespace
     {
         switch (pen_primitive_topology)
         {
-        case PEN_PT_POINTLIST:
-            return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-        case PEN_PT_LINELIST:
-            return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-        case PEN_PT_LINESTRIP:
-            return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
-        case PEN_PT_TRIANGLELIST:
-            return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        case PEN_PT_TRIANGLESTRIP:
-            return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+            case PEN_PT_POINTLIST:
+                return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+            case PEN_PT_LINELIST:
+                return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+            case PEN_PT_LINESTRIP:
+                return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+            case PEN_PT_TRIANGLELIST:
+                return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+            case PEN_PT_TRIANGLESTRIP:
+                return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
         }
         PEN_ASSERT(0);
         return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -92,20 +96,20 @@ namespace
     {
         switch (pen_vertex_format)
         {
-        case PEN_VERTEX_FORMAT_FLOAT1:
-            return VK_FORMAT_R32_SFLOAT;
-        case PEN_VERTEX_FORMAT_FLOAT2:
-            return VK_FORMAT_R32G32_SFLOAT;
-        case PEN_VERTEX_FORMAT_FLOAT3:
-            return VK_FORMAT_R32G32B32_SFLOAT;
-        case PEN_VERTEX_FORMAT_FLOAT4:
-            return VK_FORMAT_R32G32B32A32_SFLOAT;
-        case PEN_VERTEX_FORMAT_UNORM4:
-            return VK_FORMAT_R8G8B8A8_UNORM;
-        case PEN_VERTEX_FORMAT_UNORM2:
-            return VK_FORMAT_R8G8_UNORM;
-        case PEN_VERTEX_FORMAT_UNORM1:
-            return VK_FORMAT_R8_UNORM;
+            case PEN_VERTEX_FORMAT_FLOAT1:
+                return VK_FORMAT_R32_SFLOAT;
+            case PEN_VERTEX_FORMAT_FLOAT2:
+                return VK_FORMAT_R32G32_SFLOAT;
+            case PEN_VERTEX_FORMAT_FLOAT3:
+                return VK_FORMAT_R32G32B32_SFLOAT;
+            case PEN_VERTEX_FORMAT_FLOAT4:
+                return VK_FORMAT_R32G32B32A32_SFLOAT;
+            case PEN_VERTEX_FORMAT_UNORM4:
+                return VK_FORMAT_R8G8B8A8_UNORM;
+            case PEN_VERTEX_FORMAT_UNORM2:
+                return VK_FORMAT_R8G8_UNORM;
+            case PEN_VERTEX_FORMAT_UNORM1:
+                return VK_FORMAT_R8_UNORM;
         }
         PEN_ASSERT(0);
         return VK_FORMAT_R32G32B32A32_SFLOAT;
@@ -115,10 +119,10 @@ namespace
     {
         switch (pen_index_type)
         {
-        case PEN_FORMAT_R16_UINT:
-            return VK_INDEX_TYPE_UINT16;
-        case PEN_FORMAT_R32_UINT:
-            return VK_INDEX_TYPE_UINT32;
+            case PEN_FORMAT_R16_UINT:
+                return VK_INDEX_TYPE_UINT16;
+            case PEN_FORMAT_R32_UINT:
+                return VK_INDEX_TYPE_UINT32;
         }
         PEN_ASSERT(0);
         return VK_INDEX_TYPE_UINT16;
@@ -128,12 +132,12 @@ namespace
     {
         switch (pen_filter)
         {
-        case PEN_FILTER_MIN_MAG_MIP_LINEAR:
-        case PEN_FILTER_LINEAR:
-            return VK_FILTER_LINEAR;
-        case PEN_FILTER_MIN_MAG_MIP_POINT:
-        case PEN_FILTER_POINT:
-            return VK_FILTER_NEAREST;
+            case PEN_FILTER_MIN_MAG_MIP_LINEAR:
+            case PEN_FILTER_LINEAR:
+                return VK_FILTER_LINEAR;
+            case PEN_FILTER_MIN_MAG_MIP_POINT:
+            case PEN_FILTER_POINT:
+                return VK_FILTER_NEAREST;
         }
         PEN_ASSERT(0);
         return VK_FILTER_LINEAR;
@@ -143,13 +147,13 @@ namespace
     {
         switch (pen_filter)
         {
-        case PEN_FILTER_MIN_MAG_MIP_LINEAR:
-            return VK_SAMPLER_MIPMAP_MODE_LINEAR;
-        case PEN_FILTER_MIN_MAG_MIP_POINT:
-            return VK_SAMPLER_MIPMAP_MODE_NEAREST;
-        case PEN_FILTER_POINT:
-        case PEN_FILTER_LINEAR:
-            return VK_SAMPLER_MIPMAP_MODE_NEAREST;
+            case PEN_FILTER_MIN_MAG_MIP_LINEAR:
+                return VK_SAMPLER_MIPMAP_MODE_LINEAR;
+            case PEN_FILTER_MIN_MAG_MIP_POINT:
+                return VK_SAMPLER_MIPMAP_MODE_NEAREST;
+            case PEN_FILTER_POINT:
+            case PEN_FILTER_LINEAR:
+                return VK_SAMPLER_MIPMAP_MODE_NEAREST;
         }
         PEN_ASSERT(0);
         return VK_SAMPLER_MIPMAP_MODE_NEAREST;
@@ -159,16 +163,16 @@ namespace
     {
         switch (pen_sampler_address_mode)
         {
-        case PEN_TEXTURE_ADDRESS_WRAP:
-            return VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        case PEN_TEXTURE_ADDRESS_MIRROR:
-            return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-        case PEN_TEXTURE_ADDRESS_CLAMP:
-            return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-        case PEN_TEXTURE_ADDRESS_BORDER:
-            return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-        case PEN_TEXTURE_ADDRESS_MIRROR_ONCE:
-            return VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
+            case PEN_TEXTURE_ADDRESS_WRAP:
+                return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+            case PEN_TEXTURE_ADDRESS_MIRROR:
+                return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+            case PEN_TEXTURE_ADDRESS_CLAMP:
+                return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+            case PEN_TEXTURE_ADDRESS_BORDER:
+                return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+            case PEN_TEXTURE_ADDRESS_MIRROR_ONCE:
+                return VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
         }
         PEN_ASSERT(0);
         return VK_SAMPLER_ADDRESS_MODE_REPEAT;
@@ -178,12 +182,12 @@ namespace
     {
         switch (pen_format)
         {
-        case PEN_TEX_FORMAT_BC1_UNORM:
-        case PEN_TEX_FORMAT_BC2_UNORM:
-        case PEN_TEX_FORMAT_BC3_UNORM:
-        case PEN_TEX_FORMAT_BC4_UNORM:
-        case PEN_TEX_FORMAT_BC5_UNORM:
-            return true;
+            case PEN_TEX_FORMAT_BC1_UNORM:
+            case PEN_TEX_FORMAT_BC2_UNORM:
+            case PEN_TEX_FORMAT_BC3_UNORM:
+            case PEN_TEX_FORMAT_BC4_UNORM:
+            case PEN_TEX_FORMAT_BC5_UNORM:
+                return true;
         }
         return false;
     }
@@ -192,8 +196,8 @@ namespace
     {
         switch (pen_format)
         {
-        case PEN_TEX_FORMAT_D24_UNORM_S8_UINT:
-            return true;
+            case PEN_TEX_FORMAT_D24_UNORM_S8_UINT:
+                return true;
         }
         return false;
     }
@@ -202,7 +206,7 @@ namespace
     {
         if (pen_texture_format == PEN_TEX_FORMAT_D24_UNORM_S8_UINT)
             return VK_IMAGE_ASPECT_DEPTH_BIT;
-        
+
         return VK_IMAGE_ASPECT_COLOR_BIT;
     }
 
@@ -245,16 +249,16 @@ namespace
     {
         switch (pen_blend_op)
         {
-        case PEN_BLEND_OP_ADD:
-            return VK_BLEND_OP_ADD;
-        case PEN_BLEND_OP_SUBTRACT:
-            return VK_BLEND_OP_SUBTRACT;
-        case PEN_BLEND_OP_REV_SUBTRACT:
-            return VK_BLEND_OP_REVERSE_SUBTRACT;
-        case PEN_BLEND_OP_MIN:
-            return VK_BLEND_OP_MIN;
-        case PEN_BLEND_OP_MAX:
-            return VK_BLEND_OP_MAX;
+            case PEN_BLEND_OP_ADD:
+                return VK_BLEND_OP_ADD;
+            case PEN_BLEND_OP_SUBTRACT:
+                return VK_BLEND_OP_SUBTRACT;
+            case PEN_BLEND_OP_REV_SUBTRACT:
+                return VK_BLEND_OP_REVERSE_SUBTRACT;
+            case PEN_BLEND_OP_MIN:
+                return VK_BLEND_OP_MIN;
+            case PEN_BLEND_OP_MAX:
+                return VK_BLEND_OP_MAX;
         }
         PEN_ASSERT(0);
         return VK_BLEND_OP_ADD;
@@ -264,38 +268,38 @@ namespace
     {
         switch (pen_blend_factor)
         {
-        case PEN_BLEND_ZERO:
-            return VK_BLEND_FACTOR_ZERO;
-        case PEN_BLEND_ONE:
-            return VK_BLEND_FACTOR_ONE;
-        case PEN_BLEND_SRC_COLOR:
-            return VK_BLEND_FACTOR_SRC_COLOR;
-        case PEN_BLEND_INV_SRC_COLOR:
-            return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
-        case PEN_BLEND_SRC_ALPHA:
-            return VK_BLEND_FACTOR_SRC_ALPHA;
-        case PEN_BLEND_INV_SRC_ALPHA:
-            return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-        case PEN_BLEND_DEST_ALPHA:
-            return VK_BLEND_FACTOR_DST_ALPHA;
-        case PEN_BLEND_INV_DEST_ALPHA:
-            return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
-        case PEN_BLEND_INV_DEST_COLOR:
-            return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
-        case PEN_BLEND_SRC_ALPHA_SAT:
-            return VK_BLEND_FACTOR_SRC_ALPHA_SATURATE;
-        case PEN_BLEND_SRC1_COLOR:
-            return VK_BLEND_FACTOR_SRC1_COLOR;
-        case PEN_BLEND_INV_SRC1_COLOR:
-            return VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR;
-        case PEN_BLEND_SRC1_ALPHA:
-            return VK_BLEND_FACTOR_SRC1_ALPHA;
-        case PEN_BLEND_INV_SRC1_ALPHA:
-            return VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;
-        case PEN_BLEND_BLEND_FACTOR:
-        case PEN_BLEND_INV_BLEND_FACTOR:
-            PEN_ASSERT(0);
-            break;
+            case PEN_BLEND_ZERO:
+                return VK_BLEND_FACTOR_ZERO;
+            case PEN_BLEND_ONE:
+                return VK_BLEND_FACTOR_ONE;
+            case PEN_BLEND_SRC_COLOR:
+                return VK_BLEND_FACTOR_SRC_COLOR;
+            case PEN_BLEND_INV_SRC_COLOR:
+                return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+            case PEN_BLEND_SRC_ALPHA:
+                return VK_BLEND_FACTOR_SRC_ALPHA;
+            case PEN_BLEND_INV_SRC_ALPHA:
+                return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+            case PEN_BLEND_DEST_ALPHA:
+                return VK_BLEND_FACTOR_DST_ALPHA;
+            case PEN_BLEND_INV_DEST_ALPHA:
+                return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+            case PEN_BLEND_INV_DEST_COLOR:
+                return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
+            case PEN_BLEND_SRC_ALPHA_SAT:
+                return VK_BLEND_FACTOR_SRC_ALPHA_SATURATE;
+            case PEN_BLEND_SRC1_COLOR:
+                return VK_BLEND_FACTOR_SRC1_COLOR;
+            case PEN_BLEND_INV_SRC1_COLOR:
+                return VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR;
+            case PEN_BLEND_SRC1_ALPHA:
+                return VK_BLEND_FACTOR_SRC1_ALPHA;
+            case PEN_BLEND_INV_SRC1_ALPHA:
+                return VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;
+            case PEN_BLEND_BLEND_FACTOR:
+            case PEN_BLEND_INV_BLEND_FACTOR:
+                PEN_ASSERT(0);
+                break;
         }
         PEN_ASSERT(0);
         return VK_BLEND_FACTOR_ZERO;
@@ -305,22 +309,22 @@ namespace
     {
         switch (pen_comparison)
         {
-        case PEN_COMPARISON_NEVER:
-            return VK_COMPARE_OP_NEVER;
-        case PEN_COMPARISON_LESS:
-            return VK_COMPARE_OP_LESS;
-        case PEN_COMPARISON_EQUAL:
-            return VK_COMPARE_OP_EQUAL;
-        case PEN_COMPARISON_LESS_EQUAL:
-            return VK_COMPARE_OP_LESS_OR_EQUAL;
-        case PEN_COMPARISON_GREATER:
-            return VK_COMPARE_OP_GREATER;
-        case PEN_COMPARISON_NOT_EQUAL:
-            return VK_COMPARE_OP_NOT_EQUAL;
-        case PEN_COMPARISON_GREATER_EQUAL:
-            return VK_COMPARE_OP_GREATER_OR_EQUAL;
-        case PEN_COMPARISON_ALWAYS:
-            return VK_COMPARE_OP_ALWAYS;
+            case PEN_COMPARISON_NEVER:
+                return VK_COMPARE_OP_NEVER;
+            case PEN_COMPARISON_LESS:
+                return VK_COMPARE_OP_LESS;
+            case PEN_COMPARISON_EQUAL:
+                return VK_COMPARE_OP_EQUAL;
+            case PEN_COMPARISON_LESS_EQUAL:
+                return VK_COMPARE_OP_LESS_OR_EQUAL;
+            case PEN_COMPARISON_GREATER:
+                return VK_COMPARE_OP_GREATER;
+            case PEN_COMPARISON_NOT_EQUAL:
+                return VK_COMPARE_OP_NOT_EQUAL;
+            case PEN_COMPARISON_GREATER_EQUAL:
+                return VK_COMPARE_OP_GREATER_OR_EQUAL;
+            case PEN_COMPARISON_ALWAYS:
+                return VK_COMPARE_OP_ALWAYS;
         }
 
         PEN_ASSERT(0);
@@ -331,37 +335,37 @@ namespace
     {
         switch (pen_image_format)
         {
-        case PEN_TEX_FORMAT_RGBA8_UNORM:
-            return VK_FORMAT_R8G8B8A8_UNORM;
-        case PEN_TEX_FORMAT_BGRA8_UNORM:
-            return VK_FORMAT_B8G8R8A8_UNORM;
-        case PEN_TEX_FORMAT_R32G32B32A32_FLOAT:
-            return VK_FORMAT_R32G32B32A32_SFLOAT;
-        case PEN_TEX_FORMAT_R32G32_FLOAT:
-            return VK_FORMAT_R32G32_SFLOAT;
-        case PEN_TEX_FORMAT_R32_FLOAT:
-            return VK_FORMAT_R32_SFLOAT;
-        case PEN_TEX_FORMAT_R16G16B16A16_FLOAT:
-            return VK_FORMAT_R16G16B16A16_SFLOAT;
-        case PEN_TEX_FORMAT_R16_FLOAT:
-            return VK_FORMAT_R16_SFLOAT;
-        case PEN_TEX_FORMAT_R32_UINT:
-            return VK_FORMAT_R32_UINT;
-        case PEN_TEX_FORMAT_R8_UNORM:
-            return VK_FORMAT_R8_UNORM;
-        case PEN_TEX_FORMAT_BC1_UNORM:
-            return VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
-        case PEN_TEX_FORMAT_BC2_UNORM:
-            return VK_FORMAT_BC2_UNORM_BLOCK;
-        case PEN_TEX_FORMAT_BC3_UNORM:
-            return VK_FORMAT_BC3_UNORM_BLOCK;
-        case PEN_TEX_FORMAT_BC4_UNORM:
-            return VK_FORMAT_BC4_UNORM_BLOCK;
-        case PEN_TEX_FORMAT_BC5_UNORM:
-            return VK_FORMAT_BC5_UNORM_BLOCK;
-        case PEN_TEX_FORMAT_D24_UNORM_S8_UINT:
-            return VK_FORMAT_D24_UNORM_S8_UINT;
-            break;
+            case PEN_TEX_FORMAT_RGBA8_UNORM:
+                return VK_FORMAT_R8G8B8A8_UNORM;
+            case PEN_TEX_FORMAT_BGRA8_UNORM:
+                return VK_FORMAT_B8G8R8A8_UNORM;
+            case PEN_TEX_FORMAT_R32G32B32A32_FLOAT:
+                return VK_FORMAT_R32G32B32A32_SFLOAT;
+            case PEN_TEX_FORMAT_R32G32_FLOAT:
+                return VK_FORMAT_R32G32_SFLOAT;
+            case PEN_TEX_FORMAT_R32_FLOAT:
+                return VK_FORMAT_R32_SFLOAT;
+            case PEN_TEX_FORMAT_R16G16B16A16_FLOAT:
+                return VK_FORMAT_R16G16B16A16_SFLOAT;
+            case PEN_TEX_FORMAT_R16_FLOAT:
+                return VK_FORMAT_R16_SFLOAT;
+            case PEN_TEX_FORMAT_R32_UINT:
+                return VK_FORMAT_R32_UINT;
+            case PEN_TEX_FORMAT_R8_UNORM:
+                return VK_FORMAT_R8_UNORM;
+            case PEN_TEX_FORMAT_BC1_UNORM:
+                return VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
+            case PEN_TEX_FORMAT_BC2_UNORM:
+                return VK_FORMAT_BC2_UNORM_BLOCK;
+            case PEN_TEX_FORMAT_BC3_UNORM:
+                return VK_FORMAT_BC3_UNORM_BLOCK;
+            case PEN_TEX_FORMAT_BC4_UNORM:
+                return VK_FORMAT_BC4_UNORM_BLOCK;
+            case PEN_TEX_FORMAT_BC5_UNORM:
+                return VK_FORMAT_BC5_UNORM_BLOCK;
+            case PEN_TEX_FORMAT_D24_UNORM_S8_UINT:
+                return VK_FORMAT_D24_UNORM_S8_UINT;
+                break;
         }
         // unhandled
         PEN_ASSERT(0);
@@ -377,44 +381,43 @@ namespace
     // vulkan internals
     struct vulkan_context
     {
-        VkInstance                          instance;
-        const char**                        layer_names = nullptr;
-        const char**                        ext_names = nullptr;
-        VkDebugUtilsMessengerEXT            debug_messanger;
-        bool                                enable_validation = false;
-        VkPhysicalDevice                    physical_device = VK_NULL_HANDLE;
-        u32                                 num_queue_families;
-        u32                                 graphics_family_index;
-        VkQueue                             graphics_queue;
-        u32                                 present_family_index;
-        VkQueue                             present_queue;
-        u32                                 compute_family_index;
-        VkQueue                             compute_queue;
-        VkDevice                            device;
-        VkSurfaceKHR                        surface;
-        VkSwapchainKHR                      swap_chain = VK_NULL_HANDLE;
-        VkImage*                            swap_chain_images = nullptr;
-        VkCommandPool                       cmd_pool;
-        VkCommandBuffer*                    cmd_bufs = nullptr;
-        VkCommandPool                       cmd_pool_compute;
-        VkCommandBuffer*                    cmd_buf_compute = nullptr;
-        u32                                 ii = 0; // image index 0 - NBB, next = (ii + i) % NBB
-        VkSemaphore                         sem_img_avail[NBB];
-        VkSemaphore                         sem_render_finished[NBB];
-        VkFence                             fences[NBB];
-        VkFence                             compute_fences[NBB];
-        VkPhysicalDeviceMemoryProperties    mem_properties;
-        VkDescriptorPool                    descriptor_pool[NBB];
-        u32                                 submit_flags = 0;
+        VkInstance                       instance;
+        const char**                     layer_names = nullptr;
+        const char**                     ext_names = nullptr;
+        VkDebugUtilsMessengerEXT         debug_messanger;
+        bool                             enable_validation = false;
+        VkPhysicalDevice                 physical_device = VK_NULL_HANDLE;
+        u32                              num_queue_families;
+        u32                              graphics_family_index;
+        VkQueue                          graphics_queue;
+        u32                              present_family_index;
+        VkQueue                          present_queue;
+        u32                              compute_family_index;
+        VkQueue                          compute_queue;
+        VkDevice                         device;
+        VkSurfaceKHR                     surface;
+        VkSwapchainKHR                   swap_chain = VK_NULL_HANDLE;
+        VkImage*                         swap_chain_images = nullptr;
+        VkCommandPool                    cmd_pool;
+        VkCommandBuffer*                 cmd_bufs = nullptr;
+        VkCommandPool                    cmd_pool_compute;
+        VkCommandBuffer*                 cmd_buf_compute = nullptr;
+        u32                              ii = 0; // image index 0 - NBB, next = (ii + i) % NBB
+        VkSemaphore                      sem_img_avail[NBB];
+        VkSemaphore                      sem_render_finished[NBB];
+        VkFence                          fences[NBB];
+        VkFence                          compute_fences[NBB];
+        VkPhysicalDeviceMemoryProperties mem_properties;
+        VkDescriptorPool                 descriptor_pool[NBB];
+        u32                              submit_flags = 0;
     };
     vulkan_context _ctx;
 
     struct pen_binding
     {
-        u32                 stage;
-        VkDescriptorType    descriptor_type;
-        union
-        {
+        u32              stage;
+        VkDescriptorType descriptor_type;
+        union {
             struct
             {
                 u32 index;
@@ -434,22 +437,22 @@ namespace
 
     struct vk_pass_cache
     {
-        VkRenderPassBeginInfo   begin_info;
-        VkRenderPass            pass = VK_NULL_HANDLE;
-        VkAttachmentReference*  colour_attachments = nullptr;
-        VkAttachmentReference*  depth_attachments = nullptr;
+        VkRenderPassBeginInfo  begin_info;
+        VkRenderPass           pass = VK_NULL_HANDLE;
+        VkAttachmentReference* colour_attachments = nullptr;
+        VkAttachmentReference* depth_attachments = nullptr;
     };
-    hash_id*        s_pass_cache_hash = nullptr;
-    vk_pass_cache*  s_pass_cache = nullptr;
+    hash_id*       s_pass_cache_hash = nullptr;
+    vk_pass_cache* s_pass_cache = nullptr;
 
     struct vk_pipeline_cache
     {
-        VkPipeline              pipeline = VK_NULL_HANDLE;
-        VkDescriptorSetLayout   descriptor_set_layout = VK_NULL_HANDLE;
-        VkPipelineLayout        pipeline_layout = VK_NULL_HANDLE;
+        VkPipeline            pipeline = VK_NULL_HANDLE;
+        VkDescriptorSetLayout descriptor_set_layout = VK_NULL_HANDLE;
+        VkPipelineLayout      pipeline_layout = VK_NULL_HANDLE;
     };
-    hash_id*            s_pipeline_cache_hash = nullptr;
-    vk_pipeline_cache*  s_pipeline_cache = nullptr;
+    hash_id*           s_pipeline_cache_hash = nullptr;
+    vk_pipeline_cache* s_pipeline_cache = nullptr;
 
     enum e_shd
     {
@@ -465,33 +468,33 @@ namespace
     struct pen_state
     {
         // hashes
-        hash_id                             hpass = 0;
-        hash_id                             hpipeline = 0;
-        hash_id                             hdescriptors = 0;
+        hash_id hpass = 0;
+        hash_id hpipeline = 0;
+        hash_id hdescriptors = 0;
         // hash for pass
-        u32*                                colour_attachments = nullptr;
-        u32                                 depth_attachment = 0;
-        u32                                 colour_slice;
-        u32                                 depth_slice;
-        u32                                 clear_state;
-        u32                                 depth_stencil_state;
+        u32* colour_attachments = nullptr;
+        u32  depth_attachment = 0;
+        u32  colour_slice;
+        u32  depth_slice;
+        u32  clear_state;
+        u32  depth_stencil_state;
         // hash for pipeline
-        u32                                 shader[e_shd::count]; // vs, fs, gs, so, cs
-        viewport                            vp;
-        rect                                sr;
-        u32                                 vertex_buffer;
-        u32                                 index_buffer;
-        u32                                 input_layout;
-        u32                                 raster;
-        u32                                 blend = -1;
-        VkRenderPass                        pass;
-        pen_binding*                        bindings = nullptr;
+        u32          shader[e_shd::count]; // vs, fs, gs, so, cs
+        viewport     vp;
+        rect         sr;
+        u32          vertex_buffer;
+        u32          index_buffer;
+        u32          input_layout;
+        u32          raster;
+        u32          blend = -1;
+        VkRenderPass pass;
+        pen_binding* bindings = nullptr;
         // vulkan cached state
-        VkPipelineLayout                    pipeline_layout;
-        VkVertexInputBindingDescription*    vertex_input_bindings = nullptr;
-        VkDescriptorSetLayout               descriptor_set_layout;
-        u32                                 descriptor_set_index;
-        u32                                 pipeline_index = -1;
+        VkPipelineLayout                 pipeline_layout;
+        VkVertexInputBindingDescription* vertex_input_bindings = nullptr;
+        VkDescriptorSetLayout            descriptor_set_layout;
+        u32                              descriptor_set_index;
+        u32                              pipeline_index = -1;
     };
     pen_state _state;
 
@@ -504,21 +507,21 @@ namespace
 
     struct vulkan_texture
     {
-        VkImageView                 image_view;
-        VkImage                     image;
-        VkFormat                    format;
-        VkDeviceMemory              mem = 0;
-        texture_creation_params*    tcp;
-        VkImageLayout               layout;
-        bool                        compute_shader_write = false;
+        VkImageView              image_view;
+        VkImage                  image;
+        VkFormat                 format;
+        VkDeviceMemory           mem = 0;
+        texture_creation_params* tcp;
+        VkImageLayout            layout;
+        bool                     compute_shader_write = false;
     };
 
     struct vulkan_buffer
     {
-        VkBuffer        buf[NBB];
-        VkDeviceMemory  mem[NBB];
-        u32             size;
-        bool            dynamic;
+        VkBuffer       buf[NBB];
+        VkDeviceMemory mem[NBB];
+        u32            size;
+        bool           dynamic;
 
         VkBuffer& get_buffer()
         {
@@ -563,24 +566,24 @@ namespace
         e_res type = e_res::none;
 
         union {
-            vulkan_texture                          texture;
-            vulkan_shader                           shader;
-            clear_state                             clear;
-            vulkan_buffer                           buffer;
-            VkPipelineRasterizationStateCreateInfo  raster;
-            VkVertexInputAttributeDescription*      vertex_attributes;
-            VkSampler                               sampler;
-            vulkan_blend_state                      blend;
-            VkPipelineDepthStencilStateCreateInfo   depth_stencil;
+            vulkan_texture                         texture;
+            vulkan_shader                          shader;
+            clear_state                            clear;
+            vulkan_buffer                          buffer;
+            VkPipelineRasterizationStateCreateInfo raster;
+            VkVertexInputAttributeDescription*     vertex_attributes;
+            VkSampler                              sampler;
+            vulkan_blend_state                     blend;
+            VkPipelineDepthStencilStateCreateInfo  depth_stencil;
         };
     };
     res_pool<resource_allocation> _res_pool;
 
     // hash contents of a stretchy buffer
-    template<typename T>
+    template <typename T>
     hash_id sb_hash(T* sb)
     {
-        u32 c = sb_count(sb);
+        u32          c = sb_count(sb);
         HashMurmur2A hh;
         hh.begin();
         for (u32 i = 0; i < c; ++i)
@@ -665,21 +668,18 @@ namespace
             sb_push(_ctx.ext_names, ext_props[i].extensionName);
     }
 
-    static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
-        VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-        VkDebugUtilsMessageTypeFlagsEXT messageType,
-        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-        void* pUserData) {
+    static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT      messageSeverity,
+                                                         VkDebugUtilsMessageTypeFlagsEXT             messageType,
+                                                         const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+                                                         void*                                       pUserData)
+    {
 
         PEN_LOG("[vulkan validation] %s\n", pCallbackData->pMessage);
         return VK_FALSE;
     }
 
-    VkResult CreateDebugUtilsMessengerEXT(
-        VkInstance instance,
-        const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-        const VkAllocationCallbacks* pAllocator,
-        VkDebugUtilsMessengerEXT* pDebugMessenger)
+    VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+                                          const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger)
     {
         auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
         if (func != nullptr)
@@ -688,10 +688,8 @@ namespace
         return VK_ERROR_EXTENSION_NOT_PRESENT;
     }
 
-    void DestroyDebugUtilsMessengerEXT(
-        VkInstance instance,
-        VkDebugUtilsMessengerEXT debugMessenger,
-        const VkAllocationCallbacks* pAllocator)
+    void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger,
+                                       const VkAllocationCallbacks* pAllocator)
     {
         auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
         if (func != nullptr)
@@ -702,12 +700,11 @@ namespace
     {
         VkDebugUtilsMessengerCreateInfoEXT info = {};
         info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-        info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT
-            | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
-            | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-        info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT
-            | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT
-            | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+                               VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+                               VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+                           VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
         info.pfnUserCallback = debug_callback;
         info.pUserData = nullptr;
 
@@ -854,12 +851,10 @@ namespace
     {
         // one large pool for all descriptor sets to be allocated from
 
-        VkDescriptorPoolSize pool_sizes[] = {
-            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER , size },
-            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER , size },
-            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE , size },
-            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, size }
-        };
+        VkDescriptorPoolSize pool_sizes[] = {{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, size},
+                                             {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, size},
+                                             {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, size},
+                                             {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, size}};
 
         u32 max_sets = 0;
         for (auto& ps : pool_sizes)
@@ -912,7 +907,7 @@ namespace
     }
 
     void _transition_image_cs(VkCommandBuffer cmd_buf, VkImage image, VkFormat format, VkImageLayout old_layout,
-        VkImageLayout new_layout)
+                              VkImageLayout new_layout)
     {
         VkImageMemoryBarrier barrier = {};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -939,8 +934,8 @@ namespace
         vkCmdPipelineBarrier(cmd_buf, src_stage, dst_stage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
     }
 
-    void _transition_image(VkImage image, VkFormat format, VkImageAspectFlags aspect, VkImageLayout old_layout, 
-        VkImageLayout new_layout)
+    void _transition_image(VkImage image, VkFormat format, VkImageAspectFlags aspect, VkImageLayout old_layout,
+                           VkImageLayout new_layout)
     {
         VkCommandBuffer cmd_buf = begin_cmd_buffer();
 
@@ -949,7 +944,8 @@ namespace
         barrier.oldLayout = old_layout;
         barrier.newLayout = new_layout;
         barrier.srcQueueFamilyIndex = _ctx.graphics_family_index;
-        barrier.dstQueueFamilyIndex = _ctx.graphics_family_index;;
+        barrier.dstQueueFamilyIndex = _ctx.graphics_family_index;
+        ;
         barrier.image = image;
         barrier.subresourceRange.aspectMask = aspect;
         barrier.subresourceRange.baseMipLevel = 0;
@@ -960,8 +956,7 @@ namespace
         VkPipelineStageFlags src_stage;
         VkPipelineStageFlags dst_stage;
 
-        if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED
-            && new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+        if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
         {
             barrier.srcAccessMask = 0;
             barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -969,8 +964,7 @@ namespace
             src_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
             dst_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
         }
-        else if (old_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-            && new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        else if (old_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
         {
             barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
             barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
@@ -978,8 +972,7 @@ namespace
             src_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
             dst_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
         }
-        else if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED
-            && new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        else if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
         {
             barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
             barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
@@ -1040,7 +1033,7 @@ namespace
         swap_chain_info.minImageCount = NBB;
         swap_chain_info.imageFormat = VK_FORMAT_B8G8R8A8_UNORM;
         swap_chain_info.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-        swap_chain_info.imageExtent = { pen_window.width, caps.currentExtent.height };
+        swap_chain_info.imageExtent = {pen_window.width, caps.currentExtent.height};
         swap_chain_info.imageArrayLayers = 1;
         swap_chain_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         swap_chain_info.presentMode = VK_PRESENT_MODE_FIFO_KHR;
@@ -1068,7 +1061,7 @@ namespace
 
         // surface
         create_surface(params);
-        
+
         // find queues
         _ctx.num_queue_families = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(_ctx.physical_device, &_ctx.num_queue_families, nullptr);
@@ -1091,14 +1084,13 @@ namespace
             vkGetPhysicalDeviceSurfaceSupportKHR(_ctx.physical_device, i, _ctx.surface, &present);
             if (queue_families[i].queueCount > 0 && present)
                 _ctx.present_family_index = i;
-
         }
         PEN_ASSERT(_ctx.graphics_family_index != -1);
         PEN_ASSERT(_ctx.present_family_index != -1);
         PEN_ASSERT(_ctx.compute_family_index != -1);
 
         // gfx queue
-        f32 pri = 1.0f;
+        f32                     pri = 1.0f;
         VkDeviceQueueCreateInfo gfx_queue_info = {};
         gfx_queue_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         gfx_queue_info.queueFamilyIndex = _ctx.graphics_family_index;
@@ -1188,11 +1180,11 @@ namespace
         delete devices;
     }
 
-    u32 get_mem_type(u32 filter, VkMemoryPropertyFlags properties) 
+    u32 get_mem_type(u32 filter, VkMemoryPropertyFlags properties)
     {
-        for (u32 i = 0; i < _ctx.mem_properties.memoryTypeCount; i++) 
+        for (u32 i = 0; i < _ctx.mem_properties.memoryTypeCount; i++)
         {
-            if ((filter & (1 << i)) && (_ctx.mem_properties.memoryTypes[i].propertyFlags & properties) == properties) 
+            if ((filter & (1 << i)) && (_ctx.mem_properties.memoryTypes[i].propertyFlags & properties) == properties)
             {
                 return i;
             }
@@ -1232,8 +1224,8 @@ namespace
     void bind_dynamic_viewport()
     {
         // viewport / scissor
-        viewport& vp = _state.vp;
-        rect& sr = _state.sr;
+        viewport&  vp = _state.vp;
+        rect&      sr = _state.sr;
         VkViewport viewport = {};
         viewport.x = vp.x;
         viewport.y = vp.y;
@@ -1245,15 +1237,15 @@ namespace
         vkCmdSetViewport(_ctx.cmd_bufs[_ctx.ii], 0, 1, &viewport);
 
         VkRect2D scissor = {};
-        scissor.offset = { (s32)sr.left, (s32)sr.top };
-        scissor.extent = { (u32)sr.right - (u32)sr.left, (u32)sr.bottom - (u32)sr.top };
+        scissor.offset = {(s32)sr.left, (s32)sr.top};
+        scissor.extent = {(u32)sr.right - (u32)sr.left, (u32)sr.bottom - (u32)sr.top};
 
         vkCmdSetScissor(_ctx.cmd_bufs[_ctx.ii], 0, 1, &scissor);
     }
 
     void bind_pipeline_from_cache(const vk_pipeline_cache& pc, VkPipelineBindPoint bind_point, hash_id hash, u32 index)
     {
-        if(bind_point == VK_PIPELINE_BIND_POINT_COMPUTE)
+        if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE)
             vkCmdBindPipeline(_ctx.cmd_buf_compute[_ctx.ii], bind_point, pc.pipeline);
         else
             vkCmdBindPipeline(_ctx.cmd_bufs[_ctx.ii], bind_point, pc.pipeline);
@@ -1292,10 +1284,10 @@ namespace
         }
 
         // begin building a new pipeline
-        static clear_state null_clear = { 0 };
-        clear_state* clear = &null_clear;
+        static clear_state null_clear = {0};
+        clear_state*       clear = &null_clear;
 
-        if(_state.clear_state != PEN_INVALID_HANDLE)
+        if (_state.clear_state != PEN_INVALID_HANDLE)
             clear = &_res_pool.get(_state.clear_state).clear;
 
         // attachments
@@ -1305,7 +1297,7 @@ namespace
         VkImageView*             attachment_img_view = nullptr;
 
         size_t fbw, fbh;
-        u32 attachment_index = 0;
+        u32    attachment_index = 0;
         for (u32 i = 0; i < sb_count(_state.colour_attachments); ++i)
         {
             u32 ica = _state.colour_attachments[i];
@@ -1321,7 +1313,7 @@ namespace
             col.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 
             if (clear->flags & PEN_CLEAR_COLOUR_BUFFER)
-                col.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;              
+                col.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 
             col.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
             col.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -1428,11 +1420,11 @@ namespace
         // clear
         clear_state& cs = *clear;
 
-        VkClearValue clear_colour; 
-        clear_colour.color = { cs.r, cs.g, cs.b, cs.a };
+        VkClearValue clear_colour;
+        clear_colour.color = {cs.r, cs.g, cs.b, cs.a};
 
         VkClearValue clear_depth_stencil;
-        clear_depth_stencil.depthStencil = { cs.depth, 0 };
+        clear_depth_stencil.depthStencil = {cs.depth, 0};
 
         VkClearValue* clear_values = nullptr;
         sb_push(clear_values, clear_colour);
@@ -1444,8 +1436,8 @@ namespace
         vk_pc.begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         vk_pc.begin_info.renderPass = pass;
         vk_pc.begin_info.framebuffer = fb;
-        vk_pc.begin_info.renderArea.offset = { 0, 0 };
-        vk_pc.begin_info.renderArea.extent = { (u32)fbw, (u32)fbh };
+        vk_pc.begin_info.renderArea.offset = {0, 0};
+        vk_pc.begin_info.renderArea.extent = {(u32)fbw, (u32)fbh};
         vk_pc.begin_info.clearValueCount = sb_count(clear_values);
         vk_pc.begin_info.pClearValues = clear_values;
         vk_pc.colour_attachments = attachment_refs;
@@ -1527,10 +1519,7 @@ namespace
         info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 
         // dynamic states
-        VkDynamicState dynamic_states[] = { 
-            VK_DYNAMIC_STATE_VIEWPORT,
-            VK_DYNAMIC_STATE_SCISSOR
-        };
+        VkDynamicState dynamic_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
 
         VkPipelineDynamicStateCreateInfo dynamic_info = {};
         dynamic_info.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
@@ -1551,8 +1540,8 @@ namespace
         info.pInputAssemblyState = &input_assembly;
 
         // viewport / scissor
-        viewport& vp = _state.vp;
-        rect& sr = _state.sr;
+        viewport&  vp = _state.vp;
+        rect&      sr = _state.sr;
         VkViewport viewport = {};
         viewport.x = vp.x;
         viewport.y = vp.y;
@@ -1562,8 +1551,8 @@ namespace
         viewport.maxDepth = vp.max_depth;
 
         VkRect2D scissor = {};
-        scissor.offset = { (s32)sr.left, (s32)sr.top };
-        scissor.extent = { (u32)sr.right - (u32)sr.left, (u32)sr.bottom - (u32)sr.top };
+        scissor.offset = {(s32)sr.left, (s32)sr.top};
+        scissor.extent = {(u32)sr.right - (u32)sr.left, (u32)sr.bottom - (u32)sr.top};
 
         VkPipelineViewportStateCreateInfo viewportState = {};
         viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -1571,7 +1560,7 @@ namespace
         viewportState.pViewports = &viewport;
         viewportState.scissorCount = 1;
         viewportState.pScissors = &scissor;
-        
+
         info.pViewportState = &viewportState;
 
         // shader stages
@@ -1590,7 +1579,7 @@ namespace
         fragment_shader_info.module = _res_pool.get(fs).shader.module;
         fragment_shader_info.pName = "main";
 
-        VkPipelineShaderStageCreateInfo shader_stages[] = { vertex_shader_info, fragment_shader_info };
+        VkPipelineShaderStageCreateInfo shader_stages[] = {vertex_shader_info, fragment_shader_info};
 
         info.stageCount = 2;
         info.pStages = shader_stages;
@@ -1617,11 +1606,8 @@ namespace
         {
             // make default
             VkPipelineColorBlendAttachmentState colour_blend_attachment = {};
-            colour_blend_attachment.colorWriteMask = 
-                VK_COLOR_COMPONENT_R_BIT | 
-                VK_COLOR_COMPONENT_G_BIT | 
-                VK_COLOR_COMPONENT_B_BIT | 
-                VK_COLOR_COMPONENT_A_BIT;
+            colour_blend_attachment.colorWriteMask =
+                VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 
             colour_blend_attachment.blendEnable = VK_FALSE;
 
@@ -1661,7 +1647,7 @@ namespace
         info.pMultisampleState = &multisampling;
 
         // layout
-        VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
+        VkPipelineLayout      pipeline_layout = VK_NULL_HANDLE;
         VkDescriptorSetLayout descriptor_set_layout = VK_NULL_HANDLE;
         create_pipeline_layout(pipeline_layout, descriptor_set_layout);
         info.layout = pipeline_layout;
@@ -1691,7 +1677,7 @@ namespace
         VkComputePipelineCreateInfo info = {};
         info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
         info.flags = 0;
-        
+
         HashMurmur2A hh;
         hh.begin();
         hh.add(_state.shader[e_shd::compute]);
@@ -1713,15 +1699,14 @@ namespace
             }
         }
 
-
         // layout
-        VkPipelineLayout pipeline_layout;
+        VkPipelineLayout      pipeline_layout;
         VkDescriptorSetLayout descriptor_set_layout;
         create_pipeline_layout(pipeline_layout, descriptor_set_layout);
         info.layout = pipeline_layout;
 
         // shader
-        u32 cs = _state.shader[e_shd::compute];
+        u32                             cs = _state.shader[e_shd::compute];
         VkPipelineShaderStageCreateInfo compute_shader_info = {};
         compute_shader_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         compute_shader_info.stage = VK_SHADER_STAGE_COMPUTE_BIT;
@@ -1756,7 +1741,7 @@ namespace
             return;
 
         // allocate a descriptor set
-        VkDescriptorSet descriptor_set = 0;
+        VkDescriptorSet             descriptor_set = 0;
         VkDescriptorSetAllocateInfo alloc_info = {};
         alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         alloc_info.descriptorPool = _ctx.descriptor_pool[_ctx.ii];
@@ -1781,7 +1766,7 @@ namespace
             descriptor_write.descriptorType = pb.descriptor_type;
             descriptor_write.descriptorCount = 1;
 
-            VkDescriptorImageInfo image_info = {};
+            VkDescriptorImageInfo  image_info = {};
             VkDescriptorBufferInfo buf_info = {};
 
             switch (pb.descriptor_type)
@@ -1807,8 +1792,8 @@ namespace
                     {
                         if (vt.layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
                         {
-                            _transition_image_cs(_ctx.cmd_buf_compute[_ctx.ii], vt.image,
-                                vt.format, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL);
+                            _transition_image_cs(_ctx.cmd_buf_compute[_ctx.ii], vt.image, vt.format,
+                                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL);
 
                             vt.layout = VK_IMAGE_LAYOUT_GENERAL;
                         }
@@ -1826,12 +1811,11 @@ namespace
             vkUpdateDescriptorSets(_ctx.device, 1, &descriptor_write, 0, nullptr);
         }
 
-        vkCmdBindDescriptorSets(cmd_buf, 
-            bind_point, _state.pipeline_layout, 0, 1, &descriptor_set, 0, nullptr);
+        vkCmdBindDescriptorSets(cmd_buf, bind_point, _state.pipeline_layout, 0, 1, &descriptor_set, 0, nullptr);
 
         _state.hdescriptors = h;
     }
-}
+} // namespace
 
 namespace pen
 {
@@ -1840,16 +1824,9 @@ namespace pen
     static renderer_info s_renderer_info;
     const renderer_info& renderer_get_info()
     {
-        s_renderer_info.caps = PEN_CAPS_TEXTURE_MULTISAMPLE
-            | PEN_CAPS_DEPTH_CLAMP
-            | PEN_CAPS_GPU_TIMER
-            | PEN_CAPS_COMPUTE
-            | PEN_CAPS_TEX_FORMAT_BC1
-            | PEN_CAPS_TEX_FORMAT_BC2
-            | PEN_CAPS_TEX_FORMAT_BC3
-            | PEN_CAPS_TEX_FORMAT_BC4
-            | PEN_CAPS_TEX_FORMAT_BC5
-            ;
+        s_renderer_info.caps = PEN_CAPS_TEXTURE_MULTISAMPLE | PEN_CAPS_DEPTH_CLAMP | PEN_CAPS_GPU_TIMER | PEN_CAPS_COMPUTE |
+                               PEN_CAPS_TEX_FORMAT_BC1 | PEN_CAPS_TEX_FORMAT_BC2 | PEN_CAPS_TEX_FORMAT_BC3 |
+                               PEN_CAPS_TEX_FORMAT_BC4 | PEN_CAPS_TEX_FORMAT_BC5;
 
         return s_renderer_info;
     }
@@ -1873,8 +1850,8 @@ namespace pen
             begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
             begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
-            CHECK_CALL(vkAcquireNextImageKHR(_ctx.device,
-                _ctx.swap_chain, UINT64_MAX, _ctx.sem_img_avail[next_frame], nullptr, &_ctx.ii));
+            CHECK_CALL(vkAcquireNextImageKHR(_ctx.device, _ctx.swap_chain, UINT64_MAX, _ctx.sem_img_avail[next_frame],
+                                             nullptr, &_ctx.ii));
 
             vkWaitForFences(_ctx.device, 1, &_ctx.fences[_ctx.ii], VK_TRUE, (s32)-1);
             vkResetFences(_ctx.device, 1, &_ctx.fences[_ctx.ii]);
@@ -1890,10 +1867,9 @@ namespace pen
             CHECK_CALL(vkBeginCommandBuffer(_ctx.cmd_bufs[_ctx.ii], &begin_info));
 
             _ctx.submit_flags |= SUBMIT_GRAPHICS;
-            
+
             vkResetDescriptorPool(_ctx.device, _ctx.descriptor_pool[next_frame], 0);
             _state.descriptor_set_index = 0;
-
         }
 
         u32 renderer_initialise(void* params, u32 bb_res, u32 bb_depth_res)
@@ -1930,7 +1906,7 @@ namespace pen
 
             CHECK_CALL(vkCreateInstance(&create_info, nullptr, &_ctx.instance));
 
-            if(_ctx.enable_validation)
+            if (_ctx.enable_validation)
                 create_debug_messenger();
 
             create_device_surface_swapchain(params);
@@ -1955,22 +1931,22 @@ namespace pen
             vkDestroySurfaceKHR(_ctx.instance, _ctx.surface, nullptr);
             vkDestroyInstance(_ctx.instance, nullptr);
         }
-        
+
         void renderer_sync()
         {
             // unused on this platform
         }
-        
+
         void renderer_new_frame()
         {
             // unused on this platform
         }
-        
+
         void renderer_end_frame()
         {
             // unused on this platform
         }
-        
+
         void renderer_create_clear_state(const clear_state& cs, u32 resource_slot)
         {
             _res_pool.insert({}, resource_slot);
@@ -2035,8 +2011,8 @@ namespace pen
             // stub this function is for opengl
         }
 
-        static void _create_buffer_internal(VkBufferUsageFlags usage, VkMemoryPropertyFlags mem_props,
-            void* data, u32 buffer_size, VkBuffer& buf, VkDeviceMemory& mem)
+        static void _create_buffer_internal(VkBufferUsageFlags usage, VkMemoryPropertyFlags mem_props, void* data,
+                                            u32 buffer_size, VkBuffer& buf, VkDeviceMemory& mem)
         {
             VkBufferCreateInfo info = {};
             info.size = buffer_size;
@@ -2076,20 +2052,20 @@ namespace pen
             res.dynamic = false;
             if (params.cpu_access_flags & PEN_CPU_ACCESS_WRITE)
             {
-                res.dynamic = true;               
+                res.dynamic = true;
                 c = NBB;
             }
 
             for (u32 i = 0; i < c; ++i)
             {
                 _create_buffer_internal(to_vk_buffer_usage(params.bind_flags),
-                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                    params.data, params.buffer_size, res.buf[i], res.mem[i]);
+                                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                        params.data, params.buffer_size, res.buf[i], res.mem[i]);
             }
         }
 
-        void renderer_set_vertex_buffers(u32* buffer_indices, 
-            u32 num_buffers, u32 start_slot, const u32* strides, const u32* offsets)
+        void renderer_set_vertex_buffers(u32* buffer_indices, u32 num_buffers, u32 start_slot, const u32* strides,
+                                         const u32* offsets)
         {
             if (_state.vertex_input_bindings)
             {
@@ -2097,7 +2073,7 @@ namespace pen
                 _state.vertex_input_bindings = nullptr;
             }
 
-            static VkBuffer _bufs[8];
+            static VkBuffer     _bufs[8];
             static VkDeviceSize _offsets[8];
             for (u32 i = 0; i < num_buffers; ++i)
             {
@@ -2150,10 +2126,9 @@ namespace pen
 
             _set_binding(b);
         }
-        
+
         void renderer_set_structured_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
         {
-            
         }
 
         void renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset)
@@ -2237,14 +2212,14 @@ namespace pen
 
             if (vt.tcp->data)
             {
-                VkBuffer buf;
+                VkBuffer       buf;
                 VkDeviceMemory mem;
                 _create_buffer_internal(VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                    vt.tcp->data, vt.tcp->data_size, buf, mem);
+                                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                        vt.tcp->data, vt.tcp->data_size, buf, mem);
 
-                _transition_image(vt.image, 
-                    vt.format, aspect, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+                _transition_image(vt.image, vt.format, aspect, VK_IMAGE_LAYOUT_UNDEFINED,
+                                  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
                 VkBufferImageCopy region = {};
                 region.bufferOffset = 0;
@@ -2254,30 +2229,24 @@ namespace pen
                 region.imageSubresource.mipLevel = 0;
                 region.imageSubresource.baseArrayLayer = 0;
                 region.imageSubresource.layerCount = 1;
-                region.imageOffset = { 0, 0, 0 };
-                region.imageExtent = {
-                    vt.tcp->width,
-                    vt.tcp->height,
-                    1
-                };
+                region.imageOffset = {0, 0, 0};
+                region.imageExtent = {vt.tcp->width, vt.tcp->height, 1};
 
                 VkCommandBuffer cmd = begin_cmd_buffer();
                 vkCmdCopyBufferToImage(cmd, buf, vt.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
                 end_cmd_buffer(cmd);
 
-                _transition_image(vt.image,
-                    vt.format, aspect, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, target_layout);
+                _transition_image(vt.image, vt.format, aspect, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, target_layout);
 
                 vkDestroyBuffer(_ctx.device, buf, nullptr);
                 vkFreeMemory(_ctx.device, mem, nullptr);
             }
-            else if(!(vt.tcp->bind_flags & PEN_BIND_RENDER_TARGET) && !(vt.tcp->bind_flags & PEN_BIND_DEPTH_STENCIL))
+            else if (!(vt.tcp->bind_flags & PEN_BIND_RENDER_TARGET) && !(vt.tcp->bind_flags & PEN_BIND_DEPTH_STENCIL))
             {
                 // if we are not a render target we need to transition image layout, if we are rt or ds then render pass
                 // will do it for us.
 
-                _transition_image(vt.image,
-                    vt.format, aspect, VK_IMAGE_LAYOUT_UNDEFINED, target_layout);
+                _transition_image(vt.image, vt.format, aspect, VK_IMAGE_LAYOUT_UNDEFINED, target_layout);
             }
 
             vt.layout = target_layout;
@@ -2452,7 +2421,6 @@ namespace pen
 
         void renderer_set_stencil_ref(u8 ref)
         {
-
         }
 
         void renderer_draw(u32 vertex_count, u32 start_vertex, u32 primitive_topology)
@@ -2464,15 +2432,14 @@ namespace pen
             vkCmdDraw(_ctx.cmd_bufs[_ctx.ii], vertex_count, 1, 0, 0);
         }
 
-        inline void _draw_index_instanced(u32 instance_count, 
-            u32 start_instance, u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology)
+        inline void _draw_index_instanced(u32 instance_count, u32 start_instance, u32 index_count, u32 start_index,
+                                          u32 base_vertex, u32 primitive_topology)
         {
             begin_pass();
             bind_render_pipeline(primitive_topology);
             bind_descriptor_sets(_ctx.cmd_bufs[_ctx.ii], VK_PIPELINE_BIND_POINT_GRAPHICS);
 
-            vkCmdDrawIndexed(_ctx.cmd_bufs[_ctx.ii], 
-                index_count, instance_count, start_index, base_vertex, start_instance);
+            vkCmdDrawIndexed(_ctx.cmd_bufs[_ctx.ii], index_count, instance_count, start_index, base_vertex, start_instance);
         }
 
         void renderer_draw_indexed(u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology)
@@ -2480,15 +2447,14 @@ namespace pen
             _draw_index_instanced(1, 0, index_count, start_index, base_vertex, primitive_topology);
         }
 
-        void renderer_draw_indexed_instanced(u32 instance_count, 
-            u32 start_instance, u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology)
+        void renderer_draw_indexed_instanced(u32 instance_count, u32 start_instance, u32 index_count, u32 start_index,
+                                             u32 base_vertex, u32 primitive_topology)
         {
             _draw_index_instanced(instance_count, start_instance, index_count, start_index, base_vertex, primitive_topology);
         }
 
         void renderer_draw_auto()
         {
-
         }
 
         void renderer_dispatch_compute(uint3 grid, uint3 num_threads)
@@ -2501,7 +2467,8 @@ namespace pen
             bind_compute_pipeline();
             bind_descriptor_sets(_ctx.cmd_buf_compute[_ctx.ii], VK_PIPELINE_BIND_POINT_COMPUTE);
 
-            vkCmdDispatch(_ctx.cmd_buf_compute[_ctx.ii], grid.x / num_threads.x, grid.y / num_threads.y, grid.z / num_threads.z);
+            vkCmdDispatch(_ctx.cmd_buf_compute[_ctx.ii], grid.x / num_threads.x, grid.y / num_threads.y,
+                          grid.z / num_threads.z);
 
             vkEndCommandBuffer(_ctx.cmd_buf_compute[_ctx.ii]);
 
@@ -2516,8 +2483,8 @@ namespace pen
             return renderer_create_texture(tcp, resource_slot);
         }
 
-        void renderer_set_targets(const u32* const colour_targets, u32 num_colour_targets, u32 depth_target, u32 colour_face, 
-            u32 depth_face)
+        void renderer_set_targets(const u32* const colour_targets, u32 num_colour_targets, u32 depth_target, u32 colour_face,
+                                  u32 depth_face)
         {
             sb_free(_state.bindings);
             _state.bindings = nullptr;
@@ -2546,22 +2513,18 @@ namespace pen
 
         void renderer_set_resolve_targets(u32 colour_target, u32 depth_target)
         {
-
         }
 
         void renderer_set_stream_out_target(u32 buffer_index)
         {
-
         }
 
         void renderer_resolve_target(u32 target, e_msaa_resolve_type type, resolve_resources res)
         {
-
         }
 
         void renderer_read_back_resource(const resource_read_back_params& rrbp)
         {
-
         }
 
         void renderer_present()
@@ -2585,23 +2548,23 @@ namespace pen
             info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
             info.commandBufferCount = 1;
             info.pCommandBuffers = &_ctx.cmd_bufs[_ctx.ii];
-            
+
             // wait
-            VkSemaphore sem_wait[] = { _ctx.sem_img_avail[_ctx.ii] };
-            VkPipelineStageFlags wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+            VkSemaphore          sem_wait[] = {_ctx.sem_img_avail[_ctx.ii]};
+            VkPipelineStageFlags wait_stages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
             info.waitSemaphoreCount = 1;
             info.pWaitSemaphores = sem_wait;
             info.pWaitDstStageMask = wait_stages;
 
             // signal
-            VkSemaphore sem_signal[] = { _ctx.sem_render_finished[_ctx.ii] };
+            VkSemaphore sem_signal[] = {_ctx.sem_render_finished[_ctx.ii]};
             info.signalSemaphoreCount = 1;
             info.pSignalSemaphores = sem_signal;
             info.signalSemaphoreCount = 1;
 
             CHECK_CALL(vkQueueSubmit(_ctx.graphics_queue, 1, &info, _ctx.fences[_ctx.ii]));
 
-            VkSwapchainKHR swapChains[] = { _ctx.swap_chain };
+            VkSwapchainKHR   swapChains[] = {_ctx.swap_chain};
             VkPresentInfoKHR present = {};
             present.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
             present.swapchainCount = 1;
@@ -2612,12 +2575,10 @@ namespace pen
 
             // present and swap
             VkResult result = vkQueuePresentKHR(_ctx.present_queue, &present);
-            u32 next_frame = (_ctx.ii + 1) % NBB;
+            u32      next_frame = (_ctx.ii + 1) % NBB;
 
             // handle swapchain re-creation / window resize
-            if (result == VK_ERROR_OUT_OF_DATE_KHR ||
-                result == VK_SUBOPTIMAL_KHR ||
-                g_window_resize)
+            if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || g_window_resize)
             {
                 g_window_resize = 0;
                 vkDeviceWaitIdle(_ctx.device);
@@ -2630,17 +2591,14 @@ namespace pen
 
         void renderer_push_perf_marker(const c8* name)
         {
-
         }
 
         void renderer_pop_perf_marker()
         {
-
         }
 
         void renderer_replace_resource(u32 dest, u32 src, e_renderer_resource type)
         {
-
         }
 
         void renderer_release_shader(u32 shader_index, u32 shader_type)
@@ -2657,8 +2615,8 @@ namespace pen
         void renderer_release_buffer(u32 buffer_index)
         {
             vulkan_buffer& buf = _res_pool.get(buffer_index).buffer;
-            u32 c = buf.dynamic ? NBB : 1;
-            
+            u32            c = buf.dynamic ? NBB : 1;
+
             for (u32 i = 0; i < c; ++i)
             {
                 vkDestroyBuffer(_ctx.device, buf.buf[i], nullptr);
@@ -2682,7 +2640,6 @@ namespace pen
 
         void renderer_release_raster_state(u32 raster_state_index)
         {
-
         }
 
         void renderer_release_blend_state(u32 blend_state)
@@ -2704,7 +2661,6 @@ namespace pen
 
         void renderer_release_depth_stencil_state(u32 depth_stencil_state)
         {
-
         }
-    }
-}
+    } // namespace direct
+} // namespace pen

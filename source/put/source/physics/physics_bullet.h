@@ -170,7 +170,7 @@ namespace physics
 
     cast_result cast_ray_internal(const ray_cast_params& rcp);
     cast_result cast_sphere_internal(const sphere_cast_params& ccp);
-    void contact_test_internal(const contact_test_params& ctp);
+    void        contact_test_internal(const contact_test_params& ctp);
 
     void add_central_force(const set_v3_params& cmd);
     void add_central_impulse(const set_v3_params& cmd);

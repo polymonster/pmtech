@@ -87,5 +87,5 @@ namespace pen
 void* operator new(std::size_t size, const std::nothrow_t& nothrow_value) THROW_NO_EXCEPT;
 void* operator new(size_t n) THROW_BAD_ALLOC;
 void* operator new[](size_t n) THROW_BAD_ALLOC;
-void operator delete[](void* p) THROW_NO_EXCEPT;
-void operator delete(void* p) THROW_NO_EXCEPT;
+void  operator delete[](void* p) THROW_NO_EXCEPT;
+void  operator delete(void* p)THROW_NO_EXCEPT;

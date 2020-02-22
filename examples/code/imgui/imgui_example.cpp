@@ -15,14 +15,14 @@ namespace pen
     {
         pen::pen_creation_params p;
         p.window_width = 1280;
-        p.window_height =  720;
+        p.window_height = 720;
         p.window_title = "imgui_example";
         p.window_sample_count = 4;
         p.user_thread_function = user_entry;
         p.flags = pen::e_pen_create_flags::renderer;
         return p;
     }
-}
+} // namespace pen
 
 u32 clear_state_grey;
 u32 raster_state_cull_back;
@@ -79,13 +79,13 @@ void* pen::user_entry(void* params)
         pen::renderer_clear(clear_state_grey);
         pen::renderer_set_rasterizer_state(raster_state_cull_back);
         pen::renderer_set_depth_stencil_state(default_depth_stencil_state);
-        
+
         put::dev_ui::new_frame();
 
         ImGui::Text("Hello World");
 
         static f32 renderer_time = 0.0f;
-        
+
         static bool show_test_window = true;
         static bool show_another_window = false;
         ImVec4      clear_col = ImColor(114, 144, 154);

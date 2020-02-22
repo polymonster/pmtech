@@ -11,15 +11,14 @@ namespace pen
     {
         pen::pen_creation_params p;
         p.window_width = 1280;
-        p.window_height =  720;
+        p.window_height = 720;
         p.window_title = "stencil_shadows";
         p.window_sample_count = 4;
         p.user_thread_function = user_entry;
         p.flags = pen::e_pen_create_flags::renderer;
         return p;
     }
-}
-
+} // namespace pen
 
 namespace
 {
@@ -286,7 +285,7 @@ void generate_edge_mesh(geometry_resource* gr, shadow_volume_edge** sve_out, geo
 void example_setup(ecs::ecs_scene* scene, camera& cam)
 {
     editor_set_transform_mode(e_transform_mode::physics);
-    
+
     put::scene_view_renderer svr_stencil_shadow_volumes;
     svr_stencil_shadow_volumes.name = "stencil_shadow_volumes";
     svr_stencil_shadow_volumes.id_name = PEN_HASH(svr_stencil_shadow_volumes.name.c_str());

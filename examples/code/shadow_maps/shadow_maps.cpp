@@ -9,15 +9,14 @@ namespace pen
     {
         pen::pen_creation_params p;
         p.window_width = 1280;
-        p.window_height =  720;
+        p.window_height = 720;
         p.window_title = "shadow_maps";
         p.window_sample_count = 4;
         p.user_thread_function = user_entry;
         p.flags = pen::e_pen_create_flags::renderer;
         return p;
     }
-}
-
+} // namespace pen
 
 struct forward_lit_material
 {
@@ -28,7 +27,7 @@ struct forward_lit_material
 
 namespace
 {
-  u32 pillar_start;
+    u32 pillar_start;
 }
 
 void example_setup(ecs_scene* scene, camera& cam)
@@ -55,7 +54,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->transforms[light].scale = vec3f::one();
     scene->entities[light] |= e_cmp::light;
     scene->entities[light] |= e_cmp::transform;
-    
+
     // point
     light = get_new_entity(scene);
     instantiate_light(scene, light);
@@ -70,7 +69,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->transforms[light].scale = vec3f::one();
     scene->entities[light] |= e_cmp::light;
     scene->entities[light] |= e_cmp::transform;
-    
+
     light = get_new_entity(scene);
     instantiate_light(scene, light);
     scene->names[light] = "point_light2";
@@ -84,7 +83,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->transforms[light].scale = vec3f::one();
     scene->entities[light] |= e_cmp::light;
     scene->entities[light] |= e_cmp::transform;
-    
+
     // spot
     light = get_new_entity(scene);
     instantiate_light(scene, light);
@@ -101,7 +100,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->transforms[light].scale = vec3f::one();
     scene->entities[light] |= e_cmp::light;
     scene->entities[light] |= e_cmp::transform;
-    
+
     light = get_new_entity(scene);
     instantiate_light(scene, light);
     scene->names[light] = "spot_light";
@@ -117,7 +116,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->transforms[light].scale = vec3f::one();
     scene->entities[light] |= e_cmp::light;
     scene->entities[light] |= e_cmp::transform;
-    
+
     // add ground
     f32 ground_size = 100.0f;
     u32 ground = get_new_entity(scene);
@@ -137,7 +136,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     m->reflectivity = 0.0f;
 
     // add some pillars for shadow casters
-    
+
     // the old classic
     f32   num_pillar_rows = 5;
     f32   pillar_size = 20.0f;
@@ -151,15 +150,15 @@ void example_setup(ecs_scene* scene, camera& cam)
         for (s32 j = 0; j < num_pillar_rows; ++j)
         {
             u32 pillar = get_new_entity(scene);
-            if(i == 0 && j == 0)
+            if (i == 0 && j == 0)
                 pillar_start = pillar;
-                
+
             scene->transforms[pillar].rotation = quat();
             scene->transforms[pillar].scale = vec3f(2.0f, pillar_size * 0.75f, 2.0f);
             scene->transforms[pillar].translation = pos;
             scene->parents[pillar] = pillar;
             scene->entities[pillar] |= e_cmp::transform;
-            
+
             // random rotation offset
             f32 x = maths::deg_to_rad(rand() % 360);
             f32 y = maths::deg_to_rad(rand() % 360);
@@ -180,9 +179,8 @@ void example_setup(ecs_scene* scene, camera& cam)
 
         pos.x += d / 2;
     }
-    
+
     // add spinning pillars
-    
 }
 
 void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
@@ -206,7 +204,7 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
 
         vec3f dir = vec3f(xz.x, 1.0f, xz.y);
         scene->lights[i].direction = dir;
-        
+
         scene->transforms.data[i].rotation = quat(xz.x, 0.0f, xz.y);
         scene->entities.data[i] |= e_cmp::transform;
     }
@@ -224,7 +222,7 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
     tz = cos(t2 * 0.5);
     scene->transforms[2].translation = vec3f(tz * 30.0f, 30.0f, tx * 30.0f);
     scene->entities[2] |= e_cmp::transform;
-    
+
     // animating pillars
     q.euler_angles(0.01f, 0.01f, 0.01f);
 

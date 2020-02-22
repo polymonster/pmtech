@@ -25,7 +25,7 @@ inline void output_debug(const c8* format, ...)
     static u32 s_buffer_size = 1024 * 1024;
     static c8* buf = new c8[s_buffer_size];
 
-	// adding 2 to stick \n\0 on windows
+    // adding 2 to stick \n\0 on windows
     u32 n = vsnprintf(buf, s_buffer_size, format, va);
     va_end(va);
 
@@ -45,8 +45,8 @@ inline void output_debug(const c8* format, ...)
     va_end(va);
 
 #ifdef _WIN32
-	buf[n] = '\n';
-	buf[n + 1] = '\0';
+    buf[n] = '\n';
+    buf[n + 1] = '\0';
     OutputDebugStringA(buf);
 #else
     printf("%s\n", buf);

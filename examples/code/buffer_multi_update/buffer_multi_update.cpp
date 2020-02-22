@@ -18,14 +18,14 @@ namespace pen
     {
         pen::pen_creation_params p;
         p.window_width = 1280;
-        p.window_height =  720;
+        p.window_height = 720;
         p.window_title = "buffer_multi_update";
         p.window_sample_count = 4;
         p.user_thread_function = user_entry;
         p.flags = pen::e_pen_create_flags::renderer;
         return p;
     }
-}
+} // namespace pen
 
 struct vertex
 {
@@ -69,10 +69,10 @@ void* pen::user_entry(void* params)
 
     // create vertex buffer for a quad
     vertex quad_vertices[] = {
-        -x_size, -0.5f,  0.5f, 1.0f, // p1
-        -x_size, 0.5f,   0.5f, 1.0f, // p
-        x_size,  0.5f,   0.5f, 1.0f, // p3
-        x_size,  -0.5f,  0.5f, 1.0f  // p4
+        -x_size, -0.5f, 0.5f, 1.0f, // p1
+        -x_size, 0.5f,  0.5f, 1.0f, // p
+        x_size,  0.5f,  0.5f, 1.0f, // p3
+        x_size,  -0.5f, 0.5f, 1.0f  // p4
     };
 
     pen::buffer_creation_params bcp;
@@ -95,26 +95,24 @@ void* pen::user_entry(void* params)
     bcp.data = (void*)&indices[0];
 
     u32 quad_index_buffer = pen::renderer_create_buffer(bcp);
-    
+
     // cbuffer
     bcp.usage_flags = PEN_USAGE_DYNAMIC;
     bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
     bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
     bcp.buffer_size = sizeof(draw_call);
     bcp.data = nullptr;
-    
+
     u32 cbuffer_draw = pen::renderer_create_buffer(bcp);
-    
+
     f32 offsetx = 0.3f * x_size;
     f32 offsety = 0.3f;
-    
+
     // multiple draw call info
-    draw_call draw_calls[] = {
-        {-offsetx, -offsety, 0.0f, 1.0f, 0.5f, 0.8f, 0.0f, 1.0f},
-        { offsetx, -offsety, 0.0f, 1.0f, 0.0f, 0.5f, 1.0f, 1.0f},
-        { offsetx,  offsety, 0.0f, 1.0f, 1.0f, 0.5f, 0.0f, 1.0f},
-        {-offsetx,  offsety, 0.0f, 1.0f, 0.5f, 0.0f, 0.5f, 1.0f}
-    };
+    draw_call draw_calls[] = {{-offsetx, -offsety, 0.0f, 1.0f, 0.5f, 0.8f, 0.0f, 1.0f},
+                              {offsetx, -offsety, 0.0f, 1.0f, 0.0f, 0.5f, 1.0f, 1.0f},
+                              {offsetx, offsety, 0.0f, 1.0f, 1.0f, 0.5f, 0.0f, 1.0f},
+                              {-offsetx, offsety, 0.0f, 1.0f, 0.5f, 0.0f, 0.5f, 1.0f}};
 
     while (1)
     {
@@ -130,11 +128,11 @@ void* pen::user_entry(void* params)
 
         // draw quads
         {
-            for(u32 i = 0; i < 4; ++i)
+            for (u32 i = 0; i < 4; ++i)
             {
                 // update cbuffer.. use single buffer and update multiple times.
                 pen::renderer_update_buffer(cbuffer_draw, &draw_calls[i], sizeof(draw_call));
-            
+
                 // bind vertex layout and shaders
                 pmfx::set_technique(textured_shader, 0);
 
@@ -142,7 +140,7 @@ void* pen::user_entry(void* params)
                 u32 stride = sizeof(vertex);
                 pen::renderer_set_vertex_buffer(quad_vertex_buffer, 0, stride, 0);
                 pen::renderer_set_index_buffer(quad_index_buffer, PEN_FORMAT_R16_UINT, 0);
-                
+
                 // bind cuffer
                 pen::renderer_set_constant_buffer(cbuffer_draw, 0, pen::CBUFFER_BIND_VS);
 

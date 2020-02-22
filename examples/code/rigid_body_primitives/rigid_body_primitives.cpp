@@ -9,21 +9,20 @@ namespace pen
     {
         pen::pen_creation_params p;
         p.window_width = 1280;
-        p.window_height =  720;
+        p.window_height = 720;
         p.window_title = "rigid_body_primitives";
         p.window_sample_count = 4;
         p.user_thread_function = user_entry;
         p.flags = pen::e_pen_create_flags::renderer;
         return p;
     }
-}
-
+} // namespace pen
 
 void example_setup(ecs_scene* scene, camera& cam)
 {
     scene->view_flags &= ~e_scene_view_flags::hide_debug;
     editor_set_transform_mode(e_transform_mode::physics);
-    
+
     clear_scene(scene);
 
     material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
@@ -70,13 +69,8 @@ void example_setup(ecs_scene* scene, camera& cam)
 
     const c8* primitive_names[] = {"box", "cylinder", "capsule", "cone", "sphere"};
 
-    physics::shape_type primitive_types[] = {
-        physics::e_shape::box,
-        physics::e_shape::cylinder,
-        physics::e_shape::capsule,
-        physics::e_shape::cone,
-        physics::e_shape::sphere
-    };
+    physics::shape_type primitive_types[] = {physics::e_shape::box, physics::e_shape::cylinder, physics::e_shape::capsule,
+                                             physics::e_shape::cone, physics::e_shape::sphere};
 
     geometry_resource* primitive_resources[] = {box, cylinder, capsule, cone, sphere};
 

@@ -5,13 +5,13 @@
 #include "renderer.h"
 #include "renderer_shared.h"
 
-#include "pen.h"
+#include "console.h"
 #include "data_struct.h"
 #include "memory.h"
+#include "pen.h"
 #include "pen_string.h"
 #include "threads.h"
 #include "timer.h"
-#include "console.h"
 
 #include "str/Str.h"
 
@@ -32,7 +32,7 @@ namespace
     ID3D11RenderTargetView* s_backbuffer_rtv = nullptr;
     ID3D11DeviceContext*    s_immediate_context = nullptr;
     ID3D11DeviceContext1*   s_immediate_context_1 = nullptr;
-    u64						s_frame = 0; // to remove
+    u64                     s_frame = 0; // to remove
 } // namespace
 
 // level 0 = no errors, level 1 = print errors, level 2 = assert on error
@@ -403,9 +403,9 @@ namespace pen
 
     struct ua_buffer
     {
-        ID3D11Buffer*               buf;
-        ID3D11UnorderedAccessView*  uav;
-        ID3D11ShaderResourceView*   srv;
+        ID3D11Buffer*              buf;
+        ID3D11UnorderedAccessView* uav;
+        ID3D11ShaderResourceView*  srv;
     };
 
     struct resource_allocation
@@ -469,44 +469,44 @@ namespace pen
     {
         // unused on this platform
     }
-    
+
     void direct::renderer_new_frame()
     {
         // unused on this platform
-		shared_flags flags = _renderer_flags();
-		if (flags & e_shared_flags::backbuffer_resize)
-		{
-			s_immediate_context->OMSetRenderTargets(0, 0, 0);
+        shared_flags flags = _renderer_flags();
+        if (flags & e_shared_flags::backbuffer_resize)
+        {
+            s_immediate_context->OMSetRenderTargets(0, 0, 0);
 
-			// Release all outstanding references to the swap chain's buffers.
-			if (_res_pool[g_context.backbuffer_depth].depth_target->ds)
-			{
-				_res_pool[g_context.backbuffer_depth].depth_target->ds[0]->Release();
-				_res_pool[g_context.backbuffer_depth].depth_target->tex.texture->Release();
-			}
+            // Release all outstanding references to the swap chain's buffers.
+            if (_res_pool[g_context.backbuffer_depth].depth_target->ds)
+            {
+                _res_pool[g_context.backbuffer_depth].depth_target->ds[0]->Release();
+                _res_pool[g_context.backbuffer_depth].depth_target->tex.texture->Release();
+            }
 
-			if (_res_pool[g_context.backbuffer_colour].render_target->rt)
-			{
-				_res_pool[g_context.backbuffer_colour].render_target->rt[0]->Release();
-				_res_pool[g_context.backbuffer_colour].render_target->tex.texture->Release();
-			}
+            if (_res_pool[g_context.backbuffer_colour].render_target->rt)
+            {
+                _res_pool[g_context.backbuffer_colour].render_target->rt[0]->Release();
+                _res_pool[g_context.backbuffer_colour].render_target->tex.texture->Release();
+            }
 
-			uint32_t w = pen_window.width;
-			uint32_t h = pen_window.height;
+            uint32_t w = pen_window.width;
+            uint32_t h = pen_window.height;
 
-			s_swap_chain->ResizeBuffers(0, w, h, DXGI_FORMAT_UNKNOWN, 0);
+            s_swap_chain->ResizeBuffers(0, w, h, DXGI_FORMAT_UNKNOWN, 0);
 
-			create_rtvs(g_context.backbuffer_colour, g_context.backbuffer_depth, w, h);
-		}
+            create_rtvs(g_context.backbuffer_colour, g_context.backbuffer_depth, w, h);
+        }
 
-		_renderer_new_frame();
+        _renderer_new_frame();
     }
-    
+
     void direct::renderer_end_frame()
     {
         // unused on this platform
     }
-    
+
     void direct::renderer_clear(u32 clear_state_index, u32 colour_face, u32 depth_face)
     {
         u32 flags = _res_pool[clear_state_index].clear_state->flags;
@@ -520,7 +520,7 @@ namespace pen
             {
                 for (s32 i = 0; i < g_context.num_active_colour_targets; ++i)
                 {
-                    s32 ct = g_context.active_colour_target[i];
+                    s32                     ct = g_context.active_colour_target[i];
                     ID3D11RenderTargetView* colour_rtv = nullptr;
 
                     auto rt = _res_pool[ct].render_target;
@@ -588,7 +588,7 @@ namespace pen
 
         gather_perf_markers();
 
-		s_frame++;
+        s_frame++;
 
         renderer_push_perf_marker(nullptr);
     }
@@ -740,7 +740,7 @@ namespace pen
             uav_desc.Buffer.NumElements = params.buffer_size / params.stride;
 
             CHECK_CALL(s_device->CreateUnorderedAccessView(_res_pool[resource_index].generic_buffer.buf, &uav_desc,
-                &_res_pool[resource_index].generic_buffer.uav));
+                                                           &_res_pool[resource_index].generic_buffer.uav));
 
             // srv if we need it
             D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
@@ -750,7 +750,7 @@ namespace pen
             srv_desc.BufferEx.NumElements = params.buffer_size / params.stride;
 
             CHECK_CALL(s_device->CreateShaderResourceView(_res_pool[resource_index].generic_buffer.buf, &srv_desc,
-                &_res_pool[resource_index].generic_buffer.srv));
+                                                          &_res_pool[resource_index].generic_buffer.srv));
         }
     }
 
@@ -854,15 +854,13 @@ namespace pen
 
     pen_inline bool is_array(u32 srv)
     {
-        return srv == D3D_SRV_DIMENSION_TEXTURE2DARRAY ||
-            srv == D3D_SRV_DIMENSION_TEXTURECUBEARRAY ||
-            srv == D3D_SRV_DIMENSION_TEXTURECUBE;
+        return srv == D3D_SRV_DIMENSION_TEXTURE2DARRAY || srv == D3D_SRV_DIMENSION_TEXTURECUBEARRAY ||
+               srv == D3D_SRV_DIMENSION_TEXTURECUBE;
     }
 
     pen_inline bool is_cube(u32 srv)
     {
-        return srv == D3D_SRV_DIMENSION_TEXTURECUBEARRAY ||
-            srv == D3D_SRV_DIMENSION_TEXTURECUBE;
+        return srv == D3D_SRV_DIMENSION_TEXTURECUBEARRAY || srv == D3D_SRV_DIMENSION_TEXTURECUBE;
     }
 
     void renderer_create_render_target_multi(const texture_creation_params& tcp, texture2d_internal* texture_container,
@@ -872,8 +870,7 @@ namespace pen
         D3D11_TEXTURE2D_DESC texture_desc;
         memcpy(&texture_desc, (void*)&tcp, sizeof(D3D11_TEXTURE2D_DESC));
 
-        if (tcp.collection_type == pen::TEXTURE_COLLECTION_CUBE ||
-            tcp.collection_type == pen::TEXTURE_COLLECTION_CUBE_ARRAY)
+        if (tcp.collection_type == pen::TEXTURE_COLLECTION_CUBE || tcp.collection_type == pen::TEXTURE_COLLECTION_CUBE_ARRAY)
         {
             texture_desc.MiscFlags |= 0x4L; // resource misc texture cube
         }
@@ -949,7 +946,7 @@ namespace pen
                 }
                 else if (is_cube(srv_dimension))
                 {
-                    resource_view_desc.Texture2DArray.ArraySize = array_size/6;
+                    resource_view_desc.Texture2DArray.ArraySize = array_size / 6;
                     resource_view_desc.Texture2DArray.FirstArraySlice = 0;
                     resource_view_desc.Texture2DArray.MipLevels = num_mips;
                     resource_view_desc.Texture2DArray.MostDetailedMip = 0;
@@ -1380,7 +1377,7 @@ namespace pen
         for (u32 i = 0; i < bcp.num_render_targets; ++i)
         {
             memcpy(&bd.RenderTarget[i], (void*)&(bcp.render_targets[i]), sizeof(render_target_blend));
-			//PEN_ASSERT(bcp.render_targets[i].render_target_write_mask >= 0xf); // 0xf is max value supported
+            //PEN_ASSERT(bcp.render_targets[i].render_target_write_mask >= 0xf); // 0xf is max value supported
             min<u8>(bcp.render_targets[i].render_target_write_mask, 0xf);
         }
 
@@ -1743,7 +1740,7 @@ namespace pen
 
     void direct::renderer_set_scissor_rect(const rect& r)
     {
-        rect _r = _renderer_resolve_scissor_ratio(r);
+        rect             _r = _renderer_resolve_scissor_ratio(r);
         const D3D11_RECT rd3d = {(LONG)_r.left, (LONG)_r.top, (LONG)_r.right, (LONG)_r.bottom};
         s_immediate_context->RSSetScissorRects(1, &rd3d);
     }

@@ -65,7 +65,7 @@ namespace put
                 ofs.write((const c8*)&zero, sizeof(u32));
             }
         }
-        
+
         void write_parsable_string_u32(const Str& str, std::ofstream& ofs)
         {
             // writes chars as u32? because some stupid code in the python export
@@ -73,7 +73,7 @@ namespace put
             {
                 u32 l = str.length();
                 ofs.write((const c8*)&l, sizeof(u32));
-                for(u32 c = 0; c < l; ++c)
+                for (u32 c = 0; c < l; ++c)
                 {
                     ofs.write(&str.c_str()[c], 1);
                     ofs.write(&str.c_str()[c], 1);
@@ -417,8 +417,8 @@ namespace put
                     u32 parent_offset = j_parent - src_parent;
                     u32 parent = dst_parent + parent_offset;
 
-                    u32 new_child =
-                        clone_entity(scene, j, nodes_start + node_counter, parent, e_clone_mode::instantiate, vec3f::zero(), "");
+                    u32 new_child = clone_entity(scene, j, nodes_start + node_counter, parent, e_clone_mode::instantiate,
+                                                 vec3f::zero(), "");
                     node_counter++;
 
                     if (new_child == parent)

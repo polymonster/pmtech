@@ -971,9 +971,9 @@ namespace physics
             }
         }
 
-        if(rcp.callback)
+        if (rcp.callback)
             rcp.callback(rcr);
-        
+
         return rcr;
     }
 
@@ -1012,9 +1012,9 @@ namespace physics
             sr.normal = from_btvector(cast_callback.m_hitNormalWorld);
         }
 
-        if(scp.callback)
+        if (scp.callback)
             scp.callback(sr);
-            
+
         return sr;
     }
 
@@ -1035,7 +1035,7 @@ namespace physics
                 c.group = colObj1Wrap->getCollisionObject()->getBroadphaseHandle()->m_collisionFilterGroup;
                 c.mask = colObj1Wrap->getCollisionObject()->getBroadphaseHandle()->m_collisionFilterMask;
                 c.physics_handle = colObj1Wrap->getCollisionObject()->getUserIndex();
-                
+
                 c.pos = from_btvector(cp.m_positionWorldOnB);
             }
             else
@@ -1043,10 +1043,10 @@ namespace physics
                 c.group = colObj0Wrap->getCollisionObject()->getBroadphaseHandle()->m_collisionFilterGroup;
                 c.mask = colObj0Wrap->getCollisionObject()->getBroadphaseHandle()->m_collisionFilterMask;
                 c.physics_handle = colObj1Wrap->getCollisionObject()->getUserIndex();
-                
+
                 c.pos = from_btvector(cp.m_positionWorldOnA);
             }
-            
+
             c.normal = from_btvector(cp.m_normalWorldOnB);
 
             sb_push(ctr.contacts, c);
@@ -1059,7 +1059,7 @@ namespace physics
         btRigidBody* rb = s_entities.get(ctp.entity).rb.rigid_body;
         if (!rb)
             return;
-        
+
         contact_processor cb;
         cb.ref_rb = rb;
         cb.ref_entity = ctp.entity;

@@ -4,17 +4,17 @@
 
 // This file contains gl and metal context creation, input handling and os events.
 
-#include "renderer_shared.h"
+#include "os.h"
 #include "console.h"
 #include "data_struct.h"
+#include "hash.h"
 #include "input.h"
-#include "os.h"
 #include "pen.h"
 #include "renderer.h"
+#include "renderer_shared.h"
 #include "str_utilities.h"
 #include "threads.h"
 #include "timer.h"
-#include "hash.h"
 
 #include "str/Str.h"
 
@@ -24,7 +24,7 @@
 #include <map>
 
 // 1 final global extern to remove :)
-pen::window_creation_params  pen_window;
+pen::window_creation_params pen_window;
 
 namespace pen
 {
@@ -40,11 +40,11 @@ namespace
         pen::user_info    pen_user_info;
     };
     os_context s_ctx;
-    
+
     // todo.. move into context
     NSWindow* _window;
     bool      pen_terminate_app = false;
-    
+
     void _update_window_frame()
     {
         NSRect rect = [_window frame];
@@ -124,7 +124,8 @@ namespace
 
 - (void)drawInMTKView:(nonnull MTKView*)view
 {
-    @autoreleasepool {
+    @autoreleasepool
+    {
         if (!pen::renderer_dispatch())
             pen::thread_sleep_us(100);
     }
@@ -151,19 +152,19 @@ void pen_window_resize()
     NSRect view_rect = [[_window contentView] bounds];
     [_metal_view setFrameSize:view_rect.size];
     pen::_renderer_resize_backbuffer(view_rect.size.width, view_rect.size.height);
-    
+
     // cancel clicks to prevent incorrect interactions
     pen::input_set_mouse_up(PEN_MOUSE_L);
     pen::input_set_mouse_up(PEN_MOUSE_R);
     pen::input_set_mouse_up(PEN_MOUSE_M);
-    
+
     _update_window_frame();
 }
 
 void run()
 {
     pen::renderer_init(_metal_view, false);
-    
+
     for (;;)
     {
         if (!pen::os_update())
@@ -275,106 +276,104 @@ void run()
 
 namespace
 {
-    std::map<u16, virtual_key> k_key_map = {
-        { 0x1D, PK_0 },
-        { 0x12, PK_1 },
-        { 0x13, PK_2 },
-        { 0x14, PK_3 },
-        { 0x15, PK_4 },
-        { 0x17, PK_5 },
-        { 0x16, PK_6 },
-        { 0x1A, PK_7 },
-        { 0x1C, PK_8 },
-        { 0x19, PK_9 },
-        { 0x00, PK_A },
-        { 0x0B, PK_B },
-        { 0x08, PK_C },
-        { 0x02, PK_D },
-        { 0x0E, PK_E },
-        { 0x03, PK_F },
-        { 0x05, PK_G },
-        { 0x04, PK_H },
-        { 0x22, PK_I },
-        { 0x26, PK_J },
-        { 0x28, PK_K },
-        { 0x25, PK_L },
-        { 0x2E, PK_M },
-        { 0x2D, PK_N },
-        { 0x1F, PK_O },
-        { 0x23, PK_P },
-        { 0x0C, PK_Q },
-        { 0x0F, PK_R },
-        { 0x01, PK_S },
-        { 0x11, PK_T },
-        { 0x20, PK_U },
-        { 0x09, PK_V },
-        { 0x0D, PK_W },
-        { 0x07, PK_X },
-        { 0x10, PK_Y },
-        { 0x06, PK_Z },
-        { 0x52, PK_NUMPAD0 },
-        { 0x53, PK_NUMPAD1 },
-        { 0x54, PK_NUMPAD2 },
-        { 0x55, PK_NUMPAD3 },
-        { 0x56, PK_NUMPAD4 },
-        { 0x57, PK_NUMPAD5 },
-        { 0x58, PK_NUMPAD6 },
-        { 0x59, PK_NUMPAD7 },
-        { 0x5B, PK_NUMPAD8 },
-        { 0x5C, PK_NUMPAD9 },
-        { 0x43, PK_MULTIPLY },
-        { 0x45, PK_ADD },
-        { 0x4E, PK_SUBTRACT },
-        { 0x41, PK_DECIMAL },
-        { 0x4B, PK_DIVIDE },
-        { 0x7A, PK_F1 },
-        { 0x78, PK_F2 },
-        { 0x63, PK_F3 },
-        { 0x76, PK_F4 },
-        { 0x60, PK_F5 },
-        { 0x61, PK_F6 },
-        { 0x62, PK_F7 },
-        { 0x64, PK_F8 },
-        { 0x65, PK_F9 },
-        { 0x6D, PK_F10 },
-        { 0x67, PK_F11 },
-        { 0x6F, PK_F12 },
-        { 0x03, PK_CANCEL },
-        { 0x33, PK_BACK },
-        { 0x30, PK_TAB },
-        { 0x0C, PK_CLEAR},
-        { 0x24, PK_RETURN },
-        { 0x10, PK_SHIFT },
-        { 0x11, PK_CONTROL },
-        { 0x6E, PK_MENU },
-        { 0x39, PK_CAPITAL },
-        { 0x35, PK_ESCAPE },
-        { 0x31, PK_SPACE },
-        { 0x79, PK_PRIOR },
-        { 0x79, PK_NEXT },
-        { 0x77, PK_END },
-        { 0x73, PK_HOME },
-        { 0x7B, PK_LEFT },
-        { 0x7E, PK_UP },
-        { 0x7C, PK_RIGHT },
-        { 0x7D, PK_DOWN },
-        { 0x72, PK_INSERT },
-        { 0x75, PK_DELETE },
-        { 0x36, PK_COMMAND },
-        { 0x21, PK_OPEN_BRACKET },
-        { 0x1E, PK_CLOSE_BRACKET },
-        { 0x29, PK_SEMICOLON },
-        { 0x27, PK_APOSTRAPHE },
-        { 0x2A, PK_BACK_SLASH },
-        { 0x2C, PK_FORWARD_SLASH },
-        { 0x2B, PK_COMMA },
-        { 0x2F, PK_PERIOD },
-        { 0x1B, PK_MINUS },
-        { 0x18, PK_EQUAL },
-        { 0x32, PK_TILDE },
-        { 0x36, PK_GRAVE }
-    };
-    
+    std::map<u16, virtual_key> k_key_map = {{0x1D, PK_0},
+                                            {0x12, PK_1},
+                                            {0x13, PK_2},
+                                            {0x14, PK_3},
+                                            {0x15, PK_4},
+                                            {0x17, PK_5},
+                                            {0x16, PK_6},
+                                            {0x1A, PK_7},
+                                            {0x1C, PK_8},
+                                            {0x19, PK_9},
+                                            {0x00, PK_A},
+                                            {0x0B, PK_B},
+                                            {0x08, PK_C},
+                                            {0x02, PK_D},
+                                            {0x0E, PK_E},
+                                            {0x03, PK_F},
+                                            {0x05, PK_G},
+                                            {0x04, PK_H},
+                                            {0x22, PK_I},
+                                            {0x26, PK_J},
+                                            {0x28, PK_K},
+                                            {0x25, PK_L},
+                                            {0x2E, PK_M},
+                                            {0x2D, PK_N},
+                                            {0x1F, PK_O},
+                                            {0x23, PK_P},
+                                            {0x0C, PK_Q},
+                                            {0x0F, PK_R},
+                                            {0x01, PK_S},
+                                            {0x11, PK_T},
+                                            {0x20, PK_U},
+                                            {0x09, PK_V},
+                                            {0x0D, PK_W},
+                                            {0x07, PK_X},
+                                            {0x10, PK_Y},
+                                            {0x06, PK_Z},
+                                            {0x52, PK_NUMPAD0},
+                                            {0x53, PK_NUMPAD1},
+                                            {0x54, PK_NUMPAD2},
+                                            {0x55, PK_NUMPAD3},
+                                            {0x56, PK_NUMPAD4},
+                                            {0x57, PK_NUMPAD5},
+                                            {0x58, PK_NUMPAD6},
+                                            {0x59, PK_NUMPAD7},
+                                            {0x5B, PK_NUMPAD8},
+                                            {0x5C, PK_NUMPAD9},
+                                            {0x43, PK_MULTIPLY},
+                                            {0x45, PK_ADD},
+                                            {0x4E, PK_SUBTRACT},
+                                            {0x41, PK_DECIMAL},
+                                            {0x4B, PK_DIVIDE},
+                                            {0x7A, PK_F1},
+                                            {0x78, PK_F2},
+                                            {0x63, PK_F3},
+                                            {0x76, PK_F4},
+                                            {0x60, PK_F5},
+                                            {0x61, PK_F6},
+                                            {0x62, PK_F7},
+                                            {0x64, PK_F8},
+                                            {0x65, PK_F9},
+                                            {0x6D, PK_F10},
+                                            {0x67, PK_F11},
+                                            {0x6F, PK_F12},
+                                            {0x03, PK_CANCEL},
+                                            {0x33, PK_BACK},
+                                            {0x30, PK_TAB},
+                                            {0x0C, PK_CLEAR},
+                                            {0x24, PK_RETURN},
+                                            {0x10, PK_SHIFT},
+                                            {0x11, PK_CONTROL},
+                                            {0x6E, PK_MENU},
+                                            {0x39, PK_CAPITAL},
+                                            {0x35, PK_ESCAPE},
+                                            {0x31, PK_SPACE},
+                                            {0x79, PK_PRIOR},
+                                            {0x79, PK_NEXT},
+                                            {0x77, PK_END},
+                                            {0x73, PK_HOME},
+                                            {0x7B, PK_LEFT},
+                                            {0x7E, PK_UP},
+                                            {0x7C, PK_RIGHT},
+                                            {0x7D, PK_DOWN},
+                                            {0x72, PK_INSERT},
+                                            {0x75, PK_DELETE},
+                                            {0x36, PK_COMMAND},
+                                            {0x21, PK_OPEN_BRACKET},
+                                            {0x1E, PK_CLOSE_BRACKET},
+                                            {0x29, PK_SEMICOLON},
+                                            {0x27, PK_APOSTRAPHE},
+                                            {0x2A, PK_BACK_SLASH},
+                                            {0x2C, PK_FORWARD_SLASH},
+                                            {0x2B, PK_COMMA},
+                                            {0x2F, PK_PERIOD},
+                                            {0x1B, PK_MINUS},
+                                            {0x18, PK_EQUAL},
+                                            {0x32, PK_TILDE},
+                                            {0x36, PK_GRAVE}};
+
     enum os_cmd_id
     {
         OS_CMD_NULL = 0,
@@ -454,7 +453,7 @@ namespace
         {
             pen::input_set_key_up(PK_COMMAND);
         }
-        
+
         if (flags & NSEventModifierFlagCapsLock)
         {
             pen::input_set_key_down(PK_CAPITAL);
@@ -473,16 +472,16 @@ namespace
 
         u16 key_code = [event keyCode];
         u32 pen_key_code = k_key_map[key_code];
-        
+
         // text input
-        if([key length] > 0)
+        if ([key length] > 0)
         {
-            if(down)
+            if (down)
                 pen::input_add_unicode_input([key UTF8String]);
         }
-        
+
         // vks
-        if(k_key_map.find(key_code) != k_key_map.end())
+        if (k_key_map.find(key_code) != k_key_map.end())
         {
             if (down)
             {
@@ -493,7 +492,6 @@ namespace
                 pen::input_set_key_up(pen_key_code);
             }
         }
-        
     }
 
     bool handle_event(NSEvent* event)
@@ -560,11 +558,12 @@ namespace
 
         return false;
     }
-    
+
     void pen_run_windowed(int argc, char** argv)
     {
         // args
-        @autoreleasepool {
+        @autoreleasepool
+        {
             if (argc > 1)
             {
                 if (strcmp(argv[1], "-test") == 0)
@@ -573,7 +572,7 @@ namespace
                     pen::renderer_test_enable();
                 }
             }
-            
+
             [NSApplication sharedApplication];
 
             id dg = [app_delegate shared_delegate];
@@ -582,15 +581,20 @@ namespace
             [NSApp activateIgnoringOtherApps:YES];
             [NSApp finishLaunching];
 
-            [[NSNotificationCenter defaultCenter] postNotificationName:NSApplicationWillFinishLaunchingNotification object:NSApp];
-            [[NSNotificationCenter defaultCenter] postNotificationName:NSApplicationDidFinishLaunchingNotification object:NSApp];
+            [[NSNotificationCenter defaultCenter] postNotificationName:NSApplicationWillFinishLaunchingNotification
+                                                                object:NSApp];
+            [[NSNotificationCenter defaultCenter] postNotificationName:NSApplicationDidFinishLaunchingNotification
+                                                                object:NSApp];
 
             NSRect frame = NSMakeRect(0, 0, pen_window.width, pen_window.height);
 
-            NSUInteger style_mask =
-                NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable;
+            NSUInteger style_mask = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable |
+                                    NSWindowStyleMaskResizable;
 
-            _window = [[NSWindow alloc] initWithContentRect:frame styleMask:style_mask backing:NSBackingStoreBuffered defer:NO];
+            _window = [[NSWindow alloc] initWithContentRect:frame
+                                                  styleMask:style_mask
+                                                    backing:NSBackingStoreBuffered
+                                                      defer:NO];
 
             [_window makeKeyAndOrderFront:_window];
 
@@ -606,11 +610,11 @@ namespace
             // creates an opengl or metal rendering context
             create_renderer_context();
         }
-        
+
         // invoke renderer specific update for main thread
         run();
     }
-    
+
     void pen_run_console_app(int argc, char** argv)
     {
         for (;;)
@@ -628,7 +632,7 @@ namespace pen
     bool os_update()
     {
         NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
-        
+
         static bool thread_started = false;
         if (!thread_started)
         {
@@ -639,8 +643,8 @@ namespace pen
         }
 
         [NSApp updateWindows];
-        
-        for(;;)
+
+        for (;;)
         {
             NSEvent* peek_event = [NSApp nextEventMatchingMask:NSEventMaskAny
                                                      untilDate:[NSDate distantPast] // do not wait for event
@@ -698,15 +702,15 @@ namespace pen
             // get next
             cmd = s_cmd_buffer.get();
         }
-        
+
         [pool drain];
-        
+
         if (pen_terminate_app)
         {
             if (pen::jobs_terminate_all())
                 return false;
         }
-    
+
         return true;
     }
 
@@ -924,9 +928,10 @@ namespace pen
 
 int main(int argc, char** argv)
 {
-    @autoreleasepool {
+    @autoreleasepool
+    {
         s_cmd_buffer.create(32);
-                
+
         // get working dir
         Str working_dir = argv[0];
         working_dir = pen::str_normalise_filepath(working_dir);
@@ -940,12 +945,12 @@ int main(int argc, char** argv)
         }
 
         s_ctx.pen_user_info.working_directory = working_dir.c_str();
-        
+
         // init systems
         users();
         pen::timer_system_intialise();
         pen::input_gamepad_init();
-        
+
         // call pmtech entry first
         pen::pen_creation_params pc = pen::pen_entry(argc, argv);
         pen_window.width = pc.window_width;
@@ -954,7 +959,7 @@ int main(int argc, char** argv)
         pen_window.sample_count = pc.window_sample_count;
 
         // window creation
-        if(pc.flags & pen::e_pen_create_flags::renderer)
+        if (pc.flags & pen::e_pen_create_flags::renderer)
         {
             pen_run_windowed(argc, argv);
         }
@@ -963,6 +968,6 @@ int main(int argc, char** argv)
             pen_run_console_app(argc, argv);
         }
     }
-        
+
     return s_ctx.return_code;
 }

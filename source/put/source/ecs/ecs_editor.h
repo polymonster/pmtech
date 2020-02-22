@@ -21,7 +21,7 @@ namespace put
             };
         }
         typedef e_select_mode::select_mode_t select_mode;
-        
+
         namespace e_transform_mode
         {
             enum transform_mode_t
@@ -54,7 +54,7 @@ namespace put
         void update_editor_scene(ecs_controller& ecsc, ecs_scene* scene, f32 dt);
         void apply_transform_to_selection(ecs_scene* scene, const vec3f move_axis);
         void render_scene_editor(const scene_view& view);
-        Str strip_project_dir(const Str& filename);
+        Str  strip_project_dir(const Str& filename);
 
     } // namespace ecs
 } // namespace put

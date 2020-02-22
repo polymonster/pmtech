@@ -5,21 +5,21 @@
 #define GL_SILENCE_DEPRECATION
 #define GLES_SILENCE_DEPRECATION
 
-#include "renderer.h"
-#include "renderer_shared.h"
+#include "console.h"
+#include "data_struct.h"
 #include "hash.h"
 #include "memory.h"
 #include "pen.h"
 #include "pen_string.h"
+#include "renderer.h"
+#include "renderer_shared.h"
 #include "threads.h"
 #include "timer.h"
-#include "console.h"
-#include "data_struct.h"
 
 #include "str/Str.h"
 
-#include <vector>
 #include <stdlib.h>
+#include <vector>
 
 extern pen::window_creation_params pen_window;
 
@@ -599,22 +599,22 @@ namespace pen
     {
         // unused for opengl, required to sync for metal
     }
-    
+
     void direct::renderer_new_frame()
     {
         pen_make_gl_context_current();
         _renderer_new_frame();
-        
+
         // if we resize render targets, delete frame buffers to invalidate and recreate them
         static u32 rs = 0;
-        if(_renderer_resize_index() != rs)
+        if (_renderer_resize_index() != rs)
         {
             rs = _renderer_resize_index();
             sb_free(s_framebuffers);
             s_framebuffers = nullptr;
         }
     }
-    
+
     void direct::renderer_end_frame()
     {
         // unused on this platform
@@ -920,9 +920,8 @@ namespace pen
         }
         else
         {
-            if (g_current_state.vertex_shader != g_bound_state.vertex_shader || 
-                g_current_state.pixel_shader != g_bound_state.pixel_shader ||
-                g_current_state.v_flip != g_bound_state.v_flip)
+            if (g_current_state.vertex_shader != g_bound_state.vertex_shader ||
+                g_current_state.pixel_shader != g_bound_state.pixel_shader || g_current_state.v_flip != g_bound_state.v_flip)
             {
                 g_bound_state.vertex_shader = g_current_state.vertex_shader;
                 g_bound_state.pixel_shader = g_current_state.pixel_shader;
@@ -1317,8 +1316,8 @@ namespace pen
         res.type = RES_RENDER_TARGET;
 
         texture_creation_params _tcp = _renderer_tcp_resolve_ratio(tcp);
-        
-        if(track)
+
+        if (track)
             _renderer_track_managed_render_target(tcp, resource_slot);
 
         res.render_target.uid = (u32)get_time_ms();
@@ -1501,8 +1500,8 @@ namespace pen
         resource_allocation& colour_res = _res_pool[target];
 
         hash_id hash[2] = {0, 0};
-        
-        if(!colour_res.render_target.tcp)
+
+        if (!colour_res.render_target.tcp)
             return;
 
         f32 w = colour_res.render_target.tcp->width;
@@ -1776,7 +1775,7 @@ namespace pen
     void direct::renderer_set_scissor_rect(const rect& r)
     {
         rect _r = _renderer_resolve_scissor_ratio(r);
-        f32 top = g_current_vp.height - _r.bottom;
+        f32  top = g_current_vp.height - _r.bottom;
         CHECK_CALL(glScissor(_r.left, top, _r.right - _r.left, _r.bottom - _r.top));
     }
 
@@ -1834,7 +1833,7 @@ namespace pen
         resource_allocation& res = _res_pool[buffer_index];
         CHECK_CALL(glBindBufferBase(GL_UNIFORM_BUFFER, resource_slot, res.handle));
     }
-    
+
     void direct::renderer_set_structured_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
     {
         PEN_ASSERT(0); // stubbed.. use metal on mac or d3d / vulkan on windows
@@ -2001,7 +2000,7 @@ namespace pen
 
     void direct::renderer_release_render_target(u32 render_target)
     {
-		_renderer_untrack_managed_render_target(render_target);
+        _renderer_untrack_managed_render_target(render_target);
 
         resource_allocation& res = _res_pool[render_target];
 

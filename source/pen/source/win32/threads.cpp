@@ -3,8 +3,8 @@
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
 #include "threads.h"
-#include "memory.h"
 #include "console.h"
+#include "memory.h"
 
 #include <Windows.h>
 
@@ -30,7 +30,8 @@ namespace pen
     {
         pen::thread* new_thread = (pen::thread*)pen::memory_alloc(sizeof(pen::thread));
 
-        new_thread->handle = CreateThread(NULL, stack_size, (LPTHREAD_START_ROUTINE)thread_func, thread_params, flags, &new_thread->id);
+        new_thread->handle =
+            CreateThread(NULL, stack_size, (LPTHREAD_START_ROUTINE)thread_func, thread_params, flags, &new_thread->id);
 
         return new_thread;
     }
@@ -130,7 +131,7 @@ namespace pen
 
     void thread_sleep_us(u32 microseconds)
     {
-		// windows cannot sleep micros
-		PEN_ASSERT(0);
+        // windows cannot sleep micros
+        PEN_ASSERT(0);
     }
 } // namespace pen

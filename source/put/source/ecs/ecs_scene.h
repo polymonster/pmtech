@@ -9,8 +9,8 @@
 #include "physics/physics.h"
 #include "pmfx.h"
 
-#include "pen.h"
 #include "data_struct.h"
+#include "pen.h"
 
 #include "maths/maths.h"
 #include "maths/quat.h"
@@ -28,42 +28,42 @@ namespace put
     {
         struct anim_instance;
         struct ecs_scene;
-                
+
         namespace e_scene_view_flags
         {
             enum sv_flags_t
             {
                 none = 0,
-                hide = 1<<0,
-                hide_debug = 1<<1,
-                node = 1<<2,
-                grid = 1<<3,
-                matrix = 1<<4,
-                bones = 1<<5,
-                aabb = 1<<6,
-                lights = 1<<7,
-                physics = 1<<8,
-                selected_children = 1<<8,
-                camera = 1<<9,
-                geometry = 1<<10,
+                hide = 1 << 0,
+                hide_debug = 1 << 1,
+                node = 1 << 2,
+                grid = 1 << 3,
+                matrix = 1 << 4,
+                bones = 1 << 5,
+                aabb = 1 << 6,
+                lights = 1 << 7,
+                physics = 1 << 8,
+                selected_children = 1 << 8,
+                camera = 1 << 9,
+                geometry = 1 << 10,
                 COUNT = 12,
-                
+
                 defaults = (node | grid)
             };
         }
         typedef u32 scene_view_flags;
-        
+
         namespace e_scene_flags
         {
             enum s_flags_t
             {
                 none = 0,
-                invalidate_scene_tree = 1<<1,
-                pause_update = 1<<2
+                invalidate_scene_tree = 1 << 1,
+                pause_update = 1 << 2
             };
         }
         typedef u32 scene_flags;
-        
+
         namespace e_state
         {
             enum state_flags_t
@@ -78,7 +78,7 @@ namespace put
                 sync_physics_transform = (1 << 7)
             };
         }
-        
+
         static const f32 k_dir_light_offset = 1000000.0f;
         namespace e_light_type
         {
@@ -91,7 +91,7 @@ namespace put
                 area_ex
             };
         }
-        
+
         namespace e_texture
         {
             enum texture_t
@@ -105,7 +105,7 @@ namespace put
                 COUNT
             };
         }
-        
+
         namespace e_global_textures
         {
             enum global_textures_t
@@ -115,7 +115,7 @@ namespace put
                 omni_shadow_map = 13
             };
         }
-        
+
         namespace e_physics_type
         {
             enum physics_type_t
@@ -125,7 +125,7 @@ namespace put
                 compound_child
             };
         }
-        
+
         namespace e_scene_limits
         {
             enum scene_limits_t
@@ -137,7 +137,7 @@ namespace put
                 max_omni_shadow_maps = 100
             };
         }
-        
+
         namespace e_cmp
         {
             enum cmp_t
@@ -271,7 +271,7 @@ namespace put
             u32 instance_buffer;
             u32 instance_stride;
         };
-        
+
         struct anim_blend
         {
             u32 anim_a = 0;
@@ -451,7 +451,7 @@ namespace put
             cmp_array<cmp_geometry>           geometries;
             cmp_array<cmp_pre_skin>           pre_skin;
             cmp_array<cmp_physics>            physics_data;
-            cmp_array<u32>                    _unused;             // removed anim controller
+            cmp_array<u32>                    _unused; // removed anim controller
             cmp_array<u32>                    cbuffer;
             cmp_array<cmp_draw_call>          draw_call_data;
             cmp_array<free_node_list>         free_list;
@@ -477,20 +477,20 @@ namespace put
             ecs_controller* controllers = nullptr;
 
             // Scene Data
-            size_t              num_entities = 0;
-            u32                 soa_size = 0;
-            free_node_list*     free_list_head = nullptr;
-            u32                 forward_light_buffer = PEN_INVALID_HANDLE;
-            u32                 sdf_shadow_buffer = PEN_INVALID_HANDLE;
-            u32                 area_light_buffer = PEN_INVALID_HANDLE;
-            u32                 shadow_map_buffer = PEN_INVALID_HANDLE;
-            s32                 selected_index = -1;
-            scene_flags         flags = 0;
-            scene_view_flags    view_flags = 0;
-            extents             renderable_extents;
-            u32*                selection_list = nullptr;
-            u32                 version = k_version;
-            Str                 filename = "";
+            size_t           num_entities = 0;
+            u32              soa_size = 0;
+            free_node_list*  free_list_head = nullptr;
+            u32              forward_light_buffer = PEN_INVALID_HANDLE;
+            u32              sdf_shadow_buffer = PEN_INVALID_HANDLE;
+            u32              area_light_buffer = PEN_INVALID_HANDLE;
+            u32              shadow_map_buffer = PEN_INVALID_HANDLE;
+            s32              selected_index = -1;
+            scene_flags      flags = 0;
+            scene_view_flags view_flags = 0;
+            extents          renderable_extents;
+            u32*             selection_list = nullptr;
+            u32              version = k_version;
+            Str              filename = "";
 
             generic_cmp_array& get_component_array(u32 index);
         };

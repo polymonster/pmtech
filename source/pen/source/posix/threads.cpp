@@ -4,10 +4,10 @@
 
 #include "threads.h"
 #include "console.h"
-#include "memory.h"
-#include "pen_string.h"
 #include "hash.h"
+#include "memory.h"
 #include "os.h"
+#include "pen_string.h"
 
 #include <fcntl.h>
 #include <pthread.h>

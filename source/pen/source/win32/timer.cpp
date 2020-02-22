@@ -13,18 +13,18 @@ namespace
     f32           ticks_to_ms;
     f32           ticks_to_us;
     f32           ticks_to_ns;
-}
+} // namespace
 
 namespace pen
 {
     struct timer
     {
         LARGE_INTEGER last_start;
-        f32 accumulated;
-        f32 longest;
-        f32 shortest;
-        u32 hit_count;
-        const c8* name;
+        f32           accumulated;
+        f32           longest;
+        f32           shortest;
+        u32           hit_count;
+        const c8*     name;
     };
 
     void timer_system_intialise()

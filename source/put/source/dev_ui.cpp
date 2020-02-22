@@ -9,16 +9,16 @@
 #include "data_struct.h"
 #include "dev_ui.h"
 #include "file_system.h"
+#include "input.h"
 #include "loader.h"
 #include "memory.h"
 #include "os.h"
 #include "pen.h"
 #include "pen_json.h"
 #include "pen_string.h"
+#include "pmfx.h"
 #include "renderer.h"
 #include "str_utilities.h"
-#include "input.h"
-#include "pmfx.h"
 #include "timer.h"
 
 using namespace pen;
@@ -46,16 +46,16 @@ namespace
         u32 imgui_shader;
         u32 imgui_ex_shader;
     };
-    
-    render_handles  s_imgui_rs;
-    pen::json       s_program_preferences;
-    Str             s_program_prefs_filename;
-    bool            s_console_open = false;
-    s32             s_program_prefs_save_timer = 0;
-    bool            s_save_program_prefs = false;
-    const u32       s_program_prefs_save_timeout = 60; //frames
-    bool            s_enable_rendering = true;
-    
+
+    render_handles s_imgui_rs;
+    pen::json      s_program_preferences;
+    Str            s_program_prefs_filename;
+    bool           s_console_open = false;
+    s32            s_program_prefs_save_timer = 0;
+    bool           s_save_program_prefs = false;
+    const u32      s_program_prefs_save_timeout = 60; //frames
+    bool           s_enable_rendering = true;
+
     void create_texture_atlas()
     {
         ImGuiIO&  io = ImGui::GetIO();
@@ -178,17 +178,17 @@ namespace
 
         pen::renderer_update_buffer(s_imgui_rs.vertex_buffer, s_imgui_rs.vb_copy_buffer, vb_offset);
         pen::renderer_update_buffer(s_imgui_rs.index_buffer, s_imgui_rs.ib_copy_buffer, ib_offset);
-        
+
         float L = 0.0f;
         float R = ImGui::GetIO().DisplaySize.x;
         float B = ImGui::GetIO().DisplaySize.y;
         float T = 0.0f;
-        
+
         mat4 ortho = mat::create_orthographic_projection(L, R, B, T, 0.0f, 1.0f);
-        
+
         pen::renderer_update_buffer(s_imgui_rs.constant_buffer, ortho.m, sizeof(mat4), 0);
     }
-    
+
     void create_render_states()
     {
         // raster state
@@ -274,11 +274,11 @@ namespace
         io.MousePos.y = (f32)ms.y;
 
         prev_mouse_wheel = (f32)ms.wheel;
-        
+
         Str input = pen::input_get_unicode_input();
         io.AddInputCharactersUTF8(input.c_str());
 
-        for(s32 i = 0; i < PK_COUNT; ++i)
+        for (s32 i = 0; i < PK_COUNT; ++i)
             io.KeysDown[i] = pen::input_key(i);
 
         // Read keyboard modifiers inputs
@@ -287,7 +287,7 @@ namespace
         io.KeyAlt = pen::input_key(PK_MENU);
         io.KeySuper = false;
     }
-}
+} // namespace
 
 namespace put
 {
@@ -295,7 +295,7 @@ namespace put
     {
         struct app_console;
         static app_console* sp_dev_console;
-        
+
         void render(ImDrawData* draw_data);
 
         bool init()
@@ -431,14 +431,14 @@ namespace put
         void render(ImDrawData* draw_data)
         {
             const ImGuiIO& io = ImGui::GetIO();
-            
+
             update_dynamic_buffers(draw_data);
 
             // set to main viewport
             pen::viewport vp = {0.0f, 0.0f, PEN_BACK_BUFFER_RATIO, 1.0f, 0.0f, 1.0};
 
             pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
-            
+
             pen::renderer_set_viewport(vp);
             pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
             pen::renderer_set_rasterizer_state(s_imgui_rs.raster_state);
@@ -465,7 +465,7 @@ namespace put
                                                   pen::TEXTURE_BIND_PS);
 
                         pen::rect r = {pcmd->ClipRect.x, pcmd->ClipRect.y, pcmd->ClipRect.z, pcmd->ClipRect.w};
-                        
+
                         // convert scissor to ratios, for safe window resizing
                         r.left /= io.DisplaySize.x;
                         r.top /= io.DisplaySize.y;
@@ -497,13 +497,8 @@ namespace put
             custom_draw_call cd = *(custom_draw_call*)cmd->UserCallbackData;
             delete (custom_draw_call*)cmd->UserCallbackData;
 
-            static hash_id ids[] = {
-                PEN_HASH("tex_2d"),
-                PEN_HASH("tex_cube"),
-                PEN_HASH("tex_volume"),
-                PEN_HASH("tex_2d_array"),
-                PEN_HASH("tex_cube_array")
-            };
+            static hash_id ids[] = {PEN_HASH("tex_2d"), PEN_HASH("tex_cube"), PEN_HASH("tex_volume"),
+                                    PEN_HASH("tex_2d_array"), PEN_HASH("tex_cube_array")};
 
             if (cd.shader == e_ui_shader::imgui)
             {
@@ -528,7 +523,7 @@ namespace put
         void new_frame()
         {
             process_input();
-            
+
             // toggle enable disable
             static bool _db = false;
             if ((pen::input_key(PK_CONTROL) || pen::input_key(PK_COMMAND)) && pen::press_debounce(PK_X, _db))
@@ -1419,7 +1414,7 @@ namespace put
         {
             s_console_open = val;
         }
-        
+
         bool is_console_open()
         {
             return s_console_open;
@@ -1449,7 +1444,7 @@ namespace put
             load_program_preferences();
             sp_dev_console = new app_console();
         }
-        
+
         void enable(bool enabled)
         {
             s_enable_rendering = enabled;
@@ -1575,8 +1570,7 @@ namespace put
                 cb.params.x++;
 
             // arrays
-            if (shader == e_ui_shader::texture_array ||
-                shader == e_ui_shader::texture_cube_array)
+            if (shader == e_ui_shader::texture_array || shader == e_ui_shader::texture_cube_array)
             {
                 ImGui::SameLine();
                 ImGui::PushID("Array");

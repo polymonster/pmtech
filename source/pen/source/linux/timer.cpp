@@ -17,7 +17,7 @@ namespace
     f32 ticks_to_ms;
     f32 ticks_to_us;
     f32 ticks_to_ns;
-}
+} // namespace
 
 namespace pen
 {

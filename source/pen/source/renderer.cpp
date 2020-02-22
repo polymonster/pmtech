@@ -12,11 +12,11 @@
 #include "pen.h"
 #include "pen_string.h"
 #include "renderer.h"
+#include "renderer_shared.h"
 #include "slot_resource.h"
 #include "str/Str.h"
 #include "threads.h"
 #include "timer.h"
-#include "renderer_shared.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb/stb_image_write.h"
@@ -24,7 +24,7 @@
 #define MAX_COMMANDS (1 << 16)
 
 extern pen::window_creation_params pen_window;
-pen::resolve_resources g_resolve_resources;
+pen::resolve_resources             g_resolve_resources;
 
 using namespace pen;
 
@@ -361,7 +361,7 @@ namespace pen
             case CMD_SET_SCISSOR_RECT:
                 direct::renderer_set_scissor_rect(cmd.set_rect);
                 break;
-                
+
             case CMD_SET_VIEWPORT_RATIO:
                 _renderer_set_viewport_ratio(cmd.set_viewport);
                 break;
@@ -396,13 +396,13 @@ namespace pen
                 break;
 
             case CMD_SET_CONSTANT_BUFFER:
-                direct::renderer_set_constant_buffer(cmd.set_buffer.buffer_index,
-                                                     cmd.set_buffer.resource_slot, cmd.set_buffer.flags);
+                direct::renderer_set_constant_buffer(cmd.set_buffer.buffer_index, cmd.set_buffer.resource_slot,
+                                                     cmd.set_buffer.flags);
                 break;
 
             case CMD_SET_STRUCTURED_BUFFER:
-                direct::renderer_set_structured_buffer(cmd.set_buffer.buffer_index,
-                    cmd.set_buffer.resource_slot, cmd.set_buffer.flags);
+                direct::renderer_set_structured_buffer(cmd.set_buffer.buffer_index, cmd.set_buffer.resource_slot,
+                                                       cmd.set_buffer.flags);
                 break;
 
             case CMD_UPDATE_BUFFER:
@@ -641,14 +641,14 @@ namespace pen
 
         _cmd_buffer.create(MAX_COMMANDS);
         slot_resources_init(&s_renderer_slot_resources, 2048);
-        
+
         // initialise renderer
         // bb is backbuffer depth and colour
         u32 bb_res = slot_resources_get_next(&s_renderer_slot_resources);
         u32 bb_depth_res = slot_resources_get_next(&s_renderer_slot_resources);
-        
+
         // reserve a bunch more slots for interal renderer implementations
-        for(s64 i = 0; i < 10; ++i)
+        for (s64 i = 0; i < 10; ++i)
             slot_resources_get_next(&s_renderer_slot_resources);
 
         direct::renderer_initialise(user_data, bb_res, bb_depth_res);
@@ -1066,7 +1066,7 @@ namespace pen
     }
 
     void renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 bind_flags)
-    {        
+    {
         renderer_cmd cmd;
 
         cmd.command_index = CMD_SET_TEXTURE;
@@ -1121,7 +1121,7 @@ namespace pen
         memcpy(&cmd.set_rect, (void*)&r, sizeof(rect));
         _cmd_buffer.put(cmd);
     }
-    
+
     void renderer_set_viewport_ratio(const viewport& vp)
     {
         renderer_cmd cmd;
@@ -1129,7 +1129,7 @@ namespace pen
         memcpy(&cmd.set_viewport, (void*)&vp, sizeof(viewport));
         _cmd_buffer.put(cmd);
     }
-    
+
     void renderer_set_scissor_rect_ratio(const rect& r)
     {
         renderer_cmd cmd;
@@ -1189,7 +1189,7 @@ namespace pen
     void renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
     {
         renderer_cmd cmd;
-                
+
         cmd.command_index = CMD_SET_CONSTANT_BUFFER;
 
         cmd.set_buffer.buffer_index = buffer_index;

@@ -23,16 +23,16 @@
 using namespace put;
 
 // dxgi formats
-#define DXGI_RG32_FLOAT             16
-#define DXGI_RGBA32_FLOAT           2
-#define DXGI_RGBA8_UNORM            28
-#define DXGI_R8_UNORM               61
-#define DXGI_A8_UNORM               65
-#define DXGI_BC1_UNORM              71
-#define DXGI_BC2_UNORM              74
-#define DXGI_BC3_UNORM              77
-#define DXGI_BC4_UNORM              80
-#define DXGI_BC5_UNORM              83
+#define DXGI_RG32_FLOAT 16
+#define DXGI_RGBA32_FLOAT 2
+#define DXGI_RGBA8_UNORM 28
+#define DXGI_R8_UNORM 61
+#define DXGI_A8_UNORM 65
+#define DXGI_BC1_UNORM 71
+#define DXGI_BC2_UNORM 74
+#define DXGI_BC3_UNORM 77
+#define DXGI_BC4_UNORM 80
+#define DXGI_BC5_UNORM 83
 
 namespace
 {
@@ -406,13 +406,13 @@ namespace
 
         return texture_index;
     }
-    
+
     //
     // Hot loading thread
     //
-    
+
     Str s_pmbuild_cmd = "";
-    
+
     enum hot_loader_cmd_id
     {
         HOT_LOADER_CMD_CALL_SYSTEM,
@@ -426,17 +426,17 @@ namespace
     };
 
     pen::ring_buffer<hot_loader_cmd> s_hot_loader_cmd_buffer;
-    
+
     void* hot_loader_thread(void* params)
     {
         pen::job_thread_params* job_params = (pen::job_thread_params*)params;
 
         pen::job* p_thread_info = job_params->job_info;
         pen::semaphore_post(p_thread_info->p_sem_continue, 1);
-        
+
         s_hot_loader_cmd_buffer.create(32);
-        
-        for(;;)
+
+        for (;;)
         {
             hot_loader_cmd* cmd = s_hot_loader_cmd_buffer.get();
             while (cmd)
@@ -457,16 +457,16 @@ namespace
                 // get next
                 cmd = s_hot_loader_cmd_buffer.get();
             }
-            
+
             // plenty of sleep
             pen::thread_sleep_ms(16);
         }
-        
+
         pen::semaphore_post(p_thread_info->p_sem_continue, 1);
         pen::semaphore_post(p_thread_info->p_sem_terminated, 1);
         return PEN_THREAD_OK;
     }
-    
+
     void texture_build()
     {
         Str build_cmd = get_build_cmd();
@@ -495,35 +495,35 @@ namespace put
     void init_hot_loader()
     {
         pen::jobs_create_job(hot_loader_thread, 1024 * 1024, nullptr, pen::e_thread_start_flags::detached);
-        
+
         pen::json pmbuild_config = pen::json::load_from_file("data/pmbuild_config.json");
         s_pmbuild_cmd = pmbuild_config["pmbuild"].as_str();
-        
+
         dev_console_log_level(dev_ui::console_level::message, "[pmbuild cmd] %s", s_pmbuild_cmd.c_str());
     }
-    
+
     void trigger_hot_loader(const Str& cmdline)
     {
-        static f32 s_timeout = 0.0f;
+        static f32         s_timeout = 0.0f;
         static pen::timer* t = pen::timer_create();
         s_timeout -= pen::timer_elapsed_ms(t);
-        
-        if(s_timeout <= 0.0)
+
+        if (s_timeout <= 0.0)
         {
             hot_loader_cmd cmd;
             cmd.cmd_index = HOT_LOADER_CMD_CALL_SYSTEM;
             u32 len = cmdline.length();
-            cmd.cmdline = (c8*)pen::memory_alloc(len+1);
+            cmd.cmdline = (c8*)pen::memory_alloc(len + 1);
             memcpy(cmd.cmdline, cmdline.c_str(), len);
             cmd.cmdline[len] = '\0';
             s_hot_loader_cmd_buffer.put(cmd);
-            
+
             // wait 10 seconds
             s_timeout = 1000.0f * 10.0f;
             pen::timer_start(t);
         }
     }
-    
+
     Str get_build_cmd()
     {
         return s_pmbuild_cmd;
@@ -615,7 +615,7 @@ namespace put
                 return;
             }
         }
-        
+
         // not found, not a texture handle.
         PEN_ASSERT(0);
     }
@@ -637,9 +637,9 @@ namespace put
 
     void add_file_watcher(const c8* filename, void (*build_callback)(), void (*hotload_callback)(std::vector<hash_id>& dirty))
     {
-        Str fn = filename;
+        Str     fn = filename;
         hash_id id_name = PEN_HASH(fn.c_str());
-        
+
         // replace filename with dependencies.json
         u32 loc = pen::str_find_reverse(fn, ".");
 
@@ -668,7 +668,7 @@ namespace put
     void poll_hot_loader()
     {
         PEN_HOTLOADING_ENABLED;
-        
+
         // print build cmd to console first time init
         get_build_cmd();
 
@@ -678,10 +678,10 @@ namespace put
             {
                 fw->dependencies = pen::json::load_from_file(fw->filename.c_str());
             }
-            
+
             bool invalidated = false;
             bool complete = false;
-            
+
             pen::json files = fw->dependencies["files"];
             s32       num_files = files.size();
             for (s32 i = 0; i < num_files; ++i)
@@ -720,15 +720,15 @@ namespace put
                             u32 dep_ts = 0;
                             Str data_file = input["data_file"].as_str();
                             data_file = pen::str_replace_string(data_file, ".dds", ".json");
-                            
+
                             pen_error err = pen::filesystem_getmtime(data_file.c_str(), dep_ts);
-                            if(err == PEN_ERR_OK && dep_ts >= current_ts)
+                            if (err == PEN_ERR_OK && dep_ts >= current_ts)
                             {
                                 pen::json new_dependencies = pen::json::load_from_file(data_file.c_str());
-                                if(!new_dependencies.is_null())
+                                if (!new_dependencies.is_null())
                                 {
                                     u32 ts = new_dependencies["files"][i][j][k]["timestamp"].as_u32();
-                                    if(ts >= built_ts)
+                                    if (ts >= built_ts)
                                     {
                                         fw->dependencies = new_dependencies;
                                         complete = true;
@@ -740,8 +740,8 @@ namespace put
                     }
                 }
             }
-            done:
-                        
+        done:
+
             if (invalidated)
             {
                 if (!fw->invalidated)
@@ -751,7 +751,7 @@ namespace put
             }
             else
             {
-                if(fw->invalidated && complete)
+                if (fw->invalidated && complete)
                 {
                     // rebuild has succeeded
                     dev_console_log("[file watcher] rebuild for %s complete", fw->filename.c_str());

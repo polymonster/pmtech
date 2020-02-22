@@ -11,36 +11,36 @@ namespace pen
     // Structs for user to setup, make sure to define:
     // window_creation_params pen_window
     // and user_entry function somwhere and then you are good to go
-    
+
     struct window_creation_params
     {
-        volatile u32    width;
-        volatile u32    height;
-        u32             sample_count;
-        const c8*       window_title;
+        volatile u32 width;
+        volatile u32 height;
+        u32          sample_count;
+        const c8*    window_title;
     };
-    
+
     namespace e_pen_create_flags
     {
         enum pen_create_flags_t
         {
-            renderer = 1<<1,
-			console_app = 1<<2
+            renderer = 1 << 1,
+            console_app = 1 << 2
         };
     }
     typedef e_pen_create_flags::pen_create_flags_t pen_create_flags;
-    
+
     struct pen_creation_params
     {
-		volatile u32        window_width = 1280;
-		volatile u32        window_height = 720;
-		u32                 window_sample_count = 1;
-		const c8*           window_title = "pen_app";
-		pen_create_flags	flags = e_pen_create_flags::renderer;
-		void*               (*user_thread_function)(void*) = nullptr;
+        volatile u32     window_width = 1280;
+        volatile u32     window_height = 720;
+        u32              window_sample_count = 1;
+        const c8*        window_title = "pen_app";
+        pen_create_flags flags = e_pen_create_flags::renderer;
+        void* (*user_thread_function)(void*) = nullptr;
     };
 
     extern pen_creation_params pen_entry(int argc, char** argv);
-    extern void* user_entry(void* params);
-    
+    extern void*               user_entry(void* params);
+
 } // namespace pen

@@ -9,14 +9,14 @@ namespace pen
     {
         pen::pen_creation_params p;
         p.window_width = 1280;
-        p.window_height =  720;
+        p.window_height = 720;
         p.window_title = "volume_texture";
         p.window_sample_count = 4;
         p.user_thread_function = user_entry;
         p.flags = pen::e_pen_create_flags::renderer;
         return p;
     }
-}
+} // namespace pen
 
 void example_setup(ecs::ecs_scene* scene, camera& cam)
 {
@@ -110,7 +110,8 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     scene->parents[new_prim] = new_prim;
     scene->samplers[new_prim].sb[0].handle = volume_texture;
     scene->samplers[new_prim].sb[0].sampler_unit = e_texture::volume;
-    scene->samplers[new_prim].sb[0].sampler_state = pmfx::get_render_state(PEN_HASH("clamp_point"), pmfx::e_render_state::sampler);
+    scene->samplers[new_prim].sb[0].sampler_state =
+        pmfx::get_render_state(PEN_HASH("clamp_point"), pmfx::e_render_state::sampler);
 
     instantiate_geometry(cube, scene, new_prim);
     instantiate_material(volume_material, scene, new_prim);

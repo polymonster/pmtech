@@ -17,7 +17,7 @@ namespace put
             s32                     entity_index;
             std::vector<scene_tree> children;
         };
-        
+
         namespace e_clone_mode
         {
             enum clone_mode_t
@@ -28,13 +28,14 @@ namespace put
             };
         }
         typedef e_clone_mode::clone_mode_t clone_mode;
-        
+
         u32  get_next_entity(ecs_scene* scene); // gets next entity index
         u32  get_new_entity(ecs_scene* scene);  // allocates a new entity at the next index o(1)
         void get_new_entities_contiguous(ecs_scene* scene, s32 num, s32& start, s32& end); // finds contiguous space o(n)
         void get_new_entities_append(ecs_scene* scene, s32 num, s32& start, s32& end);     // appends them on the end o(1)
         u32  clone_entity(ecs_scene* scene, u32 src, s32 dst = -1, s32 parent = -1,
-            clone_mode mode = e_clone_mode::instantiate, vec3f offset = vec3f::zero(), const c8* suffix = "_cloned");
+                          clone_mode mode = e_clone_mode::instantiate, vec3f offset = vec3f::zero(),
+                          const c8* suffix = "_cloned");
         void swap_entities(ecs_scene* scene, u32 a, s32 b);
         void clone_selection_hierarchical(ecs_scene* scene, u32** selection_list, const c8* suffix);
         void instance_entity_range(ecs_scene* scene, u32 master_node, u32 num_nodes);

@@ -15,9 +15,9 @@
 #include "pen_json.h"
 #include "pen_string.h"
 #include "pmfx.h"
+#include "renderer_shared.h"
 #include "str_utilities.h"
 #include "timer.h"
-#include "renderer_shared.h"
 
 #include <fstream>
 
@@ -258,12 +258,12 @@ namespace
 
     struct render_state
     {
-        Str             name;
-        hash_id         id_name;
-        hash_id         hash;
-        u32             handle;
-        render_state_t  type;
-        bool            copy;
+        Str            name;
+        hash_id        id_name;
+        hash_id        hash;
+        u32            handle;
+        render_state_t type;
+        bool           copy;
     };
 
     struct filter_kernel
@@ -358,7 +358,7 @@ namespace put
             pen::window_get_size(iw, ih);
             w = (f32)iw;
             h = (f32)ih;
-            
+
             if (rt_r != 0)
             {
                 w /= (f32)rt_r;
@@ -375,10 +375,10 @@ namespace put
         {
             f32 w, h;
             get_rt_dimensions(rt_w, rt_h, rt_r, w, h);
-            
-            if(rt_r != 0)
+
+            if (rt_r != 0)
             {
-                vp_out = {vp_in[0], vp_in[1], PEN_BACK_BUFFER_RATIO, 1.0f/rt_r, 0.0f, 1.0f};
+                vp_out = {vp_in[0], vp_in[1], PEN_BACK_BUFFER_RATIO, 1.0f / rt_r, 0.0f, 1.0f};
             }
             else
             {
@@ -611,18 +611,18 @@ namespace put
                 rs.name = state.name();
                 rs.id_name = PEN_HASH(rs.name);
                 rs.type = e_render_state::sampler;
-				rs.copy = false;
+                rs.copy = false;
 
                 render_state* existing_state = get_state_by_hash(hh, e_render_state::sampler);
-				if (existing_state)
-				{
-					rs.handle = existing_state->handle;
-					rs.copy = true;
-				}
-				else
-				{
-					rs.handle = pen::renderer_create_sampler(scp);
-				}
+                if (existing_state)
+                {
+                    rs.handle = existing_state->handle;
+                    rs.copy = true;
+                }
+                else
+                {
+                    rs.handle = pen::renderer_create_sampler(scp);
+                }
 
                 s_render_states.push_back(rs);
             }
@@ -656,18 +656,18 @@ namespace put
                 rs.name = state.name();
                 rs.id_name = PEN_HASH(rs.name);
                 rs.type = e_render_state::rasterizer;
-				rs.copy = false;
+                rs.copy = false;
 
                 render_state* existing_state = get_state_by_hash(hh, e_render_state::rasterizer);
-				if (existing_state)
-				{
-					rs.handle = existing_state->handle;
-					rs.copy = true;
-				}
-				else
-				{
-					rs.handle = pen::renderer_create_rasterizer_state(rcp);
-				}
+                if (existing_state)
+                {
+                    rs.handle = existing_state->handle;
+                    rs.copy = true;
+                }
+                else
+                {
+                    rs.handle = pen::renderer_create_rasterizer_state(rcp);
+                }
 
                 s_render_states.push_back(rs);
             }
@@ -709,7 +709,7 @@ namespace put
                     if (p.id_name == id_blend)
                         return;
 
-                s_partial_blend_states.push_back({ id_blend, rtb });
+                s_partial_blend_states.push_back({id_blend, rtb});
 
                 // create a generic single blend for code use
                 pen::blend_creation_params bcp;
@@ -724,7 +724,7 @@ namespace put
                 rs.id_name = PEN_HASH(state.name().c_str());
                 rs.type = e_render_state::blend;
                 rs.handle = pen::renderer_create_blend_state(bcp);
-				rs.copy = false;
+                rs.copy = false;
 
                 s_render_states.push_back(rs);
             }
@@ -792,18 +792,18 @@ namespace put
                 rs.name = state.name();
                 rs.id_name = PEN_HASH(rs.name);
                 rs.type = e_render_state::depth_stencil;
-				rs.copy = false;
+                rs.copy = false;
 
                 render_state* existing_state = get_state_by_hash(hh, e_render_state::depth_stencil);
-				if (existing_state)
-				{
-					rs.handle = existing_state->handle;
-					rs.copy = true;
-				}
-				else
-				{
-					rs.handle = pen::renderer_create_depth_stencil_state(dscp);
-				}
+                if (existing_state)
+                {
+                    rs.handle = existing_state->handle;
+                    rs.copy = true;
+                }
+                else
+                {
+                    rs.handle = pen::renderer_create_depth_stencil_state(dscp);
+                }
 
                 s_render_states.push_back(rs);
             }
@@ -963,18 +963,18 @@ namespace put
             rs.name = view_name;
             rs.id_name = PEN_HASH(view_name);
             rs.type = e_render_state::blend;
-			rs.copy = false;
+            rs.copy = false;
 
             render_state* existing_state = get_state_by_hash(hh, e_render_state::blend);
-			if (existing_state)
-			{
-				rs.handle = existing_state->handle;
-				rs.copy = true;
-			}
-			else
-			{
-				rs.handle = pen::renderer_create_blend_state(bcp);
-			}
+            if (existing_state)
+            {
+                rs.handle = existing_state->handle;
+                rs.copy = true;
+            }
+            else
+            {
+                rs.handle = pen::renderer_create_blend_state(bcp);
+            }
 
             s_render_states.push_back(rs);
 
@@ -1555,7 +1555,7 @@ namespace put
                                 new_view.num_arrays = 6;
                                 new_view.view_flags |= e_view_flags::cubemap;
                             }
-                            
+
                             if (r.collection == pen::TEXTURE_COLLECTION_CUBE_ARRAY)
                             {
                                 new_view.num_arrays = r.num_arrays;
@@ -1601,8 +1601,8 @@ namespace put
 
                     if (!found)
                     {
-                        dev_console_log_level(dev_ui::console_level::error, "[error] render controller: missing render target - %s",
-                                              target_str.c_str());
+                        dev_console_log_level(dev_ui::console_level::error,
+                                              "[error] render controller: missing render target - %s", target_str.c_str());
                         valid = false;
                     }
                 }
@@ -1633,8 +1633,8 @@ namespace put
                             "[error] pmfx - view %s number of resolves %i do not match number of targets %i'",
                             new_view.name.c_str(), num_resolve, num_targets);
                 }
-                
-                if(view["generate_mip_maps"].as_bool())
+
+                if (view["generate_mip_maps"].as_bool())
                     new_view.view_flags |= e_view_flags::generate_mips;
 
                 // viewport
@@ -2513,10 +2513,10 @@ namespace put
         {
             for (auto& rs : s_render_states)
             {
-				if (rs.copy)
-					continue;
+                if (rs.copy)
+                    continue;
 
-				// PEN_LOG("release state %i : %s (%i)\n", rs.type, rs.name.c_str(), rs.handle);
+                // PEN_LOG("release state %i : %s (%i)\n", rs.type, rs.name.c_str(), rs.handle);
 
                 switch (rs.type)
                 {
@@ -2583,7 +2583,8 @@ namespace put
             if (!pmfx::set_technique_perm(sv.pmfx_shader, sv.technique))
                 return;
 
-            pen::renderer_set_constant_buffer(sv.cb_view, e_cbuffer_location::per_pass_view, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
+            pen::renderer_set_constant_buffer(sv.cb_view, e_cbuffer_location::per_pass_view,
+                                              pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
 
             pen::renderer_set_index_buffer(quad->index_buffer, quad->index_type, 0);
             pen::renderer_set_vertex_buffer(quad->vertex_buffer, 0, quad->vertex_size, 0);
@@ -2651,7 +2652,7 @@ namespace put
             static ecs::geometry_resource* quad = ecs::get_geometry_resource(PEN_HASH("full_screen_quad"));
 
             pen::renderer_set_targets(&v.stashed_output_rt, 1, PEN_NULL_DEPTH_BUFFER);
-            
+
             pen::renderer_set_viewport(vp);
             pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
 
@@ -2685,7 +2686,7 @@ namespace put
 
             // rt texture may still be bound on output
             // todo.. remove this? need to check with d3d11 validation layer
-            
+
             s32 w, h;
             pen::window_get_size(w, h);
             pen::viewport vp = {0, 0, (f32)w, (f32)h};
@@ -2696,24 +2697,24 @@ namespace put
             // rt texture may still be bound on input
             for (s32 i = 0; i < e_pmfx_constants::max_sampler_bindings; ++i)
                 pen::renderer_set_texture(0, 0, i, pen::TEXTURE_BIND_PS | pen::TEXTURE_BIND_VS);
-            
+
             // disable state
             pen::renderer_set_depth_stencil_state(get_render_state(k_id_disabled, e_render_state::depth_stencil));
             pen::renderer_set_blend_state(get_render_state(k_id_disabled, e_render_state::blend));
             pen::renderer_set_rasterizer_state(get_render_state(k_id_disabled, e_render_state::rasterizer));
 
             // resolve colour
-            if(v.view_flags & e_view_flags::resolve)
+            if (v.view_flags & e_view_flags::resolve)
             {
                 for (u32 i = 0; i < v.num_colour_targets; ++i)
                 {
                     if (v.resolve_method[i] == 0)
                         continue;
-                    
+
                     pmfx::set_technique_perm(pmfx_resolve, v.resolve_method[i]);
                     pen::renderer_resolve_target(v.render_targets[i], pen::RESOLVE_CUSTOM);
                 }
-                
+
                 // resolve depth
                 if (is_valid_non_null(v.depth_target))
                 {
@@ -2723,15 +2724,15 @@ namespace put
             }
 
             // generate mips
-            if(v.view_flags & e_view_flags::generate_mips)
+            if (v.view_flags & e_view_flags::generate_mips)
             {
                 for (u32 i = 0; i < v.num_colour_targets; ++i)
                     pen::renderer_resolve_target(v.render_targets[i], pen::RESOLVE_GENERATE_MIPS);
-                
+
                 if (is_valid_non_null(v.depth_target))
                     pen::renderer_resolve_target(v.depth_target, pen::RESOLVE_GENERATE_MIPS);
             }
-            
+
             // set textures and buffers back to prevent d3d validation layer complaining
             pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
             for (s32 i = 0; i < e_pmfx_constants::max_sampler_bindings; ++i)
@@ -2741,7 +2742,7 @@ namespace put
         void render_view(view_params& v)
         {
             // compute doesnt need render pipeline setup
-            if(v.view_flags & e_view_flags::compute)
+            if (v.view_flags & e_view_flags::compute)
             {
                 scene_view sv;
                 sv.scene = v.scene;
@@ -2750,25 +2751,25 @@ namespace put
                 sv.camera = v.camera;
                 sv.pmfx_shader = v.pmfx_shader;
                 sv.permutation = v.technique_permutation;
-                
+
                 for (s32 rf = 0; rf < v.render_functions.size(); ++rf)
                     v.render_functions[rf](sv);
-                
+
                 return;
             }
-            
+
             // caps based exclusion
             const pen::renderer_info& ri = pen::renderer_get_info();
-            if(v.view_flags & e_view_flags::cubemap_array)
-                if(!(ri.caps & PEN_CAPS_TEXTURE_CUBE_ARRAY))
+            if (v.view_flags & e_view_flags::cubemap_array)
+                if (!(ri.caps & PEN_CAPS_TEXTURE_CUBE_ARRAY))
                     return;
-            
+
             // render pipeline
-            
+
             // early out.. nothing to render
             if (v.num_colour_targets == 0 && v.depth_target == PEN_INVALID_HANDLE)
                 return;
-            
+
             static u32 cb_2d = PEN_INVALID_HANDLE;
             static u32 cb_sampler_info = PEN_INVALID_HANDLE;
             if (!is_valid(cb_2d))
@@ -2797,7 +2798,7 @@ namespace put
             pen::renderer_set_stencil_ref(v.stencil_ref);
             pen::renderer_set_rasterizer_state(v.raster_state);
             pen::renderer_set_blend_state(v.blend_state);
-            
+
             // we need the literal size not ratio
             pen::viewport vvp = _renderer_resolve_viewport_ratio(vp);
 
@@ -2826,7 +2827,7 @@ namespace put
             {
                 sv.array_index = a;
                 sv.num_arrays = v.num_arrays;
-                
+
                 // generate 3d view proj matrix
                 if (v.camera)
                 {
@@ -2873,19 +2874,22 @@ namespace put
                 if (num_samplers > 0)
                 {
                     pen::renderer_update_buffer(cb_sampler_info, v.sampler_info, num_samplers * sizeof(vec4f));
-                    pen::renderer_set_constant_buffer(cb_sampler_info, e_cbuffer_location::sampler_info, pen::CBUFFER_BIND_PS);
+                    pen::renderer_set_constant_buffer(cb_sampler_info, e_cbuffer_location::sampler_info,
+                                                      pen::CBUFFER_BIND_PS);
                 }
 
                 // filters
                 if (is_valid(v.cbuffer_filter))
-                    pen::renderer_set_constant_buffer(v.cbuffer_filter, e_cbuffer_location::filter_kernel, pen::CBUFFER_BIND_PS);
+                    pen::renderer_set_constant_buffer(v.cbuffer_filter, e_cbuffer_location::filter_kernel,
+                                                      pen::CBUFFER_BIND_PS);
 
                 // technique cbuffer
                 if (is_valid(v.cbuffer_technique))
                 {
                     pen::renderer_update_buffer(v.cbuffer_technique, v.technique_constants.data,
                                                 sizeof(technique_constant_data));
-                    pen::renderer_set_constant_buffer(v.cbuffer_technique, e_cbuffer_location::material_constants, pen::CBUFFER_BIND_PS);
+                    pen::renderer_set_constant_buffer(v.cbuffer_technique, e_cbuffer_location::material_constants,
+                                                      pen::CBUFFER_BIND_PS);
                 }
 
                 // call render functions and make draw calls

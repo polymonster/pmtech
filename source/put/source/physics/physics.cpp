@@ -4,9 +4,9 @@
 
 #include "pen.h"
 #include "pen_string.h"
+#include "physics_bullet.h"
 #include "slot_resource.h"
 #include "timer.h"
-#include "physics_bullet.h"
 
 // for multi body bullet
 #include "BulletDynamics/Featherstone/btMultiBody.h"
@@ -494,18 +494,18 @@ namespace physics
     {
         if (mag(scp.from - scp.to) < 0.0001f)
             return;
-            
+
         physics_cmd pc;
         pc.command_index = e_cmd::cast_sphere;
         pc.sphere_cast = scp;
         s_cmd_buffer.put(pc);
     }
-    
+
     cast_result cast_ray_immediate(const ray_cast_params& rcp)
     {
         return cast_ray_internal(rcp);
     }
-    
+
     cast_result cast_sphere_immediate(const sphere_cast_params& scp)
     {
         return cast_sphere_internal(scp);

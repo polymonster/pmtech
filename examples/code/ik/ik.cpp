@@ -16,14 +16,14 @@ namespace pen
     {
         pen::pen_creation_params p;
         p.window_width = 1280;
-        p.window_height =  720;
+        p.window_height = 720;
         p.window_title = "ik";
         p.window_sample_count = 4;
         p.user_thread_function = user_entry;
         p.flags = pen::e_pen_create_flags::renderer;
         return p;
     }
-}
+} // namespace pen
 
 namespace
 {
@@ -66,7 +66,7 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
 {
     scene->view_flags &= ~e_scene_view_flags::hide_debug;
     put::dev_ui::enable(true);
-    
+
     //const VectorR3& unitx = VectorR3::UnitX;
     const VectorR3& unity = VectorR3::UnitY;
     const VectorR3& unitz = VectorR3::UnitZ;

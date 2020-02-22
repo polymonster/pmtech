@@ -361,8 +361,8 @@ namespace pen
     };
 
     //
-	void				 renderer_init(void* user_data, bool wait_for_jobs);
-    void*				 renderer_thread_function(void* params);
+    void                 renderer_init(void* user_data, bool wait_for_jobs);
+    void*                renderer_thread_function(void* params);
     const c8*            renderer_get_shader_platform();
     bool                 renderer_viewport_vup();
     const renderer_info& renderer_get_info();
@@ -469,7 +469,7 @@ namespace pen
         // Platform specific implementation, implements these function
         u32  renderer_initialise(void* params, u32 bb_res, u32 bb_depth_res);
         void renderer_shutdown();
-        
+
         // functions to syncronise the render and main threads
         void renderer_sync();
         void renderer_new_frame();

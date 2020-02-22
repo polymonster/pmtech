@@ -28,4 +28,3 @@ namespace put
     void add_file_watcher(const c8* filename, void (*build_callback)(),
                           void (*hotload_callback)(std::vector<hash_id>& dirty));
 } // namespace put
-

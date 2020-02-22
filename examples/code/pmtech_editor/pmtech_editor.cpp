@@ -33,14 +33,14 @@ namespace pen
     {
         pen::pen_creation_params p;
         p.window_width = 1280;
-        p.window_height =  720;
+        p.window_height = 720;
         p.window_title = "pmtech_editor";
         p.window_sample_count = 4;
         p.user_thread_function = user_entry;
         p.flags = pen::e_pen_create_flags::renderer;
         return p;
     }
-}
+} // namespace pen
 
 namespace physics
 {
@@ -92,7 +92,7 @@ void* pen::user_entry(void* params)
     svr_area_light_textures.name = "ces_render_area_light_textures";
     svr_area_light_textures.id_name = PEN_HASH(svr_area_light_textures.name.c_str());
     svr_area_light_textures.render_function = &ecs::render_area_light_textures;
-    
+
     put::scene_view_renderer svr_omni_shadow_maps;
     svr_omni_shadow_maps.name = "ces_render_omni_shadow_maps";
     svr_omni_shadow_maps.id_name = PEN_HASH(svr_omni_shadow_maps.name.c_str());

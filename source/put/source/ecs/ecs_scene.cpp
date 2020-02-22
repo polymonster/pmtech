@@ -11,11 +11,11 @@
 #include "dev_ui.h"
 #include "file_system.h"
 #include "hash.h"
+#include "os.h"
 #include "pmfx.h"
 #include "str/Str.h"
 #include "str_utilities.h"
 #include "timer.h"
-#include "os.h"
 
 #include "ecs/ecs_resources.h"
 #include "ecs/ecs_scene.h"
@@ -436,17 +436,17 @@ namespace put
 
                 // create a shadow camera
                 camera cam;
-                if(scene->lights[n].type == e_light_type::dir)
+                if (scene->lights[n].type == e_light_type::dir)
                 {
-                    vec3f  light_dir = normalised(-scene->lights[n].direction);
+                    vec3f light_dir = normalised(-scene->lights[n].direction);
                     camera_update_shadow_frustum(&cam, light_dir, scene->renderable_extents.min - vec3f(0.1f),
-                                                scene->renderable_extents.max + vec3f(0.1f));
+                                                 scene->renderable_extents.max + vec3f(0.1f));
                 }
                 else
                 {
                     // spot
                     camera_create_perspective(&cam, 100.0f, 1.0f, 0.01f, 500.0f);
-                    
+
                     cam.view.set_row(0, vec4f(normalised(scene->world_matrices[n].get_column(2).xyz), 0.0f));
                     cam.view.set_row(1, vec4f(normalised(scene->world_matrices[n].get_column(0).xyz), 0.0f));
                     cam.view.set_row(2, vec4f(normalised(scene->world_matrices[n].get_column(1).xyz), 0.0f));
@@ -464,17 +464,18 @@ namespace put
                 pen::renderer_update_buffer(cb_view, &shadow_vp, sizeof(mat4));
                 shadow_matrices[shadow_index - 1] = shadow_vp;
                 vv.cb_view = cb_view;
-                
+
                 render_scene_view(vv);
             }
 
             // update cbuffer
             if (is_valid(scene->shadow_map_buffer))
             {
-                pen::renderer_update_buffer(scene->shadow_map_buffer, &shadow_matrices[0], sizeof(mat4) * e_scene_limits::max_shadow_maps);
+                pen::renderer_update_buffer(scene->shadow_map_buffer, &shadow_matrices[0],
+                                            sizeof(mat4) * e_scene_limits::max_shadow_maps);
             }
         }
-        
+
         void single_light_from_entity(light_data& ld, const ecs_scene* scene, u32 n)
         {
             cmp_draw_call dc;
@@ -502,17 +503,17 @@ namespace put
                     break;
             }
         }
-        
+
         void render_omni_shadow_views(const scene_view& view)
         {
             ecs_scene* scene = view.scene;
-                        
+
             static camera cam_omni_shadow;
-            static u32 cb_light = -1;
-            if(!is_valid(cb_light))
+            static u32    cb_light = -1;
+            if (!is_valid(cb_light))
             {
                 cam_omni_shadow.pos = vec3f(0.0f, 0.0f, 0.0f);
-                
+
                 pen::buffer_creation_params bcp;
                 bcp.usage_flags = PEN_USAGE_DYNAMIC;
                 bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
@@ -522,7 +523,7 @@ namespace put
 
                 cb_light = pen::renderer_create_buffer(bcp);
             }
-            
+
             u32 target_omni_light_index = view.array_index / 6;
             u32 array_face = view.array_index % 6;
             u32 omni_light_index = 0;
@@ -533,28 +534,28 @@ namespace put
 
                 if (!scene->lights[n].shadow_map || scene->lights[n].type != e_light_type::point)
                     continue;
-                    
-                if(omni_light_index++ != target_omni_light_index)
+
+                if (omni_light_index++ != target_omni_light_index)
                     continue;
-                    
+
                 cam_omni_shadow.pos = scene->transforms[n].translation;
                 put::camera_create_cubemap(&cam_omni_shadow, 0.1f, scene->lights[n].radius * 2.0);
                 put::camera_set_cubemap_face(&cam_omni_shadow, array_face);
                 put::camera_update_shader_constants(&cam_omni_shadow);
-                
+
                 light_data ld;
                 single_light_from_entity(ld, scene, n);
                 pen::renderer_update_buffer(cb_light, &ld, sizeof(light_data));
                 pen::renderer_set_constant_buffer(cb_light, 10, pen::CBUFFER_BIND_PS);
-                
+
                 scene_view vv = view;
                 vv.camera = &cam_omni_shadow;
                 vv.cb_view = cam_omni_shadow.cbuffer;
-                
+
                 render_scene_view(vv);
             }
         }
-        
+
         void render_light_volumes(const scene_view& view)
         {
             ecs_scene* scene = view.scene;
@@ -564,17 +565,9 @@ namespace put
 
             pen::renderer_set_constant_buffer(view.cb_view, 0, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
 
-            static hash_id id_volume[] = {
-                PEN_HASH("full_screen_quad"),
-                PEN_HASH("sphere"),
-                PEN_HASH("cone")
-            };
+            static hash_id id_volume[] = {PEN_HASH("full_screen_quad"), PEN_HASH("sphere"), PEN_HASH("cone")};
 
-            static hash_id id_technique[] = {
-                PEN_HASH("directional_light"),
-                PEN_HASH("point_light"),
-                PEN_HASH("spot_light")
-            };
+            static hash_id id_technique[] = {PEN_HASH("directional_light"), PEN_HASH("point_light"), PEN_HASH("spot_light")};
 
             static u32 shader = pmfx::load_shader("deferred_render");
 
@@ -592,8 +585,8 @@ namespace put
             {
                 if (!(scene->entities[n] & e_cmp::light))
                     continue;
-                    
-                if(!scene->cbuffer[n])
+
+                if (!scene->cbuffer[n])
                     continue;
 
                 u32                t = scene->lights[n].type;
@@ -652,7 +645,7 @@ namespace put
                     pen::renderer_set_rasterizer_state(cull_front);
                     pen::renderer_set_depth_stencil_state(depth_disabled);
                 }
-                
+
                 pen::renderer_update_buffer(scene->cbuffer[n], &dc, sizeof(cmp_draw_call));
                 pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
                 pen::renderer_set_vertex_buffer(vol->vertex_buffer, 0, vol->vertex_size, 0);
@@ -708,7 +701,7 @@ namespace put
                         break;
                     }
                 }
-                
+
                 if (!inside)
                 {
                     cull_count++;
@@ -819,26 +812,26 @@ namespace put
                     static u32 ltc_mat = put::load_texture("data/textures/ltc/ltc_mat.dds");
                     static u32 ltc_mag = put::load_texture("data/textures/ltc/ltc_amp.dds");
 
-					static hash_id id_clamp_linear = PEN_HASH("clamp_linear");
-                    u32 clamp_linear = pmfx::get_render_state(id_clamp_linear, pmfx::e_render_state::sampler);
+                    static hash_id id_clamp_linear = PEN_HASH("clamp_linear");
+                    u32            clamp_linear = pmfx::get_render_state(id_clamp_linear, pmfx::e_render_state::sampler);
 
                     pen::renderer_set_texture(ltc_mat, clamp_linear, 13, pen::TEXTURE_BIND_PS);
                     pen::renderer_set_texture(ltc_mag, clamp_linear, 12, pen::TEXTURE_BIND_PS);
                 }
-                
+
                 // sdf shadows
                 pen::renderer_set_constant_buffer(scene->sdf_shadow_buffer, 5, pen::CBUFFER_BIND_PS);
                 for (u32 n = 0; n < scene->num_entities; ++n)
                 {
                     if (!(scene->entities[n] & e_cmp::sdf_shadow))
                         continue;
-                    
+
                     cmp_shadow& shadow = scene->shadows[n];
 
                     if (is_valid(shadow.texture_handle))
                         pen::renderer_set_texture(shadow.texture_handle, shadow.sampler_state, e_global_textures::sdf_shadow,
                                                   pen::TEXTURE_BIND_PS);
-                                                  
+
                     // info for sdf
                     pen::renderer_set_constant_buffer(scene->sdf_shadow_buffer, 5, pen::CBUFFER_BIND_PS);
                 }
@@ -991,11 +984,11 @@ namespace put
 
                         f32* f = &instance.targets[j].t[0];
 
-                        instance.joints[j].translation = vec3f(f[e_anim_output::translate_x],
-                            f[e_anim_output::translate_y], f[e_anim_output::translate_z]);
-                            
-                        instance.joints[j].scale = vec3f(f[e_anim_output::scale_x],
-                            f[e_anim_output::scale_y], f[e_anim_output::scale_z]);
+                        instance.joints[j].translation = vec3f(f[e_anim_output::translate_x], f[e_anim_output::translate_y],
+                                                               f[e_anim_output::translate_z]);
+
+                        instance.joints[j].scale =
+                            vec3f(f[e_anim_output::scale_x], f[e_anim_output::scale_y], f[e_anim_output::scale_z]);
 
                         if (instance.targets[j].flags & e_anim_flags::baked_quaternion)
                             instance.joints[j].rotation = instance.targets[j].q;
@@ -1072,8 +1065,8 @@ namespace put
 
         void update()
         {
-            static pen::timer*  dt_timer = pen::timer_create();
-            f32                 dt = pen::timer_elapsed_ms(dt_timer) * 0.001f;
+            static pen::timer* dt_timer = pen::timer_create();
+            f32                dt = pen::timer_elapsed_ms(dt_timer) * 0.001f;
             pen::timer_start(dt_timer);
 
             static f32 fft = 1.0f / 60.0f;
@@ -1480,7 +1473,7 @@ namespace put
             }
 
             // Shadow maps
-            
+
             // directional
             u32 num_shadow_maps = 0;
             u32 num_omni_shadow_maps = 0;
@@ -1493,7 +1486,7 @@ namespace put
                 if (!l.shadow_map)
                     continue;
 
-                if(l.type == e_light_type::point)
+                if (l.type == e_light_type::point)
                     ++num_omni_shadow_maps;
                 else
                     ++num_shadow_maps;
@@ -1512,18 +1505,18 @@ namespace put
                 rrp.collection = pen::TEXTURE_COLLECTION_ARRAY;
                 pmfx::resize_render_target(PEN_HASH("shadow_map"), rrp);
             }
-            
+
             // omni directional
             const pmfx::render_target* osm = pmfx::get_render_target(PEN_HASH("omni_shadow_map"));
-            if(osm)
+            if (osm)
             {
-                if (osm->num_arrays < num_omni_shadow_maps*6)
+                if (osm->num_arrays < num_omni_shadow_maps * 6)
                 {
                     pmfx::rt_resize_params rrp;
                     rrp.width = osm->width;
                     rrp.height = osm->height;
                     rrp.format = nullptr;
-                    rrp.num_arrays = num_omni_shadow_maps*6;
+                    rrp.num_arrays = num_omni_shadow_maps * 6;
                     rrp.num_mips = 1;
                     rrp.collection = pen::TEXTURE_COLLECTION_CUBE_ARRAY;
                     pmfx::resize_render_target(PEN_HASH("omni_shadow_map"), rrp);
@@ -1532,7 +1525,7 @@ namespace put
 
             // Update pre skinned vertex buffers
             static hash_id id_pre_skin_technique = PEN_HASH("pre_skin");
-            static u32 shader = pmfx::load_shader("forward_render");
+            static u32     shader = pmfx::load_shader("forward_render");
             if (pmfx::set_technique_perm(shader, id_pre_skin_technique))
             {
                 for (size_t n = 0; n < scene->num_entities; ++n)
@@ -1633,7 +1626,7 @@ namespace put
             for (u32 c = 0; c < num_controllers; ++c)
                 if (scene->controllers[c].post_update_func)
                     scene->controllers[c].post_update_func(scene->controllers[c], scene, dt);
-                    
+
             f32 elapsed = pen::timer_elapsed_ms(timer);
             PEN_UNUSED(elapsed);
             // PEN_LOG("scene update: %f(ms)", elapsed);
@@ -1773,7 +1766,7 @@ namespace put
         void save_scene(const c8* filename, ecs_scene* scene)
         {
             const c8* wd = pen::os_get_user_info().working_directory;
-            Str project_dir = dev_ui::get_program_preference_filename("project_dir", wd);
+            Str       project_dir = dev_ui::get_program_preference_filename("project_dir", wd);
 
             std::ofstream ofs(filename, std::ofstream::binary);
 
@@ -1961,9 +1954,9 @@ namespace put
         void load_scene(const c8* filename, ecs_scene* scene, bool merge)
         {
             scene->flags |= e_scene_flags::invalidate_scene_tree;
-            bool error = false;
+            bool      error = false;
             const c8* wd = pen::os_get_user_info().working_directory;
-            Str  project_dir = dev_ui::get_program_preference_filename("project_dir", wd);
+            Str       project_dir = dev_ui::get_program_preference_filename("project_dir", wd);
 
             std::ifstream ifs(pen::os_path_for_resource(filename), std::ofstream::binary);
 
@@ -2297,14 +2290,16 @@ namespace put
                     if (!texture_name.empty())
                     {
                         samplers.sb[i].handle = put::load_texture(texture_name.c_str());
-                        samplers.sb[i].sampler_state = pmfx::get_render_state(PEN_HASH("wrap_linear"), pmfx::e_render_state::sampler);
+                        samplers.sb[i].sampler_state =
+                            pmfx::get_render_state(PEN_HASH("wrap_linear"), pmfx::e_render_state::sampler);
                     }
 
                     Str sampler_state_name = read_lookup_string(ifs);
 
                     if (!sampler_state_name.empty())
                     {
-                        samplers.sb[i].sampler_state = pmfx::get_render_state(PEN_HASH(sampler_state_name), pmfx::e_render_state::sampler);
+                        samplers.sb[i].sampler_state =
+                            pmfx::get_render_state(PEN_HASH(sampler_state_name), pmfx::e_render_state::sampler);
                     }
                 }
             }
@@ -2336,9 +2331,9 @@ namespace put
             if (!merge)
             {
                 scene->view_flags = scene_view_flags;
-                
+
                 // show bones and mats if we have an error, to aid deugging
-                if(error)
+                if (error)
                     scene->view_flags |= (e_scene_view_flags::matrix | e_scene_view_flags::bones);
             }
 

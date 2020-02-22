@@ -16,11 +16,11 @@
 #include "data_struct.h"
 #include "hash.h"
 #include "input.h"
-#include "str_utilities.h"
-#include "timer.h"
 #include "os.h"
 #include "pen_string.h"
 #include "renderer_shared.h"
+#include "str_utilities.h"
+#include "timer.h"
 
 using namespace pen;
 using namespace put;
@@ -29,21 +29,12 @@ using namespace ecs;
 namespace
 {
     const hash_id ID_PICKING_BUFFER = PEN_HASH("picking");
-    
-    const hash_id ID_PRIMITIVE[] = {
-        PEN_HASH("quad"),
-        PEN_HASH("cube"),
-        PEN_HASH("cylinder"),
-        PEN_HASH("sphere"),
-        PEN_HASH("capsule"),
-        PEN_HASH("cone")
-    };
-    
-    const c8* k_camera_mode_names[] = {
-        "Modelling",
-        "Fly"
-    };
-        
+
+    const hash_id ID_PRIMITIVE[] = {PEN_HASH("quad"),   PEN_HASH("cube"),    PEN_HASH("cylinder"),
+                                    PEN_HASH("sphere"), PEN_HASH("capsule"), PEN_HASH("cone")};
+
+    const c8* k_camera_mode_names[] = {"Modelling", "Fly"};
+
     namespace e_editor_actions
     {
         enum editor_actions_t
@@ -56,7 +47,7 @@ namespace
         };
     }
     typedef e_editor_actions::editor_actions_t editor_actions;
-    
+
     namespace e_picking_state
     {
         enum picking_state_t
@@ -68,16 +59,16 @@ namespace
             grabbed
         };
     }
-    
+
     namespace e_select_flags
     {
         enum select_flags_t
         {
             none,
-            widget_selected = 1<<1
+            widget_selected = 1 << 1
         };
     }
-    
+
     namespace e_camera_mode
     {
         enum camera_mode_t
@@ -87,7 +78,7 @@ namespace
         };
     }
     typedef e_camera_mode::camera_mode_t camera_mode;
-    
+
     struct transform_undo
     {
         cmp_transform state;
@@ -100,7 +91,7 @@ namespace
         a_u8 ready;
         u32  x, y;
     };
-    
+
     struct model_view_controller
     {
         put::camera          main_camera;
@@ -111,7 +102,7 @@ namespace
         f32                  grid_size;
         Str                  current_working_scene = "";
     };
-    
+
     struct node_state
     {
         void** components = nullptr;
@@ -126,16 +117,16 @@ namespace
     typedef pen::stack<editor_action> action_stack;
 
     // to move into scene editor context
-    u32                     s_select_flags = 0;
-    picking_info            s_picking_info;
-    model_view_controller   s_model_view_controller;
-    transform_mode          s_transform_mode = e_transform_mode::none;
-    action_stack            s_undo_stack;
-    action_stack            s_redo_stack;
-    editor_action*          s_editor_nodes = nullptr;
-    bool                    s_editor_enabled = true;
-    bool                    s_editor_enable_camera = true;
-}
+    u32                   s_select_flags = 0;
+    picking_info          s_picking_info;
+    model_view_controller s_model_view_controller;
+    transform_mode        s_transform_mode = e_transform_mode::none;
+    action_stack          s_undo_stack;
+    action_stack          s_redo_stack;
+    editor_action*        s_editor_nodes = nullptr;
+    bool                  s_editor_enabled = true;
+    bool                  s_editor_enable_camera = true;
+} // namespace
 
 namespace put
 {
@@ -145,7 +136,7 @@ namespace put
         {
             s_transform_mode = mode;
         }
-        
+
         bool shortcut_key(u32 key)
         {
             u32 flags = dev_ui::want_capture();
@@ -191,26 +182,15 @@ namespace put
 
         void view_ui(ecs_scene* scene, bool* opened)
         {
-            static const c8* dd_names[] ={
-                "Hide Scene",
-                "Hide Debug",
-                "Selected Node",
-                "Grid",
-                "Matrices",
-                "Bones",
-                "AABB",
-                "Lights",
-                "Physics",
-                "Selected Children",
-                "Debug Geometry",
-                "Camera / Frustum"
-            };
+            static const c8* dd_names[] = {
+                "Hide Scene", "Hide Debug", "Selected Node",     "Grid",           "Matrices",        "Bones", "AABB",
+                "Lights",     "Physics",    "Selected Children", "Debug Geometry", "Camera / Frustum"};
             static_assert(sizeof(dd_names) / sizeof(dd_names[0]) == e_scene_view_flags::COUNT, "mismatched");
-            
+
             if (ImGui::Begin("View", opened, ImGuiWindowFlags_AlwaysAutoResize))
             {
                 for (s32 i = 0; i < e_scene_view_flags::COUNT; ++i)
-                    ImGui::CheckboxFlags(dd_names[i], &scene->view_flags, 1<<i);
+                    ImGui::CheckboxFlags(dd_names[i], &scene->view_flags, 1 << i);
 
                 if (ImGui::CollapsingHeader("Grid Options"))
                 {
@@ -1147,10 +1127,10 @@ namespace put
                 bool co = dev_ui::is_console_open();
                 ImGui::MenuItem("Console", nullptr, &co);
                 dev_ui::show_console(co);
-                
+
                 ImGui::MenuItem("Settings", nullptr, &settings_open);
                 ImGui::MenuItem("Dev", nullptr, &dev_open);
-                
+
                 ImGui::EndMenu();
             }
 
@@ -1340,8 +1320,8 @@ namespace put
 
             if (open_open)
             {
-                const c8* import = put::dev_ui::file_browser(open_open,
-                    dev_ui::e_file_browser_flags::open, 3, "**.pmm", "**.pms", "**.pmv");
+                const c8* import =
+                    put::dev_ui::file_browser(open_open, dev_ui::e_file_browser_flags::open, 3, "**.pmm", "**.pms", "**.pmv");
 
                 if (import)
                 {
@@ -1448,8 +1428,7 @@ namespace put
 
             // disable selection when we are doing something else
             static bool disable_picking = false;
-            if (pen::input_key(PK_MENU) || pen::input_key(PK_COMMAND) ||
-                (s_select_flags & e_select_flags::widget_selected) ||
+            if (pen::input_key(PK_MENU) || pen::input_key(PK_COMMAND) || (s_select_flags & e_select_flags::widget_selected) ||
                 (s_transform_mode == e_transform_mode::physics))
             {
                 disable_picking = true;
@@ -2359,7 +2338,8 @@ namespace put
 
                     if (s_file_browser_open)
                     {
-                        const c8* file = dev_ui::file_browser(s_file_browser_open, dev_ui::e_file_browser_flags::open, 1, "**.pmv");
+                        const c8* file =
+                            dev_ui::file_browser(s_file_browser_open, dev_ui::e_file_browser_flags::open, 1, "**.pmv");
 
                         if (file)
                             instantiate_sdf_shadow(file, scene, si);
@@ -2658,9 +2638,9 @@ namespace put
             s_select_flags &= ~(e_select_flags::widget_selected);
 
             ecs_scene* scene = view.scene;
-            
+
             viewport vp = _renderer_resolve_viewport_ratio(*view.viewport);
-            vec2i vpi = vec2i(vp.width, vp.height);
+            vec2i    vpi = vec2i(vp.width, vp.height);
 
             static vec3f widget_points[4];
             static vec3f pre_click_axis_pos[3];
@@ -3209,7 +3189,7 @@ namespace put
         void render_scene_editor(const scene_view& view)
         {
             ecs_scene* scene = view.scene;
-            if(scene->view_flags & e_scene_view_flags::hide_debug)
+            if (scene->view_flags & e_scene_view_flags::hide_debug)
                 return;
 
             render_physics_debug(view);

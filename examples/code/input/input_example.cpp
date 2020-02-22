@@ -16,14 +16,14 @@ namespace pen
     {
         pen::pen_creation_params p;
         p.window_width = 1280;
-        p.window_height =  720;
+        p.window_height = 720;
         p.window_title = "input_example";
         p.window_sample_count = 4;
         p.user_thread_function = user_entry;
         p.flags = pen::e_pen_create_flags::renderer;
         return p;
     }
-}
+} // namespace pen
 
 struct vertex
 {
@@ -78,7 +78,7 @@ void* pen::user_entry(void* params)
     {
         // viewport
         pen::viewport vp = {0.0f, 0.0f, PEN_BACK_BUFFER_RATIO, 1.0f, 0.0f, 1.0f};
-        
+
         s32 iw, ih;
         pen::window_get_size(iw, ih);
         pen::viewport vvp = {0.0f, 0.0f, (f32)iw, (f32)ih, 0.0f, 1.0f};
@@ -132,10 +132,10 @@ void* pen::user_entry(void* params)
             }
         }
         ascii_msg.append("\n");
-        
-        Str unicode = pen::input_get_unicode_input();
+
+        Str        unicode = pen::input_get_unicode_input();
         static Str text_buffer;
-        
+
         if (unicode[0] == 8)
         {
             text_buffer[text_buffer.length() - 1] = '\0';
@@ -144,7 +144,7 @@ void* pen::user_entry(void* params)
         {
             text_buffer.append(unicode.c_str());
         }
-        
+
         put::dbg::add_text_2f(10.0f, 40.0f, vvp, vec4f(1.0f, 1.0f, 1.0f, 1.0f), "input text: %s", text_buffer.c_str());
 
         // raw gamepad

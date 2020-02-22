@@ -41,11 +41,7 @@ namespace
 
     shader_program null_shader = {0};
 
-    hash_id id_widgets[] = {
-        PEN_HASH("slider"),
-        PEN_HASH("input"),
-        PEN_HASH("colour")
-    };
+    hash_id id_widgets[] = {PEN_HASH("slider"), PEN_HASH("input"), PEN_HASH("colour")};
     static_assert(PEN_ARRAY_SIZE(id_widgets) == e_constant_widget::COUNT, "mismatched array size");
 
     struct pmfx_shader
@@ -57,7 +53,7 @@ namespace
         u32             info_timestamp = 0;
         shader_program* techniques = nullptr;
     };
-    
+
     pmfx_shader*  s_pmfx_list = nullptr;
     const char**  s_shader_names = nullptr;
     const char*** s_technique_names = nullptr;
@@ -771,15 +767,15 @@ namespace put
                 pen::renderer_release_input_layout(t.input_layout);
             }
         }
-        
+
         bool pmfx_ready(const c8* filename)
         {
             static c8 info_file_buf[256];
             get_pmfx_info_filename(info_file_buf, filename);
             pen::json j = pen::json::load_from_file(info_file_buf);
-            if(j.is_null())
+            if (j.is_null())
                 return false;
-                
+
             return true;
         }
 
@@ -877,10 +873,10 @@ namespace put
         void poll_for_changes()
         {
             PEN_HOTLOADING_ENABLED;
-            
+
             Str shader_compiler_str = put::get_build_cmd();
             shader_compiler_str.append("-pmfx");
-            
+
             u32 current_counter = 0;
 
             u32 num_pmfx = sb_count(s_pmfx_list);
@@ -896,13 +892,13 @@ namespace put
 
                     u32       current_ts;
                     pen_error err = pen::filesystem_getmtime(info_file_buf, current_ts);
-                    
+
                     // wait until info is newer than the current info file,
                     // to know compilation is completed.
                     if (err == PEN_ERR_OK && current_ts > pmfx_set.info_timestamp)
                     {
                         bool complete = pmfx_ready(pmfx_set.filename.c_str());
-                        if(complete)
+                        if (complete)
                         {
                             // load new one
                             pmfx_shader pmfx_new = load_internal(pmfx_set.filename.c_str());

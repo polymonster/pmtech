@@ -11,26 +11,21 @@ namespace pen
     {
         pen::pen_creation_params p;
         p.window_width = 1280;
-        p.window_height =  720;
+        p.window_height = 720;
         p.window_title = "rasterizer_state";
         p.window_sample_count = 4;
         p.user_thread_function = user_entry;
         p.flags = pen::e_pen_create_flags::renderer;
         return p;
     }
-}
+} // namespace pen
 
 namespace
 {
     const u32 num_rs = 4; // cull front, cull back, cull none, wireframe
     u32       cube_entity[num_rs];
 
-    hash_id   raster_states[] = {
-        PEN_HASH("default"),
-        PEN_HASH("front_face_cull"),
-        PEN_HASH("no_cull"),
-        PEN_HASH("wireframe")
-    };
+    hash_id raster_states[] = {PEN_HASH("default"), PEN_HASH("front_face_cull"), PEN_HASH("no_cull"), PEN_HASH("wireframe")};
 } // namespace
 
 void render_raster_states(const scene_view& view)
@@ -59,18 +54,18 @@ void render_raster_states(const scene_view& view)
             pen::renderer_set_texture(samplers.sb[s].handle, samplers.sb[s].sampler_state, samplers.sb[s].sampler_unit,
                                       pen::TEXTURE_BIND_PS);
         }
-        
+
         // ltc lookups / shadow buffers
         {
             static u32 ltc_mat = put::load_texture("data/textures/ltc/ltc_mat.dds");
             static u32 ltc_mag = put::load_texture("data/textures/ltc/ltc_amp.dds");
 
             static hash_id id_clamp_linear = PEN_HASH("clamp_linear");
-            u32 clamp_linear = pmfx::get_render_state(id_clamp_linear, pmfx::e_render_state::sampler);
+            u32            clamp_linear = pmfx::get_render_state(id_clamp_linear, pmfx::e_render_state::sampler);
 
             pen::renderer_set_texture(ltc_mat, clamp_linear, 13, pen::TEXTURE_BIND_PS);
             pen::renderer_set_texture(ltc_mag, clamp_linear, 12, pen::TEXTURE_BIND_PS);
-            
+
             pen::renderer_set_constant_buffer(scene->forward_light_buffer, 3, pen::CBUFFER_BIND_PS);
             pen::renderer_set_constant_buffer(scene->shadow_map_buffer, 4, pen::CBUFFER_BIND_PS);
             pen::renderer_set_constant_buffer(scene->area_light_buffer, 6, pen::CBUFFER_BIND_PS);

@@ -9,14 +9,14 @@ namespace pen
     {
         pen::pen_creation_params p;
         p.window_width = 1280;
-        p.window_height =  720;
+        p.window_height = 720;
         p.window_title = "cubemap";
         p.window_sample_count = 4;
         p.user_thread_function = user_entry;
         p.flags = pen::e_pen_create_flags::renderer;
         return p;
     }
-}
+} // namespace pen
 
 void example_setup(ecs_scene* scene, camera& cam)
 {
@@ -46,7 +46,8 @@ void example_setup(ecs_scene* scene, camera& cam)
 
     scene->samplers[new_prim].sb[0].handle = put::load_texture("data/textures/cubemap.dds");
     scene->samplers[new_prim].sb[0].sampler_unit = 3;
-    scene->samplers[new_prim].sb[0].sampler_state = pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::e_render_state::sampler);
+    scene->samplers[new_prim].sb[0].sampler_state =
+        pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::e_render_state::sampler);
 }
 
 void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)

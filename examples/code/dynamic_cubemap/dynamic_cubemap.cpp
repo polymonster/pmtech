@@ -13,14 +13,14 @@ namespace pen
     {
         pen::pen_creation_params p;
         p.window_width = 1280;
-        p.window_height =  720;
+        p.window_height = 720;
         p.window_title = "dynamic_cubemap";
         p.window_sample_count = 4;
         p.user_thread_function = user_entry;
         p.flags = pen::e_pen_create_flags::renderer;
         return p;
     }
-}
+} // namespace pen
 
 namespace
 {
@@ -105,11 +105,12 @@ void example_setup(ecs_scene* scene, camera& cam)
 
     scene->samplers[ground].sb[0].handle = put::load_texture("data/textures/BlueChecker01.dds");
     scene->samplers[ground].sb[0].sampler_unit = 0;
-    scene->samplers[ground].sb[0].sampler_state = pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::e_render_state::sampler);
+    scene->samplers[ground].sb[0].sampler_state =
+        pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::e_render_state::sampler);
     bake_material_handles(scene, ground);
 
     f32 ramp1_angle[] = {(f32)M_PI * 0.125f, (f32)M_PI * -0.125f};
-    f32 ramp2_angle[] = { (f32)M_PI * -0.125f, (f32)M_PI * 0.125f};
+    f32 ramp2_angle[] = {(f32)M_PI * -0.125f, (f32)M_PI * 0.125f};
     f32 ramp1_x[] = {20.0f, -20.0f};
     f32 ramp2_x[] = {-10.0f, 10.0f};
     f32 block1_x[] = {30.0f, -30.0f};
@@ -224,7 +225,8 @@ void example_setup(ecs_scene* scene, camera& cam)
 
     scene->samplers[chorme_ball].sb[0].handle = chrome_cubemap_handle;
     scene->samplers[chorme_ball].sb[0].sampler_unit = 3;
-    scene->samplers[chorme_ball].sb[0].sampler_state = pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::e_render_state::sampler);
+    scene->samplers[chorme_ball].sb[0].sampler_state =
+        pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::e_render_state::sampler);
 
     // add physics
     scene->physics_data[chorme_ball].rigid_body.shape = physics::e_shape::sphere;
@@ -256,7 +258,8 @@ void example_setup(ecs_scene* scene, camera& cam)
 
     scene->samplers[chrome2_ball].sb[0].handle = chrome2_cubemap_handle;
     scene->samplers[chrome2_ball].sb[0].sampler_unit = 3;
-    scene->samplers[chrome2_ball].sb[0].sampler_state = pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::e_render_state::sampler);
+    scene->samplers[chrome2_ball].sb[0].sampler_state =
+        pmfx::get_render_state(PEN_HASH("clamp_linear"), pmfx::e_render_state::sampler);
 
     for (u32 s = 1; s < e_pmfx_constants::max_technique_sampler_bindings; ++s)
         scene->samplers[chrome2_ball].sb[s].handle = 0;

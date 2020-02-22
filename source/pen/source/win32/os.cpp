@@ -4,21 +4,21 @@
 
 #include <windows.h>
 
+#include "data_struct.h"
+#include "hash.h"
 #include "input.h"
 #include "os.h"
 #include "pen.h"
 #include "pen_string.h"
 #include "renderer.h"
+#include "renderer_shared.h"
+#include "str_utilities.h"
 #include "threads.h"
 #include "timer.h"
-#include "data_struct.h"
-#include "str_utilities.h"
-#include "renderer_shared.h"
-#include "hash.h"
 
 // the last 2 global externs! \o/
-pen::user_info pen_user_info;
-pen::window_creation_params  pen_window;
+pen::user_info              pen_user_info;
+pen::window_creation_params pen_window;
 
 //
 // OpenGL Render Context
@@ -29,72 +29,66 @@ pen::window_creation_params  pen_window;
 #include "GL/glew.c"
 namespace
 {
-	struct wgl_context
-	{
-		HDC     dc;
-		HGLRC   glrc;
-	};
-	wgl_context s_glctx;
+    struct wgl_context
+    {
+        HDC   dc;
+        HGLRC glrc;
+    };
+    wgl_context s_glctx;
 
-	void create_gl_context(HWND wnd)
-	{
-		s_glctx.dc = GetDC(wnd);
+    void create_gl_context(HWND wnd)
+    {
+        s_glctx.dc = GetDC(wnd);
 
-		PIXELFORMATDESCRIPTOR pfd;
-		memset(&pfd, 0, sizeof(pfd));
+        PIXELFORMATDESCRIPTOR pfd;
+        memset(&pfd, 0, sizeof(pfd));
 
-		pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
-		pfd.nVersion = 1;
-		pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
-		pfd.iPixelType = PFD_TYPE_RGBA;
-		pfd.cColorBits = 32;
-		pfd.cAlphaBits = 8;
-		pfd.cDepthBits = 24;
-		pfd.cStencilBits = 8;
-		pfd.iLayerType = PFD_MAIN_PLANE;
+        pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
+        pfd.nVersion = 1;
+        pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+        pfd.iPixelType = PFD_TYPE_RGBA;
+        pfd.cColorBits = 32;
+        pfd.cAlphaBits = 8;
+        pfd.cDepthBits = 24;
+        pfd.cStencilBits = 8;
+        pfd.iLayerType = PFD_MAIN_PLANE;
 
-		int pf = ChoosePixelFormat(s_glctx.dc, &pfd);
-		DescribePixelFormat(s_glctx.dc, pf, sizeof(PIXELFORMATDESCRIPTOR), &pfd);
-		int result = SetPixelFormat(s_glctx.dc, pf, &pfd);
-		HGLRC temp = wglCreateContext(s_glctx.dc);
-		wglMakeCurrent(s_glctx.dc, temp);
+        int pf = ChoosePixelFormat(s_glctx.dc, &pfd);
+        DescribePixelFormat(s_glctx.dc, pf, sizeof(PIXELFORMATDESCRIPTOR), &pfd);
+        int   result = SetPixelFormat(s_glctx.dc, pf, &pfd);
+        HGLRC temp = wglCreateContext(s_glctx.dc);
+        wglMakeCurrent(s_glctx.dc, temp);
 
-		int attribs[] =
-		{
-			WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
-			WGL_CONTEXT_MINOR_VERSION_ARB, 3,
-			WGL_CONTEXT_FLAGS_ARB, 0,
-			0
-		};
+        int attribs[] = {WGL_CONTEXT_MAJOR_VERSION_ARB, 4, WGL_CONTEXT_MINOR_VERSION_ARB, 3, WGL_CONTEXT_FLAGS_ARB, 0, 0};
 
-		// create gl 4 context
-		int error = glewInit();
-		if (wglewIsSupported("WGL_ARB_create_context") == 1)
-		{
-			s_glctx.glrc = wglCreateContextAttribsARB(s_glctx.dc, 0, attribs);
-			wglMakeCurrent(NULL, NULL);
-			wglDeleteContext(temp);
-			result = wglMakeCurrent(s_glctx.dc, s_glctx.glrc);
+        // create gl 4 context
+        int error = glewInit();
+        if (wglewIsSupported("WGL_ARB_create_context") == 1)
+        {
+            s_glctx.glrc = wglCreateContextAttribsARB(s_glctx.dc, 0, attribs);
+            wglMakeCurrent(NULL, NULL);
+            wglDeleteContext(temp);
+            result = wglMakeCurrent(s_glctx.dc, s_glctx.glrc);
 
-			// todo.
-			//glEnable(GL_DEBUG_OUTPUT);
-			//glDebugMessageCallback(debugCallback, nullptr);
-		}
-		else
-		{
-			s_glctx.glrc = temp;
-		}
-	}
-}
+            // todo.
+            //glEnable(GL_DEBUG_OUTPUT);
+            //glDebugMessageCallback(debugCallback, nullptr);
+        }
+        else
+        {
+            s_glctx.glrc = temp;
+        }
+    }
+} // namespace
 
 extern void pen_make_gl_context_current()
 {
-	wglMakeCurrent(s_glctx.dc, s_glctx.glrc);
+    wglMakeCurrent(s_glctx.dc, s_glctx.glrc);
 }
 
 extern void pen_gl_swap_buffers()
 {
-	SwapBuffers(s_glctx.dc);
+    SwapBuffers(s_glctx.dc);
 }
 #define create_ctx(wnd) create_gl_context(wnd)
 #else
@@ -103,81 +97,81 @@ extern void pen_gl_swap_buffers()
 
 namespace
 {
-	namespace e_os_cmd
-	{
-		enum os_cmd_t
-		{
-			null = 0,
-			set_window_frame
-		};
-	}
+    namespace e_os_cmd
+    {
+        enum os_cmd_t
+        {
+            null = 0,
+            set_window_frame
+        };
+    }
 
-	struct os_cmd
-	{
-		u32 cmd_index;
+    struct os_cmd
+    {
+        u32 cmd_index;
 
-		union {
-			struct
-			{
-				pen::window_frame frame;
-			};
-		};
-	};
+        union {
+            struct
+            {
+                pen::window_frame frame;
+            };
+        };
+    };
 
-	struct window_params
-	{
-		HINSTANCE hinstance;
-		int       cmdshow;
-	};
+    struct window_params
+    {
+        HINSTANCE hinstance;
+        int       cmdshow;
+    };
 
-	pen::ring_buffer<os_cmd> s_cmd_buffer;
-	HWND					 s_hwnd = nullptr;
-	HINSTANCE				 s_hinstance = nullptr;
-	bool					 s_terminate_app = false;
-	u32						 s_return_code = 0;
+    pen::ring_buffer<os_cmd> s_cmd_buffer;
+    HWND                     s_hwnd = nullptr;
+    HINSTANCE                s_hinstance = nullptr;
+    bool                     s_terminate_app = false;
+    u32                      s_return_code = 0;
 
-	void pen_window_resize(u32 w, u32 h)
-	{
-		pen::_renderer_resize_backbuffer(w, h);
-	}
+    void pen_window_resize(u32 w, u32 h)
+    {
+        pen::_renderer_resize_backbuffer(w, h);
+    }
 
-	u32 pen_run_windowed(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, INT nCmdShow)
-	{
-		Str str_cmd = lpCmdLine;
-		if (pen::str_find(str_cmd, "-test") != -1)
-		{
-			pen::renderer_test_enable();
-		}
+    u32 pen_run_windowed(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, INT nCmdShow)
+    {
+        Str str_cmd = lpCmdLine;
+        if (pen::str_find(str_cmd, "-test") != -1)
+        {
+            pen::renderer_test_enable();
+        }
 
-		window_params wp;
-		wp.cmdshow = nCmdShow;
-		wp.hinstance = hInstance;
+        window_params wp;
+        wp.cmdshow = nCmdShow;
+        wp.hinstance = hInstance;
 
-		if (pen::window_init(((void*)&wp)))
-			return 0;
+        if (pen::window_init(((void*)&wp)))
+            return 0;
 
-		// init renderer will enter a loop wait for rendering commands, and call os update
-		HWND hwnd = (HWND)pen::window_get_primary_display_handle();
-		create_ctx(hwnd);
-		pen::renderer_init((void*)&hwnd, true);
+        // init renderer will enter a loop wait for rendering commands, and call os update
+        HWND hwnd = (HWND)pen::window_get_primary_display_handle();
+        create_ctx(hwnd);
+        pen::renderer_init((void*)&hwnd, true);
 
-		return s_return_code;
-	}
+        return s_return_code;
+    }
 
-	u32 pen_run_console()
-	{
-		for (;;)
-		{
-			pen::os_update();
-		}
+    u32 pen_run_console()
+    {
+        for (;;)
+        {
+            pen::os_update();
+        }
 
-		return s_return_code;
-	}
-}
+        return s_return_code;
+    }
+} // namespace
 
 namespace pen
 {
-	LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+    LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
     bool os_update()
     {
@@ -203,12 +197,12 @@ namespace pen
             // process cmd
             switch (cmd->cmd_index)
             {
-				case e_os_cmd::set_window_frame:
+                case e_os_cmd::set_window_frame:
                 {
-					RECT r;
+                    RECT r;
                     SetWindowPos(s_hwnd, HWND_TOP, cmd->frame.x, cmd->frame.y, cmd->frame.width, cmd->frame.height, 0);
                     GetClientRect(s_hwnd, &r);
-					pen_window_resize(r.right - r.left, r.bottom - r.top);
+                    pen_window_resize(r.right - r.left, r.bottom - r.top);
                 }
                 break;
                 default:
@@ -299,8 +293,8 @@ namespace pen
 
     void set_unicode_key(u32 key_index, bool down)
     {
-        static wchar_t  buf[32];
-        static char     utf8[32];
+        static wchar_t buf[32];
+        static char    utf8[32];
 
         // modifiers
         BYTE key_state[256] = {0};
@@ -311,7 +305,7 @@ namespace pen
 
         int num = WideCharToMultiByte(CP_UTF8, 0, buf, -1, utf8, 32, nullptr, nullptr);
 
-        if(down)
+        if (down)
             pen::input_add_unicode_input(utf8);
 
         // not ideal.. need a better solution to track unicode text input.
@@ -391,7 +385,7 @@ namespace pen
                 if (lo == SIZE_MINIMIZED)
                     break;
 
-				pen_window_resize(LOWORD(lParam), HIWORD(lParam));
+                pen_window_resize(LOWORD(lParam), HIWORD(lParam));
             }
             break;
 
@@ -487,51 +481,51 @@ namespace pen
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, INT nCmdShow)
 {
-	// initilaise any generic systems
-	pen::timer_system_intialise();
-	pen::input_gamepad_init();
+    // initilaise any generic systems
+    pen::timer_system_intialise();
+    pen::input_gamepad_init();
 
-	// get working directory name
-	char module_filename[MAX_PATH];
-	GetModuleFileNameA(hInstance, module_filename, MAX_PATH);
+    // get working directory name
+    char module_filename[MAX_PATH];
+    GetModuleFileNameA(hInstance, module_filename, MAX_PATH);
 
-	static Str working_directory = module_filename;
-	working_directory = pen::str_normalise_filepath(working_directory);
+    static Str working_directory = module_filename;
+    working_directory = pen::str_normalise_filepath(working_directory);
 
-	// remove exe
-	u32 dir = pen::str_find_reverse(working_directory, "/");
-	working_directory = pen::str_substr(working_directory, 0, dir + 1);
+    // remove exe
+    u32 dir = pen::str_find_reverse(working_directory, "/");
+    working_directory = pen::str_substr(working_directory, 0, dir + 1);
 
-	pen_user_info.working_directory = working_directory.c_str();
+    pen_user_info.working_directory = working_directory.c_str();
 
-	// call user entry / setup
-    pen::pen_creation_params pc  = pen::pen_entry(0, nullptr);
+    // call user entry / setup
+    pen::pen_creation_params pc = pen::pen_entry(0, nullptr);
     pen_window.width = pc.window_width;
     pen_window.height = pc.window_height;
     pen_window.window_title = pc.window_title;
     pen_window.sample_count = pc.window_sample_count;
 
-	if (pc.flags & pen::e_pen_create_flags::renderer)
-	{
-		// console for std output.. 
-		if (!AttachConsole(ATTACH_PARENT_PROCESS))
-		{
-			AllocConsole();
-		}
+    if (pc.flags & pen::e_pen_create_flags::renderer)
+    {
+        // console for std output..
+        if (!AttachConsole(ATTACH_PARENT_PROCESS))
+        {
+            AllocConsole();
+        }
 
-		freopen("CONIN$", "r", stdin);
-		freopen("CONOUT$", "w", stdout);
-		freopen("CONOUT$", "w", stderr);
+        freopen("CONIN$", "r", stdin);
+        freopen("CONOUT$", "w", stdout);
+        freopen("CONOUT$", "w", stderr);
 
-		// windowed mode with renderer
-		pen_run_windowed(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
-	}
-	else
-	{
-		// headless mode
-		pen_run_console();
-	}
+        // windowed mode with renderer
+        pen_run_windowed(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
+    }
+    else
+    {
+        // headless mode
+        pen_run_console();
+    }
 
-	// exit program
-	return s_return_code;
+    // exit program
+    return s_return_code;
 }
