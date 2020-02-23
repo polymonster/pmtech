@@ -1532,7 +1532,7 @@ namespace pen
         }
 
         f32 percentage = 100.0f / ((f32)depth_pitch / (f32)diffs);
-        PEN_CONSOLE("test complete %i diffs: out of %i (%2.3f%%)\n", diffs, depth_pitch, percentage);
+        PEN_LOG("test complete %i diffs: out of %i (%2.3f%%)\n", diffs, depth_pitch, percentage);
 
         Str output_results_file = "";
         output_results_file.appendf("../../test_results/%s.txt", pen_window.window_title);
@@ -1546,7 +1546,7 @@ namespace pen
 
     void renderer_test_enable()
     {
-        PEN_CONSOLE("renderer test enabled.\n");
+        PEN_LOG("renderer test enabled.\n");
         s_run_test = true;
     }
 
@@ -1565,7 +1565,7 @@ namespace pen
         if (ran)
             return;
 
-        PEN_CONSOLE("running test %s.\n", pen_window.window_title);
+        PEN_LOG("running test %s.\n", pen_window.window_title);
 
         pen::resource_read_back_params rrbp;
         rrbp.block_size = 4; // RGBA8

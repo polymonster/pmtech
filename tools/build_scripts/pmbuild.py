@@ -384,6 +384,18 @@ def generate_pmbuild_config(config, profile):
     f.write(json.dumps(md, indent=4))
 
 
+# run build commands
+def run_build(config):
+    print("--------------------------------------------------------------------------------")
+    print("build --------------------------------------------------------------------------")
+    print("--------------------------------------------------------------------------------")
+    for build_task in config["build"]:
+        p = subprocess.Popen(build_task, shell=True)
+        e = p.wait()
+        if e != 0:
+            exit(0)
+
+
 # top level help
 def pmbuild_help(config):
     print("pmbuild -help ------------------------------------------------------------------")
@@ -562,6 +574,7 @@ if __name__ == "__main__":
     tasks["models"] = {"run": run_models, "help": models_help}
     tasks["textures"] = {"run": run_textures, "help": textures_help}
     tasks["copy"] = {"run": run_copy, "help": copy_help}
+    tasks["build"] = {"run": run_build, "help": copy_help}
 
     # clean is a special task, you must specify separately
     if "-clean" in sys.argv:

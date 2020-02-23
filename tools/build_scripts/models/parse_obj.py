@@ -5,11 +5,9 @@ import sys
 import math
 
 schema = "{http://www.collada.org/2005/11/COLLADASchema}"
-
 x = 0
 y = 1
 z = 2
-
 
 def normalise(v):
     m = 0

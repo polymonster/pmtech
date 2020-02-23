@@ -39,12 +39,11 @@ namespace
         u32 vb_size;
         u32 ib_size;
         u32 constant_buffer;
-
-        void* vb_copy_buffer = nullptr;
-        void* ib_copy_buffer = nullptr;
-
         u32 imgui_shader;
         u32 imgui_ex_shader;
+        
+        void* vb_copy_buffer = nullptr;
+        void* ib_copy_buffer = nullptr;
     };
 
     render_handles s_imgui_rs;
@@ -55,6 +54,7 @@ namespace
     bool           s_save_program_prefs = false;
     const u32      s_program_prefs_save_timeout = 60; //frames
     bool           s_enable_rendering = true;
+    bool           s_initialised = false;
 
     void create_texture_atlas()
     {
@@ -160,7 +160,7 @@ namespace
         u32 vb_offset = 0;
         u32 ib_offset = 0;
 
-        for (int n = 0; n < draw_data->CmdListsCount; n++)
+        for (s32 n = 0; n < draw_data->CmdListsCount; n++)
         {
             ImDrawList* cmd_list = draw_data->CmdLists[n];
             u32         vertex_size = cmd_list->VtxBuffer.Size * sizeof(ImDrawVert);
@@ -179,10 +179,10 @@ namespace
         pen::renderer_update_buffer(s_imgui_rs.vertex_buffer, s_imgui_rs.vb_copy_buffer, vb_offset);
         pen::renderer_update_buffer(s_imgui_rs.index_buffer, s_imgui_rs.ib_copy_buffer, ib_offset);
 
-        float L = 0.0f;
-        float R = ImGui::GetIO().DisplaySize.x;
-        float B = ImGui::GetIO().DisplaySize.y;
-        float T = 0.0f;
+        f32 L = 0.0f;
+        f32 R = ImGui::GetIO().DisplaySize.x;
+        f32 B = ImGui::GetIO().DisplaySize.y;
+        f32 T = 0.0f;
 
         mat4 ortho = mat::create_orthographic_projection(L, R, B, T, 0.0f, 1.0f);
 
@@ -419,6 +419,7 @@ namespace put
             style.Colors[ImGuiCol_ModalWindowDarkening] = ImVec4(0.04f, 0.10f, 0.09f, 0.51f);
 
             dev_ui::util_init();
+            s_initialised = true;
 
             return true;
         }
@@ -1424,7 +1425,16 @@ namespace put
         {
             va_list args;
             va_start(args, fmt);
-            sp_dev_console->AddLogV(0, fmt, args);
+            
+            if(s_initialised)
+            {
+                sp_dev_console->AddLogV(0, fmt, args);
+            }
+            else
+            {
+                PEN_LOG_VA(fmt, args);
+            }
+            
             va_end(args);
         }
 
@@ -1432,7 +1442,16 @@ namespace put
         {
             va_list args;
             va_start(args, fmt);
-            sp_dev_console->AddLogV(level, fmt, args);
+            
+            if(s_initialised)
+            {
+                sp_dev_console->AddLogV(level, fmt, args);
+            }
+            else
+            {
+                PEN_LOG_VA(fmt, args);
+            }
+
             va_end(args);
 
             if (level > 1)

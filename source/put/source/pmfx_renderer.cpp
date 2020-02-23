@@ -93,32 +93,49 @@ namespace
     };
 
     const mode_map k_stencil_mode_map[] = {
-        "keep",     PEN_STENCIL_OP_KEEP,     "replace", PEN_STENCIL_OP_REPLACE, "incr",     PEN_STENCIL_OP_INCR,
-        "incr_sat", PEN_STENCIL_OP_INCR_SAT, "decr",    PEN_STENCIL_OP_DECR,    "decr_sat", PEN_STENCIL_OP_DECR_SAT,
-        "zero",     PEN_STENCIL_OP_ZERO,     "invert",  PEN_STENCIL_OP_INVERT,  nullptr,    0
+        "keep",     PEN_STENCIL_OP_KEEP,
+        "replace",  PEN_STENCIL_OP_REPLACE,
+        "incr",     PEN_STENCIL_OP_INCR,
+        "incr_sat", PEN_STENCIL_OP_INCR_SAT,
+        "decr",     PEN_STENCIL_OP_DECR,
+        "decr_sat", PEN_STENCIL_OP_DECR_SAT,
+        "zero",     PEN_STENCIL_OP_ZERO,
+        "invert",   PEN_STENCIL_OP_INVERT,
+        nullptr,    0
     };
 
     const mode_map k_filter_mode_map[] = {
-        "linear", PEN_FILTER_MIN_MAG_MIP_LINEAR,
-        "point", PEN_FILTER_MIN_MAG_MIP_POINT,
+        "linear",   PEN_FILTER_MIN_MAG_MIP_LINEAR,
+        "point",    PEN_FILTER_MIN_MAG_MIP_POINT,
         nullptr, 0
     };
 
     const mode_map k_address_mode_map[] = {
-        "wrap",        PEN_TEXTURE_ADDRESS_WRAP,        "clamp",  PEN_TEXTURE_ADDRESS_CLAMP,
-        "border",      PEN_TEXTURE_ADDRESS_BORDER,      "mirror", PEN_TEXTURE_ADDRESS_MIRROR,
-        "mirror_once", PEN_TEXTURE_ADDRESS_MIRROR_ONCE, nullptr,  0
+        "wrap",         PEN_TEXTURE_ADDRESS_WRAP,
+        "clamp",        PEN_TEXTURE_ADDRESS_CLAMP,
+        "border",       PEN_TEXTURE_ADDRESS_BORDER,
+        "mirror",       PEN_TEXTURE_ADDRESS_MIRROR,
+        "mirror_once",  PEN_TEXTURE_ADDRESS_MIRROR_ONCE,
+        nullptr,  0
     };
 
     const mode_map k_blend_mode_map[] = {
-        "zero",             PEN_BLEND_ZERO,             "one",              PEN_BLEND_ONE,
-        "src_colour",       PEN_BLEND_SRC_COLOR,        "inv_src_colour",   PEN_BLEND_INV_SRC_COLOR,
-        "src_alpha",        PEN_BLEND_SRC_ALPHA,        "inv_src_alpha",    PEN_BLEND_INV_SRC_ALPHA,
-        "dest_alpha",       PEN_BLEND_DEST_ALPHA,       "inv_dest_alpha",   PEN_BLEND_INV_DEST_ALPHA,
-        "dest_colour",      PEN_BLEND_DEST_COLOR,       "inv_dest_colour",  PEN_BLEND_INV_DEST_COLOR,
-        "src_alpha_sat",    PEN_BLEND_SRC_ALPHA_SAT,    "blend_factor",     PEN_BLEND_BLEND_FACTOR,
-        "inv_blend_factor", PEN_BLEND_INV_BLEND_FACTOR, "src1_colour",      PEN_BLEND_SRC1_COLOR,
-        "inv_src1_colour",  PEN_BLEND_INV_SRC1_COLOR,   "src1_aplha",       PEN_BLEND_SRC1_ALPHA,
+        "zero",             PEN_BLEND_ZERO,
+        "one",              PEN_BLEND_ONE,
+        "src_colour",       PEN_BLEND_SRC_COLOR,
+        "inv_src_colour",   PEN_BLEND_INV_SRC_COLOR,
+        "src_alpha",        PEN_BLEND_SRC_ALPHA,
+        "inv_src_alpha",    PEN_BLEND_INV_SRC_ALPHA,
+        "dest_alpha",       PEN_BLEND_DEST_ALPHA,
+        "inv_dest_alpha",   PEN_BLEND_INV_DEST_ALPHA,
+        "dest_colour",      PEN_BLEND_DEST_COLOR,
+        "inv_dest_colour",  PEN_BLEND_INV_DEST_COLOR,
+        "src_alpha_sat",    PEN_BLEND_SRC_ALPHA_SAT,
+        "blend_factor",     PEN_BLEND_BLEND_FACTOR,
+        "inv_blend_factor", PEN_BLEND_INV_BLEND_FACTOR,
+        "src1_colour",      PEN_BLEND_SRC1_COLOR,
+        "inv_src1_colour",  PEN_BLEND_INV_SRC1_COLOR,
+        "src1_aplha",       PEN_BLEND_SRC1_ALPHA,
         "inv_src1_alpha",   PEN_BLEND_INV_SRC1_ALPHA,   nullptr, 0
     };
 
@@ -199,10 +216,17 @@ namespace
         std::vector<void (*)(const put::scene_view&)> render_functions;
 
         // targets
-        u32 render_targets[pen::MAX_MRT] = {PEN_INVALID_HANDLE, PEN_INVALID_HANDLE, PEN_INVALID_HANDLE, PEN_INVALID_HANDLE,
-                                            PEN_INVALID_HANDLE, PEN_INVALID_HANDLE, PEN_INVALID_HANDLE, PEN_INVALID_HANDLE};
+        u32 render_targets[pen::MAX_MRT] = {
+            PEN_INVALID_HANDLE,
+            PEN_INVALID_HANDLE,
+            PEN_INVALID_HANDLE,
+            PEN_INVALID_HANDLE,
+            PEN_INVALID_HANDLE,
+            PEN_INVALID_HANDLE,
+            PEN_INVALID_HANDLE,
+            PEN_INVALID_HANDLE
+        };
         hash_id resolve_method[pen::MAX_MRT] = {0};
-
         u32     depth_target = PEN_INVALID_HANDLE;
         hash_id depth_resolve_method = 0;
 

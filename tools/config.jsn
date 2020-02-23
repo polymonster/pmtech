@@ -1,0 +1,35 @@
+{
+    //
+    // common
+    //
+    
+    base: {
+        tools: {
+            premake: "premake/premake5"
+        },
+    
+        env: {
+            pmtech_dir: "../"
+        },
+    },
+    
+    // 
+    // mac
+    // 
+    
+    mac(base): {
+        premake: [
+            "xcode4",
+            "--renderer=metal", 
+            "--platform_dir=osx"
+        ],
+        build: [
+        	"xcodebuild -scheme mesh_opt -workspace build/osx/pmtech_tools_osx.xcworkspace -configuration Release",
+        	"mv bin/osx/mesh_opt.app/Contents/MacOS/mesh_opt bin/osx/mesh_opt",
+        	"install_name_tool -add_rpath @executable_path/. bin/osx/mesh_opt",
+        	"rm -rf bin/osx/mesh_opt.app && rm -rf bin/osx/mesh_opt.app.dSYM"
+        ]
+    }
+    
+    // todo pc, linux
+}

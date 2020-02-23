@@ -1605,7 +1605,8 @@ namespace put
         void optimise_pmm(const c8* input_filename, const c8* output_filename)
         {
             pmm_contents contents;
-            parse_pmm_contents(input_filename, contents);
+            if(!parse_pmm_contents(input_filename, contents))
+                return;
 
             std::vector<pmm_geometry> geom;
             parse_pmm_geometry(contents, geom);
