@@ -10,7 +10,7 @@ namespace pen
         pen::pen_creation_params p;
         p.window_width = 1280;
         p.window_height = 720;
-        p.window_title = "sdf_shadpow";
+        p.window_title = "sdf_shadow";
         p.window_sample_count = 4;
         p.user_thread_function = user_entry;
         p.flags = pen::e_pen_create_flags::renderer;
