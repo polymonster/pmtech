@@ -10,6 +10,7 @@ import models.parse_meshes as parse_meshes
 import models.parse_materials as parse_materials
 import models.parse_animations as parse_animations
 import models.parse_obj as parse_obj
+import subprocess
 
 stats_start = time.time()
 root_dir = os.getcwd()
@@ -27,6 +28,7 @@ parent_list = []
 animations = []
 geometries = []
 materials = []
+
 
 def parse_visual_scenes(root):
     for scene in root.iter(schema+'visual_scene'):
@@ -223,6 +225,14 @@ if "-i" in sys.argv and "-o" in sys.argv:
             if not os.path.exists(helpers.build_dir):
                 os.makedirs(helpers.build_dir)
 
+
+mesh_opt = ""
+if "-mesh_opt" in sys.argv:
+    for a in range(0, len(sys.argv)):
+        if sys.argv[a] == "-mesh_opt":
+            mesh_opt = sys.argv[a+1]
+
+
 # build list of files
 for file in file_list:
     deps = dict()
@@ -284,6 +294,9 @@ for file in file_list:
         for lib_file in models_lib:
             dependency_inputs.append(main_file.replace("build_models.py", os.path.join("models", lib_file)))
 
+        if len(mesh_opt) > 0:
+            dependency_inputs.append(mesh_opt)
+
         file_info = dependencies.create_dependency_info(dependency_inputs, dependency_outputs)
 
         deps["files"].append(file_info)
@@ -302,4 +315,10 @@ for file in file_list:
 
     if len(deps["files"]) > 0:
         dependencies.write_to_file_single(deps, depends_dest + ".json")
+
+    # apply optimisation
+    if len(mesh_opt) > 0:
+        cmd = " -i " + base_out_file + ".pmm"
+        p = subprocess.Popen(mesh_opt + cmd, shell=True)
+        p.wait()
 

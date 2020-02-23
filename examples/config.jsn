@@ -3,12 +3,25 @@
     // common
     //
     
+	jsn_vars<windows>: {
+		mesh_opt: "../tools/bin/win32/mesh_opt.exe"
+	},
+	
+	jsn_vars<mac>: {
+		mesh_opt: "../tools/bin/osx/mesh_opt"
+	},
+	
+	jsn_vars<linux>: {
+		mesh_opt: "../tools/bin/linux/mesh_opt"
+	},
+    
     base: {
         tools: {
             premake: "../tools/premake/premake5",
             pmfx: "../third_party/pmfx-shader/build_pmfx.py",
             texturec: "../third_party/texturec/$platform/texturec",
-            models: "../tools/build_scripts/build_models.py"
+            models: "../tools/build_scripts/build_models.py",
+            mesh_opt: "${mesh_opt}"
         },
     
         env: {
@@ -30,6 +43,7 @@
         
         libs: [
             "cd ../third_party && ./build_libs.sh osx",
+            "cd ../tools && pmbuild mac"
         ],
         
         premake: [
@@ -122,6 +136,7 @@
         
         libs: [
             "cd ../third_party && ./build_libs.sh ios",
+            "cd ../pmtech/tools && pmbuild mac"
         ],
         
         premake: [

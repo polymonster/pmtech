@@ -61,11 +61,11 @@ void* pen::user_entry(void* params)
         }
         else if(s_args[i] == "-i" && i+1 < argc)
         {
-            input_file = s_args[i];
+            input_file = s_args[i+1];
         }
         else if(s_args[i] == "-o" && i+1 < argc)
         {
-            output_file = s_args[i];
+            output_file = s_args[i+1];
         }
     }
     
@@ -81,6 +81,7 @@ void* pen::user_entry(void* params)
         output_file = input_file;
     }
     
+    PEN_LOG("optimising: %s", input_file.c_str());
     optimise_pmm(input_file.c_str(), output_file.c_str());
     
 term:

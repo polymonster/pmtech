@@ -284,9 +284,15 @@ def run_models(config):
     tool_cmd = python_tool_to_platform(config["tools"]["models"])
     for task in config["models"]:
         task_files = get_task_files(task)
+        mesh_opt = ""
+        if os.path.exists(config["tools"]["mesh_opt"]):
+            mesh_opt = config["tools"]["mesh_opt"]
         for f in task_files:
             cmd = " -i " + f[0] + " -o " + os.path.dirname(f[1])
-            subprocess.call(tool_cmd + cmd, shell=True)
+            if len(mesh_opt) > 0:
+                cmd += " -mesh_opt " + mesh_opt
+            p = subprocess.Popen(tool_cmd + cmd, shell=True)
+            p.wait()
     pass
 
 
@@ -298,17 +304,17 @@ def run_libs(config):
     shell = ["linux", "osx", "ios"]
     cmd = ""
     for arg in config["libs"]:
-        cmd += arg + " "
-        print(arg)
-    if util.get_platform_name() in shell:
-        cmd += util.get_platform_name()
-    else:
-        args = ""
-        args += config["env"]["pmtech_dir"] + "/" + " "
-        args += config["sdk_version"] + " "
-        cmd += "\"" + config["vcvarsall_dir"] + "\"" + " " + args
+        cmd = arg
+        if util.get_platform_name() in shell:
+            pass
+        else:
+            args = ""
+            args += config["env"]["pmtech_dir"] + "/" + " "
+            args += config["sdk_version"] + " "
+            cmd += "\"" + config["vcvarsall_dir"] + "\"" + " " + args
         print(cmd)
-    subprocess.call(cmd, shell=True)
+        p = subprocess.Popen(cmd, shell=True)
+        p.wait()
 
 
 # textures
@@ -524,6 +530,17 @@ def copy_help(config):
     print("\n")
 
 
+def build_help(config):
+    print("build help ----------------------------------------------------------------------")
+    print("--------------------------------------------------------------------------------")
+    print("\njsn syntax: array of commands.")
+    print("build: [")
+    print(" command args args args,")
+    print("    ...")
+    print("]")
+    print("\n")
+
+
 # print duration of job, ts is start time
 def print_duration(ts):
     millis = int((time.time() - ts) * 1000)
@@ -574,7 +591,7 @@ if __name__ == "__main__":
     tasks["models"] = {"run": run_models, "help": models_help}
     tasks["textures"] = {"run": run_textures, "help": textures_help}
     tasks["copy"] = {"run": run_copy, "help": copy_help}
-    tasks["build"] = {"run": run_build, "help": copy_help}
+    tasks["build"] = {"run": run_build, "help": build_help}
 
     # clean is a special task, you must specify separately
     if "-clean" in sys.argv:
