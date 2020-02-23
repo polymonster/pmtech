@@ -471,10 +471,10 @@ namespace pen
             CHECK_CALL(glDisable(GL_DEPTH_TEST));
         }
 
-        // stencil
         CHECK_CALL(glDepthFunc(res.depth_stencil->depth_func));
         CHECK_CALL(glDepthMask(res.depth_stencil->depth_write_mask));
 
+        // stencil
         if (res.depth_stencil->stencil_enable)
         {
             CHECK_CALL(glEnable(GL_STENCIL_TEST));
@@ -662,11 +662,15 @@ namespace pen
     {
         pen_gl_swap_buffers();
 
+        // reset state, something horrible is left over
+        CHECK_CALL(glEnable(GL_DEPTH_TEST));
+        CHECK_CALL(glDepthFunc(GL_ALWAYS));
+        CHECK_CALL(glDepthMask(true));
+
 // gpu counters
 #ifndef __linux__
         if (s_frame > 0)
             renderer_pop_perf_marker(); // gpu total
-
         gather_perf_markers();
         s_frame++;
 
@@ -1419,7 +1423,6 @@ namespace pen
             {
                 CHECK_CALL(glBindFramebuffer(GL_FRAMEBUFFER, fb._framebuffer));
                 CHECK_CALL(glDrawBuffers(num_colour_targets, k_draw_buffers));
-
                 return;
             }
         }
