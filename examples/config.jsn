@@ -289,6 +289,7 @@
         
         libs: [
             "cd ../third_party && ./build_libs.sh linux",
+            "cd ../tools && ../pmbuild linux"
         ],
         
         premake: [

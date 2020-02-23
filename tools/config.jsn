@@ -29,7 +29,19 @@
         	"install_name_tool -add_rpath @executable_path/. bin/osx/mesh_opt",
         	"rm -rf bin/osx/mesh_opt.app && rm -rf bin/osx/mesh_opt.app.dSYM"
         ]
+    },
+
+    linux(base): {
+        tools: {
+            premake: "../tools/premake/premake5_linux"
+	    },
+        premake: [
+            "gmake",
+            "--renderer=opengl", 
+            "--platform_dir=linux"
+        ],
+        build: [
+            "pwd && cd build/linux/ && make mesh_opt config=release"
+        ]
     }
-    
-    // todo pc, linux
 }
