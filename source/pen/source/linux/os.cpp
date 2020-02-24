@@ -65,10 +65,13 @@ namespace
 {
     XIM          _xim;
     XIC          _xic;
-    u32          s_error_code = 0;
-    bool         ctx_error_occured = false;
+    bool         _ctx_error_occured = false;
     window_frame _window_frame;
     bool         _invalidate_window_frame = false;
+
+    u32          s_error_code = 0;
+    bool         s_pen_terminate_app = false;
+    bool         s_windowed = false;
 
     void users()
     {
@@ -80,7 +83,7 @@ namespace
     int ctx_error_handler(Display* dpy, XErrorEvent* ev)
     {
         PEN_LOG("CONTEXT ERROR %i", ev->error_code);
-        ctx_error_occured = true;
+        _ctx_error_occured = true;
         return 0;
     }
 
@@ -101,7 +104,7 @@ namespace
         // glx setup
         const char* glxExts = glXQueryExtensionsString(_display, DefaultScreen(_display));
 
-        ctx_error_occured = false;
+        _ctx_error_occured = false;
         int (*oldHandler)(Display*, XErrorEvent*) = XSetErrorHandler(&ctx_error_handler);
 
         // find fb with matching samples
@@ -160,13 +163,12 @@ namespace
                     goto found_context;
             }
         }
-        if (ctx_error_occured || !_gl_context)
+        if (_ctx_error_occured || !_gl_context)
         {
             PEN_LOG("ERROR: OpenGL 3.1+ Context Failed to create");
             return 1;
         }
     found_context:
-
         XMapWindow(_display, _window);
 
         // obtain input context
@@ -207,6 +209,8 @@ namespace
             return 1;
         }
 
+        s_windowed = true;
+
         // inits renderer and loops in wait for jobs, calling os update
         renderer_init(nullptr, true);
 
@@ -230,39 +234,7 @@ namespace
         }
 
         pen::jobs_terminate_all();
-
         return s_error_code;
-    }
-} // namespace
-
-int main(int argc, char* argv[])
-{
-    // initilaise any generic systems
-    users();
-    timer_system_intialise();
-    input_gamepad_init();
-
-    pen::pen_creation_params pc = pen::pen_entry(argc, argv);
-    pen_window.width = pc.window_width;
-    pen_window.height = pc.window_height;
-    pen_window.window_title = pc.window_title;
-    pen_window.sample_count = pc.window_sample_count;
-
-    if (pc.flags & e_pen_create_flags::renderer)
-    {
-        pen_run_windowed();
-    }
-    else
-    {
-        pen_run_console_app();
-    }
-}
-
-namespace pen
-{
-    const c8* os_path_for_resource(const c8* filename)
-    {
-        return filename;
     }
 
     s32 translate_mouse_button(s32 b)
@@ -432,18 +404,8 @@ namespace pen
         return k;
     }
 
-    static bool pen_terminate_app = false;
-    bool        os_update()
+    void update_window()
     {
-        static bool init_jobs = false;
-        if (!init_jobs)
-        {
-            // audio, user thread etc
-            pen::default_thread_info thread_info;
-            pen::jobs_create_default(thread_info);
-            init_jobs = true;
-        }
-
         while (XPending(_display) > 0)
         {
             XEvent event;
@@ -530,9 +492,55 @@ namespace pen
         pen::input_set_mouse_pos((f32)win_x, (f32)win_y);
 
         pen::input_gamepad_update();
+    }
+} // namespace
+
+int main(int argc, char* argv[])
+{
+    // initilaise any generic systems
+    users();
+    timer_system_intialise();
+    input_gamepad_init();
+
+    pen::pen_creation_params pc = pen::pen_entry(argc, argv);
+    pen_window.width = pc.window_width;
+    pen_window.height = pc.window_height;
+    pen_window.window_title = pc.window_title;
+    pen_window.sample_count = pc.window_sample_count;
+
+    if (pc.flags & e_pen_create_flags::renderer)
+    {
+        pen_run_windowed();
+    }
+    else
+    {
+        pen_run_console_app();
+    }
+}
+
+namespace pen
+{
+    const c8* os_path_for_resource(const c8* filename)
+    {
+        return filename;
+    }
+
+    bool os_update()
+    {
+        static bool init_jobs = false;
+        if (!init_jobs)
+        {
+            // audio, user thread etc
+            pen::default_thread_info thread_info;
+            pen::jobs_create_default(thread_info);
+            init_jobs = true;
+        }
+
+        if(s_windowed)
+            update_window();
 
         // Check for terminate and poll terminated jobs
-        if (pen_terminate_app)
+        if (s_pen_terminate_app)
         {
             if (pen::jobs_terminate_all())
                 return false;
@@ -544,7 +552,7 @@ namespace pen
     void os_terminate(u32 error_code)
     {
         s_error_code = error_code;
-        pen_terminate_app = true;
+        s_pen_terminate_app = true;
     }
 
     u32 window_init(void* params)
