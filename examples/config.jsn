@@ -4,24 +4,27 @@
     //
     
 	jsn_vars<windows>: {
-		mesh_opt: "../tools/bin/win32/mesh_opt.exe"
+		mesh_opt: "../tools/bin/win32/mesh_opt.exe",
+		texturec: "../third_party/texturec/osx/texturec"
 	},
 	
 	jsn_vars<mac>: {
-		mesh_opt: "../tools/bin/osx/mesh_opt"
+		mesh_opt: "../tools/bin/osx/mesh_opt",
+		texturec: "../third_party/texturec/win32/texturec"
 	},
 	
 	jsn_vars<linux>: {
-		mesh_opt: "../tools/bin/linux/mesh_opt"
+		mesh_opt: "../tools/bin/linux/mesh_opt",
+		texturec: "../third_party/texturec/linux/texturec"
 	},
     
     base: {
         tools: {
+			texturec: "${texturec}",
+			mesh_opt: "${mesh_opt}",
             premake: "../tools/premake/premake5",
             pmfx: "../third_party/pmfx-shader/build_pmfx.py",
-            texturec: "../third_party/texturec/$platform/texturec",
             models: "../tools/build_scripts/build_models.py",
-            mesh_opt: "${mesh_opt}"
         },
     
         env: {
