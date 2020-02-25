@@ -101,6 +101,152 @@ namespace
 #define PEN_SET_BASE_VERTEX(BV) g_bound_state.base_vertex = 0;
 #endif
 
+    u32 to_gl_shader_type(u32 pen_shader_type)
+    {
+        switch(pen_shader_type)
+        {
+            case PEN_SHADER_TYPE_VS:
+                return GL_VERTEX_SHADER;
+            case PEN_SHADER_TYPE_PS:
+                return GL_FRAGMENT_SHADER;
+            case PEN_SHADER_TYPE_GS:
+                return GL_GEOMETRY_SHADER;
+             case PEN_SHADER_TYPE_SO:
+                return GL_VERTEX_SHADER;           
+        }
+        // unimplemented cs
+        PEN_ASSERT(0);
+        return 0;
+    }
+
+    u32 to_gl_polygon_mode(u32 pen_polygon_mode)
+    {
+        switch (pen_polygon_mode)
+        {
+            case PEN_FILL_SOLID:
+                return GL_FILL;
+            case PEN_FILL_WIREFRAME:
+                return GL_LINE;
+        }
+        PEN_ASSERT(0);
+        return GL_FILL;
+    }
+
+    u32 to_gl_cull_mode(u32 pen_cull_mode)
+    {
+        switch (pen_cull_mode)
+        {
+            case PEN_CULL_NONE:
+                return 0;
+            case PEN_CULL_FRONT:
+                return GL_FRONT;
+            case PEN_CULL_BACK:
+                return GL_BACK;
+        }
+        PEN_ASSERT(0);
+        return PEN_CULL_NONE;
+    }
+
+    u32 to_gl_clear_flags(u32 pen_clear_flags)
+    {
+        u32 res = 0;
+        if(pen_clear_flags & PEN_CLEAR_COLOUR_BUFFER)
+            res |= GL_COLOR_BUFFER_BIT;
+        if(pen_clear_flags & PEN_CLEAR_DEPTH_BUFFER)
+            res |= GL_DEPTH_BUFFER_BIT;
+        if(pen_clear_flags & PEN_CLEAR_STENCIL_BUFFER)
+            res |= GL_STENCIL_BUFFER_BIT;
+        return res;
+    }
+
+    u32 to_gl_primitive_topology(u32 pen_primitive_topology)
+    {
+        switch (pen_primitive_topology)
+        {
+            case PEN_PT_POINTLIST:
+                return GL_POINTS;
+            case PEN_PT_LINELIST:
+                return GL_LINES;
+            case PEN_PT_LINESTRIP:
+                return GL_LINE_STRIP;
+            case PEN_PT_TRIANGLELIST:
+                return GL_TRIANGLES;
+            case PEN_PT_TRIANGLESTRIP:
+                return GL_TRIANGLE_STRIP;
+        }
+        PEN_ASSERT(0);
+        return GL_TRIANGLES;
+    }
+
+    struct tex_format_map
+    {
+        u32 pen_format;
+        u32 sized_format;
+        u32 format;
+        u32 type;
+    };
+
+    const tex_format_map k_tex_format_map[] = {
+        {PEN_TEX_FORMAT_BGRA8_UNORM, GL_RGBA8, GL_BGRA, GL_UNSIGNED_BYTE},
+        {PEN_TEX_FORMAT_RGBA8_UNORM, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE},
+        {PEN_TEX_FORMAT_D24_UNORM_S8_UINT, GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8},
+        {PEN_TEX_FORMAT_R32G32B32A32_FLOAT, GL_RGBA32F, GL_RGBA, GL_FLOAT},
+        {PEN_TEX_FORMAT_R16G16B16A16_FLOAT, GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT},
+        {PEN_TEX_FORMAT_R32G32_FLOAT, GL_RG32F, GL_RG, GL_FLOAT},
+        {PEN_TEX_FORMAT_R32_FLOAT, GL_R32F, GL_RED, GL_FLOAT},
+        {PEN_TEX_FORMAT_R16_FLOAT, GL_R16F, GL_RED, GL_HALF_FLOAT},
+        {PEN_TEX_FORMAT_R32_UINT, GL_R32UI, GL_RED_INTEGER, GL_UNSIGNED_INT},
+        {PEN_TEX_FORMAT_R8_UNORM, GL_R8, GL_RED, GL_UNSIGNED_BYTE},
+        {PEN_TEX_FORMAT_BC1_UNORM, 0, GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, GL_TEXTURE_COMPRESSED},
+        {PEN_TEX_FORMAT_BC2_UNORM, 0, GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, GL_TEXTURE_COMPRESSED},
+        {PEN_TEX_FORMAT_BC3_UNORM, 0, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_TEXTURE_COMPRESSED}
+    };
+    const u32 k_num_tex_maps = sizeof(k_tex_format_map) / sizeof(k_tex_format_map[0]);
+
+    void to_gl_texture_format(u32 pen_format, u32& sized_format, u32& format, u32& type)
+    {
+        for (s32 i = 0; i < k_num_tex_maps; ++i)
+        {
+            if (k_tex_format_map[i].pen_format == pen_format)
+            {
+                sized_format = k_tex_format_map[i].sized_format;
+                format = k_tex_format_map[i].format;
+                type = k_tex_format_map[i].type;
+                return;
+            }
+        }
+
+        PEN_LOG("unimplemented / unsupported texture format");
+        PEN_ASSERT(0);
+    }
+
+    struct vertex_format_map
+    {
+        u32 pen_format;
+        u32 format;
+        u32 num_elements;
+    };
+
+    const vertex_format_map k_vertex_format_map[] = {
+        {PEN_VERTEX_FORMAT_FLOAT1, GL_FLOAT, 1},
+        {PEN_VERTEX_FORMAT_FLOAT2, GL_FLOAT, 2},
+        {PEN_VERTEX_FORMAT_FLOAT3, GL_FLOAT, 3},
+        {PEN_VERTEX_FORMAT_FLOAT4, GL_FLOAT, 4},
+        {PEN_VERTEX_FORMAT_UNORM1, GL_UNSIGNED_BYTE, 1},
+        {PEN_VERTEX_FORMAT_UNORM2, GL_UNSIGNED_BYTE, 2},
+        {PEN_VERTEX_FORMAT_UNORM4, GL_UNSIGNED_BYTE, 4}
+    };
+    const u32 k_num_vertex_format_maps = sizeof(k_vertex_format_map) / sizeof(k_vertex_format_map[0]);
+
+    vertex_format_map to_gl_vertex_format(u32 pen_format)
+    {
+        for (s32 i = 0; i < k_num_vertex_format_maps; ++i)
+            if (k_vertex_format_map[i].pen_format == pen_format)
+                return k_vertex_format_map[i];
+        PEN_ASSERT(0);
+        return { 0 };
+    }
+
 } // namespace
 
 namespace pen
@@ -459,6 +605,8 @@ namespace pen
 
     void _set_depth_stencil_state(u32 dss, u8 ref)
     {
+        PEN_LOG("Set DSS %i", dss);
+
         resource_allocation& res = _res_pool[dss];
 
         // depth
@@ -512,7 +660,7 @@ namespace pen
         _res_pool[resource_slot].clear_state.rgba[3] = cs.a;
         _res_pool[resource_slot].clear_state.depth = cs.depth;
         _res_pool[resource_slot].clear_state.stencil = cs.stencil;
-        _res_pool[resource_slot].clear_state.flags = cs.flags;
+        _res_pool[resource_slot].clear_state.flags = to_gl_clear_flags(cs.flags);
 
         _res_pool[resource_slot].clear_state.num_colour_targets = cs.num_colour_targets;
         memcpy(&_res_pool[resource_slot].clear_state.mrt, cs.mrt, sizeof(mrt_clear) * MAX_MRT);
@@ -661,11 +809,13 @@ namespace pen
     void direct::renderer_present()
     {
         pen_gl_swap_buffers();
+        
+        g_bound_state = { };
 
         // reset state, something horrible is left over
-        CHECK_CALL(glEnable(GL_DEPTH_TEST));
-        CHECK_CALL(glDepthFunc(GL_ALWAYS));
-        CHECK_CALL(glDepthMask(true));
+        // CHECK_CALL(glEnable(GL_DEPTH_TEST));
+        // CHECK_CALL(glDepthFunc(GL_ALWAYS));
+        // CHECK_CALL(glDepthMask(true));
 
 // gpu counters
 #ifndef __linux__
@@ -685,10 +835,7 @@ namespace pen
 
         resource_allocation& res = _res_pool[resource_slot];
 
-        u32 internal_type = params.type;
-        if (params.type == PEN_SHADER_TYPE_SO)
-            internal_type = PEN_SHADER_TYPE_VS;
-
+        u32 internal_type = to_gl_shader_type(params.type);
         res.handle = CHECK_CALL(glCreateShader(internal_type));
 
         CHECK_CALL(glShaderSource(res.handle, 1, (const c8**)&params.byte_code, (s32*)&params.byte_code_size));
@@ -735,20 +882,21 @@ namespace pen
 
     void direct::renderer_set_shader(u32 shader_index, u32 shader_type)
     {
-        if (shader_type == GL_VERTEX_SHADER)
+        switch(shader_type)
         {
-            g_current_state.vertex_shader = shader_index;
-            g_current_state.stream_out_shader = 0;
-        }
-        else if (shader_type == GL_FRAGMENT_SHADER)
-        {
-            g_current_state.pixel_shader = shader_index;
-        }
-        else if (shader_type == PEN_SHADER_TYPE_SO)
-        {
-            g_current_state.stream_out_shader = shader_index;
-            g_current_state.vertex_shader = 0;
-            g_current_state.pixel_shader = 0;
+            case PEN_SHADER_TYPE_VS:
+                g_current_state.vertex_shader = shader_index;
+                g_current_state.stream_out_shader = 0;
+                break;
+            case PEN_SHADER_TYPE_PS:
+                g_current_state.pixel_shader = shader_index;
+                break;
+            case PEN_SHADER_TYPE_SO:
+                g_current_state.stream_out_shader = shader_index;
+                g_current_state.vertex_shader = 0;
+                g_current_state.pixel_shader = 0;
+                break;
+            // GS, CS not implemented
         }
     }
 
@@ -838,18 +986,17 @@ namespace pen
         _res_pool.grow(resource_slot);
 
         resource_allocation& res = _res_pool[resource_slot];
-
         res.input_layout = new input_layout;
-
         res.input_layout->attributes = nullptr;
 
         for (u32 i = 0; i < params.num_elements; ++i)
         {
             vertex_attribute new_attrib;
+            vertex_format_map vf = to_gl_vertex_format(params.input_layout[i].format);
 
             new_attrib.location = i;
-            new_attrib.type = UNPACK_FORMAT(params.input_layout[i].format);
-            new_attrib.num_elements = UNPACK_NUM_ELEMENTS(params.input_layout[i].format);
+            new_attrib.type = vf.format;
+            new_attrib.num_elements = vf.num_elements;
             new_attrib.offset = params.input_layout[i].aligned_byte_offset;
             new_attrib.stride = 0;
             new_attrib.input_slot = params.input_layout[i].input_slot;
@@ -1088,6 +1235,7 @@ namespace pen
 
     void direct::renderer_draw(u32 vertex_count, u32 start_vertex, u32 primitive_topology)
     {
+        primitive_topology = to_gl_primitive_topology(primitive_topology);
         bind_state(primitive_topology);
 
         CHECK_CALL(glDrawArrays(primitive_topology, start_vertex, vertex_count));
@@ -1107,6 +1255,7 @@ namespace pen
     {
         PEN_SET_BASE_VERTEX(base_vertex);
 
+        primitive_topology = to_gl_primitive_topology(primitive_topology);
         bind_state(primitive_topology);
 
         // bind index buffer -this must always be re-bound
@@ -1124,6 +1273,7 @@ namespace pen
     {
         PEN_SET_BASE_VERTEX(base_vertex);
 
+        primitive_topology = to_gl_primitive_topology(primitive_topology);
         bind_state(primitive_topology);
 
         // bind index buffer -this must always be re-bound
@@ -1137,51 +1287,10 @@ namespace pen
                                                      instance_count, base_vertex));
     }
 
-    struct tex_format_map
-    {
-        u32 pen_format;
-        u32 sized_format;
-        u32 format;
-        u32 type;
-    };
-
-    static const tex_format_map k_tex_format_map[] = {
-        {PEN_TEX_FORMAT_BGRA8_UNORM, GL_RGBA8, GL_BGRA, GL_UNSIGNED_BYTE},
-        {PEN_TEX_FORMAT_RGBA8_UNORM, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE},
-        {PEN_TEX_FORMAT_D24_UNORM_S8_UINT, GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8},
-        {PEN_TEX_FORMAT_R32G32B32A32_FLOAT, GL_RGBA32F, GL_RGBA, GL_FLOAT},
-        {PEN_TEX_FORMAT_R16G16B16A16_FLOAT, GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT},
-        {PEN_TEX_FORMAT_R32G32_FLOAT, GL_RG32F, GL_RG, GL_FLOAT},
-        {PEN_TEX_FORMAT_R32_FLOAT, GL_R32F, GL_RED, GL_FLOAT},
-        {PEN_TEX_FORMAT_R16_FLOAT, GL_R16F, GL_RED, GL_HALF_FLOAT},
-        {PEN_TEX_FORMAT_R32_UINT, GL_R32UI, GL_RED_INTEGER, GL_UNSIGNED_INT},
-        {PEN_TEX_FORMAT_R8_UNORM, GL_R8, GL_RED, GL_UNSIGNED_BYTE},
-        {PEN_TEX_FORMAT_BC1_UNORM, 0, GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, GL_TEXTURE_COMPRESSED},
-        {PEN_TEX_FORMAT_BC2_UNORM, 0, GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, GL_TEXTURE_COMPRESSED},
-        {PEN_TEX_FORMAT_BC3_UNORM, 0, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_TEXTURE_COMPRESSED}};
-    static const u32 k_num_tex_maps = sizeof(k_tex_format_map) / sizeof(k_tex_format_map[0]);
-
-    void get_texture_format(u32 pen_format, u32& sized_format, u32& format, u32& type)
-    {
-        for (s32 i = 0; i < k_num_tex_maps; ++i)
-        {
-            if (k_tex_format_map[i].pen_format == pen_format)
-            {
-                sized_format = k_tex_format_map[i].sized_format;
-                format = k_tex_format_map[i].format;
-                type = k_tex_format_map[i].type;
-                return;
-            }
-        }
-
-        PEN_LOG("unimplemented / unsupported texture format");
-        PEN_ASSERT(0);
-    }
-
     texture_info create_texture_internal(const texture_creation_params& tcp)
     {
         u32 sized_format, format, type;
-        get_texture_format(tcp.format, sized_format, format, type);
+        to_gl_texture_format(tcp.format, sized_format, format, type);
 
         u32 mip_w = tcp.width;
         u32 mip_h = tcp.height;
@@ -1751,7 +1860,7 @@ namespace pen
         if (rscp.cull_mode != PEN_CULL_NONE)
         {
             rs.culling_enabled = true;
-            rs.cull_face = rscp.cull_mode;
+            rs.cull_face = to_gl_cull_mode(rscp.cull_mode);
         }
 
         rs.front_ccw = rscp.front_ccw;
@@ -1759,7 +1868,7 @@ namespace pen
         rs.depth_clip_enabled = rscp.depth_clip_enable;
         rs.scissor_enabled = rscp.scissor_enable;
 
-        rs.polygon_mode = rscp.fill_mode;
+        rs.polygon_mode = to_gl_polygon_mode(rscp.fill_mode);
     }
 
     void direct::renderer_set_rasterizer_state(u32 rasterizer_state_index)
@@ -1910,7 +2019,7 @@ namespace pen
         else if (t == RES_TEXTURE || t == RES_RENDER_TARGET || t == RES_RENDER_TARGET_MSAA)
         {
             u32 sized_format, format, type;
-            get_texture_format(rrbp.format, sized_format, format, type);
+            to_gl_texture_format(rrbp.format, sized_format, format, type);
 
             s32 target_handle = res.texture.handle;
             if (t == RES_RENDER_TARGET || t == RES_RENDER_TARGET_MSAA)
