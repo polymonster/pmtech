@@ -59,13 +59,6 @@ namespace pen
         return new_thread;
     }
 
-    void thread_destroy(pen::thread* p_thread)
-    {
-        pthread_cancel(p_thread->handle);
-
-        pen::memory_free(p_thread);
-    }
-
     pen::mutex* mutex_create()
     {
         pen::mutex* new_mutex = (pen::mutex*)pen::memory_alloc(sizeof(pen::mutex));

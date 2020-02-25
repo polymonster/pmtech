@@ -36,13 +36,6 @@ namespace pen
         return new_thread;
     }
 
-    void thread_destroy(pen::thread* p_mutex)
-    {
-        CloseHandle(p_mutex->handle);
-
-        pen::memory_free(p_mutex);
-    }
-
     void thread_suspend(pen::thread* p_thread)
     {
         SuspendThread(p_thread->handle);

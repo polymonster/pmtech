@@ -60,7 +60,6 @@ namespace pen
 
     // Threads
     thread* thread_create(dispatch_thread thread_func, u32 stack_size, void* thread_params, thread_start_flags flags);
-    void    thread_destroy(pen::thread* p_thread);
     void    thread_sleep_ms(u32 milliseconds);
     void    thread_sleep_us(u32 microseconds);
 
