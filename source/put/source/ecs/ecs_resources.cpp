@@ -1625,9 +1625,21 @@ namespace put
                     size_t _ib_size = sm.num_indices * sizeof(u32);
                     u32*   remap = (u32*)pen::memory_alloc(_ib_size);
                     u32*   ni = (u32*)pen::memory_alloc(_ib_size);
+                    
+                    // to 32 bit indices
+                    if(sm.index_size == 2)
+                    {
+                        u16* i16 = (u16*)sm.index_data;
+                        u32* i32 = (u32*)pen::memory_alloc(sm.num_indices*sizeof(u32));
+                        for(u32 i = 0; i < sm.num_indices; ++i)
+                            i32[i] = i16[i];
+                            
+                        pen::memory_free(sm.index_data);
+                        sm.index_data = (void*)i32;
+                    }
 
                     // generate efficient index buffer and reduce vertex count
-                    size_t vertex_count = meshopt_generateVertexRemap(&remap[0], nullptr, sm.num_indices, sm.vertex_data,
+                    size_t vertex_count = meshopt_generateVertexRemap(&remap[0], (u32*)sm.index_data, sm.num_indices, sm.vertex_data,
                                                                       sm.num_verts, sm.vertex_size);
 
                     meshopt_remapIndexBuffer(ni, nullptr, sm.num_indices, &remap[0]);
@@ -1660,6 +1672,7 @@ namespace put
                     reduction += vbr + ibr;
 
                     // reassign
+                    PEN_LOG("    new vertex count: %i, old %i", sm.num_verts, vertex_count);
                     sm.vertex_data = nv;
                     sm.vertex_data_size = _vb_size;
                     sm.index_data = ni;

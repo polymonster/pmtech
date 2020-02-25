@@ -41,7 +41,18 @@
             "--platform_dir=linux"
         ],
         build: [
-            "pwd && cd build/linux/ && make mesh_opt config=release"
+            "cd build/linux/ && make mesh_opt config=release"
         ]
-    }
+    },
+	
+	win32(base): {
+		premake: [
+            "vs2017",
+            "--renderer=dx11", 
+            "--platform_dir=win32"
+        ],
+		build: [
+			"cd build/win32 && msbuild pmtech_tools_win32.sln /p:Configuration=Release"
+		]
+	}
 }
