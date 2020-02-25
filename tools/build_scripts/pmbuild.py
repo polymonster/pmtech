@@ -9,6 +9,7 @@ import platform
 import shutil
 import time
 import dependencies
+import glob
 import jsn.jsn as jsn
 
 
@@ -65,11 +66,38 @@ def configure_windows_sdk(config):
     return
 
 
+# attempt to locate vc vars all by lookin in prgoram files, and finding visual studio installations
+def locate_vc_vars_all():
+    pf_env = ["PROGRAMFILES", "PROGRAMFILES(X86)"]
+    vs = "Microsoft Visual Studio"
+    vs_dir = ""
+    for v in pf_env:
+        d = os.environ[v]
+        if d:
+            if vs in os.listdir(d):
+                vs_dir = os.path.join(d, vs)
+                break
+    pattern = os.path.join(vs_dir, "**/vcvarsall.bat")
+    # if we reverse sort then we get the latest vs version
+    vc_vars = sorted(glob.glob(pattern, recursive=True), reverse=False)
+    if len(vc_vars) > 0:
+        return vc_vars[0]
+    return None
+
+
 # windows only, configure vcvarsall directory for commandline vc compilation
 def configure_vc_vars_all(config):
+    # already exists
     if "vcvarsall_dir" in config.keys():
         if os.path.exists(config["vcvarsall_dir"]):
             return
+    # attempt to auto locate
+    auto_vc_vars = locate_vc_vars_all()
+    if auto_vc_vars:
+        auto_vc_vars = os.path.dirname(auto_vc_vars)
+        update_user_config("vcvarsall_dir", auto_vc_vars, config)
+        return
+    # user input
     while True:
         print("Cannot find 'vcvarsall.bat'")
         print("Please enter the full path to the vc2017/vc2019 installation directory containing vcvarsall.bat")
@@ -390,12 +418,19 @@ def generate_pmbuild_config(config, profile):
     f.write(json.dumps(md, indent=4))
 
 
+# gets a commandline to setup vcvars for msbuil from command line
+def setup_vcvars():
+    return "pushd \ && cd \"" + config["vcvarsall_dir"] + "\" && vcvarsall.bat x86_amd64 && popd"
+
+
 # run build commands
 def run_build(config):
     print("--------------------------------------------------------------------------------")
     print("build --------------------------------------------------------------------------")
     print("--------------------------------------------------------------------------------")
     for build_task in config["build"]:
+        if util.get_platform_name() == "win32":
+            build_task = setup_vcvars() + " && " + build_task
         p = subprocess.Popen(build_task, shell=True)
         e = p.wait()
         if e != 0:
