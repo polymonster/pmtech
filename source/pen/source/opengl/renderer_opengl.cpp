@@ -246,6 +246,89 @@ namespace
         return 0;
     }
 
+    u32 to_gl_texture_address_mode(u32 pen_texture_address_mode)
+    {
+        switch (pen_texture_address_mode)
+        {
+            case PEN_TEXTURE_ADDRESS_WRAP:
+                return GL_REPEAT;
+            case PEN_TEXTURE_ADDRESS_MIRROR:
+                return GL_MIRRORED_REPEAT;
+            case PEN_TEXTURE_ADDRESS_CLAMP:
+                return GL_CLAMP_TO_EDGE;
+            case PEN_TEXTURE_ADDRESS_BORDER:
+                return GL_CLAMP_TO_BORDER;
+            case PEN_TEXTURE_ADDRESS_MIRROR_ONCE:
+            #if GL_EXT_texture_mirror_clamp
+                return GL_MIRROR_CLAMP_EXT;
+            #else
+                return GL_MIRRORED_REPEAT;
+            #endif
+        }
+        PEN_ASSERT(0);
+        return GL_REPEAT;
+    }
+
+    void to_gl_filter_mode(u32 pen_filter_mode, u32* min_filter, u32* mag_filter)
+    {
+        switch (pen_filter_mode)
+        {
+            case PEN_FILTER_MIN_MAG_MIP_LINEAR:
+            {
+                *min_filter = GL_LINEAR_MIPMAP_LINEAR;
+                *mag_filter = GL_LINEAR;
+            }
+            return;
+            case PEN_FILTER_MIN_MAG_MIP_POINT:
+            {
+                *min_filter = GL_NEAREST_MIPMAP_NEAREST;
+                *mag_filter = GL_NEAREST;
+
+            }
+            return;
+            case PEN_FILTER_LINEAR:
+            {
+                *min_filter = GL_LINEAR;
+                *mag_filter = GL_LINEAR;
+            }
+            return;
+            case PEN_FILTER_POINT:
+            {
+                *min_filter = GL_NEAREST;
+                *mag_filter = GL_NEAREST;
+            }
+            return;
+        }
+        PEN_ASSERT(0);
+        *min_filter = GL_LINEAR;
+        *mag_filter = GL_LINEAR;
+    }
+
+    u32 to_gl_comparison(u32 pen_comparison)
+    {
+        switch (pen_comparison)
+        {
+            case PEN_COMPARISON_NEVER:
+                return GL_NEVER;
+            case PEN_COMPARISON_LESS:
+                return GL_LESS;
+            case PEN_COMPARISON_EQUAL:
+                return GL_EQUAL;
+            case PEN_COMPARISON_LESS_EQUAL:
+                return GL_LEQUAL;
+            case PEN_COMPARISON_GREATER:
+                return GL_GREATER;
+            case PEN_COMPARISON_NOT_EQUAL:
+                return GL_NOTEQUAL;
+            case PEN_COMPARISON_GREATER_EQUAL:
+                return GL_GEQUAL;
+            case PEN_COMPARISON_ALWAYS:
+                return GL_ALWAYS;
+        }
+        PEN_ASSERT(0);
+        return GL_ALWAYS;
+    }
+
     struct tex_format_map
     {
         u32 pen_format;
@@ -617,6 +700,12 @@ namespace pen
     };
     static shader_program* s_shader_programs;
 
+    struct gl_sampler : public sampler_creation_params
+    {
+        u32 min_filter;
+        u32 mag_filter;
+    };
+
     struct resource_allocation
     {
         u8     asigned_flag;
@@ -630,7 +719,7 @@ namespace pen
             GLuint                         handle;
             texture_info                   texture;
             pen::render_target             render_target;
-            sampler_creation_params*       sampler_state;
+            gl_sampler*                    sampler_state;
             pen::shader_program*           shader_program;
         };
     };
@@ -846,6 +935,12 @@ namespace pen
             // we must enable depth writes when clearing..
             CHECK_CALL(glEnable(GL_DEPTH_TEST));
             CHECK_CALL(glDepthMask(true));
+        }
+
+        if(rc.clear_state.flags & GL_STENCIL_BUFFER)
+        {
+            CHECK_CALL(glEnable(GL_STENCIL));
+            CHECK_CALL(glStencilMask(0xff));
         }
 
         if (cs.num_colour_targets == 0)
@@ -1805,9 +1900,15 @@ namespace pen
     {
         _res_pool.grow(resource_slot);
 
-        _res_pool[resource_slot].sampler_state = (sampler_creation_params*)memory_alloc(sizeof(scp));
-
+        _res_pool[resource_slot].sampler_state = (gl_sampler*)memory_alloc(sizeof(gl_sampler));
         memcpy(_res_pool[resource_slot].sampler_state, &scp, sizeof(scp));
+
+        gl_sampler* sampler = _res_pool[resource_slot].sampler_state;
+        sampler->address_u = to_gl_texture_address_mode(scp.address_u);
+        sampler->address_v = to_gl_texture_address_mode(scp.address_v);
+        sampler->address_w = to_gl_texture_address_mode(scp.address_w);
+        sampler->comparison_func = to_gl_comparison(scp.comparison_func);
+        to_gl_filter_mode(scp.filter, &sampler->min_filter, &sampler->mag_filter);
     }
 
     void direct::renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 bind_flags)
@@ -1869,34 +1970,8 @@ namespace pen
         if (!sampler_state)
             return;
 
-        // filter
-        switch (sampler_state->filter)
-        {
-            case PEN_FILTER_MIN_MAG_MIP_LINEAR:
-            {
-                CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
-                CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-            }
-            break;
-            case PEN_FILTER_MIN_MAG_MIP_POINT:
-            {
-                CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST));
-                CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-            }
-            break;
-            case PEN_FILTER_LINEAR:
-            {
-                CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-                CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-            }
-            break;
-            case PEN_FILTER_POINT:
-            {
-                CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
-                CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-            }
-            break;
-        };
+        CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MIN_FILTER, sampler_state->min_filter));
+        CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MAG_FILTER, sampler_state->mag_filter));
 
         // address mode
         if (target == GL_TEXTURE_2D_ARRAY)
@@ -2124,8 +2199,16 @@ namespace pen
         _res_pool.grow(resource_slot);
 
         _res_pool[resource_slot].depth_stencil = (depth_stencil_creation_params*)memory_alloc(sizeof(dscp));
-
         memcpy(_res_pool[resource_slot].depth_stencil, &dscp, sizeof(dscp));
+
+        depth_stencil_creation_params* depth_stencil = _res_pool[resource_slot].depth_stencil;
+        depth_stencil->depth_func = to_gl_comparison(dscp.depth_func);
+
+        if(depth_stencil->stencil_enable)
+        {
+            depth_stencil->front_face.stencil_func = to_gl_comparison(dscp.front_face.stencil_func);
+            depth_stencil->back_face.stencil_func = to_gl_comparison(dscp.back_face.stencil_func);
+        }
     }
 
     void direct::renderer_set_depth_stencil_state(u32 depth_stencil_state)
