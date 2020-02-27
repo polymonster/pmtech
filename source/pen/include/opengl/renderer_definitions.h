@@ -169,10 +169,10 @@ enum bind_flags
     PEN_STREAM_OUT_VERTEX_BUFFER = 1 << 8 // needs renaming
 };
 
-enum cpu_access_flags : s32
+enum cpu_access_flags
 {
-    PEN_CPU_ACCESS_WRITE = GL_MAP_WRITE_BIT,
-    PEN_CPU_ACCESS_READ = GL_MAP_READ_BIT
+    PEN_CPU_ACCESS_WRITE = 1<<0,
+    PEN_CPU_ACCESS_READ = 1<<1
 };
 
 enum texture_address_mode : s32

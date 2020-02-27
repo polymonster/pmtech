@@ -233,6 +233,19 @@ namespace
         return 0;
     }
 
+    u32 to_gl_cpu_access_flags(u32 pen_access_flags)
+    {
+        switch (pen_access_flags)
+        {
+            case PEN_CPU_ACCESS_WRITE:
+                return GL_MAP_WRITE_BIT;
+            case PEN_CPU_ACCESS_READ:
+                return GL_MAP_READ_BIT;
+        }
+        PEN_ASSERT(0);
+        return 0;
+    }
+
     struct tex_format_map
     {
         u32 pen_format;
