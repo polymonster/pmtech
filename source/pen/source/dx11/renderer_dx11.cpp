@@ -33,11 +33,56 @@ namespace
     ID3D11DeviceContext*    s_immediate_context = nullptr;
     ID3D11DeviceContext1*   s_immediate_context_1 = nullptr;
     u64                     s_frame = 0; // to remove
+
+	D3D11_FILL_MODE to_d3d11_fill_mode(u32 pen_fill_mode)
+	{
+		switch (pen_fill_mode)
+		{
+		case PEN_FILL_SOLID:
+			return D3D11_FILL_SOLID;
+		case PEN_FILL_WIREFRAME:
+			return D3D11_FILL_WIREFRAME;
+		}
+		PEN_ASSERT(0);
+		return D3D11_FILL_SOLID;
+	}
+
+	D3D11_CULL_MODE to_d3d11_cull_mode(u32 pen_cull_mode)
+	{
+		switch (pen_cull_mode)
+		{
+		case PEN_CULL_NONE:
+			return D3D11_CULL_NONE;
+		case PEN_CULL_FRONT:
+			return D3D11_CULL_FRONT;
+		case PEN_CULL_BACK:
+			return D3D11_CULL_BACK;
+		}
+		PEN_ASSERT(0);
+		return D3D11_CULL_NONE;
+	}
+
+	D3D11_USAGE to_d3d11_usage(u32 pen_usage)
+	{
+		switch (pen_usage)
+		{
+		case PEN_USAGE_DEFAULT:	
+			return D3D11_USAGE_DEFAULT;
+		case PEN_USAGE_IMMUTABLE:
+			return D3D11_USAGE_IMMUTABLE;
+		case PEN_USAGE_DYNAMIC:
+			return D3D11_USAGE_DYNAMIC;
+		case PEN_USAGE_STAGING:
+			return D3D11_USAGE_STAGING;
+		}
+		PEN_ASSERT(0);
+		return D3D11_USAGE_DEFAULT;
+	}
+
 } // namespace
 
 // level 0 = no errors, level 1 = print errors, level 2 = assert on error
 #define D3D_DEBUG_LEVEL 2
-
 #if D3D_DEBUG_LEVEL > 0
 #include <comdef.h>
 void check_d3d_error(HRESULT hr)
@@ -67,9 +112,10 @@ namespace pen
     void create_rtvs(u32 crtv, u32 dsv, uint32_t w, uint32_t h);
     void release_render_target_internal(u32 render_target);
 
-    //--------------------------------------------------------------------------------------
-    //  PERF MARKER API
-    //--------------------------------------------------------------------------------------
+	//
+	// perf markers
+	//
+
     struct gpu_perf_result
     {
         u64 elapsed;
@@ -705,7 +751,7 @@ namespace pen
         D3D11_BUFFER_DESC bd;
         ZeroMemory(&bd, sizeof(bd));
 
-        bd.Usage = (D3D11_USAGE)params.usage_flags;
+        bd.Usage = to_d3d11_usage(params.usage_flags);
         bd.ByteWidth = params.buffer_size;
         bd.BindFlags = (D3D11_BIND_FLAG)params.bind_flags;
         bd.CPUAccessFlags = params.cpu_access_flags;
@@ -869,6 +915,7 @@ namespace pen
         // create an empty texture
         D3D11_TEXTURE2D_DESC texture_desc;
         memcpy(&texture_desc, (void*)&tcp, sizeof(D3D11_TEXTURE2D_DESC));
+		texture_desc.Usage = to_d3d11_usage(texture_desc.Usage);
 
         if (tcp.collection_type == pen::TEXTURE_COLLECTION_CUBE || tcp.collection_type == pen::TEXTURE_COLLECTION_CUBE_ARRAY)
         {
@@ -1178,7 +1225,7 @@ namespace pen
                                                  tcp.num_arrays,
                                                  (u32)tcp.num_mips,
                                                  (DXGI_FORMAT)tcp.format,
-                                                 (D3D11_USAGE)tcp.usage,
+                                                 to_d3d11_usage(tcp.usage),
                                                  tcp.bind_flags,
                                                  tcp.cpu_access_flags,
                                                  tcp.flags};
@@ -1348,7 +1395,13 @@ namespace pen
 
         u32 resource_index = resource_slot;
 
-        CHECK_CALL(s_device->CreateRasterizerState((D3D11_RASTERIZER_DESC*)&rscp, &_res_pool[resource_index].raster_state));
+		// convert
+		D3D11_RASTERIZER_DESC rd; 
+		memcpy(&rd, &rscp, sizeof(D3D11_RASTERIZER_DESC));
+		rd.FillMode = to_d3d11_fill_mode(rd.FillMode);
+		rd.CullMode = to_d3d11_cull_mode(rd.CullMode);
+
+        CHECK_CALL(s_device->CreateRasterizerState(&rd, &_res_pool[resource_index].raster_state));
     }
 
     void direct::renderer_set_rasterizer_state(u32 rasterizer_state_index)

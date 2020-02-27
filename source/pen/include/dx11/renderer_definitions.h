@@ -7,7 +7,7 @@
 
 #include <d3d11_1.h>
 
-enum clear_flags : s32
+enum clear_flags
 {
     PEN_CLEAR_COLOUR_BUFFER = 1 << 0,
     PEN_CLEAR_DEPTH_BUFFER = 1 << 1,
@@ -16,24 +16,24 @@ enum clear_flags : s32
 
 enum shader_type
 {
-    PEN_SHADER_TYPE_VS = 0x03,
-    PEN_SHADER_TYPE_PS = 0x04,
-    PEN_SHADER_TYPE_GS = 0x05,
-    PEN_SHADER_TYPE_SO = 0x06,
-    PEN_SHADER_TYPE_CS = 0x07
+    PEN_SHADER_TYPE_VS,
+    PEN_SHADER_TYPE_PS,
+    PEN_SHADER_TYPE_GS,
+    PEN_SHADER_TYPE_SO,
+    PEN_SHADER_TYPE_CS
 };
 
-enum raster_state : s32
+enum raster_state
 {
-    PEN_FILL_SOLID = D3D11_FILL_SOLID,
-    PEN_FILL_WIREFRAME = D3D11_FILL_WIREFRAME
+    PEN_FILL_SOLID,
+    PEN_FILL_WIREFRAME
 };
 
-enum cull_mode : s32
+enum cull_mode
 {
-    PEN_CULL_NONE = D3D11_CULL_NONE,
-    PEN_CULL_FRONT = D3D11_CULL_FRONT,
-    PEN_CULL_BACK = D3D11_CULL_BACK
+    PEN_CULL_NONE,
+    PEN_CULL_FRONT,
+    PEN_CULL_BACK
 };
 
 enum default_targets : s32
@@ -46,10 +46,10 @@ enum default_targets : s32
 
 enum usage : s32
 {
-    PEN_USAGE_DEFAULT = D3D11_USAGE_DEFAULT,
-    PEN_USAGE_IMMUTABLE = D3D11_USAGE_IMMUTABLE,
-    PEN_USAGE_DYNAMIC = D3D11_USAGE_DYNAMIC,
-    PEN_USAGE_STAGING = D3D11_USAGE_STAGING
+    PEN_USAGE_DEFAULT,
+    PEN_USAGE_IMMUTABLE,
+    PEN_USAGE_DYNAMIC,
+    PEN_USAGE_STAGING
 };
 
 enum input_classification

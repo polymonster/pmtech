@@ -26,7 +26,6 @@ using namespace ecs;
 
 namespace
 {
-    // clang-format off
     const c8* semantic_names[] = {
         "SV_POSITION",
         "POSITION",
@@ -34,14 +33,18 @@ namespace
         "NORMAL",
         "TANGENT",
         "BITANGENT",
+		"BLENDWEIGHTS",
         "COLOR",
         "BLENDINDICES"
     };
-    // clang-format on
 
     shader_program null_shader = {0};
 
-    hash_id id_widgets[] = {PEN_HASH("slider"), PEN_HASH("input"), PEN_HASH("colour")};
+    hash_id id_widgets[] = {
+		PEN_HASH("slider"), 
+		PEN_HASH("input"), 
+		PEN_HASH("colour")
+	};
     static_assert(PEN_ARRAY_SIZE(id_widgets) == e_constant_widget::COUNT, "mismatched array size");
 
     struct pmfx_shader
@@ -261,11 +264,19 @@ namespace put
                     u32 num_elements = vj["num_elements"].as_u32();
                     u32 elements_size = vj["element_size"].as_u32();
 
-                    static const s32 float_formats[4] = {PEN_VERTEX_FORMAT_FLOAT1, PEN_VERTEX_FORMAT_FLOAT2,
-                                                         PEN_VERTEX_FORMAT_FLOAT3, PEN_VERTEX_FORMAT_FLOAT4};
+                    static const s32 float_formats[4] = {
+						PEN_VERTEX_FORMAT_FLOAT1, 
+						PEN_VERTEX_FORMAT_FLOAT2,
+						PEN_VERTEX_FORMAT_FLOAT3, 
+						PEN_VERTEX_FORMAT_FLOAT4
+					};
 
-                    static const s32 byte_formats[4] = {PEN_VERTEX_FORMAT_UNORM1, PEN_VERTEX_FORMAT_UNORM2,
-                                                        PEN_VERTEX_FORMAT_UNORM2, PEN_VERTEX_FORMAT_UNORM4};
+                    static const s32 byte_formats[4] = {
+						PEN_VERTEX_FORMAT_UNORM1, 
+						PEN_VERTEX_FORMAT_UNORM2,
+						PEN_VERTEX_FORMAT_UNORM2, 
+						PEN_VERTEX_FORMAT_UNORM4
+					};
 
                     const s32* fomats = float_formats;
 
