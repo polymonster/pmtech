@@ -178,6 +178,61 @@ namespace
         return GL_TRIANGLES;
     }
 
+    u32 to_gl_index_format(u32 pen_index_format)
+    {
+        switch (pen_index_format)
+        {
+            case PEN_FORMAT_R16_UINT:
+                return GL_UNSIGNED_SHORT;
+            case PEN_FORMAT_R32_UINT:
+                return GL_UNSIGNED_INT;
+        }
+        PEN_ASSERT(0);
+        return GL_UNSIGNED_SHORT;
+    }
+
+    u32 to_gl_usage(u32 pen_usage)
+    {
+        switch (pen_usage)
+        {
+            case PEN_USAGE_DEFAULT:
+                return GL_STATIC_DRAW;
+            case PEN_USAGE_IMMUTABLE:
+                return GL_STATIC_DRAW;
+            case PEN_USAGE_DYNAMIC:
+                return GL_DYNAMIC_DRAW;
+            case PEN_USAGE_STAGING:
+                return GL_DYNAMIC_DRAW;
+        }
+        PEN_ASSERT(0);
+        return GL_STATIC_DRAW;
+    }
+
+    u32 to_gl_bind_flags(u32 pen_bind_flags)
+    {
+        switch (pen_bind_flags)
+        {
+            case PEN_BIND_SHADER_RESOURCE:
+                return 0;
+            case PEN_BIND_VERTEX_BUFFER:
+                return GL_ARRAY_BUFFER;
+            case PEN_BIND_INDEX_BUFFER:
+                return GL_ELEMENT_ARRAY_BUFFER;
+            case PEN_BIND_CONSTANT_BUFFER:
+                return GL_UNIFORM_BUFFER;
+            case PEN_BIND_RENDER_TARGET:
+                return GL_FRAMEBUFFER;
+            case PEN_BIND_DEPTH_STENCIL:
+                return 1;
+            case PEN_BIND_SHADER_WRITE:
+                return 2;
+            case PEN_STREAM_OUT_VERTEX_BUFFER:
+                return GL_ARRAY_BUFFER;
+        }
+        PEN_ASSERT(0);
+        return 0;
+    }
+
     struct tex_format_map
     {
         u32 pen_format;
@@ -215,8 +270,7 @@ namespace
                 return;
             }
         }
-
-        PEN_LOG("unimplemented / unsupported texture format");
+        // unsupported / unhandled texture format
         PEN_ASSERT(0);
     }
 
@@ -605,8 +659,6 @@ namespace pen
 
     void _set_depth_stencil_state(u32 dss, u8 ref)
     {
-        PEN_LOG("Set DSS %i", dss);
-
         resource_allocation& res = _res_pool[dss];
 
         // depth
@@ -776,6 +828,13 @@ namespace pen
         CHECK_CALL(glClearDepth(cs.depth));
         CHECK_CALL(glClearStencil(cs.stencil));
 
+        if(rc.clear_state.flags & GL_DEPTH_BUFFER_BIT)
+        {
+            // we must enable depth writes when clearing..
+            CHECK_CALL(glEnable(GL_DEPTH_TEST));
+            CHECK_CALL(glDepthMask(true));
+        }
+
         if (cs.num_colour_targets == 0)
         {
             CHECK_CALL(
@@ -906,13 +965,14 @@ namespace pen
 
         resource_allocation& res = _res_pool[resource_slot];
 
+        u32 usage = to_gl_usage(params.usage_flags);
+        u32 gl_bind = to_gl_bind_flags(params.bind_flags);
+
         CHECK_CALL(glGenBuffers(1, &res.handle));
+        CHECK_CALL(glBindBuffer(gl_bind, res.handle));
+        CHECK_CALL(glBufferData(gl_bind, params.buffer_size, params.data, usage));
 
-        CHECK_CALL(glBindBuffer(params.bind_flags, res.handle));
-
-        CHECK_CALL(glBufferData(params.bind_flags, params.buffer_size, params.data, params.usage_flags));
-
-        res.type = params.bind_flags;
+        res.type = gl_bind;
     }
 
     void direct::renderer_link_shader_program(const shader_link_params& params, u32 resource_slot)
@@ -1027,7 +1087,7 @@ namespace pen
     void direct::renderer_set_index_buffer(u32 buffer_index, u32 format, u32 offset)
     {
         g_bound_state.index_buffer = buffer_index;
-        g_bound_state.index_format = format;
+        g_bound_state.index_format = to_gl_index_format(format);
     }
 
     void bind_state(u32 primitive_topology)

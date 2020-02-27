@@ -30,7 +30,7 @@
 #define GL_SRC1_COLOR GL_SRC_COLOR
 #define GL_ONE_MINUS_SRC1_COLOR GL_ONE_MINUS_SRC_COLOR
 #define GL_SRC1_ALPHA GL_SRC_ALPHA
-#define GL_ONE_MINUS_SRC1_ALPHA GL_ONE_MINUS_SRC_ALPHA
+#define GL_ONE_MINUS_SRC1_ALPHA GL_ONE_MINUS_SRC_ALPHA/
 #define GL_TEXTURE_2D_MULTISAMPLE GL_TEXTURE_2D
 #define glClearDepth glClearDepthf // gl es has these type suffixes
 // gles does not support base vertex offset assert when b is > 0.. rethink how you are rendering stuff
@@ -143,30 +143,30 @@ enum vertex_format
     PEN_VERTEX_FORMAT_UNORM1
 };
 
-enum index_buffer_format : s32
+enum index_buffer_format
 {
-    PEN_FORMAT_R16_UINT = GL_UNSIGNED_SHORT,
-    PEN_FORMAT_R32_UINT = GL_UNSIGNED_INT
+    PEN_FORMAT_R16_UINT,
+    PEN_FORMAT_R32_UINT
 };
 
-enum usage : s32
+enum usage
 {
-    PEN_USAGE_DEFAULT = GL_STATIC_DRAW,   // gpu read and write, d3d can updatesubresource with usage default
-    PEN_USAGE_IMMUTABLE = GL_STATIC_DRAW, // gpu read only
-    PEN_USAGE_DYNAMIC = GL_DYNAMIC_DRAW,  // dynamic
-    PEN_USAGE_STAGING = GL_DYNAMIC_DRAW,  // cpu access
+    PEN_USAGE_DEFAULT,   // gpu read and write, d3d can updatesubresource with usage default
+    PEN_USAGE_IMMUTABLE, // gpu read only
+    PEN_USAGE_DYNAMIC,   // dynamic
+    PEN_USAGE_STAGING    // cpu access
 };
 
-enum bind_flags : s32
+enum bind_flags
 {
-    PEN_BIND_SHADER_RESOURCE = 0,
-    PEN_BIND_VERTEX_BUFFER = GL_ARRAY_BUFFER,
-    PEN_BIND_INDEX_BUFFER = GL_ELEMENT_ARRAY_BUFFER,
-    PEN_BIND_CONSTANT_BUFFER = GL_UNIFORM_BUFFER,
-    PEN_STREAM_OUT_VERTEX_BUFFER = GL_ARRAY_BUFFER,
-    PEN_BIND_RENDER_TARGET = GL_FRAMEBUFFER,
-    PEN_BIND_DEPTH_STENCIL,
-    PEN_BIND_SHADER_WRITE
+    PEN_BIND_SHADER_RESOURCE = 1 << 0,
+    PEN_BIND_VERTEX_BUFFER = 1 << 1,
+    PEN_BIND_INDEX_BUFFER = 1 << 2,
+    PEN_BIND_CONSTANT_BUFFER = 1 << 3,
+    PEN_BIND_RENDER_TARGET = 1 << 5,
+    PEN_BIND_DEPTH_STENCIL = 1 << 6,
+    PEN_BIND_SHADER_WRITE = 1 << 7,
+    PEN_STREAM_OUT_VERTEX_BUFFER = 1 << 8 // needs renaming
 };
 
 enum cpu_access_flags : s32
