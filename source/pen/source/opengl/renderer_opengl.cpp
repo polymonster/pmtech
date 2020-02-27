@@ -937,7 +937,7 @@ namespace pen
             CHECK_CALL(glDepthMask(true));
         }
 
-        if(rc.clear_state.flags & GL_STENCIL_BUFFER)
+        if(rc.clear_state.flags & GL_STENCIL_BUFFER_BIT)
         {
             CHECK_CALL(glEnable(GL_STENCIL_TEST));
             CHECK_CALL(glStencilMask(0xff));
