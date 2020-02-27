@@ -939,7 +939,7 @@ namespace pen
 
         if(rc.clear_state.flags & GL_STENCIL_BUFFER)
         {
-            CHECK_CALL(glEnable(GL_STENCIL));
+            CHECK_CALL(glEnable(GL_STENCIL_TEST));
             CHECK_CALL(glStencilMask(0xff));
         }
 
