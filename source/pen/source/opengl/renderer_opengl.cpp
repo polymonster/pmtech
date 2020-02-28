@@ -21,6 +21,51 @@
 #include <stdlib.h>
 #include <vector>
 
+#if __APPLE__
+#include "TargetConditionals.h"
+#if TARGET_OS_IPHONE
+#define PEN_GLES3
+#endif
+#endif
+#ifdef PEN_GLES3
+#include <OpenGLES/ES3/gl.h>
+#include <OpenGLES/ES3/glext.h>
+// for portability with regular gl
+// mark unsupported features null
+#define GL_FILL 0x00               // gl fill is the only polygon mode on gles3
+#define GL_LINE 0x00               // gl line (wireframe) usupported
+#define GL_GEOMETRY_SHADER 0x00    // gl geometry shader unsupported
+#define GL_TEXTURE_COMPRESSED 0x00 //
+#define GL_COMPRESSED_RGBA_S3TC_DXT1_EXT 0x00
+#define GL_COMPRESSED_RGBA_S3TC_DXT3_EXT 0x00
+#define GL_COMPRESSED_RGBA_S3TC_DXT5_EXT 0x00
+// remap unsupported stuff for rough equivalent
+#define GL_CLAMP_TO_BORDER GL_CLAMP_TO_EDGE
+#define GL_SRC1_COLOR GL_SRC_COLOR
+#define GL_ONE_MINUS_SRC1_COLOR GL_ONE_MINUS_SRC_COLOR
+#define GL_SRC1_ALPHA GL_SRC_ALPHA
+#define GL_ONE_MINUS_SRC1_ALPHA GL_ONE_MINUS_SRC_ALPHA/
+#define GL_TEXTURE_2D_MULTISAMPLE GL_TEXTURE_2D
+#define glClearDepth glClearDepthf // gl es has these type suffixes
+// gles does not support base vertex offset assert when b is > 0.. rethink how you are rendering stuff
+#define glDrawElementsBaseVertex(p, i, f, o, b) glDrawElements(p, i, f, o)
+#define glDrawElementsInstancedBaseVertex(p, i, f, o, c, b) glDrawElementsInstanced(p, i, f, o, c)
+#define glDrawBuffer
+#define glTexImage2DMultisample(a1, a2, a3, a4, a5, a6) PEN_ASSERT(0)
+#else
+#ifdef __linux__
+#include "GL/glew.h"
+#elif _WIN32
+#define GLEW_STATIC
+#include "GL/glew.h"
+#include "GL/wglew.h"
+#else // osx
+#include <OpenGL/gl3.h>
+#include <OpenGL/gl3ext.h>
+#endif
+#endif
+
+
 extern pen::window_creation_params pen_window;
 
 // these are required for platform specific gl implementation calls.
@@ -327,6 +372,91 @@ namespace
         }
         PEN_ASSERT(0);
         return GL_ALWAYS;
+    }
+
+    u32 to_gl_stencil_op(u32 pen_stencil_op)
+    {
+        switch (pen_stencil_op)
+        {
+            case PEN_STENCIL_OP_KEEP:
+                return GL_KEEP;
+            case PEN_STENCIL_OP_REPLACE:
+                return GL_REPLACE;
+            case PEN_STENCIL_OP_ZERO:
+                return GL_ZERO;
+            case PEN_STENCIL_OP_DECR:
+                return GL_DECR_WRAP;
+            case PEN_STENCIL_OP_INCR:
+                return GL_INCR_WRAP;
+            case PEN_STENCIL_OP_DECR_SAT:
+                return GL_DECR;
+            case PEN_STENCIL_OP_INCR_SAT:
+                return GL_INCR;
+            case PEN_STENCIL_OP_INVERT:
+                return GL_INVERT;
+        }
+        PEN_ASSERT(0);
+        return GL_REPLACE;
+    }
+
+    u32 to_gl_blend_factor(u32 pen_blend_factor)
+    {
+        switch (pen_blend_factor)
+        {
+            case PEN_BLEND_ZERO:
+                return GL_ZERO;
+            case PEN_BLEND_ONE:
+                return GL_ONE;
+            case PEN_BLEND_SRC_COLOR:
+                return GL_SRC_COLOR;
+            case PEN_BLEND_INV_SRC_COLOR:
+                return GL_ONE_MINUS_SRC_COLOR;
+            case PEN_BLEND_SRC_ALPHA:
+                return GL_SRC_ALPHA;
+            case PEN_BLEND_INV_SRC_ALPHA:
+                return GL_ONE_MINUS_SRC_ALPHA;
+            case PEN_BLEND_DEST_ALPHA:
+                return GL_DST_ALPHA;
+            case PEN_BLEND_INV_DEST_ALPHA:
+                return GL_ONE_MINUS_DST_ALPHA;
+            case PEN_BLEND_INV_DEST_COLOR:
+                return GL_DST_COLOR;
+            case PEN_BLEND_SRC_ALPHA_SAT:
+                return GL_SRC_ALPHA_SATURATE;
+            case PEN_BLEND_SRC1_COLOR:
+                return GL_SRC1_COLOR;
+            case PEN_BLEND_INV_SRC1_COLOR:
+                return GL_ONE_MINUS_SRC1_COLOR;
+            case PEN_BLEND_SRC1_ALPHA:
+                return GL_SRC1_ALPHA;
+            case PEN_BLEND_INV_SRC1_ALPHA:
+                return GL_ONE_MINUS_SRC1_ALPHA;
+            case PEN_BLEND_BLEND_FACTOR:
+            case PEN_BLEND_INV_BLEND_FACTOR:
+                PEN_ASSERT(0);
+                break;
+        }
+        PEN_ASSERT(0);
+        return GL_ZERO;
+    }
+
+    u32 to_gl_blend_op(u32 pen_blend_op)
+    {
+        switch (pen_blend_op)
+        {
+            case PEN_BLEND_OP_ADD:
+                return GL_FUNC_ADD;
+            case PEN_BLEND_OP_SUBTRACT:
+                return GL_FUNC_SUBTRACT;
+            case PEN_BLEND_OP_REV_SUBTRACT:
+                return GL_FUNC_REVERSE_SUBTRACT;
+            case PEN_BLEND_OP_MIN:
+                return GL_MIN;
+            case PEN_BLEND_OP_MAX:
+                return GL_MAX;
+        }
+        PEN_ASSERT(0);
+        return GL_FUNC_ADD;
     }
 
     struct tex_format_map
@@ -2055,6 +2185,14 @@ namespace pen
         for (s32 i = 0; i < bcp.num_render_targets; ++i)
         {
             blend_state->render_targets[i] = bcp.render_targets[i];
+
+            render_target_blend& rtb = blend_state->render_targets[i];
+            rtb.src_blend = to_gl_blend_factor(rtb.src_blend);
+            rtb.dest_blend = to_gl_blend_factor(rtb.dest_blend);
+            rtb.blend_op = to_gl_blend_op(rtb.blend_op);
+            rtb.src_blend_alpha = to_gl_blend_factor(rtb.src_blend_alpha);
+            rtb.dest_blend_alpha = to_gl_blend_factor(rtb.dest_blend_alpha);
+            rtb.blend_op_alpha = to_gl_blend_op(rtb.blend_op_alpha);
         }
     }
 
@@ -2206,8 +2344,17 @@ namespace pen
 
         if(depth_stencil->stencil_enable)
         {
+            // front
             depth_stencil->front_face.stencil_func = to_gl_comparison(dscp.front_face.stencil_func);
+            depth_stencil->front_face.stencil_failop = to_gl_stencil_op(dscp.front_face.stencil_failop);
+            depth_stencil->front_face.stencil_depth_failop = to_gl_stencil_op(dscp.front_face.stencil_depth_failop);
+            depth_stencil->front_face.stencil_passop = to_gl_stencil_op(dscp.front_face.stencil_passop);
+
+            //back
             depth_stencil->back_face.stencil_func = to_gl_comparison(dscp.back_face.stencil_func);
+            depth_stencil->back_face.stencil_failop = to_gl_stencil_op(dscp.back_face.stencil_failop);
+            depth_stencil->back_face.stencil_depth_failop = to_gl_stencil_op(dscp.back_face.stencil_depth_failop);
+            depth_stencil->back_face.stencil_passop = to_gl_stencil_op(dscp.back_face.stencil_passop);
         }
     }
 
