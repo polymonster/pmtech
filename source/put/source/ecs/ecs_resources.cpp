@@ -1671,8 +1671,22 @@ namespace put
                             std::swap(ni[i], ni[i + 2]);
                     }
 
-                    // reduce index size to u16?
-                    sm.index_size = 4;
+                    // reduce index size to u16 if possible
+                    void* new_ib = ni;
+                    if(vertex_count < 65535)
+                    {
+                        _ib_size = sm.num_indices*sizeof(u16);
+                        u16* nni = (u16*)pen::memory_alloc(_ib_size);
+                        for(u32 i = 0; i < sm.num_indices; ++i)
+                            nni[i] = ni[i];
+                        new_ib = nni;
+                        pen::memory_free(ni);
+                        sm.index_size = 2;
+                    }
+                    else
+                    {
+                        sm.index_size = 4;
+                    }
 
                     // cleanup the old / temp buffers
                     pen::memory_free(sm.vertex_data);
@@ -1689,7 +1703,7 @@ namespace put
                     PEN_LOG("    new vertex count: %i, old %i", sm.num_verts, vertex_count);
                     sm.vertex_data = nv;
                     sm.vertex_data_size = _vb_size;
-                    sm.index_data = ni;
+                    sm.index_data = new_ib;
                     sm.index_data_size = _ib_size;
                     sm.num_verts = vertex_count;
                     sm.num_vertex_floats = _vb_size / sizeof(f32);
