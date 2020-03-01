@@ -284,6 +284,10 @@ def write_geometry(file, root):
             mesh_data.append(struct.pack("f", (float(max_extents[i]))))
 
         # write vb and ib
+        handedness = 0
+        if flip_winding:
+            handedness = 1
+        mesh_data.append(struct.pack("i", int(handedness)))
         mesh_data.append(struct.pack("i", int(num_verts)))
         mesh_data.append(struct.pack("i", int(index_size)))
         mesh_data.append(struct.pack("i", (len(mesh[pb]))))

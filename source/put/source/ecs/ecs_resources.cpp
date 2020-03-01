@@ -44,6 +44,15 @@ namespace
         };
     }
     typedef e_pmm_transform::pmm_transform_t pmm_transform;
+    
+    namespace e_handedness
+    {
+        enum handedness_t
+        {
+            left,
+            right
+        };
+    };
 
     struct pmm_contents
     {
@@ -65,6 +74,7 @@ namespace
         // pmm submesh header
         vec3f min_extents;
         vec3f max_extents;
+        u32   handedness;
         u32   num_verts;
         u32   index_size;
         u32   num_pos_floats;
@@ -183,6 +193,7 @@ namespace
                 p_reader += k_extent_floats;
 
                 // parse vertex and index data
+                sm.handedness = *p_reader++;
                 sm.num_verts = *p_reader++;
                 sm.index_size = *p_reader++;
                 sm.num_pos_floats = *p_reader++;
@@ -1654,8 +1665,11 @@ namespace put
                     meshopt_remapVertexBuffer(nv, sm.vertex_data, sm.num_indices, sm.vertex_size, &remap[0]);
 
                     // swap winding..
-                    for (u32 i = 0; i < sm.num_indices; i += 3)
-                        std::swap(ni[i], ni[i + 2]);
+                    if(sm.handedness == e_handedness::left)
+                    {
+                        for (u32 i = 0; i < sm.num_indices; i += 3)
+                            std::swap(ni[i], ni[i + 2]);
+                    }
 
                     // reduce index size to u16?
                     sm.index_size = 4;
@@ -1758,6 +1772,7 @@ namespace put
                     // header
                     ofs.write((const c8*)&sm.min_extents, sizeof(vec3f));
                     ofs.write((const c8*)&sm.max_extents, sizeof(vec3f));
+                    ofs.write((const c8*)&sm.handedness, sizeof(u32));
                     ofs.write((const c8*)&sm.num_verts, sizeof(u32));
                     ofs.write((const c8*)&sm.index_size, sizeof(u32));
                     ofs.write((const c8*)&sm.num_pos_floats, sizeof(u32));
