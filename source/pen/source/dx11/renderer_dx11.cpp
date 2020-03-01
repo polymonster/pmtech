@@ -79,6 +79,57 @@ namespace
 		return D3D11_USAGE_DEFAULT;
 	}
 
+	UINT to_d3d11_bind_flags(u32 pen_bind_flags)
+	{
+		u32 bf = 0;
+		if (pen_bind_flags & PEN_BIND_SHADER_RESOURCE)
+			bf |= D3D11_BIND_SHADER_RESOURCE;
+		if (pen_bind_flags & PEN_BIND_VERTEX_BUFFER)
+			bf |= D3D11_BIND_VERTEX_BUFFER;
+		if (pen_bind_flags & PEN_BIND_INDEX_BUFFER)
+			bf |= D3D11_BIND_INDEX_BUFFER;
+		if (pen_bind_flags & PEN_BIND_CONSTANT_BUFFER)
+			bf |= D3D11_BIND_CONSTANT_BUFFER;
+		if (pen_bind_flags & PEN_BIND_RENDER_TARGET)
+			bf |= D3D11_BIND_RENDER_TARGET;
+		if (pen_bind_flags & PEN_BIND_DEPTH_STENCIL)
+			bf |= D3D11_BIND_DEPTH_STENCIL;
+		if (pen_bind_flags & PEN_BIND_SHADER_WRITE)
+			bf |= D3D11_BIND_UNORDERED_ACCESS;
+		if (pen_bind_flags & PEN_STREAM_OUT_VERTEX_BUFFER)
+			bf |= (D3D11_BIND_STREAM_OUTPUT | D3D11_BIND_VERTEX_BUFFER);
+		return bf;
+	}
+
+	UINT to_d3d11_cpu_access_flags(u32 pen_access_flags)
+	{
+		u32 af = 0;
+		if (pen_access_flags & PEN_CPU_ACCESS_WRITE)
+			af |= D3D11_CPU_ACCESS_WRITE;
+		if (pen_access_flags & PEN_CPU_ACCESS_READ)
+			af |= D3D11_CPU_ACCESS_READ;
+		return af;
+	}
+
+	D3D_PRIMITIVE_TOPOLOGY to_d3d11_primitive_topology(u32 pen_primitive_topology)
+	{
+		switch (pen_primitive_topology)
+		{
+		case PEN_PT_POINTLIST:
+			return D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
+		case PEN_PT_LINELIST:
+			return D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
+		case PEN_PT_LINESTRIP:
+			return D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP;
+		case PEN_PT_TRIANGLELIST:
+			return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+		case PEN_PT_TRIANGLESTRIP:
+			return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
+		}
+		PEN_ASSERT(0);
+		return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	}
+
 } // namespace
 
 // level 0 = no errors, level 1 = print errors, level 2 = assert on error
@@ -752,11 +803,11 @@ namespace pen
         ZeroMemory(&bd, sizeof(bd));
 
         bd.Usage = to_d3d11_usage(params.usage_flags);
-        bd.ByteWidth = params.buffer_size;
-        bd.BindFlags = (D3D11_BIND_FLAG)params.bind_flags;
-        bd.CPUAccessFlags = params.cpu_access_flags;
+		bd.BindFlags = to_d3d11_bind_flags(params.bind_flags);
+        bd.CPUAccessFlags = to_d3d11_cpu_access_flags(params.cpu_access_flags);
+		bd.ByteWidth = params.buffer_size;
 
-        if (bd.BindFlags & PEN_BIND_UNORDERED_ACCESS)
+        if (bd.BindFlags & PEN_BIND_SHADER_WRITE)
         {
             bd.MiscFlags |= D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
             bd.StructureByteStride = params.stride;
@@ -776,7 +827,7 @@ namespace pen
             CHECK_CALL(s_device->CreateBuffer(&bd, nullptr, &_res_pool[resource_index].generic_buffer.buf));
         }
 
-        if (bd.BindFlags & PEN_BIND_UNORDERED_ACCESS)
+        if (bd.BindFlags & PEN_BIND_SHADER_WRITE)
         {
             // uav if we need it
             D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc = {};
@@ -835,20 +886,20 @@ namespace pen
 
     void direct::renderer_draw(u32 vertex_count, u32 start_vertex, u32 primitive_topology)
     {
-        s_immediate_context->IASetPrimitiveTopology((D3D11_PRIMITIVE_TOPOLOGY)primitive_topology);
+        s_immediate_context->IASetPrimitiveTopology(to_d3d11_primitive_topology(primitive_topology));
         s_immediate_context->Draw(vertex_count, start_vertex);
     }
 
     void direct::renderer_draw_indexed(u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology)
     {
-        s_immediate_context->IASetPrimitiveTopology((D3D11_PRIMITIVE_TOPOLOGY)primitive_topology);
+        s_immediate_context->IASetPrimitiveTopology(to_d3d11_primitive_topology(primitive_topology));
         s_immediate_context->DrawIndexed(index_count, start_index, base_vertex);
     }
 
     void direct::renderer_draw_indexed_instanced(u32 instance_count, u32 start_instance, u32 index_count, u32 start_index,
                                                  u32 base_vertex, u32 primitive_topology)
     {
-        s_immediate_context->IASetPrimitiveTopology((D3D11_PRIMITIVE_TOPOLOGY)primitive_topology);
+        s_immediate_context->IASetPrimitiveTopology(to_d3d11_primitive_topology(primitive_topology));
         s_immediate_context->DrawIndexedInstanced(index_count, instance_count, start_index, base_vertex, start_instance);
     }
 
@@ -916,6 +967,7 @@ namespace pen
         D3D11_TEXTURE2D_DESC texture_desc;
         memcpy(&texture_desc, (void*)&tcp, sizeof(D3D11_TEXTURE2D_DESC));
 		texture_desc.Usage = to_d3d11_usage(texture_desc.Usage);
+		texture_desc.BindFlags = to_d3d11_bind_flags(texture_desc.BindFlags);
 
         if (tcp.collection_type == pen::TEXTURE_COLLECTION_CUBE || tcp.collection_type == pen::TEXTURE_COLLECTION_CUBE_ARRAY)
         {
@@ -1103,6 +1155,7 @@ namespace pen
             texture_creation_params read_back_tcp = _tcp;
             read_back_tcp.bind_flags = 0;
             read_back_tcp.usage = D3D11_USAGE_STAGING;
+			read_back_tcp.cpu_access_flags = to_d3d11_cpu_access_flags(_tcp.cpu_access_flags);
 
             D3D11_TEXTURE2D_DESC texture_desc;
             memcpy(&texture_desc, (void*)&read_back_tcp, sizeof(D3D11_TEXTURE2D_DESC));
@@ -1226,7 +1279,7 @@ namespace pen
                                                  (u32)tcp.num_mips,
                                                  (DXGI_FORMAT)tcp.format,
                                                  to_d3d11_usage(tcp.usage),
-                                                 tcp.bind_flags,
+                                                 to_d3d11_bind_flags(tcp.bind_flags),
                                                  tcp.cpu_access_flags,
                                                  tcp.flags};
 
@@ -1731,8 +1784,8 @@ namespace pen
             // depth gets resolved into colour textures
             if (rti->format == PEN_TEX_FORMAT_D24_UNORM_S8_UINT)
             {
-                resolve_tcp.bind_flags &= ~D3D11_BIND_DEPTH_STENCIL;
-                resolve_tcp.bind_flags |= D3D11_BIND_RENDER_TARGET;
+                resolve_tcp.bind_flags &= ~PEN_BIND_DEPTH_STENCIL;
+                resolve_tcp.bind_flags |= PEN_BIND_RENDER_TARGET;
                 resolve_tcp.format = PEN_TEX_FORMAT_R32_FLOAT;
             }
 
@@ -1780,7 +1833,7 @@ namespace pen
 
     void direct::renderer_draw_auto()
     {
-        s_immediate_context->IASetPrimitiveTopology((D3D11_PRIMITIVE_TOPOLOGY)PEN_PT_POINTLIST);
+        s_immediate_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
         s_immediate_context->DrawAuto();
     }
 
