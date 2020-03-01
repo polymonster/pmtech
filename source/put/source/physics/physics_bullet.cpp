@@ -360,7 +360,10 @@ namespace physics
     {
         // step
         if (!g_readable_data.b_paused)
+        {
             s_bullet_systems.dynamics_world->stepSimulation(dt);
+        }
+
 
         // update mats
         update_output_matrices();

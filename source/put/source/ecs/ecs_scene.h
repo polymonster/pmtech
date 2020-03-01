@@ -507,7 +507,7 @@ namespace put
         void            destroy_scene(ecs_scene* scene);
         ecs_scene_list* get_scenes();
 
-        void update();
+        void update(f32 dt);
         void update_scene(ecs_scene* scene, f32 dt);
 
         void render_scene_view(const scene_view& view);

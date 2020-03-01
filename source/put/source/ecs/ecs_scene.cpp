@@ -1063,12 +1063,8 @@ namespace put
             //PEN_LOG("anim_v2 : %f", ms);
         }
 
-        void update()
+        void update(f32 dt)
         {
-            static pen::timer* dt_timer = pen::timer_create();
-            f32                dt = pen::timer_elapsed_ms(dt_timer) * 0.001f;
-            pen::timer_start(dt_timer);
-
             static f32 fft = 1.0f / 60.0f;
             bool       bdt = dev_ui::get_program_preference("dynamic_timestep").as_bool(true);
             f32        ft = dev_ui::get_program_preference("fixed_timestep").as_f32(fft);
@@ -1619,7 +1615,7 @@ namespace put
             }
 
             // update physics running 1 frame behind to allow the sets to take effect
-            physics::step();
+            physics::step(dt);
             physics::physics_consume_command_buffer();
 
             // controllers post update

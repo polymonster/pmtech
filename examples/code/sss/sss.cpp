@@ -89,7 +89,7 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
 {
     // rotate light
     cmp_light& snl = scene->lights[0];
-    snl.azimuth += dt * 100.0f;
+    snl.azimuth += dt;
     snl.altitude = maths::deg_to_rad(108.0f);
     snl.direction = maths::azimuth_altitude_to_xyz(snl.azimuth, snl.altitude);
 }

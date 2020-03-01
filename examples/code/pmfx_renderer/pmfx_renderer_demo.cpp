@@ -77,7 +77,7 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
             continue;
         }
 
-        scene->transforms[i].translation += anim_dir[dir_index] * dt * 0.1f;
+        scene->transforms[i].translation += anim_dir[dir_index] * dt * 0.01f;
         scene->entities[i] |= e_cmp::transform;
 
         for (u32 j = 0; j < 3; ++j)

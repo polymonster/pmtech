@@ -359,6 +359,7 @@ namespace physics
             ray_cast_params            ray_cast;
             sphere_cast_params         sphere_cast;
             contact_test_params        contact_test;
+            f32                        dt;
         };
 
         physics_cmd(){};
@@ -389,7 +390,7 @@ namespace physics
     cast_result cast_ray_immediate(const ray_cast_params& rcp);
     cast_result cast_sphere_immediate(const sphere_cast_params& scp);
 
-    void step();
+    void step(f32 dt);
     void set_v3(const u32& entity_index, const vec3f& v3, u32 cmd);
     void set_float(const u32& entity_index, const f32& fval, u32 cmd);
     void set_transform(const u32& entity_index, const vec3f& position, const quat& quaternion);

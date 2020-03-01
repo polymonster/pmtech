@@ -25,7 +25,7 @@ namespace physics
     static pen::slot_resources           s_physics_slot_resources;
     static pen::slot_resources           s_p2p_slot_resources;
 
-    void exec_cmd(const physics_cmd& cmd, f32 dt_ms)
+    void exec_cmd(const physics_cmd& cmd)
     {
         switch (cmd.command_index)
         {
@@ -164,7 +164,7 @@ namespace physics
                 contact_test_internal(cmd.contact_test);
                 break;
             case e_cmd::step:
-                physics_update(dt_ms * 1000.0f);
+                physics_update(cmd.dt);
                 break;
 
             default:
@@ -194,18 +194,11 @@ namespace physics
 
         physics_initialise();
 
-        static pen::timer* physics_timer = pen::timer_create();
-        pen::timer_start(physics_timer);
-
         // space for 8192 commands
         s_cmd_buffer.create(8192);
 
         for (;;)
         {
-            f32 dt_ms = pen::timer_elapsed_ms(physics_timer);
-
-            pen::timer_start(physics_timer);
-
             if (pen::semaphore_try_wait(p_physics_job_thread_info->p_sem_consume))
             {
                 pen::semaphore_post(p_physics_job_thread_info->p_sem_continue, 1);
@@ -213,7 +206,7 @@ namespace physics
                 physics_cmd* cmd = s_cmd_buffer.get();
                 while (cmd)
                 {
-                    exec_cmd(*cmd, dt_ms);
+                    exec_cmd(*cmd);
                     cmd = s_cmd_buffer.get();
                 }
             }
@@ -519,10 +512,11 @@ namespace physics
         s_cmd_buffer.put(pc);
     }
 
-    void step()
+    void step(f32 dt)
     {
         physics_cmd pc;
         pc.command_index = e_cmd::step;
+        pc.dt = dt;
         s_cmd_buffer.put(pc);
     }
 } // namespace physics

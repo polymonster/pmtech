@@ -34,12 +34,11 @@ namespace pen
         const c8* name;
     };
 
-    s32 get_absolute_time()
+    u64 get_absolute_time()
     {
-        static struct timeval now;
-        gettimeofday(&now, nullptr);
-
-        return now.tv_usec;
+        static struct timeval tv;
+        gettimeofday(&tv, nullptr);
+        return (tv.tv_sec * 1000 * 1000) + (tv.tv_usec);
     }
 
     void timer_system_intialise()
@@ -67,19 +66,19 @@ namespace pen
     f32 timer_elapsed_ms(timer* t)
     {
         uint64_t mt = get_absolute_time() - t->last_start;
-        return mt * ticks_to_ms;
+        return (f32)mt * ticks_to_ms;
     }
 
     f32 timer_elapsed_us(timer* t)
     {
         uint64_t mt = get_absolute_time() - t->last_start;
-        return mt * ticks_to_us;
+        return (f32)mt * ticks_to_us;
     }
 
     f32 timer_elapsed_ns(timer* t)
     {
         uint64_t mt = get_absolute_time() - t->last_start;
-        return mt * ticks_to_ns;
+        return (f32)mt * ticks_to_ns;
     }
 
     f32 get_time_ms()

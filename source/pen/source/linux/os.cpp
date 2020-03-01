@@ -22,6 +22,7 @@
 #include <unistd.h>
 
 #include <GL/glx.h>
+#include <GL/glxext.h>
 #include <X11/Xlib.h>
 
 using namespace pen;
@@ -208,6 +209,12 @@ namespace
             PEN_LOG("ERROR: glewInit failed: %s\n", glewGetErrorString(err));
             return 1;
         }
+
+        // enable vysnc.. we could pass this into pen create params
+        PFNGLXSWAPINTERVALEXTPROC glXSwapIntervalEXT = 0;
+        glXSwapIntervalEXT = (PFNGLXSWAPINTERVALEXTPROC)glXGetProcAddress((const GLubyte*)"glXSwapIntervalEXT");
+        if(glXSwapIntervalEXT)
+            glXSwapIntervalEXT(_display, _window, 1);
 
         s_windowed = true;
 

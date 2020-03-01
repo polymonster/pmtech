@@ -444,6 +444,8 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
 
 void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
 {
+    dt *= 0.001f;
+    
     // rotate lights
     for (u32 i = 0; i < 4; ++i)
     {

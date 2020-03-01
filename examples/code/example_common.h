@@ -100,25 +100,25 @@ void* pen::user_entry(void* params)
 
     example_setup(main_scene, main_camera);
 
-    f32 frame_time = 0.0f;
+    f32 dt = 0.0f;
+    pen::timer* frame_timer = pen::timer_create();
+    pen::timer_start(frame_timer);
 
     while (1)
     {
-        static pen::timer* frame_timer = pen::timer_create();
+        dt = pen::timer_elapsed_ms(frame_timer)/1000.0f;
         pen::timer_start(frame_timer);
 
         put::dev_ui::new_frame();
 
-        example_update(main_scene, main_camera, frame_time / 1000.0f);
+        example_update(main_scene, main_camera, dt);
 
-        ecs::update();
+        ecs::update(dt);
 
         pmfx::render();
 
         pmfx::show_dev_ui();
         put::dev_ui::render();
-
-        frame_time = pen::timer_elapsed_ms(frame_timer);
 
         pen::renderer_present();
         pen::renderer_consume_cmd_buffer();
