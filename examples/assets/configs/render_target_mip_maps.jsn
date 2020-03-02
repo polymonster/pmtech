@@ -10,8 +10,8 @@
             size    : equal,
             format  : rgba8,
             mips    : true
-        },
-    }
+        }
+    },
     
     views:
     {    

@@ -25,7 +25,7 @@
             format  : rgba8,
             samples : 4
         }
-    }
+    },
     
     views:
     {    
@@ -60,8 +60,6 @@
             camera : model_viewer_camera,
             resolve : ["custom_4x"]
         },
-        
-        
     },
     
     view_sets: 

@@ -120,7 +120,7 @@
         {
             cull_mode: none,
             fill_mode: wireframe
-        }
+        },
         
         front_face_cull:
         {
@@ -189,7 +189,7 @@
             scene              : main_scene,
             camera             : model_viewer_camera,
             scene_views        : ["ces_render_scene"],
-            render_flags       : ["forward_lit"]
+            render_flags       : ["forward_lit"],
             
             sampler_bindings:
             [
@@ -234,7 +234,7 @@
         multiple_area_light_views:
         {
             target             : [area_light_textures],
-            clear_colour       : [0.0, 1.0, 0.0, 1.0],
+            clear_colour       : [0.0, 0.0, 0.0, 1.0],
             clear_depth        : 1.0,
             colour_write_mask  : 0xf,
             blend_state        : disabled,

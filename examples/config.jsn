@@ -10,7 +10,7 @@
 	
 	jsn_vars<mac>: {
 		mesh_opt: "../tools/bin/osx/mesh_opt",
-		texturec: "../third_party/texturec/win32/texturec"
+		texturec: "../third_party/texturec/osx/texturec"
 	},
 	
 	jsn_vars<linux>: {
@@ -25,11 +25,17 @@
             premake: "../tools/premake/premake5",
             pmfx: "../third_party/pmfx-shader/build_pmfx.py",
             models: "../tools/build_scripts/build_models.py",
+            jsn: "../tools/build_scripts/jsn/jsn.py"
         },
     
         env: {
             pmtech_dir: "../"
         },
+        
+        jsn: [
+        	["assets/configs", "bin/osx/data/configs"],
+			["../assets/configs", "bin/osx/data/configs"]
+        ]
     },
     
     //
@@ -37,7 +43,6 @@
     //
     
     mac(base): {
-
         clean: [
             "build/osx",
             "bin/osx",
