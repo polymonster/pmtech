@@ -15,8 +15,7 @@
 #include "renderer_shared.h"
 #include "threads.h"
 #include "timer.h"
-
-#include "str/Str.h"
+#include "str_utilities.h"
 
 #include <stdlib.h>
 #include <vector>
@@ -254,42 +253,36 @@ namespace
     }
 
     u32 to_gl_bind_flags(u32 pen_bind_flags)
-    {
-        switch (pen_bind_flags)
-        {
-            case PEN_BIND_SHADER_RESOURCE:
-                return 0;
-            case PEN_BIND_VERTEX_BUFFER:
-                return GL_ARRAY_BUFFER;
-            case PEN_BIND_INDEX_BUFFER:
-                return GL_ELEMENT_ARRAY_BUFFER;
-            case PEN_BIND_CONSTANT_BUFFER:
-                return GL_UNIFORM_BUFFER;
-            case PEN_BIND_RENDER_TARGET:
-                return GL_FRAMEBUFFER;
-            case PEN_BIND_DEPTH_STENCIL:
-                return 1;
-            case PEN_BIND_SHADER_WRITE:
-                return 2;
-            case PEN_STREAM_OUT_VERTEX_BUFFER:
-                return GL_ARRAY_BUFFER;
-        }
-        PEN_ASSERT(0);
-        return 0;
-    }
+	{
+		u32 bf = 0;
+		if (pen_bind_flags & PEN_BIND_SHADER_RESOURCE)
+			bf |= 0;
+		if (pen_bind_flags & PEN_BIND_VERTEX_BUFFER)
+			bf |= GL_ARRAY_BUFFER;
+		if (pen_bind_flags & PEN_BIND_INDEX_BUFFER)
+			bf |= GL_ELEMENT_ARRAY_BUFFER;
+		if (pen_bind_flags & PEN_BIND_CONSTANT_BUFFER)
+			bf |= GL_UNIFORM_BUFFER;
+		if (pen_bind_flags & PEN_BIND_RENDER_TARGET)
+			bf |= GL_FRAMEBUFFER;
+		if (pen_bind_flags & PEN_BIND_DEPTH_STENCIL)
+			bf |= 1;
+		if (pen_bind_flags & PEN_BIND_SHADER_WRITE)
+			bf |= 2;
+		if (pen_bind_flags & PEN_STREAM_OUT_VERTEX_BUFFER)
+			bf |= GL_ARRAY_BUFFER;
+		return bf;
+	}
 
-    u32 to_gl_cpu_access_flags(u32 pen_access_flags)
-    {
-        switch (pen_access_flags)
-        {
-            case PEN_CPU_ACCESS_WRITE:
-                return GL_MAP_WRITE_BIT;
-            case PEN_CPU_ACCESS_READ:
-                return GL_MAP_READ_BIT;
-        }
-        PEN_ASSERT(0);
-        return 0;
-    }
+	u32 to_gl_cpu_access_flags(u32 pen_access_flags)
+	{
+		u32 af = 0;
+		if (pen_access_flags & PEN_CPU_ACCESS_WRITE)
+			af |= GL_MAP_WRITE_BIT;
+		if (pen_access_flags & PEN_CPU_ACCESS_READ)
+			af |= GL_MAP_READ_BIT;
+		return af;
+	}
 
     u32 to_gl_texture_address_mode(u32 pen_texture_address_mode)
     {
@@ -1600,7 +1593,7 @@ namespace pen
         u32 base_texture_target = texture_target;
 
         u32 num_slices = 1;
-        u32 num_arrays = tcp.num_arrays;
+        u32 num_faces = tcp.num_arrays;
 
         switch ((texture_collection_type)tcp.collection_type)
         {
@@ -1613,17 +1606,24 @@ namespace pen
                 texture_target = GL_TEXTURE_CUBE_MAP;
                 base_texture_target = GL_TEXTURE_CUBE_MAP_POSITIVE_X;
                 break;
+            case TEXTURE_COLLECTION_CUBE_ARRAY:
+                is_msaa = false;
+                texture_target = GL_TEXTURE_CUBE_MAP_ARRAY;
+                num_slices = tcp.num_arrays;
+                num_faces = 1;
+                base_texture_target = GL_TEXTURE_CUBE_MAP_ARRAY;
+                break;
             case TEXTURE_COLLECTION_VOLUME:
                 is_msaa = false;
                 num_slices = tcp.num_arrays;
-                num_arrays = 1;
+                num_faces = 1;
                 texture_target = GL_TEXTURE_3D;
                 base_texture_target = texture_target;
                 break;
             case TEXTURE_COLLECTION_ARRAY:
                 is_msaa = false;
                 num_slices = tcp.num_arrays;
-                num_arrays = tcp.num_arrays;
+                num_faces = tcp.num_arrays;
                 texture_target = is_msaa ? GL_TEXTURE_2D_MULTISAMPLE_ARRAY : GL_TEXTURE_2D_ARRAY;
                 base_texture_target = texture_target;
                 break;
@@ -1652,7 +1652,7 @@ namespace pen
             }
         }
 
-        for (u32 a = 0; a < num_arrays; ++a)
+        for (u32 a = 0; a < num_faces; ++a)
         {
             mip_w = tcp.width;
             mip_h = tcp.height;
@@ -1676,7 +1676,9 @@ namespace pen
                     }
                     else
                     {
-                        if (base_texture_target == GL_TEXTURE_3D || tcp.collection_type == TEXTURE_COLLECTION_ARRAY)
+                        if (base_texture_target == GL_TEXTURE_3D ||
+                            tcp.collection_type == TEXTURE_COLLECTION_ARRAY ||
+                            tcp.collection_type == TEXTURE_COLLECTION_CUBE_ARRAY)
                         {
                             CHECK_CALL(glTexImage3D(base_texture_target, mip, sized_format, mip_w, mip_h, mip_d, 0, format,
                                                     type, mip_data));
@@ -1843,7 +1845,8 @@ namespace pen
         {
             resource_allocation& depth_res = _res_pool[depth_target];
 
-            if (depth_res.render_target.collection_type == pen::TEXTURE_COLLECTION_ARRAY)
+            if (depth_res.render_target.collection_type == pen::TEXTURE_COLLECTION_ARRAY ||
+                depth_res.render_target.collection_type == pen::TEXTURE_COLLECTION_CUBE_ARRAY)
             {
                 glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, depth_res.render_target.texture.handle,
                                           0, depth_face);
@@ -1871,7 +1874,8 @@ namespace pen
         {
             resource_allocation& colour_res = _res_pool[colour_targets[i]];
 
-            if (colour_res.render_target.collection_type == pen::TEXTURE_COLLECTION_ARRAY)
+            if (colour_res.render_target.collection_type == pen::TEXTURE_COLLECTION_ARRAY ||
+                colour_res.render_target.collection_type == pen::TEXTURE_COLLECTION_CUBE_ARRAY)
             {
                 glFramebufferTextureLayer(GL_FRAMEBUFFER, k_draw_buffers[i], colour_res.render_target.texture.handle, 0,
                                           colour_face);
@@ -2506,6 +2510,12 @@ namespace pen
         str_gl_renderer = (const c8*)gl_renderer;
         str_gl_vendor = (const c8*)gl_vendor;
 
+        // version ints
+        u32 major_pos = str_find(str_gl_version, ".", 0);
+        u32 minor_pos = str_find(str_gl_version, ".", major_pos+1);
+        u32 major = atoi(str_substr(str_gl_version, 0, major_pos).c_str());
+        u32 minor = atoi(str_substr(str_gl_version, major_pos+1, minor_pos).c_str());
+
         s_renderer_info.shader_version = str_glsl_version.c_str();
         s_renderer_info.api_version = str_gl_version.c_str();
         s_renderer_info.renderer = str_gl_renderer.c_str();
@@ -2527,7 +2537,10 @@ namespace pen
         s_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC3;
         s_renderer_info.caps |= PEN_CAPS_GPU_TIMER;
         s_renderer_info.caps |= PEN_CAPS_DEPTH_CLAMP;
-        s_renderer_info.caps |= PEN_CAPS_COMPUTE;
+        if(major >= 4)
+            s_renderer_info.caps |= PEN_CAPS_TEXTURE_CUBE_ARRAY;
+        if(major >= 4 && minor >= 6)
+            s_renderer_info.caps |= PEN_CAPS_COMPUTE;
 #endif
         return PEN_ERR_OK;
     }
