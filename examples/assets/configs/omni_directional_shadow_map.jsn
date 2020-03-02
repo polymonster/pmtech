@@ -40,7 +40,7 @@
         omni_shadow_view:
         {
             target: [shadow_cube],
-            clear_colour: [1.0, 1.0, 1.0, 1.0]
+            clear_colour: [1.0, 1.0, 1.0, 1.0],
             clear_depth : 1.0,
             colour_write_mask  : 0xf,
             blend_state : disabled,

@@ -275,6 +275,20 @@ def run_copy(config):
             util.copy_file_create_dir_if_newer(f[0], f[1])
 
 
+# convert jsn to json for use at runtime
+def run_jsn(config):
+    print("--------------------------------------------------------------------------------")
+    print("jsn ----------------------------------------------------------------------------")
+    print("--------------------------------------------------------------------------------")
+    copy_tasks = config["jsn"]
+    for task in copy_tasks:
+        files = get_task_files(task)
+        for f in files:
+            cmd = python_tool_to_platform(config["tools"]["jsn"])
+            cmd += " -i " + f[0] + " -o " + f[1]
+            subprocess.call(cmd, shell=True)
+
+
 # premake
 def run_premake(config):
     print("--------------------------------------------------------------------------------")
@@ -419,7 +433,7 @@ def generate_pmbuild_config(config, profile):
 
 
 # gets a commandline to setup vcvars for msbuil from command line
-def setup_vcvars():
+def setup_vcvars(config):
     return "pushd \ && cd \"" + config["vcvarsall_dir"] + "\" && vcvarsall.bat x86_amd64 && popd"
 
 
@@ -430,7 +444,7 @@ def run_build(config):
     print("--------------------------------------------------------------------------------")
     for build_task in config["build"]:
         if util.get_platform_name() == "win32":
-            build_task = setup_vcvars() + " && " + build_task
+            build_task = setup_vcvars(config) + " && " + build_task
         p = subprocess.Popen(build_task, shell=True)
         e = p.wait()
         if e != 0:
@@ -467,6 +481,7 @@ def pmbuild_help(config):
 def clean_help(config):
     print("clean help ---------------------------------------------------------------------")
     print("--------------------------------------------------------------------------------")
+    print("removes all intermediate and temp directories:")
     print("\njsn syntax: array of [directories to remove...].")
     print("clean: [")
     print("    [<rm dir>],")
@@ -478,6 +493,7 @@ def clean_help(config):
 def libs_help(config):
     print("libs help ----------------------------------------------------------------------")
     print("--------------------------------------------------------------------------------")
+    print("builds tools and third-party libraries:")
     print("\njsn syntax: array of [cmdlines, ..]")
     print("libs: [")
     print("    [\"command line\"],")
@@ -494,6 +510,7 @@ def libs_help(config):
 def premake_help(config):
     print("premake help -------------------------------------------------------------------")
     print("--------------------------------------------------------------------------------")
+    print("generate ide projects or make files from lua descriptions:")
     print("\njsn syntax: array of [<action>, cmdline options..]")
     print("premake: [")
     print("    [\"<action> (vs2017, xcode4, gmake, android-studio)\"],")
@@ -510,6 +527,7 @@ def premake_help(config):
 def pmfx_help(config):
     print("pmfx help ----------------------------------------------------------------------")
     print("--------------------------------------------------------------------------------")
+    print("compile platform specific shaders:")
     print("\njsn syntax: array of [cmdline options, ..]")
     print("pmfx: [")
     print("    [\"-pmfx_option <value>\"],")
@@ -524,6 +542,7 @@ def pmfx_help(config):
 def models_help(config):
     print("models help --------------------------------------------------------------------")
     print("--------------------------------------------------------------------------------")
+    print("create binary pmm and pma model files from collada files:")
     print("\njsn syntax: array of [src, dst] pairs.")
     print("models: [")
     print("    [<src files, directories or wildcards>, <dst file or folder>],")
@@ -536,6 +555,7 @@ def models_help(config):
 def textures_help(config):
     print("textures help ------------------------------------------------------------------")
     print("--------------------------------------------------------------------------------")
+    print("convert, re-size or compress textures:")
     print("\njsn syntax: array of [src, dst] pairs.")
     print("copy: [")
     print("    [<src files, directories or wildcards>, <dst file or folder>],")
@@ -557,6 +577,7 @@ def textures_help(config):
 def copy_help(config):
     print("copy help ----------------------------------------------------------------------")
     print("--------------------------------------------------------------------------------")
+    print("copy files from src to dst:")
     print("\njsn syntax: array of [src, dst] pairs.")
     print("copy: [")
     print("    [<src files, directories or wildcards>, <dst file or folder>],")
@@ -565,9 +586,21 @@ def copy_help(config):
     print("\n")
 
 
+def jsn_help(config):
+    print("jsn help ----------------------------------------------------------------------")
+    print("-------------------------------------------------------------------------------")
+    print("convert jsn to json:")
+    print("\njsn syntax: array of [src, dst] pairs.")
+    print("jsn: [")
+    print("    [<src files, directories or wildcards>, <dst file or folder>],")
+    print("    ...")
+    print("]")
+    print("\n")
+
+
 def build_help(config):
     print("build help ----------------------------------------------------------------------")
-    print("--------------------------------------------------------------------------------")
+    print("---------------------------------------------------------------------------------")
     print("\njsn syntax: array of commands.")
     print("build: [")
     print(" command args args args,")
@@ -583,13 +616,8 @@ def print_duration(ts):
     print("Took (" + str(millis) + "ms)")
 
 
-# entry point of pmbuild
-if __name__ == "__main__":
-    print("--------------------------------------------------------------------------------")
-    print("pmbuild (v3) -------------------------------------------------------------------")
-    print("--------------------------------------------------------------------------------")
-    print("")
-
+# main function
+def main():
     # must have config.json in working directory
     if not os.path.exists("config.jsn"):
         print("[error] no config.json in current directory.")
@@ -620,11 +648,12 @@ if __name__ == "__main__":
 
     # tasks are executed in order they are declared here
     tasks = collections.OrderedDict()
-    tasks["libs"] = {"run": run_libs,  "help": libs_help}
+    tasks["libs"] = {"run": run_libs, "help": libs_help}
     tasks["premake"] = {"run": run_premake, "help": premake_help}
     tasks["pmfx"] = {"run": run_pmfx, "help": pmfx_help}
     tasks["models"] = {"run": run_models, "help": models_help}
     tasks["textures"] = {"run": run_textures, "help": textures_help}
+    tasks["jsn"] = {"run": run_jsn, "help": jsn_help}
     tasks["copy"] = {"run": run_copy, "help": copy_help}
     tasks["build"] = {"run": run_build, "help": build_help}
 
@@ -653,3 +682,12 @@ if __name__ == "__main__":
 
     # finally metadata for rebuilding and hot reloading
     generate_pmbuild_config(config, sys.argv[1])
+
+
+# entry point of pmbuild
+if __name__ == "__main__":
+    print("--------------------------------------------------------------------------------")
+    print("pmbuild (v3) -------------------------------------------------------------------")
+    print("--------------------------------------------------------------------------------")
+    print("")
+    main()

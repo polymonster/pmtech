@@ -794,8 +794,8 @@ namespace put
                     mode_from_string(k_comparison_mode_map, state["depth_func"].as_cstr(), PEN_COMPARISON_ALWAYS);
 
                 dscp.stencil_enable = state["stencil_enable"].as_bool(false) ? 1 : 0;
-                dscp.stencil_read_mask = state["stencil_read_mask"].as_u8_hex(0);
-                dscp.stencil_write_mask = state["stencil_write_mask"].as_u8_hex(0);
+                dscp.stencil_read_mask = state["stencil_read_mask"].as_u32(0);
+                dscp.stencil_write_mask = state["stencil_write_mask"].as_u32(0);
 
                 pen::json op = state["stencil_op"];
                 if (!op.is_null())
@@ -935,11 +935,11 @@ namespace put
                 if (write_mask.type() == JSMN_ARRAY)
                 {
                     for (s32 i = 0; i < write_mask.size(); ++i)
-                        masks.push_back(write_mask[i].as_u8_hex());
+                        masks.push_back(write_mask[i].as_u32());
                 }
                 else
                 {
-                    masks.push_back(write_mask.as_u8_hex(0x0F));
+                    masks.push_back(write_mask.as_u32(0x0F));
                 }
             }
 
@@ -1445,7 +1445,7 @@ namespace put
             {
                 if (!(clear_stencil.as_str() == "false"))
                 {
-                    clear_stencil_val = clear_stencil.as_u8_hex();
+                    clear_stencil_val = clear_stencil.as_u32();
 
                     clear_flags |= PEN_CLEAR_STENCIL_BUFFER;
                 }
@@ -1693,7 +1693,7 @@ namespace put
                     new_view.depth_stencil_state = state->handle;
 
                 // stencil ref
-                new_view.stencil_ref = (u32)view["stencil_ref"].as_u8_hex();
+                new_view.stencil_ref = (u32)view["stencil_ref"].as_u32();
 
                 // blend
                 bool      alpha_to_coverage = view["alpha_to_coverage"].as_bool();

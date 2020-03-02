@@ -189,7 +189,7 @@
             view_subtract,
             view_rev_subtract
         ],
-    }
+    },
     
     view_set: blend_test
 }

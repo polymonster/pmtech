@@ -451,7 +451,7 @@
                     { texture: pp_output_full, unit: 0, state: clamp_linear, shader: ps },
                 ]
             }
-        ]
+        ],
         
         blit_depth: [
             { 
