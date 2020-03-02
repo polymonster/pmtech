@@ -5,24 +5,31 @@
     
 	jsn_vars<windows>: {
 		mesh_opt: "../tools/bin/win32/mesh_opt.exe",
-		texturec: "../third_party/texturec/osx/texturec"
+		texturec: "../third_party/texturec/osx/texturec",
+        premake: "../tools/premake/premake5"
 	},
 	
 	jsn_vars<mac>: {
 		mesh_opt: "../tools/bin/osx/mesh_opt",
-		texturec: "../third_party/texturec/osx/texturec"
+		texturec: "../third_party/texturec/osx/texturec",
+        premake: "../tools/premake/premake5"
 	},
 	
 	jsn_vars<linux>: {
 		mesh_opt: "../tools/bin/linux/mesh_opt",
-		texturec: "../third_party/texturec/linux/texturec"
+		texturec: "../third_party/texturec/linux/texturec",
+        premake: "../tools/premake/premake5_linux"
 	},
     
     base: {
+        jsn_vars: {
+            data_dir: ""
+        },
+
         tools: {
 			texturec: "${texturec}",
 			mesh_opt: "${mesh_opt}",
-            premake: "../tools/premake/premake5",
+            premake: "${premake}",
             pmfx: "../third_party/pmfx-shader/build_pmfx.py",
             models: "../tools/build_scripts/build_models.py",
             jsn: "../tools/build_scripts/jsn/jsn.py"
@@ -33,8 +40,8 @@
         },
         
         jsn: [
-        	["assets/configs", "bin/osx/data/configs"],
-			["../assets/configs", "bin/osx/data/configs"]
+        	["assets/configs", "${data_dir}/configs"],
+			["../assets/configs", "${data_dir}/configs"]
         ]
     },
     
@@ -43,6 +50,10 @@
     //
     
     mac(base): {
+        jsn_vars: {
+            data_dir: "bin/osx/data"
+        },
+
         clean: [
             "build/osx",
             "bin/osx",
@@ -82,8 +93,6 @@
         copy: [
             ["assets/audio", "bin/osx/data/audio"],
             ["../assets/audio", "bin/osx/data/audio"],
-            ["assets/configs", "bin/osx/data/configs"],
-            ["../assets/configs", "bin/osx/data/configs"],
             ["../assets/fonts", "bin/osx/data/fonts"],
             ["assets/scene", "bin/osx/data/scene"]
         ],
@@ -92,7 +101,6 @@
     },
     
     mac-gl(mac): {
-
         premake: [
             "xcode4",
             "--renderer=opengl", 
@@ -112,7 +120,6 @@
     },
 
     mac-gl-ci(mac): {
-
         premake: [
             "gmake",
             "--renderer=opengl", 
@@ -121,7 +128,6 @@
     },
 
     mac-metal-ci(mac): {
-
         premake: [
             "gmake",
             "--renderer=metal", 
@@ -135,7 +141,11 @@
     
     ios(base): {
         require_teamid: true,
-        
+
+        jsn_vars: {
+            data_dir: "bin/ios/data"
+        },
+
         clean: [
             "build/ios",
             "bin/ios",
@@ -167,8 +177,6 @@
         copy: [
             ["assets/audio", "bin/ios/data/audio"],
             ["../assets/audio", "bin/ios/data/audio"],
-            ["assets/configs", "bin/ios/data/configs"],
-            ["../assets/configs", "bin/ios/data/configs"],
             ["../assets/fonts", "bin/ios/data/fonts"],
             ["assets/scene", "bin/ios/data/scene"]
         ],
@@ -187,9 +195,11 @@
     // win32
     //
     
-    win32: {
-        jsn_inherit: ["base"],
-        
+    win32(base): {
+        jsn_vars: {
+            data_dir: "bin/win32/data"
+        },
+
         clean: [
             "build/win32",
             "bin/win32",
@@ -228,19 +238,15 @@
         
         copy: [
             ["assets/audio", "bin/win32/data/audio"],
-            ["assets/configs", "bin/win32/data/configs"],
             ["assets/scene", "bin/win32/data/scene"],
             ["../third_party/shared_libs/win32", "bin/win32"],
-            ["../assets/configs", "bin/win32/data/configs"],
             ["../assets/fonts", "bin/win32/data/fonts"]
         ],
         
         data_dir: "bin/win32/data/"
     },
     
-    win32-vulkan: {
-        jsn_inherit: ["win32"],
-        
+    win32-vulkan(win32): {
         premake: [
             "vs2017",
             "--renderer=vulkan", 
@@ -258,9 +264,7 @@
         ],
     },
     
-    win32-gl: {
-        jsn_inherit: ["win32"],
-        
+    win32-gl(win32): {
         premake: [
             "vs2017",
             "--renderer=opengl", 
@@ -281,13 +285,11 @@
     
     // linux
     
-    linux: {
-        jsn_inherit: ["base"],
+    linux(base): {
+        jsn_vars: {
+            data_dir: "bin/linux/data"
+        },
 
-        tools: {
-            premake: "../tools/premake/premake5_linux"
-	    },
-        
         clean: [
             "build/linux",
             "bin/linux",
@@ -329,8 +331,6 @@
         copy: [
             ["assets/audio", "bin/linux/data/audio"],
             ["../assets/audio", "bin/linux/data/audio"],
-            ["assets/configs", "bin/linux/data/configs"],
-            ["../assets/configs", "bin/linux/data/configs"],
             ["../assets/fonts", "bin/linux/data/fonts"],
             ["assets/scene", "bin/linux/data/scene"]
         ],
@@ -338,9 +338,7 @@
         data_dir: "bin/linux/data/"
     },
 
-    linux-vulkan: {
-        jsn_inherit: ["linux"],
-
+    linux-vulkan(linux): {
         premake: [
             "gmake",
             "--renderer=vulkan", 
