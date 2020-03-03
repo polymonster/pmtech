@@ -1775,7 +1775,6 @@ namespace pen
         };
 
         bool use_back_buffer = false;
-
         if (depth_target == PEN_BACK_BUFFER_DEPTH)
             use_back_buffer = true;
 
@@ -1785,6 +1784,11 @@ namespace pen
 
         if (use_back_buffer)
         {
+            if(depth_target == 116)
+            {
+                PEN_LOG("User BB", depth_face);
+            }
+
             g_current_state.backbuffer_bound = true;
             g_current_state.v_flip = false;
 
@@ -1800,12 +1804,21 @@ namespace pen
 
         hash_murmur hh;
         hh.begin();
+        hh.add(colour_face);
+        hh.add(depth_face);
+        hh.add(num_colour_targets);
 
         if (depth_target != PEN_NULL_DEPTH_BUFFER)
         {
             resource_allocation& depth_res = _res_pool[depth_target];
             hh.add(depth_res.render_target.uid);
+            hh.add(depth_target);
             depth_res.render_target.invalidate = 1;
+        }
+        else
+        {
+            hh.add(-1);
+            hh.add(-1);
         }
 
         for (s32 i = 0; i < num_colour_targets; ++i)
@@ -1819,8 +1832,6 @@ namespace pen
                 msaa = true;
         }
 
-        hh.add(colour_face);
-        hh.add(depth_face);
         hash_id h = hh.end();
 
         u32 num_fb = sb_count(s_framebuffers);
