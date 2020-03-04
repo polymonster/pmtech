@@ -310,7 +310,7 @@
         
         pmfx: [
             "-shader_platform glsl",
-            "-shader_version 400",
+            "-shader_version 450",
             "-i assets/shaders ../assets/shaders",
             "-o bin/linux/data/pmfx/glsl",
             "-h shader_structs",
