@@ -156,7 +156,11 @@ namespace
             case PEN_SHADER_TYPE_GS:
                 return GL_GEOMETRY_SHADER;
              case PEN_SHADER_TYPE_SO:
-                return GL_VERTEX_SHADER;           
+                return GL_VERTEX_SHADER;
+#if GL_ARB_compute_shader       
+            case PEN_SHADER_TYPE_CS:
+                return GL_COMPUTE_SHADER;
+#endif
         }
         // unimplemented cs
         PEN_ASSERT(0);
@@ -816,6 +820,7 @@ namespace pen
         u32    ps;
         u32    gs;
         u32    so;
+        u32    cs;
         GLuint program;
         GLuint vflip_uniform;
         u8     uniform_block_location[MAX_UNIFORM_BUFFERS];
@@ -860,6 +865,7 @@ namespace pen
         u32  vertex_shader = 0;
         u32  pixel_shader = 0;
         u32  stream_out_shader = 0;
+        u32  compute_shader = 0;
         u32  raster_state = 0;
         u32  base_vertex = 0;
         bool backbuffer_bound = false;
@@ -943,12 +949,11 @@ namespace pen
         memcpy(&_res_pool[resource_slot].clear_state.mrt, cs.mrt, sizeof(mrt_clear) * MAX_MRT);
     }
 
-    u32 link_program_internal(u32 vs, u32 ps, const shader_link_params* params = nullptr)
+    u32 link_program_internal(u32 vs, u32 ps, u32 cs, const shader_link_params* params = nullptr)
     {
         // link the shaders
         GLuint program_id = CHECK_CALL(glCreateProgram());
-
-        GLuint so = 0;
+        u32 so = 0;
 
         if (params)
         {
@@ -976,10 +981,17 @@ namespace pen
         }
         else
         {
-            // on the fly link for bound vs and ps which have not been explicity linked
-            // to emulate d3d behaviour of set vs set ps etc
-            CHECK_CALL(glAttachShader(program_id, vs));
-            CHECK_CALL(glAttachShader(program_id, ps));
+            if(vs && ps)
+            {
+                // on the fly link for bound vs and ps which have not been explicity linked
+                // to emulate d3d behaviour of set vs set ps etc
+                CHECK_CALL(glAttachShader(program_id, vs));
+                CHECK_CALL(glAttachShader(program_id, ps));
+            }
+            else if(cs)
+            {
+                CHECK_CALL(glAttachShader(program_id, cs));        
+            }
         }
 
         CHECK_CALL(glLinkProgram(program_id));
@@ -1006,6 +1018,7 @@ namespace pen
         program.vs = vs;
         program.ps = ps;
         program.so = so;
+        program.cs = cs;
         program.program = program_id;
         program.vflip_uniform = glGetUniformLocation(program.program, "v_flip");
 
@@ -1186,7 +1199,14 @@ namespace pen
                 g_current_state.vertex_shader = 0;
                 g_current_state.pixel_shader = 0;
                 break;
-            // GS, CS not implemented
+#if GL_ARB_compute_shader
+            case PEN_SHADER_TYPE_CS:
+                g_current_state.compute_shader = shader_index;
+                g_current_state.vertex_shader = 0;
+                g_current_state.pixel_shader = 0;
+                g_current_state.stream_out_shader = 0;
+                break;
+#endif
         }
     }
 
@@ -1211,7 +1231,7 @@ namespace pen
         _res_pool.grow(resource_slot);
 
         shader_link_params slp = params;
-        u32                program_index = link_program_internal(0, 0, &slp);
+        u32                program_index = link_program_internal(0, 0, 0, &slp);
 
         shader_program* linked_program = &s_shader_programs[program_index];
 
@@ -1270,6 +1290,31 @@ namespace pen
 
     void direct::renderer_dispatch_compute(uint3 grid, uint3 num_threads)
     {
+#if GL_ARB_compute_shader
+        // look for linked cs program
+        u32 cs = _res_pool[g_current_state.compute_shader].handle;
+        shader_program* linked_program = nullptr;
+        u32 num_shaders = sb_count(s_shader_programs);
+        for (s32 i = 0; i < num_shaders; ++i)
+        {
+            if (s_shader_programs[i].cs == cs)
+            {
+                linked_program = &s_shader_programs[i];
+                break;
+            }
+        }
+
+        // link if we need to on the fly
+        if (linked_program == nullptr)
+        {
+            u32 index = link_program_internal(0, 0, cs, nullptr);
+            linked_program = &s_shader_programs[index];
+        }
+        
+        glUseProgram(linked_program->program);
+        CHECK_CALL(glDispatchCompute(grid.x/num_threads.x, grid.y/num_threads.y, grid.z/num_threads.z));
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+#endif
     }
 
     void direct::renderer_create_input_layout(const input_layout_creation_params& params, u32 resource_slot)
@@ -1363,7 +1408,8 @@ namespace pen
         else
         {
             if (g_current_state.vertex_shader != g_bound_state.vertex_shader ||
-                g_current_state.pixel_shader != g_bound_state.pixel_shader || g_current_state.v_flip != g_bound_state.v_flip)
+                g_current_state.pixel_shader != g_bound_state.pixel_shader || 
+                g_current_state.v_flip != g_bound_state.v_flip)
             {
                 g_bound_state.vertex_shader = g_current_state.vertex_shader;
                 g_bound_state.pixel_shader = g_current_state.pixel_shader;
@@ -1387,7 +1433,7 @@ namespace pen
 
                 if (linked_program == nullptr)
                 {
-                    u32 index = link_program_internal(vs_handle, ps_handle);
+                    u32 index = link_program_internal(vs_handle, ps_handle, 0);
                     linked_program = &s_shader_programs[index];
                 }
 
@@ -2066,9 +2112,24 @@ namespace pen
         CHECK_CALL(glActiveTexture(GL_TEXTURE0 + resource_slot));
 
         u32 max_mip = 0;
-
         u32 target = _res_pool[texture_index].texture.target;
 
+#if GL_ARB_compute_shader
+        if(bind_flags & pen::TEXTURE_BIND_CS)
+        {
+            if(resource_slot == 0)
+            {
+                CHECK_CALL(glBindImageTexture(resource_slot, res.texture.handle, 0, false, 0, GL_RGBA8, GL_READ_ONLY));
+            }
+            else
+            {
+                CHECK_CALL(glBindImageTexture(resource_slot, res.texture.handle, 0, false, 0, GL_RGBA8, GL_WRITE_ONLY));
+            }
+
+            return;
+        }
+#endif
+        
         if (res.type == RES_TEXTURE || res.type == RES_TEXTURE_3D)
         {
             CHECK_CALL(glBindTexture(target, res.texture.handle));
