@@ -1314,6 +1314,8 @@ namespace pen
         glUseProgram(linked_program->program);
         CHECK_CALL(glDispatchCompute(grid.x/num_threads.x, grid.y/num_threads.y, grid.z/num_threads.z));
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        glBindImageTexture(0, 0, 0, 0, 0, 0, 0);
+
 #endif
     }
 
@@ -2119,18 +2121,18 @@ namespace pen
         {
             if(resource_slot == 0)
             {
-                CHECK_CALL(glBindImageTexture(resource_slot, res.texture.handle, 0, false, 0, GL_RGBA8, GL_READ_ONLY));
+                glBindTexture(GL_TEXTURE_2D, res.texture.handle);
+                CHECK_CALL(glBindImageTexture(resource_slot, res.texture.handle, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8));
             }
             else
             {
-                CHECK_CALL(glBindImageTexture(resource_slot, res.texture.handle, 0, false, 0, GL_RGBA8, GL_WRITE_ONLY));
+                glBindTexture(GL_TEXTURE_2D, res.texture.handle);
+                CHECK_CALL(glBindImageTexture(resource_slot, res.texture.handle, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8));
             }
-
-            return;
+            max_mip = res.texture.max_mip_level;
         }
 #endif
-        
-        if (res.type == RES_TEXTURE || res.type == RES_TEXTURE_3D)
+        else if (res.type == RES_TEXTURE || res.type == RES_TEXTURE_3D)
         {
             CHECK_CALL(glBindTexture(target, res.texture.handle));
             max_mip = res.texture.max_mip_level;
