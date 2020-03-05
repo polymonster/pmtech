@@ -130,6 +130,91 @@ namespace
 		return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	}
 
+	DXGI_FORMAT to_d3d11_vertex_format(u32 pen_vertex_format)
+	{
+		switch (pen_vertex_format)
+		{
+		case PEN_VERTEX_FORMAT_FLOAT1:
+			return DXGI_FORMAT_R32_FLOAT;
+		case PEN_VERTEX_FORMAT_FLOAT2:
+			return DXGI_FORMAT_R32G32_FLOAT;
+		case PEN_VERTEX_FORMAT_FLOAT3:
+			return DXGI_FORMAT_R32G32B32_FLOAT;
+		case PEN_VERTEX_FORMAT_FLOAT4:
+			return DXGI_FORMAT_R32G32B32A32_FLOAT;
+		case PEN_VERTEX_FORMAT_UNORM1:
+			return DXGI_FORMAT_R8_UNORM;
+		case PEN_VERTEX_FORMAT_UNORM2:
+			return DXGI_FORMAT_R8G8_UNORM;
+		case PEN_VERTEX_FORMAT_UNORM4:
+			return DXGI_FORMAT_R8G8B8A8_UNORM;
+		}
+		PEN_ASSERT(0);
+		return DXGI_FORMAT_UNKNOWN;
+	}
+
+	DXGI_FORMAT to_d3d11_index_format(u32 pen_index_format)
+	{
+		switch (pen_index_format)
+		{
+		case PEN_FORMAT_R16_UINT:
+			return DXGI_FORMAT_R16_UINT;
+		case PEN_FORMAT_R32_UINT:
+			return DXGI_FORMAT_R32_UINT;
+		}
+		PEN_ASSERT(0);
+		return DXGI_FORMAT_UNKNOWN;
+	}
+
+	u32 depth_texture_format_to_dsv_format(u32 tex_format)
+	{
+		switch (tex_format)
+		{
+		case DXGI_FORMAT_R16_TYPELESS:
+			return DXGI_FORMAT_D16_UNORM;
+		case DXGI_FORMAT_R32_TYPELESS:
+			return DXGI_FORMAT_D32_FLOAT;
+		case DXGI_FORMAT_R24G8_TYPELESS:
+			return DXGI_FORMAT_D24_UNORM_S8_UINT;
+		case DXGI_FORMAT_R32G8X24_TYPELESS:
+			return DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
+		}
+		// unsupported depth texture type
+		PEN_ASSERT(0);
+		return 0;
+	}
+
+	u32 depth_texture_format_to_srv_format(u32 tex_format)
+	{
+		switch (tex_format)
+		{
+		case DXGI_FORMAT_R16_TYPELESS:
+			return DXGI_FORMAT_R16_FLOAT;
+		case DXGI_FORMAT_R32_TYPELESS:
+			return DXGI_FORMAT_R32_FLOAT;
+		case DXGI_FORMAT_R24G8_TYPELESS:
+			return DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+		case DXGI_FORMAT_R32G8X24_TYPELESS:
+			return DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
+		}
+		// unsupported depth texture type
+		PEN_ASSERT(0);
+		return 0;
+	}
+
+	pen_inline bool is_array(u32 srv)
+	{
+		return srv == D3D_SRV_DIMENSION_TEXTURE2DARRAY || 
+			srv == D3D_SRV_DIMENSION_TEXTURECUBEARRAY ||
+			srv == D3D_SRV_DIMENSION_TEXTURECUBE;
+	}
+
+	pen_inline bool is_cube(u32 srv)
+	{
+		return srv == D3D_SRV_DIMENSION_TEXTURECUBEARRAY || 
+			srv == D3D_SRV_DIMENSION_TEXTURECUBE;
+	}
+
 } // namespace
 
 // level 0 = no errors, level 1 = print errors, level 2 = assert on error
@@ -396,25 +481,22 @@ namespace pen
 
         u32 backbuffer_colour;
         u32 backbuffer_depth;
-
         u32 active_colour_target[8] = {0};
         u32 active_depth_target = 0;
         u32 num_active_colour_targets = 1;
         u32 depth_stencil_state = 0;
         u8  stencil_ref = 0;
-
         u32 active_query_index;
     };
 
     struct clear_state_internal
     {
-        FLOAT rgba[4];
-        f32   depth;
-        u8    stencil;
-        u32   flags;
-
-        mrt_clear mrt[MAX_MRT];
-        u32       num_colour_targets;
+        FLOAT		rgba[4];
+        f32			depth;
+        u8			stencil;
+        u32			flags;
+        mrt_clear	mrt[MAX_MRT];
+        u32			num_colour_targets;
     };
 
     struct texture2d_internal
@@ -440,40 +522,32 @@ namespace pen
 
     struct render_target_internal
     {
-        texture2d_internal       tex;
-        ID3D11RenderTargetView** rt;
-
-        texture2d_internal       tex_msaa;
-        ID3D11RenderTargetView** rt_msaa;
-
-        texture2d_internal tex_read_back;
-        texture2d_internal tex_resolve;
-        bool               msaa_resolve_readback = false;
-
-        DXGI_FORMAT              format;
-        texture_creation_params* tcp;
-
-        u32  invalidate;
-        u32  num_arrays = 1;
-        bool has_mips = false;
+        texture2d_internal			tex;
+        ID3D11RenderTargetView**	rt;
+        texture2d_internal			tex_msaa;
+        ID3D11RenderTargetView**	rt_msaa;
+        texture2d_internal			tex_read_back;
+        texture2d_internal			tex_resolve;
+        bool						msaa_resolve_readback = false;
+        DXGI_FORMAT					format;
+        texture_creation_params*	tcp;
+        u32							invalidate;
+        u32							num_arrays = 1;
+        bool						has_mips = false;
     };
 
     struct depth_stencil_target_internal
     {
-        texture2d_internal       tex;
-        ID3D11DepthStencilView** ds;
-
-        texture2d_internal       tex_msaa;
-        ID3D11DepthStencilView** ds_msaa;
-
-        texture2d_internal tex_read_back;
-
-        DXGI_FORMAT              format;
-        texture_creation_params* tcp;
-
-        u32  invalidate;
-        u32  num_arrays = 1;
-        bool has_mips = false;
+        texture2d_internal			tex;
+        ID3D11DepthStencilView**	ds;
+        texture2d_internal			tex_msaa;
+        ID3D11DepthStencilView**	ds_msaa;
+        texture2d_internal			tex_read_back;
+        DXGI_FORMAT					format;
+        texture_creation_params*	tcp;
+        u32							invalidate;
+        u32							num_arrays = 1;
+        bool						has_mips = false;
     };
 
     struct shader_program
@@ -857,8 +931,16 @@ namespace pen
 
         u32 resource_index = resource_slot;
 
+		// convert to d3d11 types
+		input_layout_creation_params _layout = params;
+		D3D11_INPUT_ELEMENT_DESC* desc = (D3D11_INPUT_ELEMENT_DESC*)params.input_layout;
+		for (u32 i = 0; i < _layout.num_elements; ++i)
+		{
+			desc[i].Format = to_d3d11_vertex_format(params.input_layout[i].format);
+		}
+
         // Create the input layout
-        CHECK_CALL(s_device->CreateInputLayout((D3D11_INPUT_ELEMENT_DESC*)params.input_layout, params.num_elements,
+        CHECK_CALL(s_device->CreateInputLayout(desc, params.num_elements,
                                                params.vs_byte_code, params.vs_byte_code_size,
                                                &_res_pool[resource_index].input_layout));
     }
@@ -881,7 +963,8 @@ namespace pen
 
     void direct::renderer_set_index_buffer(u32 buffer_index, u32 format, u32 offset)
     {
-        s_immediate_context->IASetIndexBuffer(_res_pool[buffer_index].generic_buffer.buf, (DXGI_FORMAT)format, offset);
+		DXGI_FORMAT d3d11_format = to_d3d11_index_format(format);
+        s_immediate_context->IASetIndexBuffer(_res_pool[buffer_index].generic_buffer.buf, d3d11_format, offset);
     }
 
     void direct::renderer_draw(u32 vertex_count, u32 start_vertex, u32 primitive_topology)
@@ -903,63 +986,6 @@ namespace pen
         s_immediate_context->DrawIndexedInstanced(index_count, instance_count, start_index, base_vertex, start_instance);
     }
 
-    u32 depth_texture_format_to_dsv_format(u32 tex_format)
-    {
-        switch (tex_format)
-        {
-            case DXGI_FORMAT_R16_TYPELESS:
-                return DXGI_FORMAT_D16_UNORM;
-
-            case DXGI_FORMAT_R32_TYPELESS:
-                return DXGI_FORMAT_D32_FLOAT;
-
-            case DXGI_FORMAT_R24G8_TYPELESS:
-                return DXGI_FORMAT_D24_UNORM_S8_UINT;
-
-            case DXGI_FORMAT_R32G8X24_TYPELESS:
-                return DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
-        }
-
-        // unsupported depth texture type
-        PEN_ASSERT(0);
-
-        return 0;
-    }
-
-    u32 depth_texture_format_to_srv_format(u32 tex_format)
-    {
-        switch (tex_format)
-        {
-            case DXGI_FORMAT_R16_TYPELESS:
-                return DXGI_FORMAT_R16_FLOAT;
-
-            case DXGI_FORMAT_R32_TYPELESS:
-                return DXGI_FORMAT_R32_FLOAT;
-
-            case DXGI_FORMAT_R24G8_TYPELESS:
-                return DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
-
-            case DXGI_FORMAT_R32G8X24_TYPELESS:
-                return DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
-        }
-
-        // unsupported depth texture type
-        PEN_ASSERT(0);
-
-        return 0;
-    }
-
-    pen_inline bool is_array(u32 srv)
-    {
-        return srv == D3D_SRV_DIMENSION_TEXTURE2DARRAY || srv == D3D_SRV_DIMENSION_TEXTURECUBEARRAY ||
-               srv == D3D_SRV_DIMENSION_TEXTURECUBE;
-    }
-
-    pen_inline bool is_cube(u32 srv)
-    {
-        return srv == D3D_SRV_DIMENSION_TEXTURECUBEARRAY || srv == D3D_SRV_DIMENSION_TEXTURECUBE;
-    }
-
     void renderer_create_render_target_multi(const texture_creation_params& tcp, texture2d_internal* texture_container,
                                              ID3D11DepthStencilView*** dsv, ID3D11RenderTargetView*** rtv)
     {
@@ -969,9 +995,10 @@ namespace pen
 		texture_desc.Usage = to_d3d11_usage(texture_desc.Usage);
 		texture_desc.BindFlags = to_d3d11_bind_flags(texture_desc.BindFlags);
 
-        if (tcp.collection_type == pen::TEXTURE_COLLECTION_CUBE || tcp.collection_type == pen::TEXTURE_COLLECTION_CUBE_ARRAY)
+        if (tcp.collection_type == pen::TEXTURE_COLLECTION_CUBE || 
+			tcp.collection_type == pen::TEXTURE_COLLECTION_CUBE_ARRAY)
         {
-            texture_desc.MiscFlags |= 0x4L; // resource misc texture cube
+            texture_desc.MiscFlags |= 0x4L; // resource misc texture cube is required
         }
 
         u32  array_size = texture_desc.ArraySize;
