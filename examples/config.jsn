@@ -92,7 +92,6 @@
     },
     
     mac-gl(mac): {
-
         premake: [
             "xcode4",
             "--renderer=opengl", 
@@ -112,7 +111,6 @@
     },
 
     mac-gl-ci(mac): {
-
         premake: [
             "gmake",
             "--renderer=opengl", 
@@ -121,7 +119,6 @@
     },
 
     mac-metal-ci(mac): {
-
         premake: [
             "gmake",
             "--renderer=metal", 
