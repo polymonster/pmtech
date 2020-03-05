@@ -8,6 +8,7 @@
 #include "memory.h"
 #include "pen.h"
 #include "pen_string.h"
+
 #include "str/Str.h"
 
 namespace pen

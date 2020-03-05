@@ -592,9 +592,10 @@ ps_output ps_forward_lit( vs_output input )
                 float3 to_light = (input.world_pos.xyz - lights[i].pos_radius.xyz);
                 float d = length(to_light) / 2.0; // omni shadow space far plane is radius * 2.0
                 float3 cv = normalize(to_light) * float3(1.0, 1.0, -1.0);
+                
                 float cube_d = sample_texture_cube_array_level(omni_shadow_texture, cv, float(omni_shadow_index), 0).r;
-                lit_colour += d < cube_d * lights[i].pos_radius.w ? light_col : 0.0;
-            
+                lit_colour += d < cube_d * lights[i].pos_radius.w ? light_col : float3(0.0, 0.0, 0.0);
+
                 ++omni_shadow_index;
             }
         }   

@@ -53,9 +53,44 @@ def update_user_config(k, v, config):
     bj.close()
 
 
+# locate latest version of the windows sdk
+def locate_windows_sdk():
+    pf_env = ["PROGRAMFILES", "PROGRAMFILES(X86)"]
+    sdk = "Windows Kits"
+    sdk_dir = None
+    for v in pf_env:
+        print(v)
+        d = os.environ[v]
+        if d:
+            if sdk in os.listdir(d):
+                print(sdk)
+                print(d)
+                sdk_dir = os.path.join(d, sdk)
+                break
+    if sdk_dir:
+        versions = sorted(os.listdir(sdk_dir), reverse=False)
+        if len(versions) > 0:
+            if versions[0] == "10":
+                # windows 10 has sub versions
+                source = os.path.join(sdk_dir, versions[0], "Source")
+                if os.path.exists(source):
+                    sub_versions = sorted(os.listdir(source), reverse=False)
+                    if len(sub_versions) > 0:
+                        return str(sub_versions[0])
+            else:
+                # 8.1
+                return str(versions[0])
+    return None
+
+
 # windows only, prompt user to supply their windows sdk version
 def configure_windows_sdk(config):
     if "sdk_version" in config.keys():
+        return
+    # attempt to auto locate
+    auto_sdk = locate_windows_sdk()
+    if auto_sdk:
+        update_user_config("sdk_version", auto_sdk, config)
         return
     print("Windows SDK version not set.")
     print("Please enter the windows sdk you want to use.")
