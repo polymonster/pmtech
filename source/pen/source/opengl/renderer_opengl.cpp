@@ -2116,7 +2116,9 @@ namespace pen
         u32 max_mip = 0;
         u32 target = _res_pool[texture_index].texture.target;
 
+
 #if GL_ARB_compute_shader
+		// bind image textures for cs rw
         if(bind_flags & pen::TEXTURE_BIND_CS)
         {
             if(resource_slot == 0)
@@ -2129,10 +2131,11 @@ namespace pen
                 glBindTexture(GL_TEXTURE_2D, res.texture.handle);
                 CHECK_CALL(glBindImageTexture(resource_slot, res.texture.handle, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8));
             }
-            max_mip = res.texture.max_mip_level;
+            return;
         }
 #endif
-        else if (res.type == RES_TEXTURE || res.type == RES_TEXTURE_3D)
+        
+        if (res.type == RES_TEXTURE || res.type == RES_TEXTURE_3D)
         {
             CHECK_CALL(glBindTexture(target, res.texture.handle));
             max_mip = res.texture.max_mip_level;
