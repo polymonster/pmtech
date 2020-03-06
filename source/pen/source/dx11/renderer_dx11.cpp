@@ -166,6 +166,46 @@ namespace
 		return DXGI_FORMAT_UNKNOWN;
 	}
 
+    DXGI_FORMAT to_d3d11_texture_format(u32 pen_texture_format)
+    {
+        switch (pen_texture_format)
+        {
+        case PEN_TEX_FORMAT_BGRA8_UNORM:
+            return DXGI_FORMAT_B8G8R8A8_UNORM;
+        case PEN_TEX_FORMAT_RGBA8_UNORM:
+            return DXGI_FORMAT_R8G8B8A8_UNORM;
+        case PEN_TEX_FORMAT_D24_UNORM_S8_UINT:
+            return DXGI_FORMAT_R24G8_TYPELESS;
+        case PEN_TEX_FORMAT_R32G32B32A32_FLOAT:
+            return DXGI_FORMAT_R32G32B32A32_FLOAT;
+        case PEN_TEX_FORMAT_R32_FLOAT:
+            return DXGI_FORMAT_R32_FLOAT;
+        case PEN_TEX_FORMAT_R16G16B16A16_FLOAT:
+            return DXGI_FORMAT_R16G16B16A16_FLOAT;
+        case PEN_TEX_FORMAT_R16_FLOAT:
+            return DXGI_FORMAT_R16_FLOAT;
+        case PEN_TEX_FORMAT_R32_UINT:
+            return DXGI_FORMAT_R32_UINT;
+        case PEN_TEX_FORMAT_R8_UNORM:
+            return DXGI_FORMAT_R8_UNORM;
+        case PEN_TEX_FORMAT_R32G32_FLOAT:
+            return DXGI_FORMAT_R32G32_FLOAT;
+        case PEN_TEX_FORMAT_BC1_UNORM:
+            return DXGI_FORMAT_BC1_UNORM;
+        case PEN_TEX_FORMAT_BC2_UNORM:
+            return DXGI_FORMAT_BC2_UNORM;
+        case PEN_TEX_FORMAT_BC3_UNORM:
+            return DXGI_FORMAT_BC3_UNORM;
+        case PEN_TEX_FORMAT_BC4_UNORM:
+            return DXGI_FORMAT_BC4_UNORM;
+        case PEN_TEX_FORMAT_BC5_UNORM:
+            return DXGI_FORMAT_BC5_UNORM;
+        }
+        // unsupported / unimplemented texture type
+        PEN_ASSERT(0);
+        return DXGI_FORMAT_UNKNOWN;
+    }
+
 	u32 depth_texture_format_to_dsv_format(u32 tex_format)
 	{
 		switch (tex_format)
@@ -992,8 +1032,10 @@ namespace pen
         // create an empty texture
         D3D11_TEXTURE2D_DESC texture_desc;
         memcpy(&texture_desc, (void*)&tcp, sizeof(D3D11_TEXTURE2D_DESC));
-		texture_desc.Usage = to_d3d11_usage(texture_desc.Usage);
-		texture_desc.BindFlags = to_d3d11_bind_flags(texture_desc.BindFlags);
+        texture_desc.Format = to_d3d11_texture_format(tcp.format);
+		texture_desc.Usage = to_d3d11_usage(tcp.usage);
+		texture_desc.BindFlags = to_d3d11_bind_flags(tcp.bind_flags);
+        texture_desc.CPUAccessFlags = to_d3d11_cpu_access_flags(tcp.cpu_access_flags);
 
         if (tcp.collection_type == pen::TEXTURE_COLLECTION_CUBE || 
 			tcp.collection_type == pen::TEXTURE_COLLECTION_CUBE_ARRAY)
@@ -1183,6 +1225,7 @@ namespace pen
             read_back_tcp.bind_flags = 0;
             read_back_tcp.usage = D3D11_USAGE_STAGING;
 			read_back_tcp.cpu_access_flags = to_d3d11_cpu_access_flags(_tcp.cpu_access_flags);
+            read_back_tcp.format = to_d3d11_texture_format(_tcp.format);
 
             D3D11_TEXTURE2D_DESC texture_desc;
             memcpy(&texture_desc, (void*)&read_back_tcp, sizeof(D3D11_TEXTURE2D_DESC));
@@ -1304,10 +1347,10 @@ namespace pen
                                                  tcp.height,
                                                  tcp.num_arrays,
                                                  (u32)tcp.num_mips,
-                                                 (DXGI_FORMAT)tcp.format,
+                                                 to_d3d11_texture_format(tcp.format),
                                                  to_d3d11_usage(tcp.usage),
                                                  to_d3d11_bind_flags(tcp.bind_flags),
-                                                 tcp.cpu_access_flags,
+                                                 to_d3d11_cpu_access_flags(tcp.cpu_access_flags),
                                                  tcp.flags};
 
             _res_pool[resource_index].type = RES_TEXTURE_3D;
@@ -1319,6 +1362,10 @@ namespace pen
             // texture 2d, arrays and cubemaps, cubemap arrays
             D3D11_TEXTURE2D_DESC texture_desc;
             memcpy(&texture_desc, (void*)&tcp, sizeof(D3D11_TEXTURE2D_DESC));
+            texture_desc.Format = to_d3d11_texture_format(tcp.format);
+            texture_desc.Usage = to_d3d11_usage(tcp.usage);
+            texture_desc.BindFlags = to_d3d11_bind_flags(tcp.bind_flags);
+            texture_desc.CPUAccessFlags = to_d3d11_cpu_access_flags(tcp.cpu_access_flags);
 
             if (tcp.collection_type == TEXTURE_COLLECTION_CUBE)
             {
@@ -1369,7 +1416,7 @@ namespace pen
 
         // create shader resource view
         D3D11_SHADER_RESOURCE_VIEW_DESC resource_view_desc;
-        resource_view_desc.Format = (DXGI_FORMAT)tcp.format;
+        resource_view_desc.Format = to_d3d11_texture_format(tcp.format);
         resource_view_desc.ViewDimension = view_dimension;
         resource_view_desc.Texture2D.MipLevels = -1;
         resource_view_desc.Texture2D.MostDetailedMip = 0;
@@ -1510,8 +1557,7 @@ namespace pen
         for (u32 i = 0; i < bcp.num_render_targets; ++i)
         {
             memcpy(&bd.RenderTarget[i], (void*)&(bcp.render_targets[i]), sizeof(render_target_blend));
-            //PEN_ASSERT(bcp.render_targets[i].render_target_write_mask >= 0xf); // 0xf is max value supported
-            min<u8>(bcp.render_targets[i].render_target_write_mask, 0xf);
+            bd.RenderTarget[i].RenderTargetWriteMask = min<u8>(bcp.render_targets[i].render_target_write_mask, 0xf);
         }
 
         CHECK_CALL(s_device->CreateBlendState(&bd, &_res_pool[resource_index].blend_state));
