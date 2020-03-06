@@ -12,7 +12,7 @@ GOTO build
 
 :cibuild
 cd bullet
-..\..\tools\premake\premake5.exe %4 --platform_dir="win32"
+..\..\tools\premake\premake5.exe vs2017 --platform_dir="win32"
 GOTO build
 
 :: bullet
