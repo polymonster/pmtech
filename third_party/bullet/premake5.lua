@@ -1,10 +1,6 @@
 dofile("../../tools/premake/options.lua")
 dofile("../../tools/premake/globals.lua")
 
-if _ACTION == "vs2017" or _ACTION == "vs2015" then
-	platform_dir = _ACTION
-end
-
 link_cmd = ""
 if platform_dir == "osx" then
 	link_cmd = "-mmacosx-version-min=10.8"
