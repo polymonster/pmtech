@@ -101,8 +101,8 @@ def configure_windows_sdk(config):
     return
 
 
-# attempt to locate vc vars all by lookin in prgoram files, and finding visual studio installations
-def locate_vc_vars_all():
+# find visual studio installation directory
+def locate_vs_root():
     pf_env = ["PROGRAMFILES", "PROGRAMFILES(X86)"]
     vs = "Microsoft Visual Studio"
     vs_dir = ""
@@ -112,6 +112,27 @@ def locate_vc_vars_all():
             if vs in os.listdir(d):
                 vs_dir = os.path.join(d, vs)
                 break
+    return vs_dir
+
+
+# find latest visual studio version
+def locate_vs_latest():
+    vs_dir = locate_vs_root()
+    if len(vs_dir) == 0:
+        print("[warning]: could not auto locate visual studio, using vs2017 as default")
+        return "vs2017"
+    supported = ["2017", "2019"]
+    versions = sorted(os.listdir(vs_dir), reverse=False)
+    for v in versions:
+        if v in supported:
+            return "vs" + v
+
+
+# attempt to locate vc vars all by lookin in prgoram files, and finding visual studio installations
+def locate_vc_vars_all():
+    vs_dir = locate_vs_root()
+    if len(vs_dir) == 0:
+        return None
     pattern = os.path.join(vs_dir, "**/vcvarsall.bat")
     # if we reverse sort then we get the latest vs version
     vc_vars = sorted(glob.glob(pattern, recursive=True), reverse=False)
@@ -298,6 +319,23 @@ def get_container_dep_inputs(container_filepath, dep_inputs):
     return dep_inputs
 
 
+# set visual studio version for building
+def run_vs_version(config):
+    supported_versions = [
+        "vs2017",
+        "vs2019"
+    ]
+    version = config["vs_version"]
+    if version == "latest":
+        config["vs_version"] = locate_vs_latest()
+        print("setting vs_version to: " + config["vs_version"])
+        return config
+    else:
+        if version not in supported_versions:
+            print("[error]: unsupported visual studio version " + str(version))
+            print("    supported versions are " + str(supported_versions))
+
+
 # copy files, directories or wildcards
 def run_copy(config):
     print("--------------------------------------------------------------------------------")
@@ -331,6 +369,8 @@ def run_premake(config):
     print("--------------------------------------------------------------------------------")
     cmd = tool_to_platform(config["tools"]["premake"])
     for c in config["premake"]:
+        if c == "vs_version":
+            c = config["vs_version"]
         cmd += " " + c
     # add pmtech dir
     cmd += " --pmtech_dir=\"" + config["env"]["pmtech_dir"] + "\""
@@ -388,6 +428,9 @@ def run_libs(config):
             args = ""
             args += config["env"]["pmtech_dir"] + "/" + " "
             args += config["sdk_version"] + " "
+            if "vs_version" not in config:
+                config["vs_version"] = "vs2017"
+            args += config["vs_version"] + " "
             cmd += "\"" + config["vcvarsall_dir"] + "\"" + " " + args
         print(cmd)
         p = subprocess.Popen(cmd, shell=True)
@@ -522,6 +565,20 @@ def clean_help(config):
     print("    [<rm dir>],")
     print("    ...")
     print("]")
+    print("\n")
+
+
+def vs_version_help(config):
+    print("vs version help ---------------------------------------------------------------")
+    print("-------------------------------------------------------------------------------")
+    print("select version of visual studio for building libs and porjects:")
+    print("\njsn syntax:")
+    print("vs_version: <version>")
+    print("\n")
+    print("version options:")
+    print("    latest (will choose latest version installed on your machine)")
+    print("    vs2017 (minimum supported compiler)")
+    print("    vs2019")
     print("\n")
 
 
@@ -683,6 +740,7 @@ def main():
 
     # tasks are executed in order they are declared here
     tasks = collections.OrderedDict()
+    tasks["vs_version"] = {"run": run_vs_version, "help": vs_version_help}
     tasks["libs"] = {"run": run_libs, "help": libs_help}
     tasks["premake"] = {"run": run_premake, "help": premake_help}
     tasks["pmfx"] = {"run": run_pmfx, "help": pmfx_help}
@@ -705,13 +763,16 @@ def main():
             if key not in config.keys():
                 continue
         ts = time.time()
+        run = False
+        # check flags to include or exclude jobs
         if "-all" in sys.argv and "-n" + key not in sys.argv:
-            tasks.get(key, lambda config: '')[call](config)
-            print_duration(ts)
+            run = True
         elif len(sys.argv) != 2 and "-" + key in sys.argv:
-            tasks.get(key, lambda config: '')[call](config)
-            print_duration(ts)
+            run = True
         elif len(sys.argv) == 2:
+            run = True
+        # run job
+        if run:
             tasks.get(key, lambda config: '')[call](config)
             print_duration(ts)
 

@@ -5,7 +5,7 @@
     
 	jsn_vars<windows>: {
 		mesh_opt: "../tools/bin/win32/mesh_opt.exe",
-		texturec: "../third_party/texturec/osx/texturec",
+		texturec: "../third_party/texturec/win32/texturec",
         premake: "../tools/premake/premake5"
 	},
 	
@@ -200,6 +200,8 @@
             data_dir: "bin/win32/data"
         },
 
+        vs_version: "latest",
+
         clean: [
             "build/win32",
             "bin/win32",
@@ -212,7 +214,7 @@
         ],
         
         premake: [
-            "vs2017",
+            "vs_version",
             "--renderer=dx11", 
             "--platform_dir=win32"
         ],
@@ -248,7 +250,7 @@
     
     win32-vulkan(win32): {
         premake: [
-            "vs2017",
+            "vs_version",
             "--renderer=vulkan", 
             "--platform_dir=win32"
         ],
@@ -266,7 +268,7 @@
     
     win32-gl(win32): {
         premake: [
-            "vs2017",
+            "vs_version",
             "--renderer=opengl", 
             "--platform_dir=win32"
         ],

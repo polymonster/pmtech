@@ -26,8 +26,9 @@ project "bullet_monolithic"
 		"src\\", 
 	}
 	
-	if _ACTION == "vs2017" or _ACTION == "vs2015" then
+	if _ACTION == "vs2017" or _ACTION == "vs2015" or ACTION == "vs2019" then
 		systemversion(windows_sdk_version())
+		disablewarnings { "4267", "4305", "4244" }
 	end
 	
 	setup_env()
@@ -48,7 +49,7 @@ project "bullet_monolithic"
 				
 	configuration "Debug"
 		defines { "DEBUG" }
-		flags { "WinMain" }
+		entrypoint "WinMainCRTStartup"
 		linkoptions { link_cmd }
 		symbols "On"
 		targetdir ("lib/" .. platform_dir)
@@ -56,7 +57,8 @@ project "bullet_monolithic"
  
 	configuration "Release"
 		defines { "NDEBUG" }
-		flags { "WinMain", "OptimizeSpeed" }
+		entrypoint "WinMainCRTStartup"
+		optimize "Speed"
 		linkoptions { link_cmd }
 		targetdir ("lib/" .. platform_dir)
 		targetname "bullet_monolithic"
