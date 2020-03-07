@@ -55,7 +55,6 @@ class geometry_mesh:
     index_buffer = []
     min_extents = []
     max_extents = []
-    collision_vertices = []
     controller = None
 
     semantic_ids = [
@@ -88,7 +87,6 @@ class geometry_mesh:
         self.vertex_buffer = []
         self.max_extents = []
         self.min_extents = []
-        self.collision_vertices = []
         self.vertex_elements = []
 
         index = 0
@@ -473,8 +471,8 @@ def write_geometry_file(geom_instance):
         mesh_data.append(struct.pack("i", int(index_size)))
         mesh_data.append(struct.pack("i", (len(mesh.vertex_elements[0].float_values))))
         mesh_data.append(struct.pack("i", (len(mesh.vertex_buffer))))
-        mesh_data.append(struct.pack("i", (len(mesh.index_buffer))))
-        mesh_data.append(struct.pack("i", (len(mesh.collision_vertices))))
+        mesh_data.append(struct.pack("i", (len(mesh.index_buffer))))  # position ib count
+        mesh_data.append(struct.pack("i", (len(mesh.index_buffer))))  # vertex ib count
 
         # skinning is conditional, but write any fixed length data anyway
         skinned = 0
@@ -503,14 +501,18 @@ def write_geometry_file(geom_instance):
         for vertexfloat in mesh.vertex_buffer:
             mesh_data.append(struct.pack("f", (float(vertexfloat))))
         data_size += len(mesh_data)*4
-        # index buffer
+
+        # write index buffer twice, at this point they match, but after optimisation
+        # the number of indices in position only vs vertex buffer may changes
+
+        # position index buffer
         for index in mesh.index_buffer:
             mesh_data.append(struct.pack(index_type, (int(index))))
         data_size += len(mesh.index_buffer) * 2
-        # collision vertex buffer
-        for vertexfloat in mesh.collision_vertices:
-            mesh_data.append(struct.pack("f", (float(vertexfloat))))
-        data_size += len(mesh.collision_vertices) * 4
+        # vertex index buffer
+        for index in mesh.index_buffer:
+            mesh_data.append(struct.pack(index_type, (int(index))))
+        data_size += len(mesh.index_buffer) * 2
         # top level pmm
         for m in mesh_data:
             geometry_data.append(m)

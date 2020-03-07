@@ -190,6 +190,7 @@ namespace put
             {
                 forward_lit = 1,
                 deferred_lit = 1 << 1,
+                shadow_map = 1 << 1,
                 COUNT
             };
         }

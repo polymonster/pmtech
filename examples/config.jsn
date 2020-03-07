@@ -166,7 +166,7 @@
         
         pmfx: [
             "-shader_platform metal",
-            "-metal_sdk ios",
+            "-metal_sdk iphoneos",
             "-i assets/shaders ../assets/shaders",
             "-o bin/ios/data/pmfx/metal",
             "-h shader_structs",

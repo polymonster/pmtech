@@ -136,6 +136,9 @@ void example_setup(ecs_scene* scene, camera& cam)
     m->reflectivity = 0.0f;
 
     // add some pillars for shadow casters
+    
+    // deterministic results
+    srand(10);
 
     // the old classic
     f32   num_pillar_rows = 5;

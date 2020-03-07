@@ -1145,10 +1145,11 @@ namespace put
                     }
 
                     geometry_resource* gr = get_geometry_resource(sdf_job->scene->id_geometry[n]);
+                    pmm_renderable& r = gr->renderable[e_pmm_renderable::position_only];
 
-                    vec4f* vertex_positions = (vec4f*)gr->cpu_position_buffer;
+                    vec4f* vertex_positions = (vec4f*)r.cpu_vertex_buffer;
 
-                    if (!gr->cpu_index_buffer || !vertex_positions)
+                    if (!r.cpu_index_buffer || !vertex_positions)
                     {
                         dev_console_log_level(dev_ui::console_level::error,
                                               "[error] mesh %s does not have cpu vertex / triangle data",
@@ -1158,17 +1159,17 @@ namespace put
                     }
 
                     index_offset = vertices.size();
-                    for (u32 i = 0; i < gr->num_vertices; ++i)
+                    for (u32 i = 0; i < r.num_vertices; ++i)
                     {
                         vec3f tv = sdf_job->scene->world_matrices[n].transform_vector(vertex_positions[i].xyz);
                         vertices.push_back(tv);
                     }
 
-                    for (u32 i = 0; i < gr->num_indices; i += 3)
+                    for (u32 i = 0; i < r.num_indices; i += 3)
                     {
-                        if (gr->index_type == PEN_FORMAT_R32_UINT)
+                        if (r.index_type == PEN_FORMAT_R32_UINT)
                         {
-                            u32* indices = (u32*)gr->cpu_index_buffer;
+                            u32* indices = (u32*)r.cpu_index_buffer;
                             u32  i0, i1, i2;
                             i0 = index_offset + indices[i + 0];
                             i1 = index_offset + indices[i + 1];
@@ -1177,7 +1178,7 @@ namespace put
                         }
                         else
                         {
-                            u16* indices = (u16*)gr->cpu_index_buffer;
+                            u16* indices = (u16*)r.cpu_index_buffer;
                             u32  i0, i1, i2;
                             i0 = index_offset + (u32)indices[i + 0];
                             i1 = index_offset + (u32)indices[i + 1];

@@ -500,18 +500,19 @@ namespace put
                 u32 n = node_list[i];
 
                 geometry_resource* gr = get_geometry_resource_by_index(PEN_HASH(scene->geometry_names[n]), 0);
+                pmm_renderable& r = gr->renderable[e_pmm_renderable::full_vertex_buffer];
 
-                if (vertex_size && gr->vertex_size != vertex_size)
+                if (vertex_size && r.vertex_size != vertex_size)
                 {
                     dev_console_log("[error] can't bake vertex buffer with different vertex types.");
                     return;
                 }
 
-                vertex_size = gr->vertex_size;
-                num_vertices += gr->num_vertices;
-                num_indices += gr->num_indices;
+                vertex_size = r.vertex_size;
+                num_vertices += r.num_vertices;
+                num_indices += r.num_indices;
 
-                vbcp.buffer_size += gr->num_vertices * gr->vertex_size;
+                vbcp.buffer_size += r.num_vertices * r.vertex_size;
             }
 
             // determine output index type
@@ -539,26 +540,27 @@ namespace put
                 u32 n = node_list[i];
 
                 geometry_resource* gr = get_geometry_resource_by_index(PEN_HASH(scene->geometry_names[n]), 0);
+                pmm_renderable& r = gr->renderable[e_pmm_renderable::full_vertex_buffer];
 
-                u32 input_index_size = gr->index_type == PEN_FORMAT_R32_UINT ? 4 : 2;
-                u32 vb_stride = gr->num_vertices * gr->vertex_size;
-                u32 ib_stride = gr->num_indices * output_index_size;
+                u32 input_index_size = r.index_type == PEN_FORMAT_R32_UINT ? 4 : 2;
+                u32 vb_stride = r.num_vertices * r.vertex_size;
+                u32 ib_stride = r.num_indices * output_index_size;
 
-                memcpy(vb_data_pos, gr->cpu_vertex_buffer, vb_stride);
+                memcpy(vb_data_pos, r.cpu_vertex_buffer, vb_stride);
 
                 // offset indices
-                for (u32 i = 0; i < gr->num_indices; ++i)
+                for (u32 i = 0; i < r.num_indices; ++i)
                 {
                     // get raw index out of ib
                     u32 raw_i = 0;
                     if (input_index_size == 2)
                     {
-                        u16 ii = ((u16*)gr->cpu_index_buffer)[i];
+                        u16 ii = ((u16*)r.cpu_index_buffer)[i];
                         raw_i = (u32)ii;
                     }
                     else
                     {
-                        u32 ii = ((u32*)gr->cpu_index_buffer)[i];
+                        u32 ii = ((u32*)r.cpu_index_buffer)[i];
                         raw_i = (u32)ii;
                     }
 
@@ -583,7 +585,7 @@ namespace put
                 mat4 rm;
                 scene->transforms[n].rotation.get_matrix(rm);
 
-                for (u32 v = 0; v < gr->num_vertices; ++v)
+                for (u32 v = 0; v < r.num_vertices; ++v)
                 {
                     vertex_model* vm = (vertex_model*)vb_data_pos;
 
@@ -596,7 +598,7 @@ namespace put
                 vb_data_pos += vb_stride;
                 ib_data_pos += ib_stride;
 
-                index_offset += gr->num_indices;
+                index_offset += r.num_indices;
 
                 delete_entity(scene, n);
             }

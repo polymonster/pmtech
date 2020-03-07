@@ -16,24 +16,45 @@ namespace put
 {
     namespace ecs
     {
+        void create_position_only_buffers(geometry_resource* p_geometry,
+            vertex_model* v, u32 num_verts, u16* indices, u32 num_indices)
+        {
+            // position only from full vertex
+            pmm_renderable& rp = p_geometry->renderable[e_pmm_renderable::position_only];
+            
+            // assign from full vertex
+            rp = p_geometry->renderable[e_pmm_renderable::full_vertex_buffer];
+            
+            // create pos only buffer
+            rp.cpu_vertex_buffer = pen::memory_alloc(sizeof(vec4f) * num_verts);
+            vec4f* cpu_pos = (vec4f*)rp.cpu_vertex_buffer;
+            for (u32 i = 0; i < num_verts; ++i)
+                cpu_pos[i] = v[i].pos;
+                
+            // create the gpu copy
+            pen::buffer_creation_params bcp;
+            bcp.usage_flags = PEN_USAGE_DEFAULT;
+            bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
+            bcp.cpu_access_flags = 0;
+            bcp.buffer_size = sizeof(vec4f) * num_verts;
+            bcp.data = rp.cpu_vertex_buffer;
+
+            rp.vertex_buffer = pen::renderer_create_buffer(bcp);
+            
+            // change vertex size
+            rp.vertex_size = sizeof(vec4f);
+        }
+        
         void create_cpu_buffers(geometry_resource* p_geometry, vertex_model* v, u32 num_verts, u16* indices, u32 num_indices)
         {
             // Create position and index buffer of primitives
+            pmm_renderable& r = p_geometry->renderable[e_pmm_renderable::full_vertex_buffer];
+                        
+            r.cpu_index_buffer = pen::memory_alloc(sizeof(u16) * num_indices);
+            r.cpu_vertex_buffer = pen::memory_alloc(sizeof(vertex_model) * num_verts);
 
-            p_geometry->cpu_position_buffer = pen::memory_alloc(sizeof(vec4f) * num_verts);
-            p_geometry->cpu_index_buffer = pen::memory_alloc(sizeof(u16) * num_indices);
-            p_geometry->cpu_vertex_buffer = pen::memory_alloc(sizeof(vertex_model) * num_verts);
-
-            memcpy(p_geometry->cpu_vertex_buffer, v, sizeof(vertex_model) * num_verts);
-
-            vec4f* cpu_positions = (vec4f*)p_geometry->cpu_position_buffer;
-            u16*   cpu_indices = (u16*)p_geometry->cpu_index_buffer;
-
-            for (u32 i = 0; i < num_verts; ++i)
-                cpu_positions[i] = v[i].pos;
-
-            for (u32 i = 0; i < num_indices; ++i)
-                cpu_indices[i] = indices[i];
+            memcpy(r.cpu_vertex_buffer, v, sizeof(vertex_model) * num_verts);
+            memcpy(r.cpu_index_buffer, indices, sizeof(u16) * num_indices);
         }
 
         void create_quad()
@@ -83,7 +104,8 @@ namespace put
             bcp.buffer_size = sizeof(vertex_model) * num_verts;
             bcp.data = (void*)v;
 
-            p_geometry->vertex_buffer = pen::renderer_create_buffer(bcp);
+            pmm_renderable& r = p_geometry->renderable[e_pmm_renderable::full_vertex_buffer];
+            r.vertex_buffer = pen::renderer_create_buffer(bcp);
 
             // IB
             bcp.usage_flags = PEN_USAGE_DEFAULT;
@@ -92,13 +114,14 @@ namespace put
             bcp.buffer_size = 2 * num_indices;
             bcp.data = (void*)indices;
 
-            p_geometry->index_buffer = pen::renderer_create_buffer(bcp);
+            r.index_buffer = pen::renderer_create_buffer(bcp);
 
+            r.num_indices = num_indices;
+            r.num_vertices = num_verts;
+            r.vertex_size = sizeof(vertex_model);
+            r.index_type = PEN_FORMAT_R16_UINT;
+            
             // info
-            p_geometry->num_indices = num_indices;
-            p_geometry->num_vertices = num_verts;
-            p_geometry->vertex_size = sizeof(vertex_model);
-            p_geometry->index_type = PEN_FORMAT_R16_UINT;
             p_geometry->min_extents = -vec3f(1.0f, 0.00001f, 1.0f);
             p_geometry->max_extents = vec3f(1.0f, 0.00001f, 1.0f);
             p_geometry->geometry_name = "quad";
@@ -132,7 +155,8 @@ namespace put
             bcp.buffer_size = sizeof(vertex_2d) * num_verts;
             bcp.data = (void*)v;
 
-            p_geometry->vertex_buffer = pen::renderer_create_buffer(bcp);
+            pmm_renderable& r = p_geometry->renderable[e_pmm_renderable::full_vertex_buffer];
+            r.vertex_buffer = pen::renderer_create_buffer(bcp);
 
             // IB
             bcp.usage_flags = PEN_USAGE_DEFAULT;
@@ -141,13 +165,14 @@ namespace put
             bcp.buffer_size = 2 * num_indices;
             bcp.data = (void*)indices;
 
-            p_geometry->index_buffer = pen::renderer_create_buffer(bcp);
+            r.index_buffer = pen::renderer_create_buffer(bcp);
 
+            r.num_indices = num_indices;
+            r.num_vertices = num_verts;
+            r.vertex_size = sizeof(vertex_2d);
+            r.index_type = PEN_FORMAT_R16_UINT;
+            
             // info
-            p_geometry->num_indices = num_indices;
-            p_geometry->num_vertices = num_verts;
-            p_geometry->vertex_size = sizeof(vertex_2d);
-            p_geometry->index_type = PEN_FORMAT_R16_UINT;
             p_geometry->min_extents = -vec3f(1.0f, 1.0f, 0.0f);
             p_geometry->max_extents = vec3f(1.0f, 1.0f, 0.0f);
             p_geometry->geometry_name = "full_screen_quad";
@@ -286,7 +311,8 @@ namespace put
             bcp.buffer_size = sizeof(vertex_model) * num_verts;
             bcp.data = (void*)v;
 
-            p_geometry->vertex_buffer = pen::renderer_create_buffer(bcp);
+            pmm_renderable& r = p_geometry->renderable[e_pmm_renderable::full_vertex_buffer];
+            r.vertex_buffer = pen::renderer_create_buffer(bcp);
 
             // IB
             bcp.usage_flags = PEN_USAGE_DEFAULT;
@@ -295,13 +321,14 @@ namespace put
             bcp.buffer_size = 2 * num_indices;
             bcp.data = (void*)indices;
 
-            p_geometry->index_buffer = pen::renderer_create_buffer(bcp);
+            r.index_buffer = pen::renderer_create_buffer(bcp);
 
+            r.num_indices = num_indices;
+            r.num_vertices = num_verts;
+            r.vertex_size = sizeof(vertex_model);
+            r.index_type = PEN_FORMAT_R16_UINT;
+            
             // info
-            p_geometry->num_indices = num_indices;
-            p_geometry->num_vertices = num_verts;
-            p_geometry->vertex_size = sizeof(vertex_model);
-            p_geometry->index_type = PEN_FORMAT_R16_UINT;
             p_geometry->min_extents = vec3f(-1.0f, bottom, -1.0f);
             p_geometry->max_extents = vec3f(1.0f, top, 1.0f);
             p_geometry->geometry_name = name;
@@ -311,6 +338,7 @@ namespace put
             p_geometry->p_skin = nullptr;
 
             create_cpu_buffers(p_geometry, v, num_verts, indices, num_indices);
+            create_position_only_buffers(p_geometry, v, num_verts, indices, num_indices);
             add_geometry_resource(p_geometry);
         }
 
@@ -419,7 +447,8 @@ namespace put
             bcp.buffer_size = sizeof(vertex_model) * num_verts;
             bcp.data = (void*)v;
 
-            p_geometry->vertex_buffer = pen::renderer_create_buffer(bcp);
+            pmm_renderable& r = p_geometry->renderable[e_pmm_renderable::full_vertex_buffer];
+            r.vertex_buffer = pen::renderer_create_buffer(bcp);
 
             // IB
             bcp.usage_flags = PEN_USAGE_DEFAULT;
@@ -428,12 +457,12 @@ namespace put
             bcp.buffer_size = 2 * num_indices;
             bcp.data = (void*)indices;
 
-            p_geometry->index_buffer = pen::renderer_create_buffer(bcp);
+            r.index_buffer = pen::renderer_create_buffer(bcp);
 
-            p_geometry->num_indices = num_indices;
-            p_geometry->num_vertices = num_verts;
-            p_geometry->vertex_size = sizeof(vertex_model);
-            p_geometry->index_type = PEN_FORMAT_R16_UINT;
+            r.num_indices = num_indices;
+            r.num_vertices = num_verts;
+            r.vertex_size = sizeof(vertex_model);
+            r.index_type = PEN_FORMAT_R16_UINT;
 
             p_geometry->min_extents = vec3f(-1.0f, -1.5f, -1.0f);
             p_geometry->max_extents = vec3f(1.0f, 1.5f, 1.0f);
@@ -446,6 +475,7 @@ namespace put
             p_geometry->p_skin = nullptr;
 
             create_cpu_buffers(p_geometry, v, num_verts, indices, num_indices);
+            create_position_only_buffers(p_geometry, v, num_verts, indices, num_indices);
             add_geometry_resource(p_geometry);
         }
 
@@ -537,7 +567,8 @@ namespace put
             bcp.buffer_size = sizeof(vertex_model) * num_verts;
             bcp.data = (void*)v;
 
-            p_geometry->vertex_buffer = pen::renderer_create_buffer(bcp);
+            pmm_renderable& r = p_geometry->renderable[e_pmm_renderable::full_vertex_buffer];
+            r.vertex_buffer = pen::renderer_create_buffer(bcp);
 
             // IB
             bcp.usage_flags = PEN_USAGE_DEFAULT;
@@ -546,12 +577,12 @@ namespace put
             bcp.buffer_size = 2 * num_indices;
             bcp.data = (void*)indices;
 
-            p_geometry->index_buffer = pen::renderer_create_buffer(bcp);
+            r.index_buffer = pen::renderer_create_buffer(bcp);
 
-            p_geometry->num_indices = num_indices;
-            p_geometry->num_vertices = num_verts;
-            p_geometry->vertex_size = sizeof(vertex_model);
-            p_geometry->index_type = PEN_FORMAT_R16_UINT;
+            r.num_indices = num_indices;
+            r.num_vertices = num_verts;
+            r.vertex_size = sizeof(vertex_model);
+            r.index_type = PEN_FORMAT_R16_UINT;
 
             p_geometry->min_extents = -vec3f::one();
             p_geometry->max_extents = vec3f::one();
@@ -564,6 +595,7 @@ namespace put
             p_geometry->p_skin = nullptr;
 
             create_cpu_buffers(p_geometry, v, num_verts, indices, num_indices);
+            create_position_only_buffers(p_geometry, v, num_verts, indices, num_indices);
             add_geometry_resource(p_geometry);
         }
 
@@ -684,7 +716,8 @@ namespace put
             bcp.buffer_size = sizeof(vertex_model) * num_verts;
             bcp.data = (void*)v;
 
-            p_geometry->vertex_buffer = pen::renderer_create_buffer(bcp);
+            pmm_renderable& r = p_geometry->renderable[e_pmm_renderable::full_vertex_buffer];
+            r.vertex_buffer = pen::renderer_create_buffer(bcp);
 
             // IB
             bcp.usage_flags = PEN_USAGE_DEFAULT;
@@ -693,12 +726,12 @@ namespace put
             bcp.buffer_size = 2 * num_indices;
             bcp.data = (void*)indices;
 
-            p_geometry->index_buffer = pen::renderer_create_buffer(bcp);
+            r.index_buffer = pen::renderer_create_buffer(bcp);
 
-            p_geometry->num_indices = 36;
-            p_geometry->num_vertices = num_verts;
-            p_geometry->vertex_size = sizeof(vertex_model);
-            p_geometry->index_type = PEN_FORMAT_R16_UINT;
+            r.num_indices = 36;
+            r.num_vertices = num_verts;
+            r.vertex_size = sizeof(vertex_model);
+            r.index_type = PEN_FORMAT_R16_UINT;
 
             p_geometry->min_extents = -vec3f::one();
             p_geometry->max_extents = vec3f::one();
@@ -711,6 +744,7 @@ namespace put
             p_geometry->p_skin = nullptr;
 
             create_cpu_buffers(p_geometry, v, num_verts, indices, num_indices);
+            create_position_only_buffers(p_geometry, v, num_verts, indices, num_indices);
             add_geometry_resource(p_geometry);
         }
 
@@ -872,7 +906,8 @@ namespace put
             bcp.buffer_size = sizeof(vertex_model) * num_verts;
             bcp.data = (void*)v;
 
-            p_geometry->vertex_buffer = pen::renderer_create_buffer(bcp);
+            pmm_renderable& r = p_geometry->renderable[e_pmm_renderable::full_vertex_buffer];
+            r.vertex_buffer = pen::renderer_create_buffer(bcp);
 
             // IB
             bcp.usage_flags = PEN_USAGE_DEFAULT;
@@ -881,13 +916,14 @@ namespace put
             bcp.buffer_size = 2 * num_indices;
             bcp.data = (void*)indices;
 
-            p_geometry->index_buffer = pen::renderer_create_buffer(bcp);
+            r.index_buffer = pen::renderer_create_buffer(bcp);
 
             // info
-            p_geometry->num_indices = num_indices;
-            p_geometry->num_vertices = num_verts;
-            p_geometry->vertex_size = sizeof(vertex_model);
-            p_geometry->index_type = PEN_FORMAT_R16_UINT;
+            r.num_indices = num_indices;
+            r.num_vertices = num_verts;
+            r.vertex_size = sizeof(vertex_model);
+            r.index_type = PEN_FORMAT_R16_UINT;
+            
             p_geometry->min_extents = -vec3f::one();
             p_geometry->max_extents = vec3f::one();
             p_geometry->geometry_name = "cylinder";
@@ -897,6 +933,7 @@ namespace put
             p_geometry->p_skin = nullptr;
 
             create_cpu_buffers(p_geometry, v, num_verts, indices, num_indices);
+            create_position_only_buffers(p_geometry, v, num_verts, indices, num_indices);
             add_geometry_resource(p_geometry);
         }
 

@@ -180,6 +180,7 @@ namespace
     const mode_map render_flags_map[] = {
         "forward_lit", e_scene_render_flags::forward_lit,
         "deferred_lit", e_scene_render_flags::deferred_lit,
+        "shadow_map", e_scene_render_flags::shadow_map,
         nullptr, 0
     };
     
@@ -2598,6 +2599,7 @@ namespace put
         void fullscreen_quad(const scene_view& sv)
         {
             static ecs::geometry_resource* quad = ecs::get_geometry_resource(PEN_HASH("full_screen_quad"));
+            static ecs::pmm_renderable& r = quad->renderable[e_pmm_renderable::full_vertex_buffer];
 
             if (!is_valid(sv.pmfx_shader))
                 return;
@@ -2607,11 +2609,10 @@ namespace put
 
             pen::renderer_set_constant_buffer(sv.cb_view, e_cbuffer_location::per_pass_view,
                                               pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
-
-            pen::renderer_set_index_buffer(quad->index_buffer, quad->index_type, 0);
-            pen::renderer_set_vertex_buffer(quad->vertex_buffer, 0, quad->vertex_size, 0);
-
-            pen::renderer_draw_indexed(quad->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
+                                              
+            pen::renderer_set_index_buffer(r.index_buffer, r.index_type, 0);
+            pen::renderer_set_vertex_buffer(r.vertex_buffer, 0, r.vertex_size, 0);
+            pen::renderer_draw_indexed(r.num_indices, 0, 0, PEN_PT_TRIANGLELIST);
         }
 
         void stash_output(view_params& v, const pen::viewport& vp)
@@ -2670,8 +2671,9 @@ namespace put
             }
 
             // render
-            static u32                     pp_shader = pmfx::load_shader("post_process");
+            static u32 pp_shader = pmfx::load_shader("post_process");
             static ecs::geometry_resource* quad = ecs::get_geometry_resource(PEN_HASH("full_screen_quad"));
+            static ecs::pmm_renderable& r = quad->renderable[e_pmm_renderable::full_vertex_buffer];
 
             pen::renderer_set_targets(&v.stashed_output_rt, 1, PEN_NULL_DEPTH_BUFFER);
 
@@ -2682,14 +2684,14 @@ namespace put
 
             pen::renderer_set_texture(v.render_targets[0], wlss, 0, pen::TEXTURE_BIND_PS);
 
-            pen::renderer_set_index_buffer(quad->index_buffer, quad->index_type, 0);
-            pen::renderer_set_vertex_buffer(quad->vertex_buffer, 0, quad->vertex_size, 0);
+            pen::renderer_set_index_buffer(r.index_buffer, r.index_type, 0);
+            pen::renderer_set_vertex_buffer(r.vertex_buffer, 0, r.vertex_size, 0);
 
             static hash_id id_technique = PEN_HASH("blit");
             if (!pmfx::set_technique_perm(pp_shader, id_technique))
                 PEN_ASSERT(0);
 
-            pen::renderer_draw_indexed(quad->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
+            pen::renderer_draw_indexed(r.num_indices, 0, 0, PEN_PT_TRIANGLELIST);
 
             v.stash_output = false;
         }

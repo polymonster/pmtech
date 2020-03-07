@@ -255,7 +255,6 @@ def get_task_files(task):
     else:
         # single file
         if not is_excluded(task[0]):
-            util.copy_file_create_dir_if_newer(task[0], task[1])
             outputs.append((task[0], task[1]))
     return outputs
 
@@ -357,6 +356,9 @@ def run_jsn(config):
     for task in copy_tasks:
         files = get_task_files(task)
         for f in files:
+            if not os.path.exists(f[0]):
+                print("[warning]: file or directory " + f[0] + " does not exist!")
+                continue
             cmd = python_tool_to_platform(config["tools"]["jsn"])
             cmd += " -i " + f[0] + " -o " + f[1]
             subprocess.call(cmd, shell=True)

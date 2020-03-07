@@ -1,7 +1,10 @@
-import "common.jsn"
-import "deferred_renderer.jsn"
-import "post_process.jsn"
-{    
+{
+	include: [
+		"common.jsn",
+		"deferred_renderer.jsn",
+		"post_process.jsn"
+	],
+	    
     render_targets:
     {
         picking:
@@ -97,7 +100,7 @@ import "post_process.jsn"
     view_sets: 
     {
         editor_d: [
-            main_view,
+        	main_view,
             editor_view
         ],
         

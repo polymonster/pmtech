@@ -60,6 +60,21 @@ struct vs_input_multi
     }
 };
 
+struct vs_input_position_only
+{
+	float4 position : POSITION;
+	
+	if:(SKINNED)
+    {
+		float4 normal : TEXCOORD0;
+		float4 texcoord : TEXCOORD1;
+		float4 tangent : TEXCOORD2;
+		float4 bitangent : TEXCOORD3;
+		float4 blend_indices : TEXCOORD4;
+		float4 blend_weights : TEXCOORD5;
+    }
+};
+
 // vs outputs / ps inputs
 struct vs_output
 {
@@ -133,7 +148,7 @@ shader_resources
     texture_2d_array( area_light_textures, 11 );
 };
 
-vs_output_zonly vs_main_zonly( vs_input_multi input, vs_instance_input instance_input )
+vs_output_zonly vs_main_zonly( vs_input_position_only input, vs_instance_input instance_input )
 {
     vs_output_zonly output;
     
@@ -173,7 +188,7 @@ vs_output_zonly vs_main_zonly( vs_input_multi input, vs_instance_input instance_
     return output;
 }
 
-vs_output_zonly_wp vs_main_zonly_wp( vs_input_multi input, vs_instance_input instance_input )
+vs_output_zonly_wp vs_main_zonly_wp( vs_input_position_only input, vs_instance_input instance_input )
 {
     vs_output_zonly_wp output;
     

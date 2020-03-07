@@ -589,8 +589,9 @@ namespace put
                 if (!scene->cbuffer[n])
                     continue;
 
-                u32                t = scene->lights[n].type;
+                u32 t = scene->lights[n].type;
                 geometry_resource* vol = volume[t];
+                pmm_renderable& r = vol->renderable[e_pmm_renderable::full_vertex_buffer];
 
                 pmfx::set_technique_perm(shader, id_technique[t], view.permutation);
 
@@ -648,9 +649,9 @@ namespace put
 
                 pen::renderer_update_buffer(scene->cbuffer[n], &dc, sizeof(cmp_draw_call));
                 pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
-                pen::renderer_set_vertex_buffer(vol->vertex_buffer, 0, vol->vertex_size, 0);
-                pen::renderer_set_index_buffer(vol->index_buffer, vol->index_type, 0);
-                pen::renderer_draw_indexed(vol->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
+                pen::renderer_set_vertex_buffer(r.vertex_buffer, 0, r.vertex_size, 0);
+                pen::renderer_set_index_buffer(r.index_buffer, r.index_type, 0);
+                pen::renderer_draw_indexed(r.num_indices, 0, 0, PEN_PT_TRIANGLELIST);
 
                 if (inside_volume)
                 {
@@ -711,6 +712,10 @@ namespace put
                 draw_count++;
 
                 cmp_geometry* p_geom = &scene->geometries[n];
+                if (!(scene->entities[n] & e_cmp::skinned))
+                    if(view.render_flags & pmfx::e_scene_render_flags::shadow_map)
+                        p_geom = &scene->position_geometries[n];
+
                 cmp_material* p_mat = &scene->materials[n];
                 u32           permutation = scene->material_permutation[n];
 
@@ -842,14 +847,14 @@ namespace put
                 if (scene->entities[n] & e_cmp::master_instance)
                 {
                     u32 num_instances = scene->master_instances[n].num_instances;
-                    pen::renderer_draw_indexed_instanced(num_instances, 0, scene->geometries[n].num_indices, 0, 0,
+                    pen::renderer_draw_indexed_instanced(num_instances, 0, p_geom->num_indices, 0, 0,
                                                          PEN_PT_TRIANGLELIST);
                     n += num_instances;
                     continue;
                 }
 
                 // single
-                pen::renderer_draw_indexed(scene->geometries[n].num_indices, 0, 0, PEN_PT_TRIANGLELIST);
+                pen::renderer_draw_indexed(p_geom->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
             }
         }
 

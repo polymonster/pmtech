@@ -228,7 +228,7 @@
             technique          : omni_shadow,
             scene              : main_scene,
             scene_views        : ["ces_render_omni_shadow_maps"],
-            render_flags       : ["forward_lit"]
+            render_flags       : ["shadow_map"]
         },
         
         multiple_area_light_views:

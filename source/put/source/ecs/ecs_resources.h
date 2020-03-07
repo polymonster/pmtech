@@ -108,6 +108,16 @@ namespace put
             };
         }
         typedef u32 pmm_load_flags;
+        
+        namespace e_pmm_renderable
+        {
+            enum pmm_renderable_t
+            {
+                full_vertex_buffer,
+                position_only,
+                COUNT
+            };
+        }
 
         struct anim_info
         {
@@ -190,35 +200,34 @@ namespace put
 
             soa_anim soa;
         };
+        
+        struct pmm_renderable // resouce may contain full vb and position only
+        {
+            u32     vertex_buffer;
+            u32     num_vertices;
+            u32     vertex_size;
+            u32     index_buffer;
+            u32     num_indices;
+            u32     index_type;
+            void*   cpu_vertex_buffer;
+            void*   cpu_index_buffer;
+        };
 
         struct geometry_resource
         {
-            hash_id file_hash;
-            hash_id geom_hash; // mesh
-            hash_id hash;      // submesh
-            hash_id material_id_name;
-
-            Str filename;
-            Str geometry_name;
-            Str material_name;
-            u32 submesh_index;
-            u32 position_buffer;
-            u32 vertex_buffer;
-            u32 index_buffer;
-            u32 num_indices;
-            u32 num_vertices;
-            u32 index_type;
-            u32 material_index;
-            u32 vertex_size;
-
-            vec3f min_extents;
-            vec3f max_extents;
-
-            void* cpu_index_buffer;
-            void* cpu_position_buffer;
-            void* cpu_vertex_buffer;
-
-            cmp_skin* p_skin;
+            hash_id             file_hash;
+            hash_id             geom_hash; // mesh
+            hash_id             hash;      // submesh
+            hash_id             material_id_name;
+            Str                 filename;
+            Str                 geometry_name;
+            Str                 material_name;
+            u32                 submesh_index;
+            u32                 material_index;
+            vec3f               min_extents;
+            vec3f               max_extents;
+            cmp_skin*           p_skin;
+            pmm_renderable      renderable[e_pmm_renderable::COUNT];
         };
 
         struct vertex_2d

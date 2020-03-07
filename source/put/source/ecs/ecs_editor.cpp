@@ -3088,6 +3088,7 @@ namespace put
 
                         // volume geometry
                         geometry_resource* vol = volume[snl.type];
+                        pmm_renderable& r = vol->renderable[e_pmm_renderable::full_vertex_buffer];
 
                         pmfx::set_technique_perm(shader, id_technique);
 
@@ -3098,9 +3099,9 @@ namespace put
 
                         pen::renderer_update_buffer(scene->cbuffer[n], &dc, sizeof(cmp_draw_call));
                         pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
-                        pen::renderer_set_vertex_buffer(vol->vertex_buffer, 0, vol->vertex_size, 0);
-                        pen::renderer_set_index_buffer(vol->index_buffer, vol->index_type, 0);
-                        pen::renderer_draw_indexed(vol->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
+                        pen::renderer_set_vertex_buffer(r.vertex_buffer, 0, r.vertex_size, 0);
+                        pen::renderer_set_index_buffer(r.index_buffer, r.index_type, 0);
+                        pen::renderer_draw_indexed(r.num_indices, 0, 0, PEN_PT_TRIANGLELIST);
                     }
                     break;
                 }
@@ -3128,6 +3129,7 @@ namespace put
                         continue;
 
                     geometry_resource* gr = get_geometry_resource(ID_PRIMITIVE[prim]);
+                    pmm_renderable& r = gr->renderable[e_pmm_renderable::full_vertex_buffer];
 
                     if (!gr)
                         continue;
@@ -3171,9 +3173,10 @@ namespace put
                     // draw
                     pen::renderer_set_constant_buffer(scene->physics_debug_cbuffer[n], 1,
                                                       pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
-                    pen::renderer_set_vertex_buffer(gr->vertex_buffer, 0, gr->vertex_size, 0);
-                    pen::renderer_set_index_buffer(gr->index_buffer, gr->index_type, 0);
-                    pen::renderer_draw_indexed(gr->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
+                    
+                    pen::renderer_set_vertex_buffer(r.vertex_buffer, 0, r.vertex_size, 0);
+                    pen::renderer_set_index_buffer(r.index_buffer, r.index_type, 0);
+                    pen::renderer_draw_indexed(r.num_indices, 0, 0, PEN_PT_TRIANGLELIST);
                 }
 
                 bool preview_con = s_physics_preview.active && s_physics_preview.params.type == e_physics_type::constraint;
@@ -3272,25 +3275,26 @@ namespace put
                     if (scene->id_geometry[s] != 0)
                     {
                         geometry_resource* gr = get_geometry_resource(scene->id_geometry[s]);
+                        pmm_renderable& r = gr->renderable[e_pmm_renderable::position_only];
 
                         s32 index_offset = trii * 3;
 
                         s32 tri_indices[3] = {};
 
-                        if (gr->index_type == PEN_FORMAT_R16_UINT)
+                        if (r.index_type == PEN_FORMAT_R16_UINT)
                         {
-                            u16* indices = (u16*)gr->cpu_index_buffer;
+                            u16* indices = (u16*)r.cpu_index_buffer;
                             for (u32 i = 0; i < 3; ++i)
                                 tri_indices[i] = indices[index_offset + i];
                         }
                         else
                         {
-                            u32* indices = (u32*)gr->cpu_index_buffer;
+                            u32* indices = (u32*)r.cpu_index_buffer;
                             for (u32 i = 0; i < 3; ++i)
                                 tri_indices[i] = indices[index_offset + i];
                         }
 
-                        vec4f* pb = (vec4f*)gr->cpu_position_buffer;
+                        vec4f* pb = (vec4f*)r.cpu_vertex_buffer;
 
                         vec3f positions[3] = {};
                         for (u32 i = 0; i < 3; ++i)
@@ -3308,7 +3312,7 @@ namespace put
 
                         if (show_verts)
                         {
-                            for (u32 v = 0; v < gr->num_vertices; ++v)
+                            for (u32 v = 0; v < r.num_vertices; ++v)
                             {
                                 dbg::add_point(pb[v].xyz, 0.05f, vec4f::green());
                             }
