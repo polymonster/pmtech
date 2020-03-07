@@ -81,6 +81,7 @@ void blend_mode_ui()
 void blend_layers(const scene_view& scene_view)
 {
     static ecs::geometry_resource* quad = ecs::get_geometry_resource(PEN_HASH("full_screen_quad"));
+    static pmm_renderable& r = quad->renderable[e_pmm_renderable::full_vertex_buffer];
 
     static u32 background_texture = put::load_texture("data/textures/blend_test_bg.dds");
     static u32 foreground_texture = put::load_texture("data/textures/blend_test_fg.dds");
@@ -95,18 +96,18 @@ void blend_layers(const scene_view& scene_view)
         PEN_ASSERT(0);
 
     pen::renderer_set_constant_buffer(scene_view.cb_view, 0, pen::CBUFFER_BIND_VS);
-    pen::renderer_set_index_buffer(quad->index_buffer, quad->index_type, 0);
-    pen::renderer_set_vertex_buffer(quad->vertex_buffer, 0, quad->vertex_size, 0);
+    pen::renderer_set_index_buffer(r.index_buffer, r.index_type, 0);
+    pen::renderer_set_vertex_buffer(r.vertex_buffer, 0, r.vertex_size, 0);
 
     // background
     pen::renderer_set_blend_state(disable_blend);
     pen::renderer_set_texture(background_texture, wrap_linear, 0, pen::TEXTURE_BIND_PS);
-    pen::renderer_draw_indexed(quad->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
+    pen::renderer_draw_indexed(r.num_indices, 0, 0, PEN_PT_TRIANGLELIST);
 
     // foreground
     pen::renderer_set_blend_state(scene_view.blend_state);
     pen::renderer_set_texture(foreground_texture, wrap_linear, 0, pen::TEXTURE_BIND_PS);
-    pen::renderer_draw_indexed(quad->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
+    pen::renderer_draw_indexed(r.num_indices, 0, 0, PEN_PT_TRIANGLELIST);
 }
 
 void* pen::user_entry(void* params)
