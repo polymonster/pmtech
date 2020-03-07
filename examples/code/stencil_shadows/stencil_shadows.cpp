@@ -58,18 +58,20 @@ void render_stencil_shadows(const scene_view& view)
     ecs_scene*         scene = view.scene;
     geometry_resource* gr = get_geometry_resource(PEN_HASH("cube"));
     gr = &s_sgr;
+    
+    pmm_renderable& r = gr->renderable[e_pmm_renderable::full_vertex_buffer];
 
     // bind cbuffer
     pen::renderer_set_constant_buffer(cb_single_light, 10, pen::CBUFFER_BIND_VS | pen::CBUFFER_BIND_PS);
     pmfx::set_technique_perm(view.pmfx_shader, view.technique, 0);
     pen::renderer_set_constant_buffer(view.cb_view, 0, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
-    pen::renderer_set_vertex_buffer(gr->vertex_buffer, 0, gr->vertex_size, 0);
-    pen::renderer_set_index_buffer(gr->index_buffer, gr->index_type, 0);
+    pen::renderer_set_vertex_buffer(r.vertex_buffer, 0, r.vertex_size, 0);
+    pen::renderer_set_index_buffer(r.index_buffer, r.index_type, 0);
 
     for (u32 i = cube_start; i <= cube_end; ++i)
     {
         pen::renderer_set_constant_buffer(scene->cbuffer[i], 1, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
-        pen::renderer_draw_indexed(gr->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
+        pen::renderer_draw_indexed(r.num_indices, 0, 0, PEN_PT_TRIANGLELIST);
     }
 }
 
@@ -140,15 +142,17 @@ void render_multi_pass_lights(const scene_view& view)
 
 void generate_edge_mesh(geometry_resource* gr, shadow_volume_edge** sve_out, geometry_resource* gr_out)
 {
-    vertex_model* vm = (vertex_model*)gr->cpu_vertex_buffer;
-    u16*          ib = (u16*)gr->cpu_index_buffer;
+    pmm_renderable& r = gr->renderable[e_pmm_renderable::full_vertex_buffer];
+    
+    vertex_model* vm = (vertex_model*)r.cpu_vertex_buffer;
+    u16*          ib = (u16*)r.cpu_index_buffer;
 
     static u32 k[] = {1, 2, 0};
 
     shadow_volume_edge* sve = nullptr;
 
     static const f32 epsilon = 0.1f;
-    for (u32 i = 0; i < gr->num_indices; i += 3)
+    for (u32 i = 0; i < r.num_indices; i += 3)
     {
         shadow_volume_edge e[3];
         for (u32 j = 0; j < 3; ++j)
@@ -246,6 +250,8 @@ void generate_edge_mesh(geometry_resource* gr, shadow_volume_edge** sve_out, geo
         base_index += 4;
     }
 
+    pmm_renderable& r_out = gr_out->renderable[e_pmm_renderable::full_vertex_buffer];
+    
     // vb
     u32                         num_verts = sb_count(svv);
     pen::buffer_creation_params bcp;
@@ -254,7 +260,7 @@ void generate_edge_mesh(geometry_resource* gr, shadow_volume_edge** sve_out, geo
     bcp.cpu_access_flags = 0;
     bcp.buffer_size = sizeof(shadow_volume_vertex) * num_verts;
     bcp.data = (void*)svv;
-    gr_out->vertex_buffer = pen::renderer_create_buffer(bcp);
+    r_out.vertex_buffer = pen::renderer_create_buffer(bcp);
 
     // ib
     u32 num_indices = sb_count(sib);
@@ -263,13 +269,13 @@ void generate_edge_mesh(geometry_resource* gr, shadow_volume_edge** sve_out, geo
     bcp.cpu_access_flags = 0;
     bcp.buffer_size = 2 * num_indices;
     bcp.data = (void*)sib;
-    gr_out->index_buffer = pen::renderer_create_buffer(bcp);
+    r_out.index_buffer = pen::renderer_create_buffer(bcp);
 
     // info
-    gr_out->num_indices = num_indices;
-    gr_out->num_vertices = num_verts;
-    gr_out->vertex_size = sizeof(shadow_volume_vertex);
-    gr_out->index_type = PEN_FORMAT_R16_UINT;
+    r_out.num_indices = num_indices;
+    r_out.num_vertices = num_verts;
+    r_out.vertex_size = sizeof(shadow_volume_vertex);
+    r_out.index_type = PEN_FORMAT_R16_UINT;
     gr_out->min_extents = -vec3f::flt_max();
     gr_out->max_extents = vec3f::flt_max();
     gr_out->geometry_name = "shadow_mesh";
@@ -444,7 +450,7 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
 
 void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
 {
-    dt *= 0.001f;
+    dt *= 0.1f;
     
     // rotate lights
     for (u32 i = 0; i < 4; ++i)
