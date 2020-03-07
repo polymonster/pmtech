@@ -73,7 +73,7 @@
         
         pmfx: [
             "-shader_platform metal",
-            "-shader_version macosx",
+            "-metal_sdk macosx",
             "-i assets/shaders ../assets/shaders",
             "-o bin/osx/data/pmfx/metal",
             "-h shader_structs",
@@ -166,7 +166,7 @@
         
         pmfx: [
             "-shader_platform metal",
-            "-shader_version ios",
+            "-metal_sdk ios",
             "-i assets/shaders ../assets/shaders",
             "-o bin/ios/data/pmfx/metal",
             "-h shader_structs",
