@@ -40,15 +40,16 @@ namespace
 void render_boids(const scene_view& view)
 {
     geometry_resource* gr = get_geometry_resource(PEN_HASH("cube"));
+    pmm_renderable& r = gr->renderable[e_pmm_renderable::full_vertex_buffer];
 
     pmfx::set_technique_perm(view.pmfx_shader, view.technique, 0);
 
     pen::renderer_set_structured_buffer(boids_buffer, 13, pen::SBUFFER_BIND_VS | pen::SBUFFER_BIND_READ);
 
     pen::renderer_set_constant_buffer(view.cb_view, 0, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
-    pen::renderer_set_vertex_buffer(gr->vertex_buffer, 0, gr->vertex_size, 0);
-    pen::renderer_set_index_buffer(gr->index_buffer, gr->index_type, 0);
-    pen::renderer_draw_indexed_instanced(num_boids, 0, gr->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
+    pen::renderer_set_vertex_buffer(r.vertex_buffer, 0, r.vertex_size, 0);
+    pen::renderer_set_index_buffer(r.index_buffer, r.index_type, 0);
+    pen::renderer_draw_indexed_instanced(num_boids, 0, r.num_indices, 0, 0, PEN_PT_TRIANGLELIST);
 
     // unbind
     pen::renderer_set_structured_buffer(0, 13, pen::SBUFFER_BIND_VS | pen::SBUFFER_BIND_READ);
