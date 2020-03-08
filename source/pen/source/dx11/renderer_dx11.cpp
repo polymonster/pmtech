@@ -23,6 +23,32 @@ extern pen::window_creation_params pen_window;
 
 namespace
 {
+// level 0 = no errors, level 1 = print errors, level 2 = assert on error
+#define D3D_DEBUG_LEVEL 2
+#if D3D_DEBUG_LEVEL > 0
+#include <comdef.h>
+    void check_d3d_error(HRESULT hr)
+    {
+        if (FAILED(hr))
+        {
+            _com_error err(hr);
+            LPCTSTR    errMsg = err.ErrorMessage();
+            printf("d3d device error: %ls\n", errMsg);
+        }
+
+#if D3D_DEBUG_LEVEL > 1
+        PEN_ASSERT(hr == 0);
+#endif
+    }
+#define CHECK_CALL(C)                                                                                                        \
+    {                                                                                                                        \
+        HRESULT ghr = C;                                                                                                     \
+        check_d3d_error(ghr);                                                                                                \
+    }
+#else
+#define CHECK_CALL(C) C
+#endif
+
     D3D_DRIVER_TYPE         s_driverType = D3D_DRIVER_TYPE_HARDWARE;
     D3D_FEATURE_LEVEL       s_featureLevel = D3D_FEATURE_LEVEL_11_0;
     ID3D11Device*           s_device = nullptr;
@@ -238,7 +264,7 @@ namespace
         return D3D11_TEXTURE_ADDRESS_WRAP;
     }
 
-    u32 to_d3d11_comparison(u32 pen_comparison)
+    D3D11_COMPARISON_FUNC to_d3d11_comparison(u32 pen_comparison)
     {
         switch (pen_comparison)
         {
@@ -263,32 +289,32 @@ namespace
         return D3D11_COMPARISON_NEVER;
     }
 
-    u32 to_d3d11_stencil_op(u32 pen_stencil_op)
+    D3D11_STENCIL_OP to_d3d11_stencil_op(u32 pen_stencil_op)
     {
         switch (pen_stencil_op)
         {
         case PEN_STENCIL_OP_KEEP:
             return D3D11_STENCIL_OP_KEEP;
         case PEN_STENCIL_OP_REPLACE:
-            return D3D11_STENCIL_OP_ZERO;
-        case PEN_STENCIL_OP_ZERO:
             return D3D11_STENCIL_OP_REPLACE;
+        case PEN_STENCIL_OP_ZERO:
+            return D3D11_STENCIL_OP_ZERO;
         case PEN_STENCIL_OP_DECR:
-            return D3D11_STENCIL_OP_INCR_SAT;
-        case PEN_STENCIL_OP_INCR:
-            return D3D11_STENCIL_OP_DECR_SAT;
-        case PEN_STENCIL_OP_DECR_SAT:
-            return D3D11_STENCIL_OP_INVERT;
-        case PEN_STENCIL_OP_INCR_SAT:
-            return D3D11_STENCIL_OP_INCR;
-        case PEN_STENCIL_OP_INVERT:
             return D3D11_STENCIL_OP_DECR;
+        case PEN_STENCIL_OP_INCR:
+            return D3D11_STENCIL_OP_INCR;
+        case PEN_STENCIL_OP_DECR_SAT:
+            return D3D11_STENCIL_OP_DECR_SAT;
+        case PEN_STENCIL_OP_INCR_SAT:
+            return D3D11_STENCIL_OP_INCR_SAT;
+        case PEN_STENCIL_OP_INVERT:
+            return D3D11_STENCIL_OP_INVERT;
         }
         PEN_ASSERT(0);
         return D3D11_STENCIL_OP_REPLACE;
     }
 
-    u32 to_d3d11_blend_factor(u32 pen_blend_factor)
+    D3D11_BLEND to_d3d11_blend_factor(u32 pen_blend_factor)
     {
         switch (pen_blend_factor)
         {
@@ -329,7 +355,7 @@ namespace
         return D3D11_BLEND_ZERO;
     }
 
-    u32 to_d3d11_blend_op(u32 pen_blend_op)
+    D3D11_BLEND_OP to_d3d11_blend_op(u32 pen_blend_op)
     {
         switch (pen_blend_op)
         {
@@ -341,7 +367,7 @@ namespace
             return D3D11_BLEND_OP_REV_SUBTRACT;
         case PEN_BLEND_OP_MIN:
             return D3D11_BLEND_OP_MIN;
-        case D3D11_BLEND_OP_MAX:
+        case PEN_BLEND_OP_MAX:
             return D3D11_BLEND_OP_MAX;
         }
         PEN_ASSERT(0);
@@ -397,42 +423,9 @@ namespace
 			srv == D3D_SRV_DIMENSION_TEXTURECUBE;
 	}
 
-} // namespace
-
-// level 0 = no errors, level 1 = print errors, level 2 = assert on error
-#define D3D_DEBUG_LEVEL 2
-#if D3D_DEBUG_LEVEL > 0
-#include <comdef.h>
-void check_d3d_error(HRESULT hr)
-{
-    if (FAILED(hr))
-    {
-        _com_error err(hr);
-        LPCTSTR    errMsg = err.ErrorMessage();
-        printf("d3d device error: %ls\n", errMsg);
-    }
-
-#if D3D_DEBUG_LEVEL > 1
-    PEN_ASSERT(hr == 0);
-#endif
-}
-#define CHECK_CALL(C)                                                                                                        \
-    {                                                                                                                        \
-        HRESULT ghr = C;                                                                                                     \
-        check_d3d_error(ghr);                                                                                                \
-    }
-#else
-#define CHECK_CALL(C) C
-#endif
-
-namespace pen
-{
-    void create_rtvs(u32 crtv, u32 dsv, uint32_t w, uint32_t h);
-    void release_render_target_internal(u32 render_target);
-
-	//
-	// perf markers
-	//
+    //
+    // perf markers
+    //
 
     struct gpu_perf_result
     {
@@ -442,7 +435,7 @@ namespace pen
         Str name;
     };
     static gpu_perf_result* s_perf_results = nullptr;
-    a_u64                   g_gpu_total;
+
 
     struct perf_marker
     {
@@ -458,7 +451,7 @@ namespace pen
 
     class index_stack
     {
-      public:
+    public:
         u32* indices;
         u32  pos = 0;
 
@@ -491,8 +484,8 @@ namespace pen
     struct perf_marker_set
     {
         static const u32 num_marker_buffers = 5;
-        perf_marker*     markers[num_marker_buffers] = {0};
-        u32              pos[num_marker_buffers] = {0};
+        perf_marker* markers[num_marker_buffers] = { 0 };
+        u32              pos[num_marker_buffers] = { 0 };
 
         ID3D11Query* disjoint_query[num_marker_buffers];
 
@@ -517,7 +510,7 @@ namespace pen
             // push a new marker
             perf_marker m;
 
-            static D3D11_QUERY_DESC desc = {(D3D11_QUERY)PEN_QUERY_TIMESTAMP, 0};
+            static D3D11_QUERY_DESC desc = { D3D11_QUERY_TIMESTAMP, 0 };
             CHECK_CALL(s_device->CreateQuery(&desc, &m.begin));
             CHECK_CALL(s_device->CreateQuery(&desc, &m.end));
 
@@ -551,6 +544,14 @@ namespace pen
             ++pos;
         }
     }
+} // namespace
+
+namespace pen
+{
+    a_u64 g_gpu_total;
+
+    void create_rtvs(u32 crtv, u32 dsv, uint32_t w, uint32_t h);
+    void release_render_target_internal(u32 render_target);
 
     void direct::renderer_push_perf_marker(const c8* name)
     {
@@ -579,7 +580,7 @@ namespace pen
             // first frame initialise disjoint queries
             for (u32 i = 0; i < perf_marker_set::num_marker_buffers; ++i)
             {
-                static D3D11_QUERY_DESC desc = {(D3D11_QUERY)PEN_QUERY_TIMESTAMP_DISJOINT, 0};
+                static D3D11_QUERY_DESC desc = {D3D11_QUERY_TIMESTAMP_DISJOINT, 0};
                 CHECK_CALL(s_device->CreateQuery(&desc, &s_perf.disjoint_query[i]));
             }
 
@@ -1590,6 +1591,7 @@ namespace pen
         desc.AddressU = to_d3d11_texture_address_mode(scp.address_u);
         desc.AddressV = to_d3d11_texture_address_mode(scp.address_v);
         desc.AddressW = to_d3d11_texture_address_mode(scp.address_w);
+        desc.ComparisonFunc = to_d3d11_comparison(scp.comparison_func);
 
         CHECK_CALL(s_device->CreateSamplerState(&desc, &_res_pool[resource_index].sampler_state));
     }
@@ -1706,6 +1708,12 @@ namespace pen
         {
             memcpy(&bd.RenderTarget[i], (void*)&(bcp.render_targets[i]), sizeof(render_target_blend));
             bd.RenderTarget[i].RenderTargetWriteMask = min<u8>(bcp.render_targets[i].render_target_write_mask, 0xf);
+            bd.RenderTarget[i].BlendOp = to_d3d11_blend_op(bcp.render_targets[i].blend_op);
+            bd.RenderTarget[i].BlendOpAlpha = to_d3d11_blend_op(bcp.render_targets[i].blend_op_alpha);
+            bd.RenderTarget[i].SrcBlend = to_d3d11_blend_factor(bcp.render_targets[i].src_blend);
+            bd.RenderTarget[i].DestBlend = to_d3d11_blend_factor(bcp.render_targets[i].dest_blend);
+            bd.RenderTarget[i].SrcBlendAlpha = to_d3d11_blend_factor(bcp.render_targets[i].src_blend_alpha);
+            bd.RenderTarget[i].DestBlendAlpha = to_d3d11_blend_factor(bcp.render_targets[i].dest_blend_alpha);
         }
 
         CHECK_CALL(s_device->CreateBlendState(&bd, &_res_pool[resource_index].blend_state));
@@ -1831,8 +1839,24 @@ namespace pen
 
         u32 resource_index = resource_slot;
 
-        CHECK_CALL(s_device->CreateDepthStencilState((D3D11_DEPTH_STENCIL_DESC*)&dscp,
-                                                     &_res_pool[resource_index].depth_stencil_state));
+        D3D11_DEPTH_STENCIL_DESC desc = {};
+        memcpy(&desc, &dscp, sizeof(desc));
+
+        if (dscp.stencil_enable)
+        {
+            desc.BackFace.StencilFailOp = to_d3d11_stencil_op(dscp.back_face.stencil_failop);
+            desc.BackFace.StencilDepthFailOp = to_d3d11_stencil_op(dscp.back_face.stencil_depth_failop);
+            desc.BackFace.StencilPassOp = to_d3d11_stencil_op(dscp.back_face.stencil_passop);
+            desc.BackFace.StencilFunc = to_d3d11_comparison(dscp.back_face.stencil_func);
+            desc.FrontFace.StencilFailOp = to_d3d11_stencil_op(dscp.front_face.stencil_failop);
+            desc.FrontFace.StencilDepthFailOp = to_d3d11_stencil_op(dscp.front_face.stencil_depth_failop);
+            desc.FrontFace.StencilPassOp = to_d3d11_stencil_op(dscp.front_face.stencil_passop);
+            desc.FrontFace.StencilFunc = to_d3d11_comparison(dscp.front_face.stencil_func);
+        }
+
+        desc.DepthFunc = to_d3d11_comparison(dscp.depth_func);
+
+        CHECK_CALL(s_device->CreateDepthStencilState(&desc, &_res_pool[resource_index].depth_stencil_state));
     }
 
     void direct::renderer_set_depth_stencil_state(u32 depth_stencil_state)
