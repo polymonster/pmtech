@@ -19,10 +19,10 @@ solution ("pmtech_examples_" .. platform)
 	}
 	
 -- Engine Project	
-dofile "../source/pen/project.lua"
+dofile "../core/pen/project.lua"
 
 -- Toolkit Project	
-dofile "../source/put/project.lua"
+dofile "../core/put/project.lua"
 
 -- Example projects	
 -- ( project name, current script dir, )

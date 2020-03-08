@@ -12,8 +12,8 @@ solution ("pmtech_tools_" .. platform)
 	buildoptions { build_cmd }
 	linkoptions { link_cmd }
 		
-dofile "../source/pen/project.lua"
-dofile "../source/put/project.lua"
+dofile "../core/pen/project.lua"
+dofile "../core/put/project.lua"
 
 create_app_example("pmtech_editor", script_path())
 create_app_example("mesh_opt", script_path())
