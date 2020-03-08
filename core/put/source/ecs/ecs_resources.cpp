@@ -75,11 +75,11 @@ namespace
         vec3f min_extents;
         vec3f max_extents;
         u32   handedness;
+        u32   num_pos_verts;
+        u32   pos_index_size;
+        u32   num_pos_indices;
         u32   num_verts;
         u32   index_size;
-        u32   num_pos_floats;
-        u32   num_vertex_floats;
-        u32   num_pos_indices;
         u32   num_indices;
         u32   skinned;
         u32   num_joint_floats;
@@ -88,10 +88,10 @@ namespace
         u32    vertex_size;
         void*  joint_data;
         size_t joint_data_size;
-        void*  position_data;
-        size_t position_data_size;
-        void*  position_index_data;
-        size_t position_index_data_size;
+        void*  pos_data;
+        size_t pos_data_size;
+        void*  pos_index_data;
+        size_t pos_index_data_size;
         void*  vertex_data;
         size_t vertex_data_size;
         void*  index_data;
@@ -194,11 +194,11 @@ namespace
 
                 // parse vertex and index data
                 sm.handedness = *p_reader++;
+                sm.num_pos_verts = *p_reader++;
+                sm.pos_index_size = *p_reader++;
+                sm.num_pos_indices = *p_reader++;
                 sm.num_verts = *p_reader++;
                 sm.index_size = *p_reader++;
-                sm.num_pos_floats = *p_reader++;
-                sm.num_vertex_floats = *p_reader++;
-                sm.num_pos_indices = *p_reader++;
                 sm.num_indices = *p_reader++;
                 sm.skinned = *p_reader++;
                 sm.num_joint_floats = *p_reader++;
@@ -216,10 +216,10 @@ namespace
                 }
 
                 // first is position only buffer
-                sm.position_data_size = sm.num_pos_floats * sizeof(f32);
-                sm.position_data = pen::memory_alloc(sm.position_data_size);
-                memcpy(sm.position_data, p_reader, sm.position_data_size);
-                p_reader += sm.position_data_size / sizeof(f32);
+                sm.pos_data_size = sm.num_pos_verts * sizeof(vec4f);
+                sm.pos_data = pen::memory_alloc(sm.pos_data_size);
+                memcpy(sm.pos_data, p_reader, sm.pos_data_size);
+                p_reader += sm.pos_data_size / sizeof(f32);
 
                 // second is model vertex buffer (skinned or unskinned)
                 sm.vertex_data_size = sm.vertex_size * sm.num_verts;
@@ -228,10 +228,10 @@ namespace
                 p_reader += sm.vertex_data_size / sizeof(f32);
                 
                 // position index data
-                sm.position_index_data_size = sm.num_pos_indices * sm.index_size;
-                sm.position_index_data = pen::memory_alloc(sm.position_index_data_size);
-                memcpy(sm.position_index_data, p_reader, sm.position_index_data_size);
-                p_reader = (u32*)((c8*)p_reader + sm.position_index_data_size);
+                sm.pos_index_data_size = sm.num_pos_indices * sm.pos_index_size;
+                sm.pos_index_data = pen::memory_alloc(sm.pos_index_data_size);
+                memcpy(sm.pos_index_data, p_reader, sm.pos_index_data_size);
+                p_reader = (u32*)((c8*)p_reader + sm.pos_index_data_size);
                 
                 // index data
                 sm.index_data_size = sm.num_indices * sm.index_size;
@@ -311,6 +311,14 @@ namespace
 
                 // assign renderables
                 
+                // positions
+                pr.num_vertices = sm.num_pos_verts;
+                pr.num_indices = sm.num_pos_indices;
+                pr.vertex_size = sizeof(vec4f);
+                pr.index_type = sm.pos_index_size == 2 ? PEN_FORMAT_R16_UINT : PEN_FORMAT_R32_UINT;
+                pr.cpu_vertex_buffer = sm.pos_data;
+                pr.cpu_index_buffer = sm.pos_index_data;
+                
                 // vertex
                 vr.num_vertices = sm.num_verts;
                 vr.num_indices = sm.num_indices;
@@ -318,14 +326,6 @@ namespace
                 vr.index_type = sm.index_size == 2 ? PEN_FORMAT_R16_UINT : PEN_FORMAT_R32_UINT;
                 vr.cpu_vertex_buffer = sm.vertex_data;
                 vr.cpu_index_buffer = sm.index_data;
-                
-                // positions
-                pr.num_vertices = sm.num_pos_floats/4;
-                pr.num_indices = sm.num_pos_indices;
-                pr.vertex_size = sizeof(vec4f);
-                pr.index_type = sm.index_size == 2 ? PEN_FORMAT_R16_UINT : PEN_FORMAT_R32_UINT;
-                pr.cpu_vertex_buffer = sm.position_data;
-                pr.cpu_index_buffer = sm.position_index_data;
                 
                 pen::buffer_creation_params bcp;
                 for(auto& r : p_geometry->renderable)
@@ -1634,6 +1634,7 @@ namespace put
         {
             void*   ib;
             void*   vb;
+            u32     index_size;
             size_t  vb_size;
             size_t  ib_size;
             size_t  vertex_count;
@@ -1663,6 +1664,8 @@ namespace put
 
             // remap
             meshopt_remapVertexBuffer(opt.vb, vertex_data, num_indices, vertex_size, &remap[0]);
+            meshopt_optimizeVertexCache((u32*)opt.ib, (u32*)opt.ib, opt.num_indices, opt.vertex_count);
+            meshopt_optimizeVertexFetch(opt.vb, (u32*)opt.ib, opt.num_indices, opt.vb, opt.vertex_count, vertex_size);
             
             // cleanup
             pen::memory_free(remap);
@@ -1703,7 +1706,7 @@ namespace put
 
                     mesh_opt opt[] = {
                         optimise_vb((u32*)sm.index_data, sm.num_indices, sm.vertex_data, sm.num_verts, sm.vertex_size),
-                        optimise_vb((u32*)sm.index_data, sm.num_pos_indices, sm.position_data, sm.num_verts, sizeof(vec4f))
+                        optimise_vb((u32*)sm.index_data, sm.num_pos_indices, sm.pos_data, sm.num_pos_verts, sizeof(vec4f))
                     };
                     
                     for(auto& o : opt)
@@ -1717,7 +1720,8 @@ namespace put
                         }
 
                         // reduce index size to u16 if possible
-                        if(opt[0].vertex_count < 65535)
+                        o.index_size = 4;
+                        if(o.vertex_count < 65535)
                         {
                             o.ib_size = sm.num_indices*sizeof(u16);
                             u16* nni = (u16*)pen::memory_alloc(o.ib_size);
@@ -1726,26 +1730,26 @@ namespace put
                                 
                             pen::memory_free(o.ib);
                             o.ib = nni;
-                            sm.index_size = 2;
+                            o.index_size = 2;
                         }
                         else
                         {
-                            sm.index_size = 4;
+                            o.index_size = 4;
                         }
                     }
-                    
+
                     // cleanup the old / temp buffers
                     pen::memory_free(sm.vertex_data);
                     pen::memory_free(sm.index_data);
-                    pen::memory_free(sm.position_data);
-                    pen::memory_free(sm.position_index_data);
+                    pen::memory_free(sm.pos_data);
+                    pen::memory_free(sm.pos_index_data);
 
                     // track data reductions
                     intptr_t vbr = (intptr_t)opt[0].vb_size - (intptr_t)sm.vertex_data_size;
                     intptr_t ibr = (intptr_t)opt[0].ib_size - (intptr_t)sm.index_data_size;
                     reduction += vbr + ibr;
-                    vbr = (intptr_t)opt[1].vb_size - (intptr_t)sm.position_data_size;
-                    ibr = (intptr_t)opt[1].ib_size - (intptr_t)sm.position_index_data_size;
+                    vbr = (intptr_t)opt[1].vb_size - (intptr_t)sm.pos_data_size;
+                    ibr = (intptr_t)opt[1].ib_size - (intptr_t)sm.pos_index_data_size;
                     reduction += vbr + ibr;
 
                     // reassign
@@ -1755,14 +1759,15 @@ namespace put
                     sm.vertex_data_size = opt[0].vb_size;
                     sm.index_data = opt[0].ib;
                     sm.index_data_size = opt[0].ib_size;
-                    sm.num_verts = opt[0].vertex_count;
-                    sm.num_vertex_floats = opt[0].vb_size / sizeof(f32);
+                    sm.num_verts = (u32)opt[0].vertex_count;
+                    sm.index_size = opt[0].index_size;
                     
-                    sm.position_data = opt[1].vb;
-                    sm.position_data_size = opt[1].vb_size;
-                    sm.position_index_data = opt[1].ib;
-                    sm.position_index_data_size = opt[1].ib_size;
-                    sm.num_pos_floats = opt[1].vb_size / sizeof(f32);
+                    sm.pos_data = opt[1].vb;
+                    sm.pos_data_size = opt[1].vb_size;
+                    sm.pos_index_data = opt[1].ib;
+                    sm.pos_index_data_size = opt[1].ib_size;
+                    sm.num_pos_verts = (u32)opt[1].vertex_count;
+                    sm.pos_index_size = opt[1].index_size;
 
                     mc++;
                 }
@@ -1772,7 +1777,7 @@ namespace put
             // work out the offset adjustments, geom is at the end so we dont need to bother with the last one.
             for (u32 g = 1; g < contents.num_geometry; ++g)
                 contents.geometry_offsets[g] += reductions[g - 1];
-
+                
             // ..
             // below can be refactored as write pmm
 
@@ -1843,20 +1848,20 @@ namespace put
                     ofs.write((const c8*)&sm.min_extents, sizeof(vec3f));
                     ofs.write((const c8*)&sm.max_extents, sizeof(vec3f));
                     ofs.write((const c8*)&sm.handedness, sizeof(u32));
+                    ofs.write((const c8*)&sm.num_pos_verts, sizeof(u32));
+                    ofs.write((const c8*)&sm.pos_index_size, sizeof(u32));
+                    ofs.write((const c8*)&sm.num_pos_indices, sizeof(u32));
                     ofs.write((const c8*)&sm.num_verts, sizeof(u32));
                     ofs.write((const c8*)&sm.index_size, sizeof(u32));
-                    ofs.write((const c8*)&sm.num_pos_floats, sizeof(u32));
-                    ofs.write((const c8*)&sm.num_vertex_floats, sizeof(u32));
-                    ofs.write((const c8*)&sm.num_pos_indices, sizeof(u32));
                     ofs.write((const c8*)&sm.num_indices, sizeof(u32));
                     ofs.write((const c8*)&sm.skinned, sizeof(u32));
                     ofs.write((const c8*)&sm.num_joint_floats, sizeof(u32));
                     ofs.write((const c8*)&sm.bind_shape_matrix, sizeof(mat4));
                     // data buffers
                     ofs.write((const c8*)sm.joint_data, sm.joint_data_size);
-                    ofs.write((const c8*)sm.position_data, sm.position_data_size);
+                    ofs.write((const c8*)sm.pos_data, sm.pos_data_size);
                     ofs.write((const c8*)sm.vertex_data, sm.vertex_data_size);
-                    ofs.write((const c8*)sm.position_index_data, sm.index_data_size);
+                    ofs.write((const c8*)sm.pos_index_data, sm.index_data_size);
                     ofs.write((const c8*)sm.index_data, sm.index_data_size);
                 }
             }
@@ -1869,8 +1874,8 @@ namespace put
                 for (auto& sm : g.submeshes)
                 {
                     pen::memory_free(sm.vertex_data);
-                    pen::memory_free(sm.position_data);
-                    pen::memory_free(sm.position_index_data);
+                    pen::memory_free(sm.pos_data);
+                    pen::memory_free(sm.pos_index_data);
                     pen::memory_free(sm.index_data);
                     pen::memory_free(sm.joint_data);
                 }

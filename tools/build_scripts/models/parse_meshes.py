@@ -466,13 +466,14 @@ def write_geometry_file(geom_instance):
             mesh_data.append(struct.pack("f", (float(mesh.max_extents[i]))))
 
         # write info
-        mesh_data.append(struct.pack("i", int(0)))  # handedness (left handed), for mesh opt
-        mesh_data.append(struct.pack("i", int(num_vertices)))
-        mesh_data.append(struct.pack("i", int(index_size)))
-        mesh_data.append(struct.pack("i", (len(mesh.vertex_elements[0].float_values))))
-        mesh_data.append(struct.pack("i", (len(mesh.vertex_buffer))))
-        mesh_data.append(struct.pack("i", (len(mesh.index_buffer))))  # position ib count
-        mesh_data.append(struct.pack("i", (len(mesh.index_buffer))))  # vertex ib count
+        mesh_data.append(struct.pack("i", int(0)))                      # handedness (left handed), for mesh opt
+        mesh_data.append(struct.pack("i", int(num_vertices)))           # num pos verts
+        mesh_data.append(struct.pack("i", int(index_size)))             # pos index size
+        mesh_data.append(struct.pack("i", (len(mesh.index_buffer))))    # pos buffer index count
+        mesh_data.append(struct.pack("i", int(num_vertices)))           # num vb verts
+        mesh_data.append(struct.pack("i", int(index_size)))             # vertex index size
+        mesh_data.append(struct.pack("i", (len(mesh.index_buffer))))    # vertex buffer index count
+
 
         # skinning is conditional, but write any fixed length data anyway
         skinned = 0

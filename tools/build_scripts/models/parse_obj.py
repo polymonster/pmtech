@@ -286,16 +286,17 @@ def write_geometry(file, root):
         if flip_winding:
             handedness = 1
         mesh_data.append(struct.pack("i", int(handedness)))
-        mesh_data.append(struct.pack("i", int(num_verts)))
-        mesh_data.append(struct.pack("i", int(index_size)))
-        mesh_data.append(struct.pack("i", (len(mesh[pb]))))
-        mesh_data.append(struct.pack("i", (len(generated_vb))))
+        mesh_data.append(struct.pack("i", int(num_verts)))   # num pos verts
+        mesh_data.append(struct.pack("i", int(index_size)))  # pos index size
         mesh_data.append(struct.pack("i", (len(mesh[ib]))))  # pos buffer index count
+        mesh_data.append(struct.pack("i", int(num_verts)))   # num vb verts
+        mesh_data.append(struct.pack("i", int(index_size)))  # vertex index size
         mesh_data.append(struct.pack("i", (len(mesh[ib]))))  # vertex buffer index count
         # skinning is not supported in obj, but write any fixed length data anyway
         mesh_data.append(struct.pack("i", int(skinned)))
         mesh_data.append(struct.pack("i", int(num_joint_floats)))
         helpers.pack_corrected_4x4matrix(mesh_data, bind_shape_matrix)
+        
 
         for vf in mesh[pb]:
             # position only buffer
