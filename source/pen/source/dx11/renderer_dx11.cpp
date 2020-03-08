@@ -206,6 +206,148 @@ namespace
         return DXGI_FORMAT_UNKNOWN;
     }
 
+    D3D11_FILTER to_d3d11_filter_mode(u32 pen_filter_mode)
+    {
+        switch (pen_filter_mode)
+        {
+        case PEN_FILTER_MIN_MAG_MIP_POINT:
+            return D3D11_FILTER_MIN_MAG_MIP_POINT;
+        case PEN_FILTER_MIN_MAG_MIP_LINEAR:
+            return D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+        }
+        PEN_ASSERT(0);
+        return D3D11_FILTER_MIN_MAG_MIP_POINT;
+    }
+
+    D3D11_TEXTURE_ADDRESS_MODE to_d3d11_texture_address_mode(u32 pen_texture_address_mode)
+    {
+        switch (pen_texture_address_mode)
+        {
+        case PEN_TEXTURE_ADDRESS_WRAP:
+            return D3D11_TEXTURE_ADDRESS_WRAP;
+        case PEN_TEXTURE_ADDRESS_MIRROR:
+            return D3D11_TEXTURE_ADDRESS_MIRROR;
+        case PEN_TEXTURE_ADDRESS_CLAMP:
+            return D3D11_TEXTURE_ADDRESS_CLAMP;
+        case PEN_TEXTURE_ADDRESS_BORDER:
+            return D3D11_TEXTURE_ADDRESS_BORDER;
+        case PEN_TEXTURE_ADDRESS_MIRROR_ONCE:
+            return D3D11_TEXTURE_ADDRESS_MIRROR_ONCE;
+        }
+        PEN_ASSERT(0);
+        return D3D11_TEXTURE_ADDRESS_WRAP;
+    }
+
+    u32 to_d3d11_comparison(u32 pen_comparison)
+    {
+        switch (pen_comparison)
+        {
+        case PEN_COMPARISON_NEVER:
+            return D3D11_COMPARISON_NEVER;
+        case PEN_COMPARISON_LESS:
+            return D3D11_COMPARISON_LESS;
+        case PEN_COMPARISON_EQUAL:
+            return D3D11_COMPARISON_EQUAL;
+        case PEN_COMPARISON_LESS_EQUAL:
+            return D3D11_COMPARISON_LESS_EQUAL;
+        case PEN_COMPARISON_GREATER:
+            return D3D11_COMPARISON_GREATER;
+        case PEN_COMPARISON_NOT_EQUAL:
+            return D3D11_COMPARISON_NOT_EQUAL;
+        case PEN_COMPARISON_GREATER_EQUAL:
+            return D3D11_COMPARISON_GREATER_EQUAL;
+        case PEN_COMPARISON_ALWAYS:
+            return D3D11_COMPARISON_ALWAYS;
+        }
+        PEN_ASSERT(0);
+        return D3D11_COMPARISON_NEVER;
+    }
+
+    u32 to_d3d11_stencil_op(u32 pen_stencil_op)
+    {
+        switch (pen_stencil_op)
+        {
+        case PEN_STENCIL_OP_KEEP:
+            return D3D11_STENCIL_OP_KEEP;
+        case PEN_STENCIL_OP_REPLACE:
+            return D3D11_STENCIL_OP_ZERO;
+        case PEN_STENCIL_OP_ZERO:
+            return D3D11_STENCIL_OP_REPLACE;
+        case PEN_STENCIL_OP_DECR:
+            return D3D11_STENCIL_OP_INCR_SAT;
+        case PEN_STENCIL_OP_INCR:
+            return D3D11_STENCIL_OP_DECR_SAT;
+        case PEN_STENCIL_OP_DECR_SAT:
+            return D3D11_STENCIL_OP_INVERT;
+        case PEN_STENCIL_OP_INCR_SAT:
+            return D3D11_STENCIL_OP_INCR;
+        case PEN_STENCIL_OP_INVERT:
+            return D3D11_STENCIL_OP_DECR;
+        }
+        PEN_ASSERT(0);
+        return D3D11_STENCIL_OP_REPLACE;
+    }
+
+    u32 to_d3d11_blend_factor(u32 pen_blend_factor)
+    {
+        switch (pen_blend_factor)
+        {
+        case PEN_BLEND_ZERO:
+            return D3D11_BLEND_ZERO;
+        case PEN_BLEND_ONE:
+            return D3D11_BLEND_ONE;
+        case PEN_BLEND_SRC_COLOR:
+            return D3D11_BLEND_SRC_COLOR;
+        case PEN_BLEND_INV_SRC_COLOR:
+            return D3D11_BLEND_INV_SRC_COLOR;
+        case PEN_BLEND_SRC_ALPHA:
+            return D3D11_BLEND_SRC_ALPHA;
+        case PEN_BLEND_INV_SRC_ALPHA:
+            return D3D11_BLEND_INV_SRC_ALPHA;
+        case PEN_BLEND_DEST_ALPHA:
+            return D3D11_BLEND_DEST_ALPHA;
+        case PEN_BLEND_INV_DEST_ALPHA:
+            return D3D11_BLEND_INV_DEST_ALPHA;
+        case PEN_BLEND_INV_DEST_COLOR:
+            return D3D11_BLEND_DEST_COLOR;
+        case PEN_BLEND_SRC_ALPHA_SAT:
+            return D3D11_BLEND_SRC_ALPHA_SAT;
+        case PEN_BLEND_SRC1_COLOR:
+            return D3D11_BLEND_SRC1_COLOR;
+        case PEN_BLEND_INV_SRC1_COLOR:
+            return D3D11_BLEND_INV_SRC1_COLOR;
+        case PEN_BLEND_SRC1_ALPHA:
+            return D3D11_BLEND_SRC1_ALPHA;
+        case PEN_BLEND_INV_SRC1_ALPHA:
+            return D3D11_BLEND_INV_SRC1_ALPHA;
+        case PEN_BLEND_BLEND_FACTOR:
+            return D3D11_BLEND_BLEND_FACTOR;
+        case PEN_BLEND_INV_BLEND_FACTOR:
+            return D3D11_BLEND_INV_BLEND_FACTOR;
+        }
+        PEN_ASSERT(0);
+        return D3D11_BLEND_ZERO;
+    }
+
+    u32 to_d3d11_blend_op(u32 pen_blend_op)
+    {
+        switch (pen_blend_op)
+        {
+        case PEN_BLEND_OP_ADD:
+            return D3D11_BLEND_OP_ADD;
+        case PEN_BLEND_OP_SUBTRACT:
+            return D3D11_BLEND_OP_SUBTRACT;
+        case PEN_BLEND_OP_REV_SUBTRACT:
+            return D3D11_BLEND_OP_REV_SUBTRACT;
+        case PEN_BLEND_OP_MIN:
+            return D3D11_BLEND_OP_MIN;
+        case D3D11_BLEND_OP_MAX:
+            return D3D11_BLEND_OP_MAX;
+        }
+        PEN_ASSERT(0);
+        return D3D11_BLEND_OP_ADD;
+    }
+
 	u32 depth_texture_format_to_dsv_format(u32 tex_format)
 	{
 		switch (tex_format)
@@ -1442,8 +1584,14 @@ namespace pen
         _res_pool.grow(resource_slot);
 
         u32 resource_index = resource_slot;
+        D3D11_SAMPLER_DESC desc = {};
+        memcpy(&desc, &scp, sizeof(desc));
+        desc.Filter = to_d3d11_filter_mode(scp.filter);
+        desc.AddressU = to_d3d11_texture_address_mode(scp.address_u);
+        desc.AddressV = to_d3d11_texture_address_mode(scp.address_v);
+        desc.AddressW = to_d3d11_texture_address_mode(scp.address_w);
 
-        CHECK_CALL(s_device->CreateSamplerState((D3D11_SAMPLER_DESC*)&scp, &_res_pool[resource_index].sampler_state));
+        CHECK_CALL(s_device->CreateSamplerState(&desc, &_res_pool[resource_index].sampler_state));
     }
 
     void direct::renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 bind_flags)
