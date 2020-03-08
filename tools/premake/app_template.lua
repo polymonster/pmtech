@@ -216,11 +216,10 @@ function create_app(project_name, source_directory, root_directory)
 		
 		includedirs
 		{
-			-- core
+			-- platform
 			pmtech_dir .. "source/pen/include",
 			pmtech_dir .. "source/pen/include/common", 
 			pmtech_dir .. "source/pen/include/" .. platform_dir,
-			pmtech_dir .. "source/pen/include/" .. renderer_dir,
 			
 			--utility			
 			pmtech_dir .. "source/put/source/",
@@ -228,6 +227,7 @@ function create_app(project_name, source_directory, root_directory)
 			-- third party			
 			pmtech_dir .. "third_party/",
 		
+			-- local
 			"include/",
 		}
 		
@@ -242,6 +242,7 @@ function create_app(project_name, source_directory, root_directory)
 		
 		setup_env()
 		setup_platform()
+		setup_platform_defines()
 		setup_modules()
 	
 		location (root_directory .. "/build/" .. platform_dir)

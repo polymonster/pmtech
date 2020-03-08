@@ -1827,7 +1827,7 @@ namespace pen
             use_back_buffer = true;
 
         if (num_colour_targets)
-            if (colour_targets[0] == 0)
+            if (colour_targets[0] == PEN_BACK_BUFFER_COLOUR)
                 use_back_buffer = true;
 
         if (use_back_buffer)

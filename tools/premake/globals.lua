@@ -53,15 +53,12 @@ function setup_from_action()
         end
     elseif _ACTION == "xcode4" then 
         platform_dir = "osx" 
-        
         if not renderer_dir then
             renderer_dir = "opengl"
         end
-        
         if _OPTIONS["xcode_target"] then
             platform_dir = _OPTIONS["xcode_target"]
         end
-
         if platform_dir == "ios" then
             build_cmd = "-std=c++11 -stdlib=libc++"
             link_cmd = "-stdlib=libc++"
@@ -144,7 +141,8 @@ end
 function setup_platform_defines()
 	defines
 	{
-		("PEN_PLATFORM_" .. string.upper(platform))
+		("PEN_PLATFORM_" .. string.upper(platform)),
+        ("PEN_RENDERER_" .. string.upper(renderer_dir))
 	}
 end
 
