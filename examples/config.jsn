@@ -94,7 +94,8 @@
             ["assets/audio", "bin/osx/data/audio"],
             ["../assets/audio", "bin/osx/data/audio"],
             ["../assets/fonts", "bin/osx/data/fonts"],
-            ["assets/scene", "bin/osx/data/scene"]
+            ["assets/scene", "bin/osx/data/scene"],
+            ["../third_party/shared_libs/osx", "bin/osx"]
         ],
         
         data_dir: "bin/osx/data/"

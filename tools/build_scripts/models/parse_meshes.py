@@ -1,5 +1,6 @@
 import models.helpers as helpers
 import struct
+import json
 
 schema = "{http://www.collada.org/2005/11/COLLADASchema}"
 
@@ -67,12 +68,27 @@ class geometry_mesh:
         "BLENDINDICES",
         "BLENDWEIGHTS"
     ]
+    alt_ids = [
+        "",
+        "",
+        "",
+        "",
+        "TEXTANGENT0",
+        "TEXBINORMAL0",
+        "",
+        ""
+    ]
     required_elements = [True, True, True, True, True, True, False, False]
     vertex_elements = []
 
     def get_element_stream(self, sem_id):
         index = 0
         for s in self.semantic_ids:
+            if s == sem_id:
+                return self.vertex_elements[index]
+            index += 1
+        index = 0
+        for s in self.alt_ids:
             if s == sem_id:
                 return self.vertex_elements[index]
             index += 1
@@ -107,8 +123,7 @@ def add_vertex_input(input_node, vertex_input_instance):
     set = input_node.get("set")
     if set == None:
         set = ""
-
-    vertex_input_instance.semantic_ids.append(input_node.get("semantic") + set )
+    vertex_input_instance.semantic_ids.append(input_node.get("semantic") + set)
     src_str = input_node.get("source")
     src_str = src_str.replace("#", "")
     vertex_input_instance.source_ids.append(src_str)
@@ -190,18 +205,142 @@ def write_vertex_data(p, src_id, sem_id, mesh):
             write_source_float_channel(source_index, mesh.controller.vec4_weights, "BLENDWEIGHTS", mesh)
 
 
-def generate_vertex_buffer(mesh):
+def generate_index_buffer(mesh):
+    mesh.index_buffer = []
+    vert_count = int(len(mesh.vertex_elements[0].float_values) / 4)
+    for i in range(0, int(vert_count), 3):
+        mesh.index_buffer.append(i + 2)
+        mesh.index_buffer.append(i + 1)
+        mesh.index_buffer.append(i + 0)
+
+
+def parse_mesh(node, tris, controller):
+    mesh_instance = geometry_mesh()
+    mesh_instance.controller = controller
+
+    # find geometry sources
+    for src in node.iter(schema + 'source'):
+        geom_src = geometry_source()
+        geom_src.float_values = []
+        geom_src.id = src.get("id")
+        for accessor in src.iter(schema + 'accessor'):
+            geom_src.stride = accessor.get("stride")
+        for data in src.iter(schema + 'float_array'):
+            splitted = data.text.split()
+            for vf in splitted:
+                geom_src.float_values.append(vf)
+        mesh_instance.sources.append(geom_src)
+
+    stream = dict()
+    stream["buffer"] = list()
+
+    # find vertex struct
+    for v in node.iter(schema + 'vertices'):
+        stream[v.get("id")] = list()
+        for i in v.iter(schema + 'input'):
+            vertex_instance = vertex_input()
+            vertex_instance.id = v.get("id")
+            add_vertex_input(i, vertex_instance)
+            mesh_instance.vertices.append(vertex_instance)
+            stream[v.get("id")].append({
+                "src": i.get("source").strip("#"),
+                "semantic": i.get("semantic")
+            })
+
+    # find triangles (multi stream index buffers)
+    mesh_instance.triangle_count = tris.get("count")
+    for i in tris.iter(schema + 'input'):
+        vertex_instance = vertex_input()
+        vertex_instance.id = i.get("id")
+        add_vertex_input(i, vertex_instance)
+        mesh_instance.triangle_inputs.append(vertex_instance)
+        stream["buffer"].append({
+            "src": i.get("source").strip("#"),
+            "offset": i.get("offset"),
+            "semantic": i.get("semantic"),
+            "set": i.get("set")
+        })
+
+    # find indices
+    for indices in tris.iter(schema + 'p'):
+        splitted = indices.text.split()
+        for vi in splitted:
+            mesh_instance.triangle_indices.append(vi)
+
+    # extract semantics mapped to data streams
+    unpack_streams = dict()
+    for s in stream["buffer"]:
+        if s["src"] in stream.keys():
+            for vs in stream[s["src"]]:
+                vs["offset"] = s["offset"]
+                unpack_streams[vs["semantic"]] = vs
+        else:
+            unpack_streams[s["semantic"]] = s
+
+    # find data streams
+    _data = dict()
+    for s in unpack_streams:
+        stream = unpack_streams[s]
+        for source in node.iter(schema + 'source'):
+            if source.get("id").find(stream["src"]) != -1:
+                for data in source.iter(schema + 'float_array'):
+                    stream["data_count"] = data.get("count")
+                    _data[s] = data.text.split(" ")
+                    for accessor in source.iter(schema + 'accessor'):
+                        stream["stride"] = accessor.get("stride")
+
+    buffer_dict = dict()
+    buffer_dict["data"] = _data
+    buffer_dict["streams"] = unpack_streams
+
+    # roll the multi stream vertex buffer into 1
+    generate_vertex_buffer(mesh_instance, buffer_dict)
+
+    # wind triangles the other way
+    generate_index_buffer(mesh_instance)
+
+    return mesh_instance
+
+
+def generate_vertex_buffer(mesh, buffer_dict):
     index_stride = 0
     for v in mesh.triangle_inputs:
         for o in v.offsets:
             if (o != None):
                 index_stride = max(int(o) + 1, index_stride)
 
+    # old
     p = 0
     while p < len(mesh.triangle_indices):
         for v in mesh.triangle_inputs:
             for s in range(0, len(v.source_ids), 1):
                 write_vertex_data(p + int(v.offsets[s]), v.source_ids[s], v.semantic_ids[s], mesh)
+        p += index_stride
+
+    # new
+    semantic_index = {
+        "POSITION": 0,
+        "NORMAL": 1,
+        "TEXCOORD": 2,
+        "TEXTANGENT": 3,
+        "TEXBINORMAL": 4
+    }
+    p = 0
+    for sem in semantic_index:
+        mesh.vertex_elements[semantic_index[sem]].float_values = []
+    while p < len(mesh.triangle_indices):
+        for s in buffer_dict["streams"]:
+            stream = buffer_dict["streams"][s]
+            data = buffer_dict["data"][s]
+            ii = semantic_index[s]
+            stride = int(stream["stride"])
+            offset = int(stream["offset"])
+            pi = int(mesh.triangle_indices[p + offset])
+            bp = pi * stride
+            for si in range(0, stride):
+                mesh.vertex_elements[ii].float_values.append(data[bp + si])
+            for si in range(stride, 4):
+                mesh.vertex_elements[ii].float_values.append("1.0")
         p += index_stride
 
     # interleave streams
@@ -229,97 +368,40 @@ def generate_vertex_buffer(mesh):
     for i in range(0, num_floats, 4):
         for f in range(0, 4, 1):
             # write vertex always
-            mesh.vertex_buffer.append(mesh.vertex_elements[0].float_values[i+f])
+            mesh.vertex_buffer.append(mesh.vertex_elements[0].float_values[i + f])
         if len(mesh.vertex_elements[1].float_values) == num_floats:
             # write normal
             for f in range(0, 4, 1):
-                mesh.vertex_buffer.append(mesh.vertex_elements[1].float_values[i+f])
+                mesh.vertex_buffer.append(mesh.vertex_elements[1].float_values[i + f])
         if len(mesh.vertex_elements[2].float_values) == num_floats \
                 and len(mesh.vertex_elements[3].float_values) == num_floats:
             # texcoord 0 and 1 packed
             for f in range(0, 2, 1):
-                mesh.vertex_buffer.append(mesh.vertex_elements[2].float_values[i+f])
+                mesh.vertex_buffer.append(mesh.vertex_elements[2].float_values[i + f])
             for f in range(0, 2, 1):
-                mesh.vertex_buffer.append(mesh.vertex_elements[3].float_values[i+f])
+                mesh.vertex_buffer.append(mesh.vertex_elements[3].float_values[i + f])
         elif len(mesh.vertex_elements[2].float_values) == num_floats:
             for f in range(0, 4, 1):
                 # texcoord 0
-                mesh.vertex_buffer.append(mesh.vertex_elements[2].float_values[i+f])
+                mesh.vertex_buffer.append(mesh.vertex_elements[2].float_values[i + f])
         if len(mesh.vertex_elements[4].float_values) == num_floats:
             # write textangent
             for f in range(0, 4, 1):
-                mesh.vertex_buffer.append(mesh.vertex_elements[4].float_values[i+f])
+                mesh.vertex_buffer.append(mesh.vertex_elements[4].float_values[i + f])
         if len(mesh.vertex_elements[5].float_values) == num_floats:
             # write texbinormal
             for f in range(0, 4, 1):
-                mesh.vertex_buffer.append(mesh.vertex_elements[5].float_values[i+f])
+                mesh.vertex_buffer.append(mesh.vertex_elements[5].float_values[i + f])
         if len(mesh.vertex_elements[6].float_values) == num_floats or elem_stride[6] > 0:
             j = i * elem_stride[6]
             # write blendindices
             for f in range(0, 4, 1):
-                mesh.vertex_buffer.append(mesh.vertex_elements[6].float_values[j+f])
+                mesh.vertex_buffer.append(mesh.vertex_elements[6].float_values[j + f])
         if len(mesh.vertex_elements[7].float_values) == num_floats or elem_stride[7] > 0:
             j = i * elem_stride[7]
             # write blendweights
             for f in range(0, 4, 1):
-                mesh.vertex_buffer.append(mesh.vertex_elements[7].float_values[j+f])
-
-
-def generate_index_buffer(mesh):
-    mesh.index_buffer = []
-    vert_count = int(len(mesh.vertex_elements[0].float_values) / 4)
-    for i in range(0, int(vert_count), 3):
-        mesh.index_buffer.append(i + 2)
-        mesh.index_buffer.append(i + 1)
-        mesh.index_buffer.append(i + 0)
-
-
-def parse_mesh(node, tris, controller):
-    mesh_instance = geometry_mesh()
-    mesh_instance.controller = controller
-
-    # find geometry sources
-    for src in node.iter(schema + 'source'):
-        geom_src = geometry_source()
-        geom_src.float_values = []
-        geom_src.id = src.get("id")
-        for accessor in src.iter(schema + 'accessor'):
-            geom_src.stride = accessor.get("stride")
-        for data in src.iter(schema + 'float_array'):
-            splitted = data.text.split()
-            for vf in splitted:
-                geom_src.float_values.append(vf)
-        mesh_instance.sources.append(geom_src)
-
-    # find vertex struct
-    for v in node.iter(schema + 'vertices'):
-        vertex_instance = vertex_input()
-        vertex_instance.id = v.get("id")
-        for i in v.iter(schema + 'input'):
-            add_vertex_input(i, vertex_instance)
-        mesh_instance.vertices.append(vertex_instance)
-
-    # find triangles (multi stream index buffers)
-    mesh_instance.triangle_count = tris.get("count")
-    for i in tris.iter(schema + 'input'):
-        vertex_instance = vertex_input()
-        vertex_instance.id = i.get("id")
-        add_vertex_input(i, vertex_instance)
-        mesh_instance.triangle_inputs.append(vertex_instance)
-
-    # find indices
-    for indices in tris.iter(schema + 'p'):
-        splitted = indices.text.split()
-        for vi in splitted:
-            mesh_instance.triangle_indices.append(vi)
-
-    # roll the multi stream vertex buffer into 1
-    generate_vertex_buffer(mesh_instance)
-
-    # wind triangles the other way
-    generate_index_buffer(mesh_instance)
-
-    return mesh_instance
+                mesh.vertex_buffer.append(mesh.vertex_elements[7].float_values[j + f])
 
 
 def parse_controller(controller_root, geom_name):
@@ -422,7 +504,6 @@ def parse_geometry(node, lib_controllers):
                 geom_container.materials.append(tris.get("material"))
                 geom_container.meshes.append(parse_mesh(mesh, tris, geom_container.controller))
                 submesh = submesh + 1
-
             for tris in mesh.iter(schema + 'triangles'):
                 geom_container.materials.append(tris.get("material"))
                 geom_container.meshes.append(parse_mesh(mesh, tris, geom_container.controller))
