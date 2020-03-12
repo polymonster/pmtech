@@ -180,31 +180,6 @@ def write_source_float_channel(p, src, sem_id, mesh):
             grow_extents([cval_x, cval_y, cval_z], mesh)
 
 
-def write_vertex_data(p, src_id, sem_id, mesh):
-    source_index = mesh.triangle_indices[int(p)]
-
-    # find source
-    for src in mesh.sources:
-        if src.id == src_id:
-            write_source_float_channel(source_index, src, sem_id, mesh)
-            return
-
-    # look in vertex list
-    # This is the vertex position buffer
-    for v in mesh.vertices:
-        if v.id == src_id:
-            itr = 0
-            for v_src in v.source_ids:
-                for src in mesh.sources:
-                    if v_src == src.id:
-                        write_source_float_channel(source_index, src, v.semantic_ids[itr], mesh)
-                itr = itr + 1
-        # also write WEIGHTS and JOINTS if we need them
-        if mesh.controller != None:
-            write_source_float_channel(source_index, mesh.controller.vec4_indices, "BLENDINDICES", mesh)
-            write_source_float_channel(source_index, mesh.controller.vec4_weights, "BLENDWEIGHTS", mesh)
-
-
 def generate_index_buffer(mesh):
     mesh.index_buffer = []
     vert_count = int(len(mesh.vertex_elements[0].float_values) / 4)
@@ -302,6 +277,24 @@ def parse_mesh(node, tris, controller):
     return mesh_instance
 
 
+def swizzle_vertex(semantic, v):
+    swizzle = [
+        "POSITION",
+        "NORMAL",
+        "TEXTANGENT",
+        "TEXBINORMAL"
+    ]
+    if semantic in swizzle:
+        if helpers.author == "Max":
+            vv = [
+                float(v[0]),
+                float(v[2]),
+                float(v[1]) * -1.0
+            ]
+            return vv
+    return v
+
+
 def generate_vertex_buffer(mesh, buffer_dict):
     index_stride = 0
     for v in mesh.triangle_inputs:
@@ -310,20 +303,25 @@ def generate_vertex_buffer(mesh, buffer_dict):
                 index_stride = max(int(o) + 1, index_stride)
 
     # old
+    '''
     p = 0
     while p < len(mesh.triangle_indices):
         for v in mesh.triangle_inputs:
             for s in range(0, len(v.source_ids), 1):
                 write_vertex_data(p + int(v.offsets[s]), v.source_ids[s], v.semantic_ids[s], mesh)
         p += index_stride
+    '''
 
     # new
     semantic_index = {
         "POSITION": 0,
         "NORMAL": 1,
         "TEXCOORD": 2,
-        "TEXTANGENT": 3,
-        "TEXBINORMAL": 4
+        "TEXCOORD1": 3,
+        "TEXTANGENT": 4,
+        "TEXBINORMAL": 5,
+        "BLENDINDICES": 6,
+        "BLENDWEIGHTS": 7
     }
     p = 0
     for sem in semantic_index:
@@ -337,10 +335,26 @@ def generate_vertex_buffer(mesh, buffer_dict):
             offset = int(stream["offset"])
             pi = int(mesh.triangle_indices[p + offset])
             bp = pi * stride
+            vv = swizzle_vertex(s, data[bp:bp+3])
             for si in range(0, stride):
-                mesh.vertex_elements[ii].float_values.append(data[bp + si])
+                mesh.vertex_elements[ii].float_values.append(vv[si])
             for si in range(stride, 4):
                 mesh.vertex_elements[ii].float_values.append("1.0")
+            if s == "POSITION":
+                v = []
+                for vi in range(0, 3):
+                    v.append(float(data[bp+vi]))
+                grow_extents(v, mesh)
+        if mesh.controller:
+            i1 = semantic_index["BLENDINDICES"]
+            i2 = semantic_index["BLENDWEIGHTS"]
+            s1 = mesh.controller.vec4_indices.float_values
+            s2 = mesh.controller.vec4_weights.float_values
+            pi = int(mesh.triangle_indices[p])
+            bp = pi * 4
+            for i in range(0, int(4)):
+                mesh.vertex_elements[i1].float_values.append(s1[bp + i])
+                mesh.vertex_elements[i2].float_values.append(s2[bp + i])
         p += index_stride
 
     # interleave streams
@@ -554,7 +568,6 @@ def write_geometry_file(geom_instance):
         mesh_data.append(struct.pack("i", int(num_vertices)))           # num vb verts
         mesh_data.append(struct.pack("i", int(index_size)))             # vertex index size
         mesh_data.append(struct.pack("i", (len(mesh.index_buffer))))    # vertex buffer index count
-
 
         # skinning is conditional, but write any fixed length data anyway
         skinned = 0
