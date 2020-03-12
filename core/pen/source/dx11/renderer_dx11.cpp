@@ -21,25 +21,23 @@
 
 extern pen::window_creation_params pen_window;
 
-namespace
-{
 // level 0 = no errors, level 1 = print errors, level 2 = assert on error
 #define D3D_DEBUG_LEVEL 2
 #if D3D_DEBUG_LEVEL > 0
 #include <comdef.h>
-    void check_d3d_error(HRESULT hr)
+void check_d3d_error(HRESULT hr)
+{
+    if (FAILED(hr))
     {
-        if (FAILED(hr))
-        {
-            _com_error err(hr);
-            LPCTSTR    errMsg = err.ErrorMessage();
-            printf("d3d device error: %ls\n", errMsg);
-        }
+        _com_error err(hr);
+        LPCTSTR    errMsg = err.ErrorMessage();
+        printf("d3d device error: %ls\n", errMsg);
+    }
 
 #if D3D_DEBUG_LEVEL > 1
-        PEN_ASSERT(hr == 0);
+    PEN_ASSERT(hr == 0);
 #endif
-    }
+}
 #define CHECK_CALL(C)                                                                                                        \
     {                                                                                                                        \
         HRESULT ghr = C;                                                                                                     \
@@ -49,6 +47,8 @@ namespace
 #define CHECK_CALL(C) C
 #endif
 
+namespace
+{
     D3D_DRIVER_TYPE         s_driverType = D3D_DRIVER_TYPE_HARDWARE;
     D3D_FEATURE_LEVEL       s_featureLevel = D3D_FEATURE_LEVEL_11_0;
     ID3D11Device*           s_device = nullptr;
