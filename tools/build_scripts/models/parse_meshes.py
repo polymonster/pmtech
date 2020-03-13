@@ -277,6 +277,31 @@ def parse_mesh(node, tris, controller):
     return mesh_instance
 
 
+def write_vertex_data(p, src_id, sem_id, mesh):
+    source_index = mesh.triangle_indices[int(p)]
+
+    # find source
+    for src in mesh.sources:
+        if src.id == src_id:
+            write_source_float_channel(source_index, src, sem_id, mesh)
+            return
+
+    # look in vertex list
+    # This is the vertex position buffer
+    for v in mesh.vertices:
+        if v.id == src_id:
+            itr = 0
+            for v_src in v.source_ids:
+                for src in mesh.sources:
+                    if v_src == src.id:
+                        write_source_float_channel(source_index, src, v.semantic_ids[itr], mesh)
+                itr = itr + 1
+        # also write WEIGHTS and JOINTS if we need them
+        if mesh.controller != None:
+            write_source_float_channel(source_index, mesh.controller.vec4_indices, "BLENDINDICES", mesh)
+            write_source_float_channel(source_index, mesh.controller.vec4_weights, "BLENDWEIGHTS", mesh)
+
+
 def swizzle_vertex(semantic, v):
     swizzle = [
         "POSITION",
@@ -303,16 +328,15 @@ def generate_vertex_buffer(mesh, buffer_dict):
                 index_stride = max(int(o) + 1, index_stride)
 
     # old
-    '''
     p = 0
     while p < len(mesh.triangle_indices):
         for v in mesh.triangle_inputs:
             for s in range(0, len(v.source_ids), 1):
                 write_vertex_data(p + int(v.offsets[s]), v.source_ids[s], v.semantic_ids[s], mesh)
         p += index_stride
-    '''
 
     # new
+    '''
     semantic_index = {
         "POSITION": 0,
         "NORMAL": 1,
@@ -356,6 +380,7 @@ def generate_vertex_buffer(mesh, buffer_dict):
                 mesh.vertex_elements[i1].float_values.append(s1[bp + i])
                 mesh.vertex_elements[i2].float_values.append(s2[bp + i])
         p += index_stride
+    '''
 
     # interleave streams
     num_floats = len(mesh.vertex_elements[0].float_values)
