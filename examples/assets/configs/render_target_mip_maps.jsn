@@ -1,8 +1,5 @@
+import common.jsn
 {            
-    include: [
-        common.jsn
-    ],
-    
     render_targets:
     {
         mip_mapped:

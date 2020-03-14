@@ -1,9 +1,6 @@
-{
-    include: [
-        common.jsn,
-        editor_renderer.jsn
-    ],
-        
+import common.jsn
+import editor_renderer.jsn
+{        
     views:
     {        
         view_rasterizer_state:

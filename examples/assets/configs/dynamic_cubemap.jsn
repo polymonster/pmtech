@@ -1,10 +1,7 @@
-{
-    include: [
-        common.jsn,
-        post_process.jsn,
-        editor_renderer.jsn
-    ],
-    
+import common.jsn
+import editor_renderer.jsn
+import post_process.jsn
+{    
     render_targets:
     {
         chrome:

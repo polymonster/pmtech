@@ -1,9 +1,6 @@
+import common.jsn
+import post_process.jsn
 {
-    include: [
-        common.jsn,
-        post_process.jsn
-    ],
-    
     views:
     {    
         pp_main_view:

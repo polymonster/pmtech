@@ -39,10 +39,15 @@
             pmtech_dir: "../"
         },
         
-        jsn: [
-        	["assets/configs", "${data_dir}/configs"],
-			["../assets/configs", "${data_dir}/configs"]
-        ]
+        jsn: {
+			files:[
+				["assets/configs", "${data_dir}/configs"],
+				["../assets/configs", "${data_dir}/configs"]
+			],
+			import_dirs:[
+				"../assets/configs", "assets/configs"
+			]
+        }
     },
     
     //

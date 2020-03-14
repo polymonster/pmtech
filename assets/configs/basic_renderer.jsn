@@ -1,9 +1,6 @@
+import common.jsn
+import editor_renderer.jsn
 {
-    include: [
-        common.jsn,
-        editor_renderer.jsn
-    ],
-    
     view_sets: 
     {
         example: [

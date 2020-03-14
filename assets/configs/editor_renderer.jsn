@@ -1,10 +1,7 @@
-{
-	include: [
-		"common.jsn",
-		"deferred_renderer.jsn",
-		"post_process.jsn"
-	],
-	    
+import common.jsn
+import deferred_renderer.jsn
+import post_process.jsn
+{	    
     render_targets:
     {
         picking:

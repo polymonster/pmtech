@@ -1,10 +1,7 @@
+import common.jsn
+import editor_renderer.jsn
+import post_process.jsn
 {
-    include: [
-        common.jsn,
-        post_process.jsn,
-        editor_renderer.jsn
-    ],
-    
     render_targets:
     {
         shadow_cube:

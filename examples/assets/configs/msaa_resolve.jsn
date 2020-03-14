@@ -1,8 +1,5 @@
-{            
-    include: [
-        common.jsn
-    ],
-    
+import common.jsn
+{                
     render_targets:
     {
         msaa_colour:

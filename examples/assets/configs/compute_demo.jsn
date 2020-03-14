@@ -1,10 +1,7 @@
+import common.jsn
+import editor_renderer.jsn
+import post_process.jsn
 {
-    include: [
-        common.jsn,
-        editor_renderer.jsn,
-        post_process.jsn
-    ],
-    
     views:
     {
         view_clear:

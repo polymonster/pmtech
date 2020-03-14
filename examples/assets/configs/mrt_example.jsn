@@ -1,8 +1,5 @@
-{            
-    include: [
-        common.jsn,
-        deferred_renderer.jsn
-    ],
-    
+import common.jsn
+import deferred_renderer.jsn
+{                
     view_set: deferred_render
 }

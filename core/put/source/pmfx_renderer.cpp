@@ -2360,25 +2360,6 @@ namespace put
             // load render config
             pen::json render_config = pen::json::load((const c8*)config_data);
 
-            // add includes
-            u32 num_includes = render_config["include"].size();
-            for (u32 i = 0; i < num_includes; ++i)
-            {
-                Str include_filename = render_config["include"][i].as_str();
-
-                Str config_path = (const c8*)config_data;
-                config_path = pen::str_normalise_filepath(filename);
-
-                u32 last_dir = pen::str_find_reverse(config_path, "/");
-                Str include_dir = pen::str_substr(config_path, 0, last_dir + 1);
-
-                include_dir.append(include_filename.c_str());
-
-                pen::json include_json = pen::json::load_from_file(include_dir.c_str());
-
-                render_config = pen::json::combine(include_json, render_config);
-            }
-
             // add main_colour and main_depth backbuffer target
             add_backbuffer_targets();
             load_always_create_render_targets(render_config); // load render targets with always_create

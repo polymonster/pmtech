@@ -1,9 +1,6 @@
-{
-    include: [
-        common.jsn,
-        editor_renderer.jsn
-    ],
-    
+import common.jsn
+import editor_renderer.jsn
+{    
     depth_stencil_states:
     {
         stencil_ref_equal:

@@ -352,15 +352,18 @@ def run_jsn(config):
     print("--------------------------------------------------------------------------------")
     print("jsn ----------------------------------------------------------------------------")
     print("--------------------------------------------------------------------------------")
-    copy_tasks = config["jsn"]
-    for task in copy_tasks:
+    jsn_tasks = config["jsn"]
+    ii = " -I "
+    for i in jsn_tasks["import_dirs"]:
+        ii += i + " "
+    for task in jsn_tasks["files"]:
         files = get_task_files(task)
         for f in files:
             if not os.path.exists(f[0]):
                 print("[warning]: file or directory " + f[0] + " does not exist!")
                 continue
             cmd = python_tool_to_platform(config["tools"]["jsn"])
-            cmd += " -i " + f[0] + " -o " + f[1]
+            cmd += " -i " + f[0] + " -o " + f[1] + ii
             subprocess.call(cmd, shell=True)
 
 

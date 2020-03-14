@@ -1,8 +1,5 @@
+import common.jsn
 {            
-    include: [
-        common.jsn,
-    ],
-    
     render_targets:
     {
         rt_no_blend:
