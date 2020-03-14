@@ -1722,8 +1722,6 @@ namespace put
 
                         // reduce index size to u16 if possible
                         o.index_size = 4;
-                        
-                        /*
                         if(o.vertex_count < 65535)
                         {
                             o.ib_size = sm.num_indices*sizeof(u16);
@@ -1735,7 +1733,6 @@ namespace put
                             o.ib = nni;
                             o.index_size = 2;
                         }
-                        */
                     }
 
                     // cleanup the old / temp buffers
