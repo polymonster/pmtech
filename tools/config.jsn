@@ -25,9 +25,8 @@
         ],
         build: [
         	"xcodebuild -scheme mesh_opt -workspace build/osx/pmtech_tools_osx.xcworkspace -configuration Release",
-        	"mv bin/osx/mesh_opt.app/Contents/MacOS/mesh_opt bin/osx/mesh_opt",
+        	"rsync bin/osx/mesh_opt.app/Contents/MacOS/mesh_opt bin/osx/mesh_opt",
         	"install_name_tool -add_rpath @executable_path/. bin/osx/mesh_opt",
-        	"rm -rf bin/osx/mesh_opt.app && rm -rf bin/osx/mesh_opt.app.dSYM"
         ]
     },
 

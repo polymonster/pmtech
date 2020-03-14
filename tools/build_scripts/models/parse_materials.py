@@ -54,6 +54,7 @@ def parse_library_images(library_node):
         lib_img.id = img_node.get("id")
         for file_node in img_node.iter(schema+'init_from'):
             corrected = file_node.text.replace('\\', '/')
+            corrected = corrected.replace('//', '/')
             identifier = dependencies.get_build_config_setting("textures_dir")
             identifier = "assets/exported/textures/"
             texture_src = corrected.find(identifier)
