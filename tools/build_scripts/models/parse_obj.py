@@ -321,8 +321,9 @@ def write_geometry(file, root):
     helpers.output_file.geometry.append(geometry_data)
     helpers.output_file.geometry_sizes.append(data_size)
 
-    scene_data = [struct.pack("i", (int(helpers.version_number))),
-                  struct.pack("i", (int(len(meshes))))]
+    scene_data = [struct.pack("i", int(helpers.version_number)),
+                  struct.pack("i", int(len(meshes))),
+                  struct.pack("i", int(0))]
 
     for m in meshes:
         scene_data.append(struct.pack("i", (int(0))))  # node type
