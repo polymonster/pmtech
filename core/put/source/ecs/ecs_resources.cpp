@@ -425,7 +425,7 @@ namespace
         // scene nodes
         bool has_control_rig = false;
         s32  nodes_start, nodes_end;
-        get_new_entities_append(scene, num_import_nodes, nodes_start, nodes_end);
+        get_new_entities_append(scene, num_import_nodes+16, nodes_start, nodes_end);
 
         u32 node_zero_offset = nodes_start;
         u32 current_node = node_zero_offset;
@@ -1721,6 +1721,8 @@ namespace put
 
                         // reduce index size to u16 if possible
                         o.index_size = 4;
+                        
+                        /*
                         if(o.vertex_count < 65535)
                         {
                             o.ib_size = sm.num_indices*sizeof(u16);
@@ -1732,10 +1734,7 @@ namespace put
                             o.ib = nni;
                             o.index_size = 2;
                         }
-                        else
-                        {
-                            o.index_size = 4;
-                        }
+                        */
                     }
 
                     // cleanup the old / temp buffers
