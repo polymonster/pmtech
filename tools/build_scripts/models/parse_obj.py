@@ -296,7 +296,6 @@ def write_geometry(file, root):
         mesh_data.append(struct.pack("i", int(skinned)))
         mesh_data.append(struct.pack("i", int(num_joint_floats)))
         helpers.pack_corrected_4x4matrix(mesh_data, bind_shape_matrix)
-        
 
         for vf in mesh[pb]:
             # position only buffer

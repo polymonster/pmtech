@@ -23,6 +23,7 @@ namespace pen
     Str  str_replace_chars(const Str& string, const c8 search, const c8 replace);
     Str  str_replace_string(const Str& string, const c8* search, const c8* replace);
     Str  str_normalise_filepath(const Str& filepath);
+    Str  str_basename(const Str& filepath);
 
     // Implementation
 
@@ -191,5 +192,16 @@ namespace pen
         }
 
         return f;
+    }
+    
+    inline Str str_basename(const Str& filepath)
+    {
+        Str f = str_replace_chars(filepath, '\\', '/');
+        u32 last = str_find_reverse(f, "/");
+        if(last != -1)
+        {
+            return str_substr(f, last+1, f.length());
+        }
+        return filepath;
     }
 } // namespace pen

@@ -48,7 +48,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->entities[light] |= e_cmp::transform;
 
     // load head model
-    u32 head_model = load_pmm("data/models/head_smooth.pmm", scene) + 1; // node 0 in the model is environment ambient light
+    u32 head_model = load_pmm("data/models/head_smooth.pmm", scene) + 2; // node 0 in the model is environment ambient light
     PEN_ASSERT(is_valid(head_model));
 
     // set character scale and pos

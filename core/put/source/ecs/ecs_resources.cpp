@@ -420,16 +420,27 @@ namespace
         u32        version = *p_u32reader++;
         u32        num_import_nodes = *p_u32reader++;
         u32        num_sub_meshes = *p_u32reader++;
+        u32        total_nodes = num_import_nodes+num_sub_meshes+1;
         
         if (version < 1)
             return PEN_INVALID_HANDLE;
-
+            
         // scene nodes
         bool has_control_rig = false;
         s32  nodes_start, nodes_end;
-        get_new_entities_append(scene, num_import_nodes+num_sub_meshes, nodes_start, nodes_end);
-
-        u32 node_zero_offset = nodes_start;
+        get_new_entities_append(scene, total_nodes, nodes_start, nodes_end);
+        
+        // root node
+        u32 root = nodes_start;
+        scene->names[root] = pen::str_basename(filename);
+        scene->parents[root] = nodes_start;
+        scene->transforms[root].scale = vec3f::one();
+        scene->transforms[root].translation = vec3f::zero();
+        scene->transforms[root].rotation = quat();
+        scene->local_matrices[root] = mat4::create_identity();
+        scene->world_matrices[root] = mat4::create_identity();
+        
+        u32 node_zero_offset = nodes_start+1;
         u32 current_node = node_zero_offset;
         u32 inserted_nodes = 0;
 
@@ -476,6 +487,10 @@ namespace
             // transformation load
             u32 parent = *p_u32reader++ + node_zero_offset + inserted_nodes;
             scene->parents[current_node] = parent;
+            
+            if(current_node == parent)
+                scene->parents[current_node] = nodes_start;
+            
             u32 transforms = *p_u32reader++;
 
             // parent fix up to contain control rig
@@ -695,19 +710,43 @@ namespace
 
             current_node = dest + 1;
         }
-
+        
+        // collapse redudant hierarchy if the top leve only has one child, we dont need it
+        u32 num_root_children = 0;
+        for(s32 i = root+1; i < root+total_nodes; ++i)
+            if(scene->parents[i] == root)
+                num_root_children++;
+                
+        if(num_root_children == 1)
+        {
+            u32 old_root = root;
+            for(s32 i = root+1; i < root+total_nodes; ++i)
+                if(scene->parents[i] == root)
+                {
+                    scene->parents[i] = i;
+                    root = i;
+                    total_nodes--;
+                    break;
+                }
+                
+            // delete temp root
+            scene->entities[old_root] &= ~e_cmp::allocated;
+        }
+        
         // now we have loaded the whole scene fix up any anim controllers
-        for (s32 i = node_zero_offset; i < node_zero_offset + num_import_nodes; ++i)
+        for (s32 i = root; i < root+total_nodes; ++i)
         {
             if (scene->entities[i] & e_cmp::sub_geometry)
                 continue;
 
             // parent geometry deals with skinning
             if ((scene->entities[i] & e_cmp::geometry) && scene->geometries[i].p_skin)
+            {
                 instantiate_anim_controller_v2(scene, i);
+            }
         }
 
-        return nodes_start;
+        return root;
     }
 } // namespace
 
