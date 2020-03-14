@@ -102,5 +102,5 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
 
 void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
 {
-    animate_lights(scene, dt * 10000.0f);
+    animate_lights(scene, dt * 500.0f);
 }

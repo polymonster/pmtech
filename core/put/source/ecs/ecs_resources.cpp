@@ -1684,12 +1684,13 @@ namespace put
 
             // perform optimisations on each submesh
             std::vector<intptr_t> reductions;
+            intptr_t              reduction = 0;
             u32                   mc = 0;
             for (auto& g : geom)
             {
                 // reduction could be negative in theory..
                 // ... especially as index size goes from u16 > u32 so handle it with signed types
-                intptr_t reduction = 0;
+                
                 for (auto& sm : g.submeshes)
                 {
                     // to 32 bit indices
@@ -1747,10 +1748,11 @@ namespace put
                     intptr_t vbr = (intptr_t)opt[0].vb_size - (intptr_t)sm.vertex_data_size;
                     intptr_t ibr = (intptr_t)opt[0].ib_size - (intptr_t)sm.index_data_size;
                     reduction += vbr + ibr;
+                    
                     vbr = (intptr_t)opt[1].vb_size - (intptr_t)sm.pos_data_size;
-                    ibr = (intptr_t)opt[1].ib_size - (intptr_t)sm.pos_index_data_size;
+                    ibr = (intptr_t)opt[1].ib_size - (intptr_t)sm.index_data_size;
                     reduction += vbr + ibr;
-
+                                        
                     // reassign
                     PEN_LOG("    new vertex count: %i, old %i", opt[0].vertex_count, sm.num_verts);
                     
@@ -1775,7 +1777,9 @@ namespace put
 
             // work out the offset adjustments, geom is at the end so we dont need to bother with the last one.
             for (u32 g = 1; g < contents.num_geometry; ++g)
+            {
                 contents.geometry_offsets[g] += reductions[g - 1];
+            }
                 
             // ..
             // below can be refactored as write pmm
@@ -1813,11 +1817,20 @@ namespace put
                 write_parsable_string_u32(contents.geometry_names[g], ofs);
                 ofs.write((const c8*)&contents.geometry_offsets[g], sizeof(u32));
             }
+            
+            // base
+            intptr_t base = (intptr_t)contents.data_start - (intptr_t)contents.file_data;
 
             // scenes
             u32 cur_offset = 0;
             for (u32 s = 0; s < contents.num_scene; ++s)
             {
+                size_t pos = ofs.tellp();
+                if(pos != base + contents.scene_offsets[s])
+                {
+                    PEN_LOG("[error] scene %u, offset %llu, should be %llu\n", s, pos, base + contents.scene_offsets[s]);
+                }
+                
                 const c8* p_scene_data = (const c8*)(contents.data_start + contents.scene_offsets[s]);
                 ofs.write(p_scene_data, offsets[cur_offset + 1] - contents.scene_offsets[s]);
                 cur_offset++;
@@ -1826,6 +1839,12 @@ namespace put
             // materials
             for (u32 m = 0; m < contents.num_materials; ++m)
             {
+                size_t pos = ofs.tellp();
+                if(pos != base + contents.material_offsets[m])
+                {
+                    PEN_LOG("[error] material %u, offset %llu, should be %llu\n", m, pos, base + contents.material_offsets[m]);
+                }
+                
                 const c8* p_mat_data = (const c8*)(contents.data_start + contents.material_offsets[m]);
                 ofs.write(p_mat_data, offsets[cur_offset + 1] - contents.material_offsets[m]);
                 cur_offset++;
@@ -1835,6 +1854,12 @@ namespace put
             for (u32 g = 0; g < contents.num_geometry; ++g)
             {
                 // header and material names
+                size_t pos = ofs.tellp();
+                if(pos != base + contents.geometry_offsets[g])
+                {
+                    PEN_LOG("[error] geom %u, offset %llu, should be %llu\n", g, pos, base + contents.geometry_offsets[g]);
+                }
+                
                 ofs.write((const c8*)&geom[g].version, sizeof(u32));
                 ofs.write((const c8*)&geom[g].num_meshes, sizeof(u32));
                 for (auto& mm : geom[g].mat_names)
@@ -1860,7 +1885,7 @@ namespace put
                     ofs.write((const c8*)sm.joint_data, sm.joint_data_size);
                     ofs.write((const c8*)sm.pos_data, sm.pos_data_size);
                     ofs.write((const c8*)sm.vertex_data, sm.vertex_data_size);
-                    ofs.write((const c8*)sm.pos_index_data, sm.index_data_size);
+                    ofs.write((const c8*)sm.pos_index_data, sm.pos_index_data_size);
                     ofs.write((const c8*)sm.index_data, sm.index_data_size);
                 }
             }
