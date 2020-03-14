@@ -419,13 +419,15 @@ namespace
         const u32* p_u32reader = (const u32*)data;
         u32        version = *p_u32reader++;
         u32        num_import_nodes = *p_u32reader++;
+        u32        num_sub_meshes = *p_u32reader++;
+        
         if (version < 1)
             return PEN_INVALID_HANDLE;
 
         // scene nodes
         bool has_control_rig = false;
         s32  nodes_start, nodes_end;
-        get_new_entities_append(scene, num_import_nodes+16, nodes_start, nodes_end);
+        get_new_entities_append(scene, num_import_nodes+num_sub_meshes, nodes_start, nodes_end);
 
         u32 node_zero_offset = nodes_start;
         u32 current_node = node_zero_offset;

@@ -155,15 +155,19 @@ def parse_dae():
 # File Writers
 def write_scene_file():
     # write out nodes and transforms
-    numjoints = len(joint_list)
-    if numjoints == 0:
+    num_nodes = len(joint_list)
+    if num_nodes == 0:
         return
     scene_data = [struct.pack("i", (int(helpers.version_number))),
-                  struct.pack("i", (int(numjoints)))]
-    for j in range(numjoints):
+                  struct.pack("i", (int(num_nodes)))]
+    num_meshes = 0
+    for j in range(num_nodes):
+        num_meshes += int(len(material_attach_data_list[j]))
+    scene_data.append(struct.pack("i", num_meshes))
+    for j in range(num_nodes):
         if joint_list[j] is None:
             joint_list[j] = "no_name"
-        scene_data.append(struct.pack("i", (int(type_list[j]))))
+        scene_data.append(struct.pack("i", (int(type_list[j]))))  # node type
         helpers.pack_parsable_string(scene_data, joint_list[j])
         helpers.pack_parsable_string(scene_data, geom_attach_data_list[j])
         scene_data.append(struct.pack("i", (int(len(material_attach_data_list[j])))))
@@ -186,11 +190,9 @@ def write_joint_file():
     # write out joints
     if len(joint_list) == 0:
         return
-
-    numjoints = len(joint_list)
     joint_data = [struct.pack("i", (int(helpers.version_number))),
                   struct.pack("i", (int(len(animations))))]
-    # write out anims
+    # write out animations
     for animation_instance in animations:
         num_times = len(animation_instance.inputs)
         bone_index = int(animation_instance.bone_index)
@@ -208,7 +210,6 @@ def write_joint_file():
                 joint_data.append(struct.pack("f", (float(animation_instance.rotation_x[t]))))
                 joint_data.append(struct.pack("f", (float(animation_instance.rotation_y[t]))))
                 joint_data.append(struct.pack("f", (float(animation_instance.rotation_z[t]))))
-
     helpers.output_file.joints.append(joint_data)
 
 
