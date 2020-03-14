@@ -26,9 +26,8 @@ import common.jsn
     
     views:
     {    
-        mssr:
+        mssr(main_view):
         {
-            inherit: main_view,
             target : [msaa_colour, msaa_depth],
             clear_colour : [0.5, 1.0, 0.0, 1.0],
             clear_depth : 1.0,
@@ -42,9 +41,8 @@ import common.jsn
             resolve : ["average_4x", "max_4x"]
         },
         
-        mssc:
+        mssc(main_view):
         {
-            inherit: main_view,
             target : [msaa_custom],
             clear_colour : [1.0, 0.0, 0.5, 1.0],
             clear_depth : 1.0,

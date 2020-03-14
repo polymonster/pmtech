@@ -113,9 +113,8 @@
             ],
         },
         
-        gbuffer_view_msaa:
+        gbuffer_view_msaa(gbuffer_view):
         {
-            inherit: gbuffer_view,
             target: [
                 gbuffer_albedo_msaa, 
                 gbuffer_normals_msaa, 
@@ -125,10 +124,8 @@
             resolve: ["average_4x", "average_4x", "average_4x", "max_4x"]
         },
         
-        deferred_lights_view_msaa:
-        {
-            inherit: deferred_lights_view,
-            
+        deferred_lights_view_msaa(deferred_lights_view):
+        {            
             sampler_bindings:
             [
                 { texture: gbuffer_albedo_msaa, unit: 4, state: wrap_linear, bind_flags: [ps, msaa]},

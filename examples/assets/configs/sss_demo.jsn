@@ -20,9 +20,8 @@ import post_process.jsn
             render_flags       : ["shadow_map"]
         },
         
-        sss_main:
+        sss_main(main_view_post_processed):
         {
-            inherit        : "main_view_post_processed",
             clear_colour   : [0.0, 0.0, 0.0, 1.0],
             clear_depth    : 1.0,
             post_process   : pp_sss,

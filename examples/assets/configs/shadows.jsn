@@ -34,9 +34,8 @@ import common.jsn
             scene_views        : ["shadows_debug"]
         },
         
-        shadow_demo_main:
+        shadow_demo_main(main_view):
         {
-            inherit        : "main_view",
             clear_colour   : [0.0, 0.0, 0.0, 1.0],
             clear_depth    : 1.0,
             

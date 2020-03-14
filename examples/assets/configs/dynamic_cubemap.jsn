@@ -21,24 +21,21 @@ import post_process.jsn
                 
     views:
     {
-        demo_main:
+        demo_main(main_view):
         {
-            inherit: "main_view",
             clear_colour: [1.0, 1.0, 1.0, 1.0]
         },
         
-        chrome1_cubemap_render:
+        chrome1_cubemap_render(demo_main):
         {
-            inherit: "demo_main",
             pmfx_shader : forward_render,
             technique: "forward_lit",
             target : [chrome],
             camera : "chrome_camera"
         },
         
-        chrome2_cubemap_render:
+        chrome2_cubemap_render(demo_main):
         {
-            inherit: "demo_main",
             pmfx_shader : forward_render,
             technique: "forward_lit",
             target : [chrome2],

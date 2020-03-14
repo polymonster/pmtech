@@ -249,9 +249,8 @@
             generate_mip_maps  : true
         },
         
-        main_view_post_processed:
+        main_view_post_processed(main_view):
         {
-            inherit: main_view,
             target: [post_process_colour, post_process_depth],
             post_process : editor_default,
             resolve: ["average_4x", "max_4x"]

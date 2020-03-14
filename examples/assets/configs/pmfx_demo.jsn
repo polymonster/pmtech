@@ -4,23 +4,20 @@ import post_process.jsn
 {               
     views:
     {        
-        forward_render_main:
+        forward_render_main(main_view):
         {
-            inherit : "main_view",
             clear_colour : [0.0, 0.0, 0.0, 1.0],
             clear_depth : 1.0
         },
         
-        zprepass:
+        zprepass(main_view):
         {
-            inherit : "main_view",
             clear_depth : 1.0,
             technique: "zonly"
         },
         
-        forward_render_zequal:
+        forward_render_zequal(main_view):
         {
-            inherit : "main_view",
             clear_depth : false,
             clear_colour : [0.0, 0.0, 0.0, 1.0],
             depth_stencil_state: "depth_equal"

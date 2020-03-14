@@ -115,60 +115,52 @@ import common.jsn
             scene_views        : ["blend_layers"]
         },
         
-        view_no_blend:
+        view_no_blend(base_blend_view):
         {
             target : [rt_no_blend],
-            inherit: base_blend_view,
             blend_state: disabled
         },
         
-        view_alpha_blend:
+        view_alpha_blend(base_blend_view):
         {
             clear_colour : [1.0, 0.0, 0.0, 1.0],
             target : [rt_alpha_blend],
-            inherit: base_blend_view,
             blend_state: alpha_blend
         },
         
-        view_additive:
+        view_additive(base_blend_view):
         {
             target : [rt_additive],
-            inherit: base_blend_view,
             blend_state: additive
         },
         
-        view_premultiplied_alpha:
+        view_premultiplied_alpha(base_blend_view):
         {
             target : [rt_premultiplied_alpha],
-            inherit: base_blend_view,
             blend_state: premultiplied_alpha
         },
         
-        view_min:
+        view_min(base_blend_view):
         {
             target : [rt_min],
-            inherit: base_blend_view,
             blend_state: min
         },
         
-        view_max:
+        view_max(base_blend_view):
         {
             target : [rt_max],
-            inherit: base_blend_view,
             blend_state: max
         },
         
-        view_subtract:
+        view_subtract(base_blend_view):
         {
             target : [rt_subtract],
-            inherit: base_blend_view,
             blend_state: subtract
         },
 
-        view_rev_subtract:
+        view_rev_subtract(base_blend_view):
         {
             target : [rt_rev_subtract],
-            inherit: base_blend_view,
             blend_state: rev_subtract
         }
     },
