@@ -102,5 +102,25 @@ def change_ext(file, ext):
     return os.path.splitext(file)[0] + ext
 
 
+# print a header in the format of:
+# ------------ (* length)
+# name ------- (* length)
+# ------------ (* length)
+def print_header(name, half=False):
+    length = 79
+    separator = "-"
+
+    if not half:
+        print(separator * length)
+
+    print(f"{name} {separator * ((length - 1) - len(name))}")
+    print(separator * length)
+
+
+# print a basic log message in the format of:
+# [status type] status message
+def print_status(_type, message):
+    print(f"[{_type}] {message}")
+
 if __name__ == "__main__":
-    print("util")
+    print_header("util", half=True)

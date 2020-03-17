@@ -92,10 +92,11 @@ def configure_windows_sdk(config):
     if auto_sdk:
         update_user_config("sdk_version", auto_sdk, config)
         return
-    print("Windows SDK version not set.")
-    print("Please enter the windows sdk you want to use.")
-    print("You can find available sdk versions in:")
-    print("Visual Studio > Project Properties > General > Windows SDK Version.")
+
+    msg = "Windows SDK version is not set! Please enter the version you'd like to use.\n" \
+            "\tAvailable versions are in: Visual Studio > Project Properties > General > Windows SDK Version"
+    util.print_status("warning", msg)
+
     input_sdk = str(input())
     update_user_config("sdk_version", input_sdk, config)
     return
@@ -119,7 +120,7 @@ def locate_vs_root():
 def locate_vs_latest():
     vs_dir = locate_vs_root()
     if len(vs_dir) == 0:
-        print("[warning]: could not auto locate visual studio, using vs2017 as default")
+        util.print_status("warning", "Unable to locate visual studio, setting vs2017 as default")
         return "vs2017"
     supported = ["2017", "2019"]
     versions = sorted(os.listdir(vs_dir), reverse=False)
@@ -155,8 +156,10 @@ def configure_vc_vars_all(config):
         return
     # user input
     while True:
-        print("Cannot find 'vcvarsall.bat'")
-        print("Please enter the full path to the vc2017/vc2019 installation directory containing vcvarsall.bat")
+        msg = "Unable to find 'vcvarsall.bat'! " \
+                "Please enter the full path to the vc2017/vc2019 installation directory containing 'vcvarsall.bat'"
+        util.print_status("warning", msg)
+
         input_dir = str(input())
         input_dir = input_dir.strip("\"")
         input_dir = os.path.normpath(input_dir)
@@ -173,11 +176,12 @@ def configure_vc_vars_all(config):
 def configure_teamid(config):
     if "teamid" in config.keys():
         return
-    print("Apple Developer Team ID not set.")
-    print("Please enter your development team ID ie. (7C3Y44TX5K)")
-    print("You can find team id's or personal team id on the Apple Developer website")
-    print("Optionally leave this blank and you select a team later in xcode:")
-    print("  Project > Signing & Capabilities > Team")
+
+    msg = "Apple Developer Team ID is not set! This can be found on the Apple Developer Website.\n" \
+            "Optionally, leave this blank to set one later in xcode: Project > Signing & Capabilities > Team\n" \
+            "Please enter your ID (ie. 7C3Y44TX5K): "
+    util.print_status("warning", msg)
+
     input_sdk = str(input())
     update_user_config("teamid", input_sdk, config)
     return
@@ -229,7 +233,7 @@ def export_config_for_file(filename):
 def get_task_files(task):
     outputs = []
     if len(task) != 2:
-        print("[error] file tasks must be an array of size 2 [src, dst]")
+        util.print_status("error", "File tasks must be an array of 2: [src, dst]")
         exit(1)
     fn = task[0].find("*")
     if fn != -1:
@@ -327,19 +331,19 @@ def run_vs_version(config):
     version = config["vs_version"]
     if version == "latest":
         config["vs_version"] = locate_vs_latest()
-        print("setting vs_version to: " + config["vs_version"])
+        util.print_status("status", f"Setting vs_version to: {config['vs_version']}")
         return config
     else:
         if version not in supported_versions:
-            print("[error]: unsupported visual studio version " + str(version))
-            print("    supported versions are " + str(supported_versions))
+            msg = f"Unsupported visual studio version: {version}\n" \
+                    "\tSupported version are: {supported_versions}"
+
+            util.print_status("error", msg)
 
 
 # copy files, directories or wildcards
 def run_copy(config):
-    print("--------------------------------------------------------------------------------")
-    print("copy ---------------------------------------------------------------------------")
-    print("--------------------------------------------------------------------------------")
+    util.print_header("copy")
     copy_tasks = config["copy"]
     for task in copy_tasks:
         files = get_task_files(task)
@@ -349,9 +353,7 @@ def run_copy(config):
 
 # convert jsn to json for use at runtime
 def run_jsn(config):
-    print("--------------------------------------------------------------------------------")
-    print("jsn ----------------------------------------------------------------------------")
-    print("--------------------------------------------------------------------------------")
+    util.print_header("jsn")
     jsn_tasks = config["jsn"]
     ii = " -I "
     for i in jsn_tasks["import_dirs"]:
@@ -360,7 +362,7 @@ def run_jsn(config):
         files = get_task_files(task)
         for f in files:
             if not os.path.exists(f[0]):
-                print("[warning]: file or directory " + f[0] + " does not exist!")
+                util.print_status("warning", f"Location '{f[0]}' does not exist")
                 continue
             cmd = python_tool_to_platform(config["tools"]["jsn"])
             cmd += " -i " + f[0] + " -o " + f[1] + ii
@@ -369,9 +371,7 @@ def run_jsn(config):
 
 # premake
 def run_premake(config):
-    print("--------------------------------------------------------------------------------")
-    print("premake ------------------------------------------------------------------------")
-    print("--------------------------------------------------------------------------------")
+    util.print_header("premake")
     cmd = tool_to_platform(config["tools"]["premake"])
     for c in config["premake"]:
         if c == "vs_version":
@@ -400,9 +400,7 @@ def run_pmfx(config):
 
 # models
 def run_models(config):
-    print("--------------------------------------------------------------------------------")
-    print("models -------------------------------------------------------------------------")
-    print("--------------------------------------------------------------------------------")
+    util.print_header("models")
     tool_cmd = python_tool_to_platform(config["tools"]["models"])
     for task in config["models"]:
         task_files = get_task_files(task)
@@ -420,9 +418,7 @@ def run_models(config):
 
 # build third_party libs
 def run_libs(config):
-    print("--------------------------------------------------------------------------------")
-    print("libs ---------------------------------------------------------------------------")
-    print("--------------------------------------------------------------------------------")
+    util.print_header("libs")
     shell = ["linux", "osx", "ios"]
     cmd = ""
     for arg in config["libs"]:
@@ -444,9 +440,7 @@ def run_libs(config):
 
 # textures
 def run_textures(config):
-    print("--------------------------------------------------------------------------------")
-    print("textures -----------------------------------------------------------------------")
-    print("--------------------------------------------------------------------------------")
+    util.print_header("textures")
     tool_cmd = tool_to_platform(config["tools"]["texturec"])
     for task in config["textures"]:
         files = get_task_files_containers(task)
@@ -488,9 +482,7 @@ def run_textures(config):
 
 # clean
 def run_clean(config):
-    print("--------------------------------------------------------------------------------")
-    print("clean --------------------------------------------------------------------------")
-    print("--------------------------------------------------------------------------------")
+    util.print_header("clean")
     for clean_task in config["clean"]:
         if os.path.isfile(clean_task):
             print("file " + clean_task)
@@ -522,9 +514,7 @@ def setup_vcvars(config):
 
 # run build commands
 def run_build(config):
-    print("--------------------------------------------------------------------------------")
-    print("build --------------------------------------------------------------------------")
-    print("--------------------------------------------------------------------------------")
+    util.print_header("build")
     for build_task in config["build"]:
         if util.get_platform_name() == "win32":
             build_task = setup_vcvars(config) + " && " + build_task
@@ -536,8 +526,7 @@ def run_build(config):
 
 # top level help
 def pmbuild_help(config):
-    print("pmbuild -help ------------------------------------------------------------------")
-    print("--------------------------------------------------------------------------------")
+    util.print_header("pmbuild -help", half=True)
     print("\nusage: pmbuild <profile> <tasks...>")
     print("\noptions:")
     print("    -help (display this dialog).")
@@ -562,8 +551,7 @@ def pmbuild_help(config):
 
 
 def clean_help(config):
-    print("clean help ---------------------------------------------------------------------")
-    print("--------------------------------------------------------------------------------")
+    util.print_header("clean help", half=True)
     print("removes all intermediate and temp directories:")
     print("\njsn syntax: array of [directories to remove...].")
     print("clean: [")
@@ -574,8 +562,7 @@ def clean_help(config):
 
 
 def vs_version_help(config):
-    print("vs version help ---------------------------------------------------------------")
-    print("-------------------------------------------------------------------------------")
+    util.print_header("vs version help", half=True)
     print("select version of visual studio for building libs and porjects:")
     print("\njsn syntax:")
     print("vs_version: <version>")
@@ -588,8 +575,7 @@ def vs_version_help(config):
 
 
 def libs_help(config):
-    print("libs help ----------------------------------------------------------------------")
-    print("--------------------------------------------------------------------------------")
+    util.print_header("libs help", half=True)
     print("builds tools and third-party libraries:")
     print("\njsn syntax: array of [cmdlines, ..]")
     print("libs: [")
@@ -605,8 +591,7 @@ def libs_help(config):
 
 
 def premake_help(config):
-    print("premake help -------------------------------------------------------------------")
-    print("--------------------------------------------------------------------------------")
+    util.print_header("premake help", half=True)
     print("generate ide projects or make files from lua descriptions:")
     print("\njsn syntax: array of [<action>, cmdline options..]")
     print("premake: [")
@@ -622,8 +607,7 @@ def premake_help(config):
 
 
 def pmfx_help(config):
-    print("pmfx help ----------------------------------------------------------------------")
-    print("--------------------------------------------------------------------------------")
+    util.print_header("pmfx help", half=True)
     print("compile platform specific shaders:")
     print("\njsn syntax: array of [cmdline options, ..]")
     print("pmfx: [")
@@ -637,8 +621,7 @@ def pmfx_help(config):
 
 
 def models_help(config):
-    print("models help --------------------------------------------------------------------")
-    print("--------------------------------------------------------------------------------")
+    util.print_header("models help", half=True)
     print("create binary pmm and pma model files from collada files:")
     print("\njsn syntax: array of [src, dst] pairs.")
     print("models: [")
@@ -650,8 +633,7 @@ def models_help(config):
 
 
 def textures_help(config):
-    print("textures help ------------------------------------------------------------------")
-    print("--------------------------------------------------------------------------------")
+    util.print_header("textures help", half=True)
     print("convert, re-size or compress textures:")
     print("\njsn syntax: array of [src, dst] pairs.")
     print("copy: [")
@@ -672,8 +654,7 @@ def textures_help(config):
 
 
 def copy_help(config):
-    print("copy help ----------------------------------------------------------------------")
-    print("--------------------------------------------------------------------------------")
+    util.print_header("copy help", half=True)
     print("copy files from src to dst:")
     print("\njsn syntax: array of [src, dst] pairs.")
     print("copy: [")
@@ -684,8 +665,7 @@ def copy_help(config):
 
 
 def jsn_help(config):
-    print("jsn help ----------------------------------------------------------------------")
-    print("-------------------------------------------------------------------------------")
+    util.print_header("jsn help", half=True)
     print("convert jsn to json:")
     print("\njsn syntax: array of [src, dst] pairs.")
     print("jsn: [")
@@ -696,8 +676,7 @@ def jsn_help(config):
 
 
 def build_help(config):
-    print("build help ----------------------------------------------------------------------")
-    print("---------------------------------------------------------------------------------")
+    util.print_header("build help", half=True)
     print("\njsn syntax: array of commands.")
     print("build: [")
     print(" command args args args,")
@@ -709,15 +688,16 @@ def build_help(config):
 # print duration of job, ts is start time
 def print_duration(ts):
     millis = int((time.time() - ts) * 1000)
-    print("--------------------------------------------------------------------------------")
-    print("Took (" + str(millis) + "ms)")
+    print("")
+    util.print_header(f"Took {millis}ms", half=True)
+    print("")
 
 
 # main function
 def main():
     # must have config.json in working directory
     if not os.path.exists("config.jsn"):
-        print("[error] no config.json in current directory.")
+        util.print_status("error", "Unable to find 'config.json' in current directory")
         exit(1)
 
     # load jsn, inherit etc
@@ -787,8 +767,6 @@ def main():
 
 # entry point of pmbuild
 if __name__ == "__main__":
-    print("--------------------------------------------------------------------------------")
-    print("pmbuild (v3) -------------------------------------------------------------------")
-    print("--------------------------------------------------------------------------------")
+    util.print_header("pmbuild (v3)")
     print("")
     main()
