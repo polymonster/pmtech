@@ -254,6 +254,9 @@ namespace physics
 
     mat4 get_rb_matrix(const u32& entity_index)
     {
+        if(!g_readable_data.output_matrices._data[0])
+            return mat4::create_identity();
+            
         mat4* const& fb = g_readable_data.output_matrices.frontbuffer();
         return fb[entity_index];
     }

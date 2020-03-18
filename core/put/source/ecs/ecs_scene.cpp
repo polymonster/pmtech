@@ -681,6 +681,19 @@ namespace put
 
                 if (scene->state_flags[n] & e_state::hidden)
                     continue;
+                
+                
+                // alpha
+                if(view.render_flags & pmfx::e_scene_render_flags::alpha_blended)
+                {
+                    if(!(scene->state_flags[n] & e_state::alpha_blended))
+                        continue;
+                }
+                else
+                {
+                    if(scene->render_flags[n] & e_state::alpha_blended)
+                        continue;
+                }
 
                 // frustum cull
                 bool inside = true;
@@ -743,6 +756,7 @@ namespace put
                 // update skin
                 if (scene->entities[n] & e_cmp::skinned && !(scene->entities[n] & e_cmp::sub_geometry))
                 {
+                    static mat4 bb[85];
                     if (p_geom->p_skin->bone_cbuffer == PEN_INVALID_HANDLE)
                     {
                         pen::buffer_creation_params bcp;
@@ -755,8 +769,7 @@ namespace put
                         p_geom->p_skin->bone_cbuffer = pen::renderer_create_buffer(bcp);
                     }
 
-                    static mat4 bb[85];
-                    s32         joints_offset = scene->anim_controller_v2[n].joints_offset;
+                    s32 joints_offset = scene->anim_controller_v2[n].joints_offset;
                     for (s32 i = 0; i < p_geom->p_skin->num_joints; ++i)
                         bb[i] = scene->world_matrices[joints_offset + i] * p_geom->p_skin->joint_bind_matrices[i];
 
@@ -1505,6 +1518,7 @@ namespace put
                 rrp.num_mips = 1;
                 rrp.collection = pen::TEXTURE_COLLECTION_ARRAY;
                 pmfx::resize_render_target(PEN_HASH("shadow_map"), rrp);
+                pmfx::resize_render_target(PEN_HASH("colour_shadow_map"), rrp);
             }
 
             // omni directional

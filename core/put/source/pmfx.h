@@ -188,9 +188,10 @@ namespace put
         {
             enum scene_render_flags_t
             {
+                opaque = 0,
                 forward_lit = 1,
-                deferred_lit = 1 << 1,
                 shadow_map = 1 << 1,
+                alpha_blended = 1 << 2,
                 COUNT
             };
         }

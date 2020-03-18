@@ -75,7 +75,8 @@ namespace put
                 no_shadow = (1 << 4),
                 samplers_initialised = (1 << 5),
                 apply_anim_transform = (1 << 6),
-                sync_physics_transform = (1 << 7)
+                sync_physics_transform = (1 << 7),
+                alpha_blended = (1 << 0)
             };
         }
 
@@ -430,43 +431,44 @@ namespace put
             };
 
             // Components version 4
-            cmp_array<u64>                    entities;
-            cmp_array<u64>                    state_flags;
-            cmp_array<hash_id>                id_name;
-            cmp_array<hash_id>                id_geometry;
-            cmp_array<hash_id>                id_material;
-            cmp_array<Str>                    names;
-            cmp_array<Str>                    geometry_names;
-            cmp_array<Str>                    material_names;
-            cmp_array<u32>                    parents;
-            cmp_array<cmp_transform>          transforms;
-            cmp_array<mat4>                   local_matrices;
-            cmp_array<mat4>                   world_matrices;
-            cmp_array<mat4>                   offset_matrices;
-            cmp_array<mat4>                   physics_matrices;
-            cmp_array<cmp_bounding_volume>    bounding_volumes;
-            cmp_array<cmp_light>              lights;
-            cmp_array<u32>                    physics_handles;
-            cmp_array<cmp_master_instance>    master_instances;
-            cmp_array<cmp_geometry>           geometries;
-            cmp_array<cmp_pre_skin>           pre_skin;
-            cmp_array<cmp_physics>            physics_data;
-            cmp_array<cmp_geometry>           position_geometries;
-            cmp_array<u32>                    cbuffer;
-            cmp_array<cmp_draw_call>          draw_call_data;
-            cmp_array<free_node_list>         free_list;
-            cmp_array<cmp_material>           materials;
-            cmp_array<cmp_material_data>      material_data;
-            cmp_array<material_resource>      material_resources;
-            cmp_array<cmp_shadow>             shadows;
-            cmp_array<cmp_samplers>           samplers;             // version 5
-            cmp_array<u32>                    material_permutation; // version 8
-            cmp_array<cmp_transform>          initial_transform;    // version 9
-            cmp_array<cmp_anim_controller_v2> anim_controller_v2;
-            cmp_array<cmp_transform>          physics_offset;
-            cmp_array<u32>                    physics_debug_cbuffer;
-            cmp_array<cmp_area_light>         area_light;
-            cmp_array<area_light_resource>    area_light_resources;
+            cmp_array<u64>                          entities;
+            cmp_array<u64>                          state_flags;
+            cmp_array<hash_id>                      id_name;
+            cmp_array<hash_id>                      id_geometry;
+            cmp_array<hash_id>                      id_material;
+            cmp_array<Str>                          names;
+            cmp_array<Str>                          geometry_names;
+            cmp_array<Str>                          material_names;
+            cmp_array<u32>                          parents;
+            cmp_array<cmp_transform>                transforms;
+            cmp_array<mat4>                         local_matrices;
+            cmp_array<mat4>                         world_matrices;
+            cmp_array<mat4>                         offset_matrices;
+            cmp_array<mat4>                         physics_matrices;
+            cmp_array<cmp_bounding_volume>          bounding_volumes;
+            cmp_array<cmp_light>                    lights;
+            cmp_array<u32>                          physics_handles;
+            cmp_array<cmp_master_instance>          master_instances;
+            cmp_array<cmp_geometry>                 geometries;
+            cmp_array<cmp_pre_skin>                 pre_skin;
+            cmp_array<cmp_physics>                  physics_data;
+            cmp_array<cmp_geometry>                 position_geometries;
+            cmp_array<u32>                          cbuffer;
+            cmp_array<cmp_draw_call>                draw_call_data;
+            cmp_array<free_node_list>               free_list;
+            cmp_array<cmp_material>                 materials;
+            cmp_array<cmp_material_data>            material_data;
+            cmp_array<material_resource>            material_resources;
+            cmp_array<cmp_shadow>                   shadows;
+            cmp_array<cmp_samplers>                 samplers;             // version 5
+            cmp_array<u32>                          material_permutation; // version 8
+            cmp_array<cmp_transform>                initial_transform;    // version 9
+            cmp_array<cmp_anim_controller_v2>       anim_controller_v2;
+            cmp_array<cmp_transform>                physics_offset;
+            cmp_array<u32>                          physics_debug_cbuffer;
+            cmp_array<cmp_area_light>               area_light;
+            cmp_array<area_light_resource>          area_light_resources;
+            cmp_array<pmfx::scene_render_flags>     render_flags;
 
             // num base components calculates value based on its address - entities address.
             u32 num_base_components;

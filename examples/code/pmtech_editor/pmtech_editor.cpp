@@ -109,6 +109,7 @@ void* pen::user_entry(void* params)
     pmfx::register_camera(&main_camera, "model_viewer_camera");
 
     pmfx::init("data/configs/editor_renderer.jsn");
+    put::init_hot_loader();
 
     f32 dt = 0.0f;
     pen::timer* frame_timer = pen::timer_create();

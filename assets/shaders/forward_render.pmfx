@@ -744,8 +744,11 @@ ps_output ps_forward_lit( vs_output input )
         }
     }
 
-    output.colour.rgb = lit_colour.rgb;    
+    output.colour.rgb = lit_colour.rgb * albedo.a;    
     output.colour.a = albedo.a;
+    
+    if(albedo.a <= 0.0)
+    	discard;
 
     return output;
 }

@@ -158,6 +158,13 @@
             type: array
         },
         
+        colour_shadow_map:
+        {
+			size: [2048, 2048],
+            format: rgba8,
+            type: array
+        },
+        
         omni_shadow_map:
         {
             size: [512, 512],
@@ -199,6 +206,27 @@
             ],
         },
         
+        main_view_alpha_blended:
+        {
+            target             : [main_colour, main_depth],
+            colour_write_mask  : 0xf,
+            blend_state        : alpha_blend,
+            viewport           : [0.0, 0.0, 1.0, 1.0],
+            raster_state       : default,
+            depth_stencil_state: default,
+            scene              : main_scene,
+            camera             : model_viewer_camera,
+            scene_views        : ["ces_render_scene"],
+            render_flags       : ["forward_lit", "alpha_blended"],
+            
+            sampler_bindings:
+            [
+                { texture: shadow_map, unit: 15, state: wrap_linear, shader: ps },
+                { texture: area_light_textures, unit: 11, state: clamp_linear, shader: ps },
+                { texture: omni_shadow_map, unit: 10, state: clamp_linear, shader: ps },
+            ],
+        },
+        
         multiple_shadow_views:
         {
             target             : [shadow_map],
@@ -213,6 +241,20 @@
             scene              : main_scene,
             scene_views        : ["ces_render_shadow_maps"],
             render_flags       : ["shadow_map"]
+        },
+        
+		multiple_colour_shadow_views:
+        {
+            target             : [colour_shadow_map, shadow_map],
+            clear_depth        : 1.0,
+            colour_write_mask  : 0xf,
+            blend_state        : disabled,
+            viewport           : [0.0, 0.0, 1.0, 1.0],
+            raster_state       : back_face_cull,
+            depth_stencil_state: default,
+            scene              : main_scene,
+            scene_views        : ["ces_render_shadow_maps"],
+            render_flags       : ["forward_lit"]
         },
 
         multiple_omni_shadow_views:

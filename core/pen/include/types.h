@@ -142,7 +142,7 @@ inline f16 float_to_half(f32 f)
 #ifdef PEN_PLATFORM_IOS
 #define PEN_HOTLOADING_ENABLED return
 #else
-#define PEN_HOTLOADING_ENABLED return
+#define PEN_HOTLOADING_ENABLED
 #endif
 #define PEN_ARRAY_SIZE(A) (sizeof(A) / sizeof(A[0]))
 #define PEN_UNUSED (void)
