@@ -37,7 +37,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->lights[light].colour = vec3f(250.0f, 162.0f, 117.0f) / 255.0f;
     scene->lights[light].direction = vec3f::one();
     scene->lights[light].type = e_light_type::dir;
-    scene->lights[light].shadow_map = true;
+    scene->lights[light].flags |= e_light_flags::shadow_map;
     scene->transforms[light].translation = vec3f::zero();
     scene->transforms[light].rotation = quat();
     scene->transforms[light].scale = vec3f::one();
@@ -50,7 +50,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->lights[light].colour = vec3f(206.0f, 106.0f, 84.0f) / 255.0f;
     scene->lights[light].direction = vec3f(-1.0f, 1.0f, 1.0f);
     scene->lights[light].type = e_light_type::dir;
-    scene->lights[light].shadow_map = true;
+    scene->lights[light].flags |= e_light_flags::shadow_map;
     scene->transforms[light].translation = vec3f::zero();
     scene->transforms[light].rotation = quat();
     scene->transforms[light].scale = vec3f::one();
@@ -63,7 +63,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->lights[light].colour = vec3f(152.0f, 82.0f, 119.0f) / 255.0f;
     scene->lights[light].direction = vec3f(0.0f, 1.0f, 1.0f);
     scene->lights[light].type = e_light_type::dir;
-    scene->lights[light].shadow_map = true;
+    scene->lights[light].flags |= e_light_flags::shadow_map;
     scene->transforms[light].translation = vec3f::zero();
     scene->transforms[light].rotation = quat();
     scene->transforms[light].scale = vec3f::one();
@@ -76,7 +76,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->lights[light].colour = vec3f(222.0f, 50.0f, 97.0f) / 255.0f;
     scene->lights[light].direction = vec3f(0.0f, 1.0f, 1.0f);
     scene->lights[light].type = e_light_type::dir;
-    scene->lights[light].shadow_map = true;
+    scene->lights[light].flags |= e_light_flags::shadow_map;
     scene->transforms[light].translation = vec3f::zero();
     scene->transforms[light].rotation = quat();
     scene->transforms[light].scale = vec3f::one();

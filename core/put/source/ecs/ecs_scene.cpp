@@ -403,6 +403,34 @@ namespace put
                 pmfx::fullscreen_quad(sub);
             }
         }
+        
+        void single_light_from_entity(light_data& ld, const ecs_scene* scene, u32 n)
+        {
+            cmp_draw_call dc;
+            dc.world_matrix = scene->world_matrices[n];
+            vec3f pos = scene->world_matrices[n].get_translation();
+            switch (scene->lights[n].type)
+            {
+                case e_light_type::dir:
+                    ld.pos_radius = vec4f(scene->lights[n].direction * 10000.0f, 0.0f);
+                    ld.dir_cutoff = vec4f(scene->lights[n].direction, 0.0f);
+                    ld.colour = vec4f(scene->lights[n].colour, 0.0f);
+                    break;
+                case e_light_type::point:
+                    ld.pos_radius = vec4f(pos, scene->lights[n].radius);
+                    ld.dir_cutoff = vec4f(scene->lights[n].direction, 0.0f);
+                    ld.colour = vec4f(scene->lights[n].colour, 0.0f);
+                    break;
+                case e_light_type::spot:
+                    ld.pos_radius = vec4f(pos, scene->lights[n].radius);
+                    ld.dir_cutoff = vec4f(-dc.world_matrix.get_column(1).xyz, scene->lights[n].cos_cutoff);
+                    ld.colour = vec4f(scene->lights[n].colour, 0.0f);
+                    ld.data = vec4f(scene->lights[n].spot_falloff, 0.0f, 0.0f, 0.0f);
+                    break;
+                default:
+                    break;
+            }
+        }
 
         void render_shadow_views(const scene_view& view)
         {
@@ -428,7 +456,7 @@ namespace put
                 if (!(scene->entities[n] & e_cmp::light))
                     continue;
 
-                if (!scene->lights[n].shadow_map || scene->lights[n].type == e_light_type::point)
+                if (!(scene->lights[n].flags & (e_light_flags::shadow_map | e_light_flags::global_illumination)))
                     continue;
 
                 if (shadow_index++ != view.array_index)
@@ -464,6 +492,29 @@ namespace put
                 pen::renderer_update_buffer(cb_view, &shadow_vp, sizeof(mat4));
                 shadow_matrices[shadow_index - 1] = shadow_vp;
                 vv.cb_view = cb_view;
+                
+                // colour shadow maps
+                if(vv.render_flags & pmfx::e_scene_render_flags::forward_lit)
+                {
+                    // bind single light cbuffer
+                    static u32    cb_light = -1;
+                    if (!is_valid(cb_light))
+                    {
+                        pen::buffer_creation_params bcp;
+                        bcp.usage_flags = PEN_USAGE_DYNAMIC;
+                        bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+                        bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+                        bcp.buffer_size = sizeof(light_data);
+                        bcp.data = nullptr;
+
+                        cb_light = pen::renderer_create_buffer(bcp);
+                    }
+                    
+                    light_data ld;
+                    single_light_from_entity(ld, scene, n);
+                    pen::renderer_update_buffer(cb_light, &ld, sizeof(light_data));
+                    pen::renderer_set_constant_buffer(cb_light, 10, pen::CBUFFER_BIND_PS);
+                }
 
                 render_scene_view(vv);
             }
@@ -473,34 +524,6 @@ namespace put
             {
                 pen::renderer_update_buffer(scene->shadow_map_buffer, &shadow_matrices[0],
                                             sizeof(mat4) * e_scene_limits::max_shadow_maps);
-            }
-        }
-
-        void single_light_from_entity(light_data& ld, const ecs_scene* scene, u32 n)
-        {
-            cmp_draw_call dc;
-            dc.world_matrix = scene->world_matrices[n];
-            vec3f pos = scene->world_matrices[n].get_translation();
-            switch (scene->lights[n].type)
-            {
-                case e_light_type::dir:
-                    ld.pos_radius = vec4f(scene->lights[n].direction * 10000.0f, 0.0f);
-                    ld.dir_cutoff = vec4f(scene->lights[n].direction, 0.0f);
-                    ld.colour = vec4f(scene->lights[n].colour, 0.0f);
-                    break;
-                case e_light_type::point:
-                    ld.pos_radius = vec4f(pos, scene->lights[n].radius);
-                    ld.dir_cutoff = vec4f(scene->lights[n].direction, 0.0f);
-                    ld.colour = vec4f(scene->lights[n].colour, 0.0f);
-                    break;
-                case e_light_type::spot:
-                    ld.pos_radius = vec4f(pos, scene->lights[n].radius);
-                    ld.dir_cutoff = vec4f(-dc.world_matrix.get_column(1).xyz, scene->lights[n].cos_cutoff);
-                    ld.colour = vec4f(scene->lights[n].colour, 0.0f);
-                    ld.data = vec4f(scene->lights[n].spot_falloff, 0.0f, 0.0f, 0.0f);
-                    break;
-                default:
-                    break;
             }
         }
 
@@ -532,7 +555,7 @@ namespace put
                 if (!(scene->entities[n] & e_cmp::light))
                     continue;
 
-                if (!scene->lights[n].shadow_map || scene->lights[n].type != e_light_type::point)
+                if (!(scene->lights[n].flags & e_light_flags::omni_shadow_map))
                     continue;
 
                 if (omni_light_index++ != target_omni_light_index)
@@ -1309,9 +1332,10 @@ namespace put
 
                 // current directional light is a point light very far away
                 // with no attenuation..
+                bool sm = l.flags & e_light_flags::shadow_map;
                 vec3f light_pos = l.direction * k_dir_light_offset;
                 light_buffer.lights[pos].pos_radius = vec4f(light_pos, 0.0);
-                light_buffer.lights[pos].colour = vec4f(l.colour, l.shadow_map ? 1.0 : 0.0);
+                light_buffer.lights[pos].colour = vec4f(l.colour, sm ? 1.0 : 0.0);
 
                 ++num_directions_lights;
                 ++num_lights;
@@ -1342,8 +1366,9 @@ namespace put
 
                 cmp_transform& t = scene->transforms[n];
 
+                bool sm = l.flags & e_light_flags::shadow_map;
                 light_buffer.lights[pos].pos_radius = vec4f(t.translation, l.radius);
-                light_buffer.lights[pos].colour = vec4f(l.colour, l.shadow_map ? 1.0 : 0.0);
+                light_buffer.lights[pos].colour = vec4f(l.colour, sm ? 1.0 : 0.0);
 
                 ++num_point_lights;
                 ++num_lights;
@@ -1380,9 +1405,10 @@ namespace put
 
                 vec3f dir = normalized(-scene->world_matrices[n].get_column(1).xyz);
 
+                bool sm = l.flags & e_light_flags::shadow_map;
                 light_buffer.lights[pos].pos_radius = vec4f(t.translation, l.radius);
                 light_buffer.lights[pos].dir_cutoff = vec4f(dir, l.cos_cutoff);
-                light_buffer.lights[pos].colour = vec4f(l.colour, l.shadow_map ? 1.0 : 0.0);
+                light_buffer.lights[pos].colour = vec4f(l.colour, sm ? 1.0 : 0.0);
                 light_buffer.lights[pos].data = vec4f(l.spot_falloff, 0.0f, 0.0f, 0.0f);
 
                 ++num_spot_lights;
@@ -1491,37 +1517,39 @@ namespace put
             // directional
             u32 num_shadow_maps = 0;
             u32 num_omni_shadow_maps = 0;
+            u32 num_gi_maps = 0;
             for (size_t n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & e_cmp::light))
                     continue;
 
                 cmp_light& l = scene->lights[n];
-                if (!l.shadow_map)
-                    continue;
+                
+                if (l.flags & e_light_flags::global_illumination)
+                    num_gi_maps++;
+                
+                if (l.flags & e_light_flags::shadow_map)
+                    num_shadow_maps++;
 
-                if (l.type == e_light_type::point)
-                    ++num_omni_shadow_maps;
-                else
-                    ++num_shadow_maps;
+                if (l.type == e_light_flags::omni_shadow_map)
+                    num_omni_shadow_maps++;
             }
 
+            // resize shadow maps..
             const pmfx::render_target* sm = pmfx::get_render_target(PEN_HASH("shadow_map"));
-
             if (sm->num_arrays < num_shadow_maps)
             {
                 pmfx::rt_resize_params rrp;
-                rrp.width = 2048;
-                rrp.height = 2048;
+                rrp.width = sm->width;
+                rrp.height = sm->height;
                 rrp.format = nullptr;
                 rrp.num_arrays = num_shadow_maps;
                 rrp.num_mips = 1;
                 rrp.collection = pen::TEXTURE_COLLECTION_ARRAY;
                 pmfx::resize_render_target(PEN_HASH("shadow_map"), rrp);
-                pmfx::resize_render_target(PEN_HASH("colour_shadow_map"), rrp);
             }
 
-            // omni directional
+            // resize omni directional
             const pmfx::render_target* osm = pmfx::get_render_target(PEN_HASH("omni_shadow_map"));
             if (osm)
             {
@@ -1537,7 +1565,21 @@ namespace put
                     pmfx::resize_render_target(PEN_HASH("omni_shadow_map"), rrp);
                 }
             }
-
+            
+            // resize gi maps
+            const pmfx::render_target* gism = pmfx::get_render_target(PEN_HASH("colour_shadow_map"));
+            if (gism)
+            {
+                pmfx::rt_resize_params rrp;
+                rrp.width = gism->width;
+                rrp.height = gism->height;
+                rrp.format = nullptr;
+                rrp.num_arrays = num_gi_maps;
+                rrp.num_mips = 1;
+                rrp.collection = pen::TEXTURE_COLLECTION_ARRAY;
+                pmfx::resize_render_target(PEN_HASH("colour_shadow_map"), rrp);
+            }
+            
             // Update pre skinned vertex buffers
             static hash_id id_pre_skin_technique = PEN_HASH("pre_skin");
             static u32     shader = pmfx::load_shader("forward_render");

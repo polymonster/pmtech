@@ -166,6 +166,17 @@ namespace put
                 samplers = (1 << 20)
             };
         }
+        
+        namespace e_light_flags
+        {
+            enum light_flags_t : u8
+            {
+                shadow_map = 1<<0,
+                omni_shadow_map = 1<<1,
+                global_illumination = 1<<2
+            };
+        };
+        typedef u8 light_flags;
 
         struct cmp_draw_call
         {
@@ -291,18 +302,15 @@ namespace put
 
         struct cmp_light
         {
-            u32   type;
-            vec3f colour;
-
-            f32 radius = 10.0f;
-            f32 spot_falloff = 0.05f;
-            f32 cos_cutoff = -M_PI / 4.0f;
-            f32 azimuth;
-            f32 altitude;
-
-            vec3f direction;
-
-            bool shadow_map = false;
+            u32         type;
+            vec3f       colour;
+            f32         radius = 10.0f;
+            f32         spot_falloff = 0.05f;
+            f32         cos_cutoff = -M_PI / 4.0f;
+            f32         azimuth;
+            f32         altitude;
+            vec3f       direction;
+            light_flags flags;
         };
 
         // run time shader / texture for area light textures

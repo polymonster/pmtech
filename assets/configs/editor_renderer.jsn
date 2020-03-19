@@ -118,7 +118,6 @@ import post_process.jsn
             multiple_omni_shadow_views,
 			picking_view,
 			main_view,
-			// main_view_alpha_blended,
             editor_view
         ],
         

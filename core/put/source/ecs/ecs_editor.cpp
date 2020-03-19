@@ -2185,7 +2185,9 @@ namespace put
 
                     bool edited = changed;
 
-                    ImGui::Checkbox("Shadow Map", &snl.shadow_map);
+                    u32 flags = snl.flags;
+                    ImGui::CheckboxFlags("Shadow Map", &flags, 1);
+                    snl.flags = flags;
 
                     switch (scene->lights[selected_index].type)
                     {

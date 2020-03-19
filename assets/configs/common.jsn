@@ -246,6 +246,7 @@
 		multiple_colour_shadow_views:
         {
             target             : [colour_shadow_map, shadow_map],
+            clear_colour	   : [0.0, 0.0, 0.0, 0.0],
             clear_depth        : 1.0,
             colour_write_mask  : 0xf,
             blend_state        : disabled,
@@ -253,6 +254,8 @@
             raster_state       : back_face_cull,
             depth_stencil_state: default,
             scene              : main_scene,
+			pmfx_shader        : forward_render,
+            technique          : single_light_directional,
             scene_views        : ["ces_render_shadow_maps"],
             render_flags       : ["forward_lit"]
         },

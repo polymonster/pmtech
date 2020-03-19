@@ -2478,7 +2478,7 @@ namespace put
         {
             Str build_cmd = get_build_cmd();
 
-            build_cmd.append(" -actions configs");
+            build_cmd.append(" -jsn ");
 
             PEN_SYSTEM(build_cmd.c_str());
         }
@@ -2486,13 +2486,11 @@ namespace put
         void pmfx_config_hotload()
         {
             // wait a bit and flush the gpu
-            /*
-            for (u32 i = 0; i < 6; ++i)
+            for (u32 i = 0; i < 3; ++i)
             {
                 pen::renderer_present();
                 pen::renderer_consume_cmd_buffer();
             }
-            */
 
             release_script_resources();
 
