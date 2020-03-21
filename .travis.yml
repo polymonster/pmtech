@@ -1,6 +1,4 @@
-
 language: cpp
-
 matrix:
   include:
     - compiler: gcc
@@ -19,9 +17,9 @@ matrix:
     - compiler: clang
       os: osx
       script: ./.ci/mac-metal.sh
-    - language: glsl
+    - compiler: clang
       os: osx
       script: ./.ci/glsl-shaders.sh
-    - language: metal
+    - compiler: clang
       os: osx
       script: ./.ci/metal-shaders.sh
