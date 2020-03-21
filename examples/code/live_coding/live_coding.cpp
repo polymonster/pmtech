@@ -12,18 +12,18 @@ using namespace ecs;
 CR_EXPORT int cr_main(struct cr_plugin *ctx, enum cr_op operation)
 {
     return 0;
-    
+        
     ecs_scene* scene = (ecs_scene*)ctx->userdata;
     
     scene->lights[0].colour = vec3f(1.0f, 1.0f, 1.0f);
-    scene->lights[0].flags &= ~e_light_flags::shadow_map;
+    scene->lights[0].flags |= e_light_flags::shadow_map;
     
     scene->transforms[1].translation = vec3f(0.0f, 0.0f, 0.0f);
     scene->entities[1] |= e_cmp::transform;
     
     scene->transforms[2].translation = vec3f(0.0f, 50.0f, 50.0f);
     scene->entities[2] |= e_cmp::transform;
-    
+        
     static bool add = true;
     if(add)
     {

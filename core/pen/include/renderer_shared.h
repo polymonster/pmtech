@@ -37,6 +37,7 @@ namespace pen
     void                    _renderer_shared_init();
     void                    _renderer_new_frame();
     void                    _renderer_end_frame();
+    bool                    _renderer_resized();
     texture_creation_params _renderer_tcp_resolve_ratio(const texture_creation_params& tcp);
     void         _renderer_track_managed_render_target(const texture_creation_params& tcp, u32 render_target_handle);
     void         _renderer_untrack_managed_render_target(u32 render_target_handle);

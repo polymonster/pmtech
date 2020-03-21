@@ -24,6 +24,7 @@ namespace
         u32                          flags = 0;
         a_u64                        frame_index = {0};
         a_u64                        resize_index = {0};
+        a_u8                         resized = {0};
         pen::stretchy_dynamic_buffer dynamic_cbuffer;
         pen::stretchy_dynamic_buffer dynamic_vbuffer;
     };
@@ -74,6 +75,7 @@ namespace pen
 
     void _renderer_new_frame()
     {
+        s_shared_ctx.resized = s_shared_ctx.flags & e_shared_flags::backbuffer_resize;
         _renderer_resize_managed_targets();
     }
 
@@ -176,6 +178,11 @@ namespace pen
     u64 _renderer_resize_index()
     {
         return s_shared_ctx.resize_index.load();
+    }
+    
+    bool _renderer_resized()
+    {
+        return s_shared_ctx.resized.load();
     }
 
     shared_flags _renderer_flags()

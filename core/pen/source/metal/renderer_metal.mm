@@ -1992,6 +1992,9 @@ namespace pen
 
         void renderer_read_back_resource(const resource_read_back_params& rrbp)
         {
+            if(_renderer_resized())
+                return;
+                
             if (_state.cmd_buffer == nil)
                 _state.cmd_buffer = [_state.command_queue commandBuffer];
 
