@@ -170,7 +170,7 @@ void run()
         if (!pen::os_update())
             break;
 
-        pen::thread_sleep_us(100);
+        pen::thread_sleep_ms(1);
     }
 }
 #else
@@ -652,14 +652,10 @@ namespace pen
                                                        dequeue:YES];
 
             if (!peek_event)
-            {
                 break;
-            }
 
             if (!handle_event(peek_event))
-            {
                 [NSApp sendEvent:peek_event];
-            }
         }
 
         // input update

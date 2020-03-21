@@ -910,6 +910,8 @@ namespace put
                     // to know compilation is completed.
                     if (err == PEN_ERR_OK && current_ts >= pmfx_set.rebuild_ts)
                     {
+                        pen::thread_sleep_ms(1000);
+                        
                         bool complete = pmfx_ready(pmfx_set.filename.c_str());
                         if (complete)
                         {

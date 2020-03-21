@@ -553,16 +553,15 @@ namespace put
 
         u32 want_capture()
         {
+            if(!s_enable_rendering)
+                return 0;
+                
             ImGuiIO& io = ImGui::GetIO();
-
             u32 flags = 0;
-
             if (io.WantCaptureMouse)
                 flags |= dev_ui::e_io_capture::mouse;
-
             if (io.WantCaptureKeyboard)
                 flags |= dev_ui::e_io_capture::keyboard;
-
             if (io.WantTextInput)
                 flags |= dev_ui::e_io_capture::text;
 

@@ -118,6 +118,13 @@ void* pen::user_entry(void* params)
 
         put::dev_ui::new_frame();
         
+        // anim
+        static Str sss = "";
+        ImGui::Text("%s", sss.c_str());
+        sss.append(">");
+        if(sss.length() > 10)
+            sss.clear();
+        
         example_update(main_scene, main_camera, dt);
         
         live_lib = cr_plugin_update(ctx);
