@@ -34,7 +34,8 @@ local function setup_linux()
 		"GLU",
 		"GL",
 		"X11",
-		"fmod"
+		"fmod",
+		"dl"
 	}
 end
 
