@@ -235,11 +235,21 @@ namespace
 
         renderer_cmd(){};
     };
+        
+    // front end render_ctx
+    struct fe_render_ctx
+    {
+        pen::timer*               present_timer = nullptr;
+        f32                       present_time = 0.0f;
+        pen::resolve_resources    resolve_resources;
+        pen::semaphore*           consume_semaphore = nullptr;
+        pen::semaphore*           continue_semaphore = nullptr;
+        pen::slot_resources       renderer_slot_resources;
+        ring_buffer<renderer_cmd> cmd_buffer;
+    };
+    static fe_render_ctx* _ctx;
+    static render_ctx     _main_ctx;
 
-    pen::timer*               _present_timer;
-    f32                       _present_time;
-    pen::resolve_resources    _resolve_resources;
-    ring_buffer<renderer_cmd> _cmd_buffer;
 } // namespace
 
 namespace pen
@@ -248,7 +258,7 @@ namespace pen
     {
         extern a_u64 g_gpu_total;
 
-        cpu_ms = _present_time;
+        cpu_ms = _ctx->present_time;
         gpu_ms = (f64)g_gpu_total / 1000.0 / 1000.0;
     }
 
@@ -262,8 +272,8 @@ namespace pen
 
             case CMD_PRESENT:
                 direct::renderer_present();
-                _present_time = timer_elapsed_ms(_present_timer);
-                timer_start(_present_timer);
+                _ctx->present_time = timer_elapsed_ms(_ctx->present_timer);
+                timer_start(_ctx->present_timer);
                 break;
 
             case CMD_LOAD_SHADER:
@@ -463,7 +473,7 @@ namespace pen
 
             case CMD_RESOLVE_TARGET:
                 direct::renderer_resolve_target(cmd.resolve_params.render_target, cmd.resolve_params.resolve_type,
-                                                _resolve_resources);
+                                                _ctx->resolve_resources);
                 break;
 
             case CMD_DRAW_AUTO:
@@ -507,22 +517,17 @@ namespace pen
 
     void renderer_wait_for_jobs();
 
-    static pen::job*           p_job_thread_info;
-    static pen::semaphore*     p_consume_semaphore = nullptr;
-    static pen::semaphore*     p_continue_semaphore = nullptr;
-    static pen::slot_resources s_renderer_slot_resources;
-
     void renderer_wait_init()
     {
-        semaphore_wait(p_continue_semaphore);
+        semaphore_wait(_ctx->continue_semaphore);
     }
 
     void renderer_consume_cmd_buffer()
     {
-        if (p_consume_semaphore)
+        if (_ctx->consume_semaphore)
         {
-            semaphore_post(p_consume_semaphore, 1);
-            semaphore_wait(p_continue_semaphore);
+            semaphore_post(_ctx->consume_semaphore, 1);
+            semaphore_wait(_ctx->continue_semaphore);
         }
 
         // sync on window surface
@@ -531,20 +536,20 @@ namespace pen
 
     bool renderer_dispatch()
     {
-        if (semaphore_try_wait(p_consume_semaphore))
+        if (semaphore_try_wait(_ctx->consume_semaphore))
         {
             // some api's need to set the current context on the caller thread.
             direct::renderer_new_frame();
 
-            semaphore_post(p_continue_semaphore, 1);
+            semaphore_post(_ctx->continue_semaphore, 1);
 
-            renderer_cmd* cmd = _cmd_buffer.get();
+            renderer_cmd* cmd = _ctx->cmd_buffer.get();
 
             // consume and execute commands
             while (cmd)
             {
                 exec_cmd(*cmd);
-                cmd = _cmd_buffer.get();
+                cmd = _ctx->cmd_buffer.get();
             }
 
             direct::renderer_end_frame();
@@ -558,7 +563,7 @@ namespace pen
     void renderer_wait_for_jobs()
     {
         // this is a dedicated thread which stays for the duration of the program
-        semaphore_post(p_continue_semaphore, 1);
+        semaphore_post(_ctx->continue_semaphore, 1);
 
         for (;;)
         {
@@ -570,7 +575,7 @@ namespace pen
         }
     }
 
-    void init_resolve_resources()
+    void init_resolve_resources(fe_render_ctx* ctx)
     {
         struct textured_vertex
         {
@@ -607,7 +612,7 @@ namespace pen
         bcp.buffer_size = sizeof(textured_vertex) * 4;
         bcp.data = (void*)&quad_vertices[0];
 
-        _resolve_resources.vertex_buffer = renderer_create_buffer(bcp);
+        ctx->resolve_resources.vertex_buffer = renderer_create_buffer(bcp);
 
         // create index buffer
         u16 indices[] = {0, 1, 2, 2, 3, 0};
@@ -618,7 +623,7 @@ namespace pen
         bcp.buffer_size = sizeof(u16) * 6;
         bcp.data = (void*)&indices[0];
 
-        _resolve_resources.index_buffer = renderer_create_buffer(bcp);
+        ctx->resolve_resources.index_buffer = renderer_create_buffer(bcp);
 
         // create cbuffer
         bcp.usage_flags = PEN_USAGE_DYNAMIC;
@@ -627,39 +632,27 @@ namespace pen
         bcp.buffer_size = sizeof(resolve_cbuffer);
         bcp.data = nullptr;
 
-        _resolve_resources.constant_buffer = renderer_create_buffer(bcp);
-        g_resolve_resources = _resolve_resources;
+        ctx->resolve_resources.constant_buffer = renderer_create_buffer(bcp);
+        g_resolve_resources = ctx->resolve_resources;
     }
 
     void renderer_init(void* user_data, bool wait_for_jobs)
     {
-        if (!p_consume_semaphore)
-            p_consume_semaphore = semaphore_create(0, 1);
-
-        if (!p_continue_semaphore)
-            p_continue_semaphore = semaphore_create(0, 1);
-
-        _cmd_buffer.create(MAX_COMMANDS);
-        slot_resources_init(&s_renderer_slot_resources, 2048);
-
-        // initialise renderer
+        // create main render context and bind it
+        _main_ctx = renderer_create_context();
+        _ctx = (fe_render_ctx*)_main_ctx;
+        
         // bb is backbuffer depth and colour
-        u32 bb_res = slot_resources_get_next(&s_renderer_slot_resources);
-        u32 bb_depth_res = slot_resources_get_next(&s_renderer_slot_resources);
-
+        u32 bb_res = slot_resources_get_next(&_ctx->renderer_slot_resources);
+        u32 bb_depth_res = slot_resources_get_next(&_ctx->renderer_slot_resources);
         // reserve a bunch more slots for interal renderer implementations
         for (s64 i = 0; i < 10; ++i)
-            slot_resources_get_next(&s_renderer_slot_resources);
+            slot_resources_get_next(&_ctx->renderer_slot_resources);
 
+        // initialise backend renderer
         direct::renderer_initialise(user_data, bb_res, bb_depth_res);
-
-        init_resolve_resources();
-
-        // create present timer for cpu perf result
-        _present_timer = timer_create();
-        timer_start(_present_timer);
-
-        _present_time = 0.0f;
+        
+        init_resolve_resources(_ctx);
 
         if (wait_for_jobs)
             renderer_wait_for_jobs();
@@ -667,12 +660,14 @@ namespace pen
 
     void* renderer_thread_function(void* params)
     {
+        static pen::job* p_job_thread_info;
+        
         job_thread_params* job_params = (job_thread_params*)params;
 
         p_job_thread_info = job_params->job_info;
 
-        p_consume_semaphore = p_job_thread_info->p_sem_consume;
-        p_continue_semaphore = p_job_thread_info->p_sem_continue;
+        _ctx->consume_semaphore = p_job_thread_info->p_sem_consume;
+        _ctx->continue_semaphore = p_job_thread_info->p_sem_continue;
 
         renderer_init(job_params->user_data, true);
 
@@ -688,7 +683,7 @@ namespace pen
         renderer_cmd cmd;
 
         cmd.command_index = CMD_UPDATE_QUERIES;
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     void renderer_clear(u32 clear_state_index, u32 array_index)
@@ -699,7 +694,7 @@ namespace pen
         cmd.clear.clear_state = clear_state_index;
         cmd.clear.array_index = array_index;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     void renderer_present()
@@ -708,7 +703,7 @@ namespace pen
 
         cmd.command_index = CMD_PRESENT;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     u32 renderer_load_shader(const shader_load_params& params)
@@ -737,10 +732,10 @@ namespace pen
             memcpy(cmd.shader_load.so_decl_entries, params.so_decl_entries, entries_size);
         }
 
-        u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
+        u32 resource_slot = slot_resources_get_next(&_ctx->renderer_slot_resources);
         cmd.resource_slot = resource_slot;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
 
         return resource_slot;
     }
@@ -787,10 +782,10 @@ namespace pen
             }
         }
 
-        u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
+        u32 resource_slot = slot_resources_get_next(&_ctx->renderer_slot_resources);
         cmd.resource_slot = resource_slot;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
 
         return resource_slot;
     }
@@ -804,7 +799,7 @@ namespace pen
         cmd.set_shader.shader_index = shader_index;
         cmd.set_shader.shader_type = shader_type;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     u32 renderer_create_input_layout(const input_layout_creation_params& params)
@@ -827,10 +822,10 @@ namespace pen
 
         memcpy(cmd.create_input_layout.input_layout, params.input_layout, input_layouts_size);
 
-        u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
+        u32 resource_slot = slot_resources_get_next(&_ctx->renderer_slot_resources);
         cmd.resource_slot = resource_slot;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
 
         return resource_slot;
     }
@@ -841,7 +836,7 @@ namespace pen
         cmd.command_index = CMD_SET_INPUT_LAYOUT;
         cmd.command_data_index = layout_index;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     u32 renderer_create_buffer(const buffer_creation_params& params)
@@ -859,10 +854,10 @@ namespace pen
             memcpy(cmd.create_buffer.data, params.data, params.buffer_size);
         }
 
-        u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
+        u32 resource_slot = slot_resources_get_next(&_ctx->renderer_slot_resources);
         cmd.resource_slot = resource_slot;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
 
         return resource_slot;
     }
@@ -893,7 +888,7 @@ namespace pen
             cmd.set_vertex_buffer.offsets[i] = offsets[i];
         }
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     void renderer_set_index_buffer(u32 buffer_index, u32 format, u32 offset)
@@ -905,7 +900,7 @@ namespace pen
         cmd.set_index_buffer.format = format;
         cmd.set_index_buffer.offset = offset;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     void renderer_draw(u32 vertex_count, u32 start_vertex, u32 primitive_topology)
@@ -917,7 +912,7 @@ namespace pen
         cmd.draw.start_vertex = start_vertex;
         cmd.draw.primitive_topology = primitive_topology;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     void renderer_draw_indexed(u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology)
@@ -930,7 +925,7 @@ namespace pen
         cmd.draw_indexed.base_vertex = base_vertex;
         cmd.draw_indexed.primitive_topology = primitive_topology;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     void renderer_draw_indexed_instanced(u32 instance_count, u32 start_instance, u32 index_count, u32 start_index,
@@ -946,7 +941,7 @@ namespace pen
         cmd.draw_indexed_instanced.base_vertex = base_vertex;
         cmd.draw_indexed_instanced.primitive_topology = primitive_topology;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     u32 renderer_create_render_target(const texture_creation_params& tcp)
@@ -959,10 +954,10 @@ namespace pen
 
         memcpy(&cmd.create_render_target, (void*)&tcp, sizeof(texture_creation_params));
 
-        u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
+        u32 resource_slot = slot_resources_get_next(&_ctx->renderer_slot_resources);
         cmd.resource_slot = resource_slot;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
 
         return resource_slot;
     }
@@ -998,10 +993,10 @@ namespace pen
             cmd.create_texture.data = nullptr;
         }
 
-        u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
+        u32 resource_slot = slot_resources_get_next(&_ctx->renderer_slot_resources);
         cmd.resource_slot = resource_slot;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
 
         return resource_slot;
     }
@@ -1010,7 +1005,7 @@ namespace pen
     {
         renderer_cmd cmd;
 
-        if (!slot_resources_free(&s_renderer_slot_resources, shader_index))
+        if (!slot_resources_free(&_ctx->renderer_slot_resources, shader_index))
             return;
 
         cmd.command_index = CMD_RELEASE_SHADER;
@@ -1018,35 +1013,35 @@ namespace pen
         cmd.set_shader.shader_index = shader_index;
         cmd.set_shader.shader_type = shader_type;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     void renderer_release_buffer(u32 buffer_index)
     {
         renderer_cmd cmd;
 
-        if (!slot_resources_free(&s_renderer_slot_resources, buffer_index))
+        if (!slot_resources_free(&_ctx->renderer_slot_resources, buffer_index))
             return;
 
         cmd.command_index = CMD_RELEASE_BUFFER;
 
         cmd.command_data_index = buffer_index;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     void renderer_release_texture(u32 texture_index)
     {
         renderer_cmd cmd;
 
-        if (!slot_resources_free(&s_renderer_slot_resources, texture_index))
+        if (!slot_resources_free(&_ctx->renderer_slot_resources, texture_index))
             return;
 
         cmd.command_index = CMD_RELEASE_TEXTURE_2D;
 
         cmd.command_data_index = texture_index;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     u32 renderer_create_sampler(const sampler_creation_params& scp)
@@ -1057,10 +1052,10 @@ namespace pen
 
         memcpy(&cmd.create_sampler, (void*)&scp, sizeof(sampler_creation_params));
 
-        u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
+        u32 resource_slot = slot_resources_get_next(&_ctx->renderer_slot_resources);
         cmd.resource_slot = resource_slot;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
 
         return resource_slot;
     }
@@ -1076,7 +1071,7 @@ namespace pen
         cmd.set_texture.resource_slot = resource_slot;
         cmd.set_texture.bind_flags = bind_flags;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     u32 renderer_create_rasterizer_state(const rasteriser_state_creation_params& rscp)
@@ -1087,10 +1082,10 @@ namespace pen
 
         memcpy(&cmd.create_raster_state, (void*)&rscp, sizeof(rasteriser_state_creation_params));
 
-        u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
+        u32 resource_slot = slot_resources_get_next(&_ctx->renderer_slot_resources);
         cmd.resource_slot = resource_slot;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
 
         return resource_slot;
     }
@@ -1103,7 +1098,7 @@ namespace pen
 
         cmd.command_data_index = rasterizer_state_index;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     void renderer_set_viewport(const viewport& vp)
@@ -1111,7 +1106,7 @@ namespace pen
         renderer_cmd cmd;
         cmd.command_index = CMD_SET_VIEWPORT;
         memcpy(&cmd.set_viewport, (void*)&vp, sizeof(viewport));
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     void renderer_set_scissor_rect(const rect& r)
@@ -1119,7 +1114,7 @@ namespace pen
         renderer_cmd cmd;
         cmd.command_index = CMD_SET_SCISSOR_RECT;
         memcpy(&cmd.set_rect, (void*)&r, sizeof(rect));
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     void renderer_set_viewport_ratio(const viewport& vp)
@@ -1127,7 +1122,7 @@ namespace pen
         renderer_cmd cmd;
         cmd.command_index = CMD_SET_VIEWPORT_RATIO;
         memcpy(&cmd.set_viewport, (void*)&vp, sizeof(viewport));
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     void renderer_set_scissor_rect_ratio(const rect& r)
@@ -1135,21 +1130,21 @@ namespace pen
         renderer_cmd cmd;
         cmd.command_index = CMD_SET_SCISSOR_RECT_RATIO;
         memcpy(&cmd.set_rect, (void*)&r, sizeof(rect));
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     void renderer_release_raster_state(u32 raster_state_index)
     {
         renderer_cmd cmd;
 
-        if (!slot_resources_free(&s_renderer_slot_resources, raster_state_index))
+        if (!slot_resources_free(&_ctx->renderer_slot_resources, raster_state_index))
             return;
 
         cmd.command_index = CMD_RELEASE_RASTER_STATE;
 
         cmd.command_data_index = raster_state_index;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     u32 renderer_create_blend_state(const blend_creation_params& bcp)
@@ -1167,10 +1162,10 @@ namespace pen
 
         memcpy(cmd.create_blend_state.render_targets, (void*)bcp.render_targets, render_target_modes_size);
 
-        u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
+        u32 resource_slot = slot_resources_get_next(&_ctx->renderer_slot_resources);
         cmd.resource_slot = resource_slot;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
 
         return resource_slot;
     }
@@ -1183,7 +1178,7 @@ namespace pen
 
         cmd.command_data_index = blend_state_index;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     void renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
@@ -1196,7 +1191,7 @@ namespace pen
         cmd.set_buffer.resource_slot = resource_slot;
         cmd.set_buffer.flags = flags;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     void renderer_set_structured_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
@@ -1209,7 +1204,7 @@ namespace pen
         cmd.set_buffer.resource_slot = resource_slot;
         cmd.set_buffer.flags = flags;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     void renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset)
@@ -1227,7 +1222,7 @@ namespace pen
         cmd.update_buffer.data = memory_alloc(data_size);
         memcpy(cmd.update_buffer.data, data, data_size);
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     u32 renderer_create_depth_stencil_state(const depth_stencil_creation_params& dscp)
@@ -1241,10 +1236,10 @@ namespace pen
 
         memcpy(cmd.p_create_depth_stencil_state, &dscp, sizeof(depth_stencil_creation_params));
 
-        u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
+        u32 resource_slot = slot_resources_get_next(&_ctx->renderer_slot_resources);
         cmd.resource_slot = resource_slot;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
 
         return resource_slot;
     }
@@ -1257,7 +1252,7 @@ namespace pen
 
         cmd.command_data_index = depth_stencil_state;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     void renderer_set_targets(u32* colour_targets, u32 num_colour_targets, u32 depth_target, u32 array_index)
@@ -1270,7 +1265,7 @@ namespace pen
         cmd.set_targets.depth = depth_target;
         cmd.set_targets.array_index = array_index;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     void renderer_set_targets(u32 colour_target, u32 depth_target)
@@ -1283,90 +1278,90 @@ namespace pen
         cmd.set_targets.depth = depth_target;
         cmd.set_targets.array_index = 0;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     void renderer_release_blend_state(u32 blend_state)
     {
         renderer_cmd cmd;
 
-        if (!slot_resources_free(&s_renderer_slot_resources, blend_state))
+        if (!slot_resources_free(&_ctx->renderer_slot_resources, blend_state))
             return;
 
         cmd.command_index = CMD_RELEASE_BLEND_STATE;
         cmd.command_data_index = blend_state;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     void renderer_release_render_target(u32 render_target)
     {
         renderer_cmd cmd;
 
-        if (!slot_resources_free(&s_renderer_slot_resources, render_target))
+        if (!slot_resources_free(&_ctx->renderer_slot_resources, render_target))
             return;
 
         cmd.command_index = CMD_RELEASE_RENDER_TARGET;
 
         cmd.command_data_index = render_target;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     void renderer_release_clear_state(u32 clear_state)
     {
         renderer_cmd cmd;
 
-        if (!slot_resources_free(&s_renderer_slot_resources, clear_state))
+        if (!slot_resources_free(&_ctx->renderer_slot_resources, clear_state))
             return;
 
         cmd.command_index = CMD_RELEASE_CLEAR_STATE;
 
         cmd.command_data_index = clear_state;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     void renderer_release_input_layout(u32 input_layout)
     {
         renderer_cmd cmd;
 
-        if (!slot_resources_free(&s_renderer_slot_resources, input_layout))
+        if (!slot_resources_free(&_ctx->renderer_slot_resources, input_layout))
             return;
 
         cmd.command_index = CMD_RELEASE_INPUT_LAYOUT;
 
         cmd.command_data_index = input_layout;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     void renderer_release_sampler(u32 sampler)
     {
         renderer_cmd cmd;
 
-        if (!slot_resources_free(&s_renderer_slot_resources, sampler))
+        if (!slot_resources_free(&_ctx->renderer_slot_resources, sampler))
             return;
 
         cmd.command_index = CMD_RELEASE_SAMPLER;
 
         cmd.command_data_index = sampler;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     void renderer_release_depth_stencil_state(u32 depth_stencil_state)
     {
         renderer_cmd cmd;
 
-        if (!slot_resources_free(&s_renderer_slot_resources, depth_stencil_state))
+        if (!slot_resources_free(&_ctx->renderer_slot_resources, depth_stencil_state))
             return;
 
         cmd.command_index = CMD_RELEASE_DEPTH_STENCIL_STATE;
 
         cmd.command_data_index = depth_stencil_state;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     void renderer_set_stream_out_target(u32 buffer_index)
@@ -1377,7 +1372,7 @@ namespace pen
 
         cmd.command_data_index = buffer_index;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     void renderer_resolve_target(u32 target, e_msaa_resolve_type type)
@@ -1389,7 +1384,7 @@ namespace pen
         cmd.resolve_params.render_target = target;
         cmd.resolve_params.resolve_type = type;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     void renderer_draw_auto()
@@ -1398,7 +1393,7 @@ namespace pen
 
         cmd.command_index = CMD_DRAW_AUTO;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     void renderer_dispatch_compute(uint3 grid, uint3 num_threads)
@@ -1409,7 +1404,7 @@ namespace pen
         cmd.cs_dispatch.grid = grid;
         cmd.cs_dispatch.num_threads = num_threads;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     void renderer_read_back_resource(const resource_read_back_params& rrbp)
@@ -1420,7 +1415,7 @@ namespace pen
 
         cmd.rrb_params = rrbp;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     void renderer_replace_resource(u32 dest, u32 src, e_renderer_resource type)
@@ -1431,20 +1426,20 @@ namespace pen
 
         cmd.replace_resource_params = {dest, src, type};
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     u32 renderer_create_clear_state(const clear_state& cs)
     {
         renderer_cmd cmd;
 
-        u32 resource_slot = slot_resources_get_next(&s_renderer_slot_resources);
+        u32 resource_slot = slot_resources_get_next(&_ctx->renderer_slot_resources);
 
         cmd.command_index = CMD_CREATE_CLEAR_STATE;
         cmd.clear_state_params = cs;
         cmd.resource_slot = resource_slot;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
 
         return resource_slot;
     }
@@ -1456,7 +1451,7 @@ namespace pen
         cmd.command_index = CMD_SET_STENCIL_REF;
         cmd.stencil_ref = ref;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     void renderer_push_perf_marker(const c8* name)
@@ -1471,7 +1466,7 @@ namespace pen
         memcpy(cmd.name, name, len);
         cmd.name[len] = '\0';
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     void renderer_pop_perf_marker()
@@ -1480,7 +1475,7 @@ namespace pen
 
         cmd.command_index = CMD_POP_PERF_MARKER;
 
-        _cmd_buffer.put(cmd);
+        _ctx->cmd_buffer.put(cmd);
     }
 
     // graphics test
@@ -1579,5 +1574,29 @@ namespace pen
         pen::renderer_read_back_resource(rrbp);
 
         ran = true;
+    }
+    
+    render_ctx renderer_create_context()
+    {
+        fe_render_ctx* new_ctx = new fe_render_ctx();
+        new_ctx->cmd_buffer.create(MAX_COMMANDS);
+        new_ctx->present_timer = timer_create();
+        timer_start(new_ctx->present_timer);
+        new_ctx->present_time = 0.0f;
+        new_ctx->consume_semaphore = semaphore_create(0, 1);
+        new_ctx->continue_semaphore = semaphore_create(0, 1);
+        slot_resources_init(&new_ctx->renderer_slot_resources, 2048);
+
+        return (render_ctx*)new_ctx;
+    }
+    
+    void renderer_set_current_ctx(render_ctx ctx)
+    {
+        _ctx = (fe_render_ctx*)ctx;
+    }
+    
+    render_ctx renderer_get_main_context()
+    {
+        return _main_ctx;
     }
 } // namespace pen
