@@ -71,3 +71,7 @@ create_app_example( "stencil_shadows", script_path() )
 create_app_example( "msaa_resolve", script_path() )
 create_app_example( "compute_demo", script_path() )
 create_app_example( "global_illumination", script_path() )
+
+-- dll to hot reload
+create_binary("live_coding", "live_coding", script_path(), "SharedLib" )
+

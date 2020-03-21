@@ -19,6 +19,9 @@
 #include "str_utilities.h"
 #include "timer.h"
 
+#define CR_HOST // required in the host only and before including cr.h
+#include "cr/cr.h"
+
 using namespace put;
 using namespace ecs;
 
@@ -103,6 +106,10 @@ void* pen::user_entry(void* params)
     f32 dt = 0.0f;
     pen::timer* frame_timer = pen::timer_create();
     pen::timer_start(frame_timer);
+    
+    cr_plugin ctx;
+    bool live_lib = cr_plugin_open(ctx, "liblive_coding_d.dylib");
+    ctx.userdata = (void*)main_scene;
 
     while (1)
     {
@@ -110,9 +117,11 @@ void* pen::user_entry(void* params)
         pen::timer_start(frame_timer);
 
         put::dev_ui::new_frame();
-
+        
         example_update(main_scene, main_camera, dt);
-
+        
+        live_lib = cr_plugin_update(ctx);
+        
         ecs::update(dt);
 
         pmfx::render();
@@ -131,6 +140,9 @@ void* pen::user_entry(void* params)
             break;
     }
 
+    if(live_lib)
+        cr_plugin_close(ctx);
+    
     ecs::destroy_scene(main_scene);
     ecs::editor_shutdown();
 
