@@ -364,7 +364,14 @@ def run_jsn(config):
                 continue
             cmd = python_tool_to_platform(config["tools"]["jsn"])
             cmd += " -i " + f[0] + " -o " + f[1] + ii
-            subprocess.call(cmd, shell=True)
+            imports = jsn.get_import_file_list(f[0], jsn_tasks["import_dirs"])
+            inputs = [f[0], config["tools"]["jsn"]]
+            for im in imports:
+                inputs.append(im)
+            dep = dependencies.create_dependency_info(inputs, [f[1]], cmd)
+            if not dependencies.check_up_to_date_single(f[1], dep):
+                subprocess.call(cmd, shell=True)
+                dependencies.write_to_file_single(dep, util.change_ext(f[1], ".dep"))
 
 
 # premake
@@ -459,31 +466,27 @@ def run_textures(config):
                 util.copy_file_create_dir_if_newer(f[0], f[1])
             if fext in conv_fmt:
                 export = export_config_for_file(f[0])
-                dep_inputs = [f[0]]
+                dep_inputs = [f[0], config["tools"]["texturec"]]
                 if fext in cont_fmt:
                     export = export_config_for_directory(f[0], "osx")
                     dep_inputs = get_container_dep_inputs(f[0], dep_inputs)
                 dst = util.change_ext(f[1], ".dds").lower()
-                if not dependencies.check_up_to_date_single(dst):
-                    if "format" not in export.keys():
-                        export["format"] = "RGBA8"
-                    dep_outputs = [dst]
-                    dep_info = dependencies.create_dependency_info(dep_inputs, dep_outputs)
-                    dep = dict()
-                    dep["files"] = list()
-                    dep["files"].append(dep_info)
+                # to refactor
+                if "format" not in export.keys():
+                    export["format"] = "RGBA8"
+                cmd = tool_cmd + " "
+                cmd += "-f " + f[0] + " "
+                cmd += "-t " + export["format"] + " "
+                if "cubemap" in export.keys() and export["cubemap"]:
+                    cmd += " --cubearray "
+                if "mips" in export.keys() and export["mips"]:
+                    cmd += " --mips "
+                cmd += "-o " + dst
+                dep = dependencies.create_dependency_info(dep_inputs, [dst], cmd)
+                if not dependencies.check_up_to_date_single(dst, dep):
                     util.create_dir(dst)
-                    cmd = tool_cmd + " "
-                    cmd += "-f " + f[0] + " "
-                    cmd += "-t " + export["format"] + " "
-                    if "cubemap" in export.keys() and export["cubemap"]:
-                        cmd += " --cubearray "
-                    if "mips" in export.keys() and export["mips"]:
-                        cmd += " --mips "
-                    cmd += "-o " + dst
-                    print("texturec " + f[0])
                     subprocess.call(cmd, shell=True)
-                    dependencies.write_to_file_single(dep, util.change_ext(dst, ".json"))
+                    dependencies.write_to_file_single(dep, util.change_ext(dst, ".dep"))
 
 
 # clean

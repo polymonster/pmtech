@@ -2485,13 +2485,6 @@ namespace put
 
         void pmfx_config_hotload()
         {
-            // wait a bit and flush the gpu
-            for (u32 i = 0; i < 3; ++i)
-            {
-                pen::renderer_present();
-                pen::renderer_consume_cmd_buffer();
-            }
-
             release_script_resources();
 
             for (auto& s : k_script_files)

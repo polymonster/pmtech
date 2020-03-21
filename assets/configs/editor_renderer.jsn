@@ -17,6 +17,7 @@ import post_process.jsn
             format: d24s8,
         },
 
+
         volume_raster:
         {
             size    : [128,128],
@@ -38,7 +39,7 @@ import post_process.jsn
             target             : [main_colour, main_depth],
             colour_write_mask  : 0xf,
             blend_state        : disabled,
-            viewport           : [0.0, 0.0, 1.0, 1.0],
+            viewport           : [0.0, 1.0, 1.0, 1.0],
             raster_state       : wireframe,
             depth_stencil_state: default,
             pmfx_shader        : pmfx_utility,

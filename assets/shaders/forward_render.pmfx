@@ -746,13 +746,13 @@ ps_output ps_forward_lit( vs_output input )
 
     output.colour.rgb = lit_colour.rgb * albedo.a;    
     output.colour.a = albedo.a;
-    
+        
     if(albedo.a <= 0.0)
     	discard;
 
     return output;
 }
-x
+
 ps_output_multi ps_gbuffer( vs_output input ) 
 {    
     ps_output_multi output;

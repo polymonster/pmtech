@@ -15,5 +15,4 @@ solution ("pmtech_tools_" .. platform)
 dofile "../core/pen/project.lua"
 dofile "../core/put/project.lua"
 
-create_app_example("pmtech_editor", script_path())
 create_app_example("mesh_opt", script_path())

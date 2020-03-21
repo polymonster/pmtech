@@ -55,6 +55,7 @@ namespace
         pen::json       info;
         u32             info_timestamp = 0;
         shader_program* techniques = nullptr;
+        u32             rebuild_ts = 0;
     };
 
     pmfx_shader*  s_pmfx_list = nullptr;
@@ -885,6 +886,8 @@ namespace put
         {
             PEN_HOTLOADING_ENABLED;
 
+            static c8 info_file_buf[256];
+            
             Str shader_compiler_str = put::get_build_cmd();
             shader_compiler_str.append("-pmfx");
 
@@ -898,7 +901,6 @@ namespace put
 
                 if (pmfx_set.invalidated)
                 {
-                    c8 info_file_buf[256];
                     get_pmfx_info_filename(info_file_buf, pmfx_set.filename.c_str());
 
                     u32       current_ts;
@@ -906,7 +908,7 @@ namespace put
 
                     // wait until info is newer than the current info file,
                     // to know compilation is completed.
-                    if (err == PEN_ERR_OK && current_ts > pmfx_set.info_timestamp)
+                    if (err == PEN_ERR_OK && current_ts >= pmfx_set.rebuild_ts)
                     {
                         bool complete = pmfx_ready(pmfx_set.filename.c_str());
                         if (complete)
@@ -937,15 +939,21 @@ namespace put
                     {
                         pen::json file = files[i];
                         Str       fn = file["name"].as_str();
-                        u32       shader_ts = file["timestamp"].as_u32();
-                        u32       current_ts;
-                        pen_error err = pen::filesystem_getmtime(fn.c_str(), current_ts);
-
-                        // trigger re-compile if files on disk are newer
-                        if (err == PEN_ERR_OK && current_ts > shader_ts)
+                        
+                        u32 dep_ts = 0;
+                        get_pmfx_info_filename(info_file_buf, pmfx_set.filename.c_str());
+                        if(pen::filesystem_getmtime(info_file_buf, dep_ts) == PEN_ERR_OK)
                         {
-                            put::trigger_hot_loader(shader_compiler_str);
-                            pmfx_set.invalidated = true;
+                            u32 input_ts = 0;
+                            if(pen::filesystem_getmtime(fn.c_str(), input_ts) == PEN_ERR_OK)
+                            {
+                                if(input_ts > dep_ts)
+                                {
+                                    put::trigger_hot_loader(shader_compiler_str);
+                                    pmfx_set.invalidated = true;
+                                    pmfx_set.rebuild_ts = dep_ts;
+                                }
+                            }
                         }
                     }
                 }

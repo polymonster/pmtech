@@ -147,6 +147,7 @@ namespace
         pen::json            dependencies;
         bool                 invalidated = false;
         std::vector<hash_id> changes;
+        u32                  rebuild_ts = 0;
 
         void (*build_callback)();
         void (*hotload_callback)(std::vector<hash_id>& dirty);
@@ -642,8 +643,7 @@ namespace put
 
         // replace filename with dependencies.json
         u32 loc = pen::str_find_reverse(fn, ".");
-
-        fn.appendf_from(loc + 1, "%s", "json");
+        fn.appendf_from(loc + 1, "%s", "dep");
 
         // search for existing
         for (auto* fw : k_file_watches)
@@ -676,90 +676,56 @@ namespace put
         {
             if (fw->invalidated)
             {
-                fw->dependencies = pen::json::load_from_file(fw->filename.c_str());
-            }
-
-            bool invalidated = false;
-            bool complete = false;
-
-            pen::json files = fw->dependencies["files"];
-            s32       num_files = files.size();
-            for (s32 i = 0; i < num_files; ++i)
-            {
-                pen::json outputs = files[i];
-                s32       num_outputs = outputs.size();
-                for (s32 j = 0; j < num_outputs; ++j)
+                u32 dep_ts;
+                if(pen::filesystem_getmtime(fw->filename.c_str(), dep_ts) == PEN_ERR_OK)
                 {
-                    pen::json inputs = outputs[j];
-                    s32       num_inputs = outputs.size();
-                    for (s32 k = 0; k < num_inputs; ++k)
+                    if(dep_ts >= fw->rebuild_ts)
                     {
-                        pen::json input = inputs[k];
-
-                        u32 built_ts = input["timestamp"].as_u32();
-                        Str fn = input["name"].as_filename();
-
-                        u32       current_ts = 0;
-                        pen_error err = pen::filesystem_getmtime(fn.c_str(), current_ts);
-
-                        if (!fw->invalidated)
+                        fw->dependencies = pen::json::load_from_file(fw->filename.c_str());
+                        
+                        // rebuild has succeeded
+                        dev_console_log("[file watcher] rebuild for %s complete", fw->filename.c_str());
+                        fw->hotload_callback(fw->changes);
+                        fw->changes.clear();
+                        fw->invalidated = false;
+                    }
+                }
+            }
+            else
+            {
+                pen::json files = fw->dependencies["files"];
+                s32       num_files = files.size();
+                for (s32 i = 0; i < num_files; ++i)
+                {
+                    pen::json   outputs = files[i];
+                    s32         num_inputs = outputs.size();
+                    u32         current_ts = 0;
+                    
+                    if(pen::filesystem_getmtime(fw->filename.c_str(), current_ts) == PEN_ERR_OK)
+                    {
+                        for (s32 j = 0; j < num_inputs; ++j)
                         {
-                            if (current_ts > built_ts && err == PEN_ERR_OK)
+                            Str ifn = outputs[j]["name"].as_str();
+                            u32 input_ts = 0;
+                            if(pen::filesystem_getmtime(ifn.c_str(), input_ts) == PEN_ERR_OK)
                             {
-                                invalidated = true;
-
-                                dev_console_log("[file watcher] source file %s has changed", fn.c_str());
-                                dev_console_log("[file watcher] dest file is %s", outputs[j].name().c_str());
-
-                                Str data_file = input["data_file"].as_str();
-                                fw->changes.push_back(PEN_HASH(data_file.c_str()));
-                            }
-                        }
-                        else
-                        {
-                            u32 dep_ts = 0;
-                            Str data_file = input["data_file"].as_str();
-                            data_file = pen::str_replace_string(data_file, ".dds", ".json");
-
-                            pen_error err = pen::filesystem_getmtime(data_file.c_str(), dep_ts);
-                            if (err == PEN_ERR_OK && dep_ts >= current_ts)
-                            {
-                                pen::json new_dependencies = pen::json::load_from_file(data_file.c_str());
-                                if (!new_dependencies.is_null())
+                                if (!fw->invalidated)
                                 {
-                                    u32 ts = new_dependencies["files"][i][j][k]["timestamp"].as_u32();
-                                    if (ts >= built_ts)
+                                    if (input_ts > current_ts)
                                     {
-                                        fw->dependencies = new_dependencies;
-                                        complete = true;
-                                        goto done;
+                                        dev_console_log("[file watcher] input file %s has changed", ifn.c_str());
+
+                                        Str data_file = outputs[j]["data_file"].as_str();
+                                        fw->changes.push_back(PEN_HASH(data_file.c_str()));
+                                        fw->rebuild_ts = input_ts;
+                                        
+                                        fw->build_callback();
+                                        fw->invalidated = true;
                                     }
                                 }
                             }
                         }
                     }
-                }
-            }
-        done:
-
-            if (invalidated)
-            {
-                if (!fw->invalidated)
-                    fw->build_callback();
-
-                fw->invalidated = true;
-            }
-            else
-            {
-                if (fw->invalidated && complete)
-                {
-                    // rebuild has succeeded
-                    dev_console_log("[file watcher] rebuild for %s complete", fw->filename.c_str());
-
-                    fw->hotload_callback(fw->changes);
-                    fw->changes.clear();
-
-                    fw->invalidated = false;
                 }
             }
         }
