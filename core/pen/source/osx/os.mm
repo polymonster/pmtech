@@ -3,7 +3,6 @@
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
 // This file contains gl and metal context creation, input handling and os events.
-
 #include "os.h"
 #include "console.h"
 #include "data_struct.h"
@@ -90,7 +89,6 @@ namespace
 //
 // Metal Context
 //
-
 #ifdef PEN_RENDERER_METAL
 #import <MetalKit/MetalKit.h>
 #import <QuartzCore/CAMetalLayer.h>

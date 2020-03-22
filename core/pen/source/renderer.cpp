@@ -510,13 +510,11 @@ namespace pen
                 break;
         }
     }
-
-    //-----------------------------------------------------------------------------------------------------------------------
-    //  THREAD SYNCRONISATION
-    //-----------------------------------------------------------------------------------------------------------------------
-
-    void renderer_wait_for_jobs();
-
+    
+    //
+    // 
+    //
+    
     void renderer_wait_init()
     {
         semaphore_wait(_ctx->continue_semaphore);
@@ -673,10 +671,139 @@ namespace pen
 
         return PEN_THREAD_OK;
     }
+    
+    // graphics test
+    static bool s_run_test = false;
+    static void renderer_test_read_complete(void* data, u32 row_pitch, u32 depth_pitch, u32 block_size)
+    {
+        Str reference_filename = "data/textures/";
+        reference_filename.appendf("%s%s", pen::window_get_title(), ".dds");
 
-    //-----------------------------------------------------------------------------------------------------------------------
-    //  COMMAND BUFFER API
-    //-----------------------------------------------------------------------------------------------------------------------
+        void* file_data = nullptr;
+        u32   file_data_size = 0;
+        u32   pen_err = pen::filesystem_read_file_to_buffer(reference_filename.c_str(), &file_data, file_data_size);
+
+        u32 diffs = 0;
+
+        // make test results
+        PEN_SYSTEM("mkdir ../../test_results");
+
+        if (pen_err == PEN_ERR_OK)
+        {
+            // file exists do image compare
+            u8* ref_image = (u8*)file_data + 124; // size of DDS header and we know its RGBA8
+            u8* cmp_image = (u8*)data;
+
+            for (u32 i = 0; i < depth_pitch; i += 4)
+            {
+                if (ref_image[i + 2] != cmp_image[i + 0])
+                    ++diffs;
+                if (ref_image[i + 1] != cmp_image[i + 1])
+                    ++diffs;
+                if (ref_image[i + 0] != cmp_image[i + 2])
+                    ++diffs;
+                if (ref_image[i + 3] != cmp_image[i + 3])
+                    ++diffs;
+            }
+
+            Str output_file = "";
+            output_file.appendf("../../test_results/%s.png", pen_window.window_title);
+            stbi_write_png(output_file.c_str(), pen_window.width, pen_window.height, 4, ref_image, row_pitch);
+
+            free(file_data);
+        }
+        else
+        {
+            // save reference image
+            Str output_file = "";
+            output_file.appendf("../../test_reference/%s.png", pen_window.window_title);
+            stbi_write_png(output_file.c_str(), pen_window.width, pen_window.height, 4, data, row_pitch);
+        }
+
+        f32 percentage = 100.0f / ((f32)depth_pitch / (f32)diffs);
+        PEN_LOG("test complete %i diffs: out of %i (%2.3f%%)\n", diffs, depth_pitch, percentage);
+
+        Str output_results_file = "";
+        output_results_file.appendf("../../test_results/%s.txt", pen_window.window_title);
+
+        std::ofstream ofs(output_results_file.c_str());
+        ofs << diffs << "/" << depth_pitch << ", " << percentage;
+        ofs.close();
+
+        pen::os_terminate(0);
+    }
+
+    void renderer_test_enable()
+    {
+        PEN_LOG("renderer test enabled.\n");
+        s_run_test = true;
+    }
+
+    void renderer_test_run()
+    {
+        if (!s_run_test)
+            return;
+
+        // wait for the first swap.
+        static u32 count = 0;
+        if (count++ < 1)
+            return;
+
+        // run once, wait for result
+        static bool ran = false;
+        if (ran)
+            return;
+
+        PEN_LOG("running test %s.\n", pen_window.window_title);
+
+        pen::resource_read_back_params rrbp;
+        rrbp.block_size = 4; // RGBA8
+        rrbp.format = PEN_TEX_FORMAT_RGBA8_UNORM;
+        rrbp.resource_index = PEN_BACK_BUFFER_COLOUR;
+        rrbp.row_pitch = pen_window.width * rrbp.block_size;
+        rrbp.depth_pitch = pen_window.width * pen_window.height * rrbp.block_size;
+        rrbp.data_size = pen_window.width * pen_window.height * rrbp.block_size;
+        rrbp.call_back_function = &renderer_test_read_complete;
+
+        pen::renderer_read_back_resource(rrbp);
+
+        ran = true;
+    }
+    
+    render_ctx renderer_create_context()
+    {
+        fe_render_ctx* new_ctx = new fe_render_ctx();
+        new_ctx->cmd_buffer.create(MAX_COMMANDS);
+        new_ctx->present_timer = timer_create();
+        timer_start(new_ctx->present_timer);
+        new_ctx->present_time = 0.0f;
+        new_ctx->consume_semaphore = semaphore_create(0, 1);
+        new_ctx->continue_semaphore = semaphore_create(0, 1);
+        slot_resources_init(&new_ctx->renderer_slot_resources, 2048);
+
+        return (render_ctx*)new_ctx;
+    }
+} // namespace pen
+
+namespace pen
+{
+    //
+    // allow shared context for hot loaded dll
+    //
+    
+    void renderer_set_current_ctx(render_ctx ctx)
+    {
+        _ctx = (fe_render_ctx*)ctx;
+    }
+    
+    render_ctx renderer_get_main_context()
+    {
+        return _main_ctx;
+    }
+    
+    //
+    // command buffer api
+    //
 
     void renderer_update_queries()
     {
@@ -1477,126 +1604,4 @@ namespace pen
 
         _ctx->cmd_buffer.put(cmd);
     }
-
-    // graphics test
-    static bool s_run_test = false;
-    static void renderer_test_read_complete(void* data, u32 row_pitch, u32 depth_pitch, u32 block_size)
-    {
-        Str reference_filename = "data/textures/";
-        reference_filename.appendf("%s%s", pen::window_get_title(), ".dds");
-
-        void* file_data = nullptr;
-        u32   file_data_size = 0;
-        u32   pen_err = pen::filesystem_read_file_to_buffer(reference_filename.c_str(), &file_data, file_data_size);
-
-        u32 diffs = 0;
-
-        // make test results
-        PEN_SYSTEM("mkdir ../../test_results");
-
-        if (pen_err == PEN_ERR_OK)
-        {
-            // file exists do image compare
-            u8* ref_image = (u8*)file_data + 124; // size of DDS header and we know its RGBA8
-            u8* cmp_image = (u8*)data;
-
-            for (u32 i = 0; i < depth_pitch; i += 4)
-            {
-                if (ref_image[i + 2] != cmp_image[i + 0])
-                    ++diffs;
-                if (ref_image[i + 1] != cmp_image[i + 1])
-                    ++diffs;
-                if (ref_image[i + 0] != cmp_image[i + 2])
-                    ++diffs;
-                if (ref_image[i + 3] != cmp_image[i + 3])
-                    ++diffs;
-            }
-
-            Str output_file = "";
-            output_file.appendf("../../test_results/%s.png", pen_window.window_title);
-            stbi_write_png(output_file.c_str(), pen_window.width, pen_window.height, 4, ref_image, row_pitch);
-
-            free(file_data);
-        }
-        else
-        {
-            // save reference image
-            Str output_file = "";
-            output_file.appendf("../../test_reference/%s.png", pen_window.window_title);
-            stbi_write_png(output_file.c_str(), pen_window.width, pen_window.height, 4, data, row_pitch);
-        }
-
-        f32 percentage = 100.0f / ((f32)depth_pitch / (f32)diffs);
-        PEN_LOG("test complete %i diffs: out of %i (%2.3f%%)\n", diffs, depth_pitch, percentage);
-
-        Str output_results_file = "";
-        output_results_file.appendf("../../test_results/%s.txt", pen_window.window_title);
-
-        std::ofstream ofs(output_results_file.c_str());
-        ofs << diffs << "/" << depth_pitch << ", " << percentage;
-        ofs.close();
-
-        pen::os_terminate(0);
-    }
-
-    void renderer_test_enable()
-    {
-        PEN_LOG("renderer test enabled.\n");
-        s_run_test = true;
-    }
-
-    void renderer_test_run()
-    {
-        if (!s_run_test)
-            return;
-
-        // wait for the first swap.
-        static u32 count = 0;
-        if (count++ < 1)
-            return;
-
-        // run once, wait for result
-        static bool ran = false;
-        if (ran)
-            return;
-
-        PEN_LOG("running test %s.\n", pen_window.window_title);
-
-        pen::resource_read_back_params rrbp;
-        rrbp.block_size = 4; // RGBA8
-        rrbp.format = PEN_TEX_FORMAT_RGBA8_UNORM;
-        rrbp.resource_index = PEN_BACK_BUFFER_COLOUR;
-        rrbp.row_pitch = pen_window.width * rrbp.block_size;
-        rrbp.depth_pitch = pen_window.width * pen_window.height * rrbp.block_size;
-        rrbp.data_size = pen_window.width * pen_window.height * rrbp.block_size;
-        rrbp.call_back_function = &renderer_test_read_complete;
-
-        pen::renderer_read_back_resource(rrbp);
-
-        ran = true;
-    }
-    
-    render_ctx renderer_create_context()
-    {
-        fe_render_ctx* new_ctx = new fe_render_ctx();
-        new_ctx->cmd_buffer.create(MAX_COMMANDS);
-        new_ctx->present_timer = timer_create();
-        timer_start(new_ctx->present_timer);
-        new_ctx->present_time = 0.0f;
-        new_ctx->consume_semaphore = semaphore_create(0, 1);
-        new_ctx->continue_semaphore = semaphore_create(0, 1);
-        slot_resources_init(&new_ctx->renderer_slot_resources, 2048);
-
-        return (render_ctx*)new_ctx;
-    }
-    
-    void renderer_set_current_ctx(render_ctx ctx)
-    {
-        _ctx = (fe_render_ctx*)ctx;
-    }
-    
-    render_ctx renderer_get_main_context()
-    {
-        return _main_ctx;
-    }
-} // namespace pen
+}

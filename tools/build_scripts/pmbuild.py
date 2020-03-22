@@ -11,6 +11,7 @@ import time
 import dependencies
 import glob
 import jsn.jsn as jsn
+import cgu.cgu as cgu
 
 
 # returns tool to run from cmdline with .exe
@@ -786,6 +787,76 @@ def main():
 
     # finally metadata for rebuilding and hot reloading
     generate_pmbuild_config(config, sys.argv[1])
+
+
+def codegen():
+    files = [
+        "../core/put/source/ecs/ecs_scene.h",
+        "../core/put/source/ecs/ecs_resources.h",
+        "../core/put/source/ecs/ecs_utilities.h"
+    ]
+    code = cgu.src_line("// codegen")
+    code += cgu.src_line("#pragma once")
+    code += cgu.src_line('#include "ecs_scene.h"')
+    code += cgu.src_line('#include "ecs_resources.h"')
+    code += cgu.src_line('#include "ecs_utilities.h"')
+    code += cgu.src_line("namespace put {")
+    code += cgu.src_line("namespace ecs {")
+
+    free_funcs = []
+    for f in files:
+        source = open(f, "r").read()
+        source = cgu.remove_comments(source)
+        functions, function_names = cgu.find_functions(source)
+        for func in functions:
+            free = True
+            for s in func["scope"]:
+                if s["type"] == "struct":
+                    free = False
+            if not free:
+                continue
+            free_funcs.append(func)
+
+    # decl function pointer prototypes
+    for func in free_funcs:
+        args = ""
+        num_args = len(func["args"])
+        for a in range(0, num_args):
+            args += func["args"][a]["type"]
+            if a < num_args-1:
+                args += ", "
+        if num_args == 0:
+            args = "void"
+        code += cgu.src_line("typedef " + func["return_type"] + " (*proc_" + func["name"] + ")(" + args + ");")
+
+    # start class with members
+    code += cgu.src_line("struct live_context")
+    code += cgu.src_line("{")
+
+    # pointers to contexts
+    code += cgu.src_line("pen::render_ctx render;")
+    code += cgu.src_line("ecs_scene* scene;")
+
+    # decl function pointer instances
+    for func in free_funcs:
+        code += cgu.src_line("proc_" + func["name"] + " " + func["name"] + ";")
+
+    code += cgu.src_line("};")
+
+    # binding function decl
+    code += cgu.src_line("#if !DLL")
+    code += cgu.src_line("void generate_bindings(live_context* ctx) {")
+
+    for func in free_funcs:
+        code += cgu.src_line("ctx->" + func["name"] + " = &" + func["name"] + ";")
+
+    code += cgu.src_line("}")
+    code += cgu.src_line("#endif")
+    code += cgu.src_line("}")  # namespace ecs
+    code += cgu.src_line("}")  # namespace put
+
+    code = cgu.format_source(code, 4)
+    print(code)
 
 
 # entry point of pmbuild

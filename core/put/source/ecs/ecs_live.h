@@ -1,0 +1,180 @@
+// codegen
+#pragma once
+#include "ecs_scene.h"
+#include "ecs_resources.h"
+#include "ecs_utilities.h"
+namespace put {
+    namespace ecs {
+        typedef void (*proc_save_scene)(const c8*, ecs_scene*);
+        typedef void (*proc_save_sub_scene)(ecs_scene*, u32);
+        typedef void (*proc_load_scene)(const c8*, ecs_scene*, bool);
+        typedef s32 (*proc_load_pmm)(const c8*, ecs_scene*, u32);
+        typedef s32 (*proc_load_pma)(const c8*);
+        typedef s32 (*proc_load_pmv)(const c8*, ecs_scene*);
+        typedef void (*proc_optimise_pmm)(const c8*, const c8*);
+        typedef void (*proc_optimise_pma)(const c8*, const c8*);
+        typedef void (*proc_instantiate_rigid_body)(ecs_scene*, u32);
+        typedef void (*proc_instantiate_compound_rigid_body)(ecs_scene*, u32, u32*, u32);
+        typedef void (*proc_instantiate_constraint)(ecs_scene*, u32);
+        typedef void (*proc_instantiate_geometry)(geometry_resource*, ecs_scene*, s32);
+        typedef void (*proc_instantiate_model_pre_skin)(ecs_scene*, s32);
+        typedef void (*proc_instantiate_model_cbuffer)(ecs_scene*, s32);
+        typedef void (*proc_instantiate_material_cbuffer)(ecs_scene*, s32, s32);
+        typedef void (*proc_instantiate_anim_controller_v2)(ecs_scene*, s32);
+        typedef void (*proc_instantiate_material)(material_resource*, ecs_scene*, u32);
+        typedef void (*proc_instantiate_sdf_shadow)(const c8*, ecs_scene*, u32);
+        typedef void (*proc_instantiate_light)(ecs_scene*, u32);
+        typedef void (*proc_instantiate_area_light)(ecs_scene*, u32);
+        typedef void (*proc_instantiate_area_light_ex)(ecs_scene*, u32, area_light_resource&);
+        typedef void (*proc_destroy_geometry)(ecs_scene*, u32);
+        typedef void (*proc_destroy_physics)(ecs_scene*, s32);
+        typedef void (*proc_bake_rigid_body_params)(ecs_scene*, u32);
+        typedef void (*proc_bake_material_handles)(ecs_scene*, u32);
+        typedef void (*proc_create_geometry_primitives)();
+        typedef void (*proc_add_geometry_resource)(geometry_resource*);
+        typedef void (*proc_add_material_resource)(material_resource*);
+        typedef material_resource* (*proc_get_material_resource)(hash_id);
+        typedef animation_resource* (*proc_get_animation_resource)(anim_handle);
+        typedef geometry_resource* (*proc_get_geometry_resource)(hash_id);
+        typedef geometry_resource* (*proc_get_geometry_resource_by_index)(hash_id, u32);
+        typedef u32 (*proc_get_next_entity)(ecs_scene*);
+        typedef u32 (*proc_get_new_entity)(ecs_scene*);
+        typedef void (*proc_get_new_entities_contiguous)(ecs_scene*, s32, s32&, s32&);
+        typedef void (*proc_get_new_entities_append)(ecs_scene*, s32, s32&, s32&);
+        typedef u32 (*proc_clone_entity)(ecs_scene*, u32, s32, s32, clone_mode, vec3f);
+        typedef void (*proc_swap_entities)(ecs_scene*, u32, s32);
+        typedef void (*proc_clone_selection_hierarchical)(ecs_scene*, u32**, const c8*);
+        typedef void (*proc_instance_entity_range)(ecs_scene*, u32, u32);
+        typedef void (*proc_bake_entities_to_vb)(ecs_scene*, u32, u32*);
+        typedef void (*proc_set_entity_parent)(ecs_scene*, u32, u32);
+        typedef void (*proc_set_entity_parent_validate)(ecs_scene*, u32&, u32&);
+        typedef void (*proc_trim_entities)(ecs_scene*);
+        typedef u32 (*proc_bind_animation_to_rig)(ecs_scene*, anim_handle, u32);
+        typedef void (*proc_tree_to_entity_index_list)(const scene_tree&, s32, std::vector<s32>&);
+        typedef void (*proc_build_scene_tree)(ecs_scene*, s32, scene_tree&);
+        typedef void (*proc_build_heirarchy_node_list)(ecs_scene*, s32, std::vector<s32>&);
+        typedef void (*proc_scene_tree_enumerate)(ecs_scene*, const scene_tree&);
+        typedef void (*proc_scene_tree_add_entity)(scene_tree&, scene_tree&, std::vector<s32>&);
+        typedef Str (*proc_read_parsable_string)(const u32**);
+        typedef void (*proc_write_parsable_string)(const Str&, std::ofstream&);
+        typedef void (*proc_write_parsable_string_u32)(const Str&, std::ofstream&);
+        struct live_context
+        {
+            pen::render_ctx render;
+            ecs_scene* scene;
+            proc_save_scene save_scene;
+            proc_save_sub_scene save_sub_scene;
+            proc_load_scene load_scene;
+            proc_load_pmm load_pmm;
+            proc_load_pma load_pma;
+            proc_load_pmv load_pmv;
+            proc_optimise_pmm optimise_pmm;
+            proc_optimise_pma optimise_pma;
+            proc_instantiate_rigid_body instantiate_rigid_body;
+            proc_instantiate_compound_rigid_body instantiate_compound_rigid_body;
+            proc_instantiate_constraint instantiate_constraint;
+            proc_instantiate_geometry instantiate_geometry;
+            proc_instantiate_model_pre_skin instantiate_model_pre_skin;
+            proc_instantiate_model_cbuffer instantiate_model_cbuffer;
+            proc_instantiate_material_cbuffer instantiate_material_cbuffer;
+            proc_instantiate_anim_controller_v2 instantiate_anim_controller_v2;
+            proc_instantiate_material instantiate_material;
+            proc_instantiate_sdf_shadow instantiate_sdf_shadow;
+            proc_instantiate_light instantiate_light;
+            proc_instantiate_area_light instantiate_area_light;
+            proc_instantiate_area_light_ex instantiate_area_light_ex;
+            proc_destroy_geometry destroy_geometry;
+            proc_destroy_physics destroy_physics;
+            proc_bake_rigid_body_params bake_rigid_body_params;
+            proc_bake_material_handles bake_material_handles;
+            proc_create_geometry_primitives create_geometry_primitives;
+            proc_add_geometry_resource add_geometry_resource;
+            proc_add_material_resource add_material_resource;
+            proc_get_material_resource get_material_resource;
+            proc_get_animation_resource get_animation_resource;
+            proc_get_geometry_resource get_geometry_resource;
+            proc_get_geometry_resource_by_index get_geometry_resource_by_index;
+            proc_get_next_entity get_next_entity;
+            proc_get_new_entity get_new_entity;
+            proc_get_new_entities_contiguous get_new_entities_contiguous;
+            proc_get_new_entities_append get_new_entities_append;
+            proc_clone_entity clone_entity;
+            proc_swap_entities swap_entities;
+            proc_clone_selection_hierarchical clone_selection_hierarchical;
+            proc_instance_entity_range instance_entity_range;
+            proc_bake_entities_to_vb bake_entities_to_vb;
+            proc_set_entity_parent set_entity_parent;
+            proc_set_entity_parent_validate set_entity_parent_validate;
+            proc_trim_entities trim_entities;
+            proc_bind_animation_to_rig bind_animation_to_rig;
+            proc_tree_to_entity_index_list tree_to_entity_index_list;
+            proc_build_scene_tree build_scene_tree;
+            proc_build_heirarchy_node_list build_heirarchy_node_list;
+            proc_scene_tree_enumerate scene_tree_enumerate;
+            proc_scene_tree_add_entity scene_tree_add_entity;
+            proc_read_parsable_string read_parsable_string;
+            proc_write_parsable_string write_parsable_string;
+            proc_write_parsable_string_u32 write_parsable_string_u32;
+        };
+
+        #if !DLL
+        void generate_bindings(live_context* ctx) {
+            ctx->save_scene = &save_scene;
+            ctx->save_sub_scene = &save_sub_scene;
+            ctx->load_scene = &load_scene;
+            ctx->load_pmm = &load_pmm;
+            ctx->load_pma = &load_pma;
+            ctx->load_pmv = &load_pmv;
+            ctx->optimise_pmm = &optimise_pmm;
+            ctx->optimise_pma = &optimise_pma;
+            ctx->instantiate_rigid_body = &instantiate_rigid_body;
+            ctx->instantiate_compound_rigid_body = &instantiate_compound_rigid_body;
+            ctx->instantiate_constraint = &instantiate_constraint;
+            ctx->instantiate_geometry = &instantiate_geometry;
+            ctx->instantiate_model_pre_skin = &instantiate_model_pre_skin;
+            ctx->instantiate_model_cbuffer = &instantiate_model_cbuffer;
+            ctx->instantiate_material_cbuffer = &instantiate_material_cbuffer;
+            ctx->instantiate_anim_controller_v2 = &instantiate_anim_controller_v2;
+            ctx->instantiate_material = &instantiate_material;
+            ctx->instantiate_sdf_shadow = &instantiate_sdf_shadow;
+            ctx->instantiate_light = &instantiate_light;
+            ctx->instantiate_area_light = &instantiate_area_light;
+            ctx->instantiate_area_light_ex = &instantiate_area_light_ex;
+            ctx->destroy_geometry = &destroy_geometry;
+            ctx->destroy_physics = &destroy_physics;
+            ctx->bake_rigid_body_params = &bake_rigid_body_params;
+            ctx->bake_material_handles = &bake_material_handles;
+            ctx->bake_material_handles = &bake_material_handles;
+            ctx->create_geometry_primitives = &create_geometry_primitives;
+            ctx->add_geometry_resource = &add_geometry_resource;
+            ctx->add_material_resource = &add_material_resource;
+            ctx->get_material_resource = &get_material_resource;
+            ctx->get_animation_resource = &get_animation_resource;
+            ctx->get_geometry_resource = &get_geometry_resource;
+            ctx->get_geometry_resource_by_index = &get_geometry_resource_by_index;
+            ctx->get_next_entity = &get_next_entity;
+            ctx->get_new_entity = &get_new_entity;
+            ctx->get_new_entities_contiguous = &get_new_entities_contiguous;
+            ctx->get_new_entities_append = &get_new_entities_append;
+            ctx->swap_entities = &swap_entities;
+            ctx->clone_selection_hierarchical = &clone_selection_hierarchical;
+            ctx->instance_entity_range = &instance_entity_range;
+            ctx->bake_entities_to_vb = &bake_entities_to_vb;
+            ctx->set_entity_parent = &set_entity_parent;
+            ctx->set_entity_parent_validate = &set_entity_parent_validate;
+            ctx->trim_entities = &trim_entities;
+            ctx->bind_animation_to_rig = &bind_animation_to_rig;
+            ctx->tree_to_entity_index_list = &tree_to_entity_index_list;
+            ctx->build_scene_tree = &build_scene_tree;
+            ctx->build_heirarchy_node_list = &build_heirarchy_node_list;
+            ctx->scene_tree_enumerate = &scene_tree_enumerate;
+            ctx->scene_tree_add_entity = &scene_tree_add_entity;
+            ctx->read_parsable_string = &read_parsable_string;
+            ctx->read_parsable_string = &read_parsable_string;
+            ctx->write_parsable_string = &write_parsable_string;
+            ctx->write_parsable_string_u32 = &write_parsable_string_u32;
+        }
+
+        #endif
+    }
+}

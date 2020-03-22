@@ -1276,7 +1276,7 @@ namespace put
             }
 
             // reverse iterate over scene and expand parents extents by children
-            for (size_t n = scene->num_entities - 1; n > 0; --n)
+            for (intptr_t n = scene->num_entities - 1; n > 0; --n)
             {
                 if (!(scene->entities[n] & e_cmp::allocated))
                     continue;

@@ -20,8 +20,6 @@ local function setup_osx()
 		"Metal.framework",
 		"OpenGL.framework"
 	}
-	
-	add_pmtech_links()
 end
 
 local function setup_linux()
@@ -165,12 +163,16 @@ function setup_modules()
 	setup_fmod()
 end
 
+
 function create_binary(project_name, source_directory, root_directory, binary_type)
 	project ( project_name )
 			setup_product( project_name )
 			kind ( binary_type )
 			language "C++"
-			dependson{ "pen", "put" }
+			
+			if binary_type ~= "SharedLib" then
+				dependson { "pen", "put" }
+			end
 		
 			includedirs
 			{
@@ -230,7 +232,6 @@ function create_binary(project_name, source_directory, root_directory, binary_ty
 					pmtech_dir .. "core/pen/lib/" .. platform_dir .. "/debug", 
 					pmtech_dir .. "core/put/lib/" .. platform_dir .. "/debug",
 				}
-		
 end
 
 function create_app(project_name, source_directory, root_directory)
