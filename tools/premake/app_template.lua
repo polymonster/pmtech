@@ -20,6 +20,7 @@ local function setup_osx()
 		"Metal.framework",
 		"OpenGL.framework"
 	}
+	add_pmtech_links()
 end
 
 local function setup_linux()
