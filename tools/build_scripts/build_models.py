@@ -271,6 +271,10 @@ for file in file_list:
         if not dependencies.check_up_to_date_single(depends_dest + ".pmm", dep):
             parse_obj.write_geometry(os.path.basename(file), root)
             helpers.output_file.write(base_out_file + ".pmm")
+            if len(mesh_opt) > 0:
+                cmd = " -i " + base_out_file + ".pmm"
+                p = subprocess.Popen(mesh_opt + cmd, shell=True)
+                p.wait()
             dependencies.write_to_file_single(dep, depends_dest + ".dep")
     elif file.endswith(".dae"):
         joint_list = []
