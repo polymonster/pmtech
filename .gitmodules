@@ -10,3 +10,6 @@
 [submodule "tools/build_scripts/jsn"]
 	path = tools/build_scripts/jsn
 	url = https://github.com/polymonster/jsn.git
+[submodule "tools/build_scripts/cgu"]
+	path = tools/build_scripts/cgu
+	url = https://github.com/polymonster/cgu

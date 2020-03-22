@@ -7,6 +7,7 @@
 #include "ecs/ecs_resources.h"
 #include "ecs/ecs_scene.h"
 #include "ecs/ecs_utilities.h"
+#include "ecs/ecs_live.h"
 #include "file_system.h"
 #include "hash.h"
 #include "input.h"
@@ -100,6 +101,12 @@ void* pen::user_entry(void* params)
     // for most demos we want to start with no debug / dev stuff so they look nice, but for others we can enable to flags
     main_scene->view_flags |= e_scene_view_flags::hide_debug;
     put::dev_ui::enable(false);
+    
+    // cr
+    ecs::live_context* lc = new ecs::live_context;
+    lc->scene = main_scene;
+    lc->render = pen::renderer_get_main_context();
+    ecs::generate_bindings(lc);
 
     example_setup(main_scene, main_camera);
 
@@ -109,7 +116,6 @@ void* pen::user_entry(void* params)
     
     cr_plugin ctx;
     bool live_lib = cr_plugin_open(ctx, "liblive_coding_d.dylib");
-    ctx.userdata = (void*)main_scene;
 
     while (1)
     {
@@ -120,7 +126,11 @@ void* pen::user_entry(void* params)
         
         example_update(main_scene, main_camera, dt);
         
-        live_lib = cr_plugin_update(ctx);
+        if(live_lib)
+        {
+            ctx.userdata = (void*)lc;
+            cr_plugin_update(ctx);
+        }
         
         ecs::update(dt);
 
