@@ -807,12 +807,15 @@ def codegen():
     for f in files:
         source = open(f, "r").read()
         source = cgu.remove_comments(source)
+        strings, source = cgu.placeholder_string_literals(source)
         functions, function_names = cgu.find_functions(source)
         for func in functions:
-            free = True
+            print(json.dumps(func, indent=4))
+            free = len(func["qualifier"]) == 0
             for s in func["scope"]:
                 if s["type"] == "struct":
                     free = False
+                    break
             if not free:
                 continue
             free_funcs.append(func)
@@ -866,3 +869,4 @@ if __name__ == "__main__":
     print("--------------------------------------------------------------------------------")
     print("")
     main()
+    codegen()

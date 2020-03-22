@@ -5,6 +5,29 @@
 #include "ecs_utilities.h"
 namespace put {
     namespace ecs {
+        typedef ecs_scene* (*proc_create_scene)(const c8*);
+        typedef void (*proc_destroy_scene)(ecs_scene*);
+        typedef ecs_scene_list* (*proc_get_scenes)();
+        typedef void (*proc_update)(f32);
+        typedef void (*proc_update_scene)(ecs_scene*, f32);
+        typedef void (*proc_render_scene_view)(const scene_view&);
+        typedef void (*proc_render_light_volumes)(const scene_view&);
+        typedef void (*proc_render_shadow_views)(const scene_view&);
+        typedef void (*proc_render_omni_shadow_views)(const scene_view&);
+        typedef void (*proc_render_area_light_textures)(const scene_view&);
+        typedef void (*proc_clear_scene)(ecs_scene*);
+        typedef void (*proc_default_scene)(ecs_scene*);
+        typedef void (*proc_resize_scene_buffers)(ecs_scene*, s32);
+        typedef void (*proc_zero_entity_components)(ecs_scene*, u32);
+        typedef void (*proc_delete_entity)(ecs_scene*, u32);
+        typedef void (*proc_delete_entity_first_pass)(ecs_scene*, u32);
+        typedef void (*proc_delete_entity_second_pass)(ecs_scene*, u32);
+        typedef void (*proc_initialise_free_list)(ecs_scene*);
+        typedef void (*proc_register_ecs_extentsions)(ecs_scene*, const ecs_extension&);
+        typedef void (*proc_unregister_ecs_extensions)(ecs_scene*);
+        typedef void (*proc_register_ecs_controller)(ecs_scene*, const ecs_controller&);
+        typedef u32 (*proc_get_extension_component_offset)(ecs_scene*, u32);
+        typedef u32 (*proc_get_extension_component_offset_from_id)(ecs_scene*, hash_id);
         typedef void (*proc_save_scene)(const c8*, ecs_scene*);
         typedef void (*proc_save_sub_scene)(ecs_scene*, u32);
         typedef void (*proc_load_scene)(const c8*, ecs_scene*, bool);
@@ -62,6 +85,29 @@ namespace put {
         {
             pen::render_ctx render;
             ecs_scene* scene;
+            proc_create_scene create_scene;
+            proc_destroy_scene destroy_scene;
+            proc_get_scenes get_scenes;
+            proc_update update;
+            proc_update_scene update_scene;
+            proc_render_scene_view render_scene_view;
+            proc_render_light_volumes render_light_volumes;
+            proc_render_shadow_views render_shadow_views;
+            proc_render_omni_shadow_views render_omni_shadow_views;
+            proc_render_area_light_textures render_area_light_textures;
+            proc_clear_scene clear_scene;
+            proc_default_scene default_scene;
+            proc_resize_scene_buffers resize_scene_buffers;
+            proc_zero_entity_components zero_entity_components;
+            proc_delete_entity delete_entity;
+            proc_delete_entity_first_pass delete_entity_first_pass;
+            proc_delete_entity_second_pass delete_entity_second_pass;
+            proc_initialise_free_list initialise_free_list;
+            proc_register_ecs_extentsions register_ecs_extentsions;
+            proc_unregister_ecs_extensions unregister_ecs_extensions;
+            proc_register_ecs_controller register_ecs_controller;
+            proc_get_extension_component_offset get_extension_component_offset;
+            proc_get_extension_component_offset_from_id get_extension_component_offset_from_id;
             proc_save_scene save_scene;
             proc_save_sub_scene save_sub_scene;
             proc_load_scene load_scene;
@@ -119,6 +165,29 @@ namespace put {
 
         #if !DLL
         void generate_bindings(live_context* ctx) {
+            ctx->create_scene = &create_scene;
+            ctx->destroy_scene = &destroy_scene;
+            ctx->get_scenes = &get_scenes;
+            ctx->update = &update;
+            ctx->update_scene = &update_scene;
+            ctx->render_scene_view = &render_scene_view;
+            ctx->render_light_volumes = &render_light_volumes;
+            ctx->render_shadow_views = &render_shadow_views;
+            ctx->render_omni_shadow_views = &render_omni_shadow_views;
+            ctx->render_area_light_textures = &render_area_light_textures;
+            ctx->clear_scene = &clear_scene;
+            ctx->default_scene = &default_scene;
+            ctx->resize_scene_buffers = &resize_scene_buffers;
+            ctx->zero_entity_components = &zero_entity_components;
+            ctx->delete_entity = &delete_entity;
+            ctx->delete_entity_first_pass = &delete_entity_first_pass;
+            ctx->delete_entity_second_pass = &delete_entity_second_pass;
+            ctx->initialise_free_list = &initialise_free_list;
+            ctx->register_ecs_extentsions = &register_ecs_extentsions;
+            ctx->unregister_ecs_extensions = &unregister_ecs_extensions;
+            ctx->register_ecs_controller = &register_ecs_controller;
+            ctx->get_extension_component_offset = &get_extension_component_offset;
+            ctx->get_extension_component_offset_from_id = &get_extension_component_offset_from_id;
             ctx->save_scene = &save_scene;
             ctx->save_sub_scene = &save_sub_scene;
             ctx->load_scene = &load_scene;
