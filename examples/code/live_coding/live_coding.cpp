@@ -20,6 +20,8 @@ int on_load(ecs::live_context* live_ctx)
     material_resource* default_material = live_ctx->get_material_resource(PEN_HASH("default_material"));
     geometry_resource* box_resource = live_ctx->get_geometry_resource(PEN_HASH("cube"));
         
+    live_ctx->clear_scene(live_ctx->scene);
+        
     f32 ground_size = 100.0f;
     u32 ground = live_ctx->get_new_entity(live_ctx->scene);
     live_ctx->scene->transforms[ground].rotation = quat();
@@ -27,10 +29,24 @@ int on_load(ecs::live_context* live_ctx)
     live_ctx->scene->transforms[ground].translation = vec3f::zero();
     live_ctx->scene->parents[ground] = ground;
     live_ctx->scene->entities[ground] |= e_cmp::transform;
-
     live_ctx->instantiate_geometry(box_resource, live_ctx->scene, ground);
     live_ctx->instantiate_material(default_material, live_ctx->scene, ground);
     live_ctx->instantiate_model_cbuffer(live_ctx->scene, ground);
+
+    // directional
+    u32 light = live_ctx->get_new_entity(live_ctx->scene);
+    live_ctx->instantiate_light(live_ctx->scene, light);
+    live_ctx->scene->names[light] = "front_light";
+    live_ctx->scene->id_name[light] = PEN_HASH("front_light");
+    live_ctx->scene->lights[light].colour = vec3f::one() * 0.3f;
+    live_ctx->scene->lights[light].direction = vec3f::one();
+    live_ctx->scene->lights[light].type = e_light_type::dir;
+    live_ctx->scene->lights[light].flags |= e_light_flags::shadow_map;
+    live_ctx->scene->transforms[light].translation = vec3f::zero();
+    live_ctx->scene->transforms[light].rotation = quat();
+    live_ctx->scene->transforms[light].scale = vec3f::one();
+    live_ctx->scene->entities[light] |= e_cmp::light;
+    live_ctx->scene->entities[light] |= e_cmp::transform;
     
     return 0;
 }
