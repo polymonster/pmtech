@@ -116,6 +116,7 @@ void* pen::user_entry(void* params)
     
     cr_plugin ctx;
     bool live_lib = cr_plugin_open(ctx, "liblive_coding_d.dylib");
+    live_lib = false;
 
     while (1)
     {
