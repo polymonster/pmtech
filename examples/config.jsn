@@ -47,6 +47,15 @@
 			import_dirs:[
 				"../assets/configs", "assets/configs"
 			]
+        },
+        
+        cr: {
+        	files: [
+            	"../core/put/source/ecs/ecs_scene.h",
+            	"../core/put/source/ecs/ecs_resources.h",
+            	"../core/put/source/ecs/ecs_utilities.h"
+        	],
+        	output: "../core/put/source/ecs/ecs_live.h"
         }
     },
     

@@ -51,7 +51,7 @@ int on_load(ecs::live_context* live_ctx)
     live_ctx->scene->entities[light] |= e_cmp::light;
     live_ctx->scene->entities[light] |= e_cmp::transform;
     
-    f32 ground_size = 100.0f;
+    f32 ground_size = 500.0f;
     u32 ground = live_ctx->get_new_entity(live_ctx->scene);
     live_ctx->scene->transforms[ground].rotation = quat();
     live_ctx->scene->transforms[ground].scale = vec3f(ground_size, 1.0f, ground_size);

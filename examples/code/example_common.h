@@ -7,7 +7,8 @@
 #include "ecs/ecs_resources.h"
 #include "ecs/ecs_scene.h"
 #include "ecs/ecs_utilities.h"
-#include "ecs/ecs_live.h"
+#include "pmfx.h"
+
 #include "file_system.h"
 #include "hash.h"
 #include "input.h"
@@ -15,13 +16,9 @@
 #include "pen.h"
 #include "pen_json.h"
 #include "pen_string.h"
-#include "pmfx.h"
 #include "renderer.h"
 #include "str_utilities.h"
 #include "timer.h"
-
-#define CR_HOST // required in the host only and before including cr.h
-#include "cr/cr.h"
 
 using namespace put;
 using namespace ecs;
@@ -101,22 +98,12 @@ void* pen::user_entry(void* params)
     // for most demos we want to start with no debug / dev stuff so they look nice, but for others we can enable to flags
     main_scene->view_flags |= e_scene_view_flags::hide_debug;
     put::dev_ui::enable(false);
-    
-    // cr
-    ecs::live_context* lc = new ecs::live_context;
-    lc->scene = main_scene;
-    lc->render = pen::renderer_get_main_context();
-    ecs::generate_bindings(lc);
 
     example_setup(main_scene, main_camera);
 
     f32 dt = 0.0f;
     pen::timer* frame_timer = pen::timer_create();
     pen::timer_start(frame_timer);
-    
-    cr_plugin ctx;
-    bool live_lib = cr_plugin_open(ctx, "liblive_coding_d.dylib");
-    live_lib = false;
 
     while (1)
     {
@@ -126,13 +113,7 @@ void* pen::user_entry(void* params)
         put::dev_ui::new_frame();
         
         example_update(main_scene, main_camera, dt);
-        
-        if(live_lib)
-        {
-            ctx.userdata = (void*)lc;
-            cr_plugin_update(ctx);
-        }
-        
+                
         ecs::update(dt);
 
         pmfx::render();
@@ -150,9 +131,6 @@ void* pen::user_entry(void* params)
         if (pen::semaphore_try_wait(p_thread_info->p_sem_exit))
             break;
     }
-
-    if(live_lib)
-        cr_plugin_close(ctx);
     
     ecs::destroy_scene(main_scene);
     ecs::editor_shutdown();

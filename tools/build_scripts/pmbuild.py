@@ -538,6 +538,86 @@ def run_build(config):
             exit(0)
 
 
+def run_cr(config):
+        print("--------------------------------------------------------------------------------")
+        print("cr -----------------------------------------------------------------------------")
+        print("--------------------------------------------------------------------------------")
+        print(config["cr"]["output"])
+
+        files = config["cr"]["files"]
+
+        code = cgu.src_line("// codegen_2")
+        code += cgu.src_line("#pragma once")
+        for f in files:
+            code += cgu.src_line('#include ' + cgu.in_quotes(os.path.basename(f)))
+        code += cgu.src_line("namespace put {")
+        code += cgu.src_line("namespace ecs {")
+
+        free_funcs = []
+        added = []
+        for f in files:
+            source = open(f, "r").read()
+            source = cgu.remove_comments(source)
+            strings, source = cgu.placeholder_string_literals(source)
+            functions, function_names = cgu.find_functions(source)
+            for func in functions:
+                free = len(func["qualifier"]) == 0
+                for s in func["scope"]:
+                    if s["type"] == "struct":
+                        free = False
+                        break
+                # cant add members
+                if not free:
+                    continue
+                # cant add overloads
+                if func["name"] in added:
+                    continue
+                # cant add funcs with default args
+                skip = False
+                for a in func["args"]:
+                    if a["default"]:
+                        skip = True
+                        break
+                if skip:
+                    continue
+                added.append(func["name"])
+                free_funcs.append(func)
+
+        # declare function pointer prototypes
+        for func in free_funcs:
+            args = cgu.get_funtion_prototype(func)
+            code += cgu.src_line("typedef " + func["return_type"] + " (*proc_" + func["name"] + ")" + args + ";")
+
+        # start class with members
+        code += cgu.src_line("struct live_context {")
+
+        # pointers to contexts
+        code += cgu.src_line("pen::render_ctx render;")
+        code += cgu.src_line("ecs_scene* scene;")
+
+        # declare function pointer instances
+        for func in free_funcs:
+            code += cgu.src_line("proc_" + func["name"] + " " + func["name"] + ";")
+
+        code += cgu.src_line("};")
+
+        # binding function decl
+        code += cgu.src_line("#if !DLL")
+        code += cgu.src_line("void generate_bindings(live_context* ctx) {")
+
+        for func in free_funcs:
+            code += cgu.src_line("ctx->" + func["name"] + " = &" + func["name"] + ";")
+
+        code += cgu.src_line("}")
+        code += cgu.src_line("#endif")
+        code += cgu.src_line("}")  # namespace ecs
+        code += cgu.src_line("}")  # namespace put
+
+        output_file = open(config["cr"]["output"], "w")
+        output_file.write(cgu.format_source(code, 4))
+        return
+
+
 # top level help
 def pmbuild_help(config):
     print("pmbuild -help ------------------------------------------------------------------")
@@ -710,6 +790,17 @@ def build_help(config):
     print("\n")
 
 
+def cr_help(config):
+    print("cr help -------------------------------------------------------------------------")
+    print("---------------------------------------------------------------------------------")
+    print("generate cfunction pointers for calling from fungos/cr")
+    print("\njsn syntax: array of commands.")
+    print("cr: {")
+    print("    files:[...], output: <filepath>")
+    print("}")
+    print("\n")
+
+
 # print duration of job, ts is start time
 def print_duration(ts):
     millis = int((time.time() - ts) * 1000)
@@ -758,6 +849,7 @@ def main():
     tasks["jsn"] = {"run": run_jsn, "help": jsn_help}
     tasks["copy"] = {"run": run_copy, "help": copy_help}
     tasks["build"] = {"run": run_build, "help": build_help}
+    tasks["cr"] = {"run": run_cr, "help": cr_help}
 
     # clean is a special task, you must specify separately
     if "-clean" in sys.argv:
@@ -787,79 +879,6 @@ def main():
 
     # finally metadata for rebuilding and hot reloading
     generate_pmbuild_config(config, sys.argv[1])
-
-
-def codegen():
-    files = [
-        "../core/put/source/ecs/ecs_scene.h",
-        "../core/put/source/ecs/ecs_resources.h",
-        "../core/put/source/ecs/ecs_utilities.h"
-    ]
-    code = cgu.src_line("// codegen")
-    code += cgu.src_line("#pragma once")
-    code += cgu.src_line('#include "ecs_scene.h"')
-    code += cgu.src_line('#include "ecs_resources.h"')
-    code += cgu.src_line('#include "ecs_utilities.h"')
-    code += cgu.src_line("namespace put {")
-    code += cgu.src_line("namespace ecs {")
-
-    free_funcs = []
-    for f in files:
-        source = open(f, "r").read()
-        source = cgu.remove_comments(source)
-        strings, source = cgu.placeholder_string_literals(source)
-        functions, function_names = cgu.find_functions(source)
-        for func in functions:
-            print(json.dumps(func, indent=4))
-            free = len(func["qualifier"]) == 0
-            for s in func["scope"]:
-                if s["type"] == "struct":
-                    free = False
-                    break
-            if not free:
-                continue
-            free_funcs.append(func)
-
-    # decl function pointer prototypes
-    for func in free_funcs:
-        args = ""
-        num_args = len(func["args"])
-        for a in range(0, num_args):
-            args += func["args"][a]["type"]
-            if a < num_args-1:
-                args += ", "
-        if num_args == 0:
-            args = "void"
-        code += cgu.src_line("typedef " + func["return_type"] + " (*proc_" + func["name"] + ")(" + args + ");")
-
-    # start class with members
-    code += cgu.src_line("struct live_context")
-    code += cgu.src_line("{")
-
-    # pointers to contexts
-    code += cgu.src_line("pen::render_ctx render;")
-    code += cgu.src_line("ecs_scene* scene;")
-
-    # decl function pointer instances
-    for func in free_funcs:
-        code += cgu.src_line("proc_" + func["name"] + " " + func["name"] + ";")
-
-    code += cgu.src_line("};")
-
-    # binding function decl
-    code += cgu.src_line("#if !DLL")
-    code += cgu.src_line("void generate_bindings(live_context* ctx) {")
-
-    for func in free_funcs:
-        code += cgu.src_line("ctx->" + func["name"] + " = &" + func["name"] + ";")
-
-    code += cgu.src_line("}")
-    code += cgu.src_line("#endif")
-    code += cgu.src_line("}")  # namespace ecs
-    code += cgu.src_line("}")  # namespace put
-
-    code = cgu.format_source(code, 4)
-    print(code)
 
 
 # entry point of pmbuild

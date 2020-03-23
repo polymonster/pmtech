@@ -1,4 +1,4 @@
-// codegen
+// codegen_2
 #pragma once
 #include "ecs_scene.h"
 #include "ecs_resources.h"
@@ -17,7 +17,6 @@ namespace put {
         typedef void (*proc_render_area_light_textures)(const scene_view&);
         typedef void (*proc_clear_scene)(ecs_scene*);
         typedef void (*proc_default_scene)(ecs_scene*);
-        typedef void (*proc_resize_scene_buffers)(ecs_scene*, s32);
         typedef void (*proc_zero_entity_components)(ecs_scene*, u32);
         typedef void (*proc_delete_entity)(ecs_scene*, u32);
         typedef void (*proc_delete_entity_first_pass)(ecs_scene*, u32);
@@ -26,12 +25,10 @@ namespace put {
         typedef void (*proc_register_ecs_extentsions)(ecs_scene*, const ecs_extension&);
         typedef void (*proc_unregister_ecs_extensions)(ecs_scene*);
         typedef void (*proc_register_ecs_controller)(ecs_scene*, const ecs_controller&);
-        typedef u32 (*proc_get_extension_component_offset)(ecs_scene*, u32);
-        typedef u32 (*proc_get_extension_component_offset_from_id)(ecs_scene*, hash_id);
+        typedef  u32 (*proc_get_extension_component_offset)(ecs_scene*, u32);
+        typedef  u32 (*proc_get_extension_component_offset_from_id)(ecs_scene*, hash_id);
         typedef void (*proc_save_scene)(const c8*, ecs_scene*);
         typedef void (*proc_save_sub_scene)(ecs_scene*, u32);
-        typedef void (*proc_load_scene)(const c8*, ecs_scene*, bool);
-        typedef s32 (*proc_load_pmm)(const c8*, ecs_scene*, u32);
         typedef s32 (*proc_load_pma)(const c8*);
         typedef s32 (*proc_load_pmv)(const c8*, ecs_scene*);
         typedef void (*proc_optimise_pmm)(const c8*, const c8*);
@@ -64,7 +61,6 @@ namespace put {
         typedef u32 (*proc_get_new_entity)(ecs_scene*);
         typedef void (*proc_get_new_entities_contiguous)(ecs_scene*, s32, s32&, s32&);
         typedef void (*proc_get_new_entities_append)(ecs_scene*, s32, s32&, s32&);
-        typedef u32 (*proc_clone_entity)(ecs_scene*, u32, s32, s32, clone_mode, vec3f);
         typedef void (*proc_swap_entities)(ecs_scene*, u32, s32);
         typedef void (*proc_clone_selection_hierarchical)(ecs_scene*, u32**, const c8*);
         typedef void (*proc_instance_entity_range)(ecs_scene*, u32, u32);
@@ -81,8 +77,7 @@ namespace put {
         typedef Str (*proc_read_parsable_string)(const u32**);
         typedef void (*proc_write_parsable_string)(const Str&, std::ofstream&);
         typedef void (*proc_write_parsable_string_u32)(const Str&, std::ofstream&);
-        struct live_context
-        {
+        struct live_context {
             pen::render_ctx render;
             ecs_scene* scene;
             proc_create_scene create_scene;
@@ -97,7 +92,6 @@ namespace put {
             proc_render_area_light_textures render_area_light_textures;
             proc_clear_scene clear_scene;
             proc_default_scene default_scene;
-            proc_resize_scene_buffers resize_scene_buffers;
             proc_zero_entity_components zero_entity_components;
             proc_delete_entity delete_entity;
             proc_delete_entity_first_pass delete_entity_first_pass;
@@ -110,8 +104,6 @@ namespace put {
             proc_get_extension_component_offset_from_id get_extension_component_offset_from_id;
             proc_save_scene save_scene;
             proc_save_sub_scene save_sub_scene;
-            proc_load_scene load_scene;
-            proc_load_pmm load_pmm;
             proc_load_pma load_pma;
             proc_load_pmv load_pmv;
             proc_optimise_pmm optimise_pmm;
@@ -144,7 +136,6 @@ namespace put {
             proc_get_new_entity get_new_entity;
             proc_get_new_entities_contiguous get_new_entities_contiguous;
             proc_get_new_entities_append get_new_entities_append;
-            proc_clone_entity clone_entity;
             proc_swap_entities swap_entities;
             proc_clone_selection_hierarchical clone_selection_hierarchical;
             proc_instance_entity_range instance_entity_range;
@@ -177,7 +168,6 @@ namespace put {
             ctx->render_area_light_textures = &render_area_light_textures;
             ctx->clear_scene = &clear_scene;
             ctx->default_scene = &default_scene;
-            ctx->resize_scene_buffers = &resize_scene_buffers;
             ctx->zero_entity_components = &zero_entity_components;
             ctx->delete_entity = &delete_entity;
             ctx->delete_entity_first_pass = &delete_entity_first_pass;
@@ -190,8 +180,6 @@ namespace put {
             ctx->get_extension_component_offset_from_id = &get_extension_component_offset_from_id;
             ctx->save_scene = &save_scene;
             ctx->save_sub_scene = &save_sub_scene;
-            ctx->load_scene = &load_scene;
-            ctx->load_pmm = &load_pmm;
             ctx->load_pma = &load_pma;
             ctx->load_pmv = &load_pmv;
             ctx->optimise_pmm = &optimise_pmm;
@@ -212,7 +200,6 @@ namespace put {
             ctx->destroy_geometry = &destroy_geometry;
             ctx->destroy_physics = &destroy_physics;
             ctx->bake_rigid_body_params = &bake_rigid_body_params;
-            ctx->bake_material_handles = &bake_material_handles;
             ctx->bake_material_handles = &bake_material_handles;
             ctx->create_geometry_primitives = &create_geometry_primitives;
             ctx->add_geometry_resource = &add_geometry_resource;
@@ -238,7 +225,6 @@ namespace put {
             ctx->build_heirarchy_node_list = &build_heirarchy_node_list;
             ctx->scene_tree_enumerate = &scene_tree_enumerate;
             ctx->scene_tree_add_entity = &scene_tree_add_entity;
-            ctx->read_parsable_string = &read_parsable_string;
             ctx->read_parsable_string = &read_parsable_string;
             ctx->write_parsable_string = &write_parsable_string;
             ctx->write_parsable_string_u32 = &write_parsable_string_u32;

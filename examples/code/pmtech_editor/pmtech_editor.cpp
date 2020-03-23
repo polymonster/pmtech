@@ -22,6 +22,10 @@
 
 #include "maths/vec.h"
 
+#define CR_HOST // required in the host only and before including cr.h
+#include "cr/cr.h"
+#include "ecs/ecs_live.h"
+
 using namespace put;
 using namespace put::ecs;
 
@@ -110,6 +114,18 @@ void* pen::user_entry(void* params)
 
     pmfx::init("data/configs/editor_renderer.jsn");
     put::init_hot_loader();
+        
+    // cr
+    cr_plugin ctx;
+    bool live_lib = cr_plugin_open(ctx, "liblive_coding_d.dylib");
+    ecs::live_context* lc = nullptr;
+    if(live_lib)
+    {
+        lc = new ecs::live_context;
+        lc->scene = main_scene;
+        lc->render = pen::renderer_get_main_context();
+        ecs::generate_bindings(lc);
+    }
 
     f32 dt = 0.0f;
     pen::timer* frame_timer = pen::timer_create();
@@ -123,6 +139,12 @@ void* pen::user_entry(void* params)
         put::dev_ui::new_frame();
 
         ecs::update(dt);
+        
+        if(live_lib)
+        {
+            ctx.userdata = (void*)lc;
+            cr_plugin_update(ctx);
+        }
 
         pmfx::render();
 
@@ -140,6 +162,12 @@ void* pen::user_entry(void* params)
         // msg from the engine we want to terminate
         if (pen::semaphore_try_wait(p_thread_info->p_sem_exit))
             break;
+    }
+    
+    if(live_lib)
+    {
+        cr_plugin_close(ctx);
+        delete lc;
     }
 
     ecs::destroy_scene(main_scene);
