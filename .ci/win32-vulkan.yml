@@ -1,7 +1,9 @@
 version: 1.0.{build}
 image: Visual Studio 2017
 init:
-- ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+  - curl -L --silent --show-error --output VulkanSDK.exe https://vulkan.lunarg.com/sdk/download/1.1.114.0/windows/VulkanSDK-1.1.114.0-Installer.exe?Human=true
+  - VulkanSDK.exe /S
+  - rm -f VulkanSDK.exe
 environment:
   APPVEYOR_RDP_PASSWORD: PmtechSecret99*
 build_script:
