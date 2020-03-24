@@ -7,7 +7,7 @@ namespace put {
     namespace ecs {
         typedef ecs_scene* (*proc_create_scene)(const c8*);
         typedef void (*proc_destroy_scene)(ecs_scene*);
-        typedef ecs_scene_list* (*proc_get_scenes)();
+        typedef ecs_scene_list* (*proc_get_scenes)(void);
         typedef void (*proc_update)(f32);
         typedef void (*proc_update_scene)(ecs_scene*, f32);
         typedef void (*proc_render_scene_view)(const scene_view&);
@@ -17,6 +17,7 @@ namespace put {
         typedef void (*proc_render_area_light_textures)(const scene_view&);
         typedef void (*proc_clear_scene)(ecs_scene*);
         typedef void (*proc_default_scene)(ecs_scene*);
+        typedef void (*proc_resize_scene_buffers)(ecs_scene*, s32);
         typedef void (*proc_zero_entity_components)(ecs_scene*, u32);
         typedef void (*proc_delete_entity)(ecs_scene*, u32);
         typedef void (*proc_delete_entity_first_pass)(ecs_scene*, u32);
@@ -29,6 +30,8 @@ namespace put {
         typedef  u32 (*proc_get_extension_component_offset_from_id)(ecs_scene*, hash_id);
         typedef void (*proc_save_scene)(const c8*, ecs_scene*);
         typedef void (*proc_save_sub_scene)(ecs_scene*, u32);
+        typedef void (*proc_load_scene)(const c8*, ecs_scene*, bool);
+        typedef s32 (*proc_load_pmm)(const c8*, ecs_scene*, u32);
         typedef s32 (*proc_load_pma)(const c8*);
         typedef s32 (*proc_load_pmv)(const c8*, ecs_scene*);
         typedef void (*proc_optimise_pmm)(const c8*, const c8*);
@@ -50,7 +53,7 @@ namespace put {
         typedef void (*proc_destroy_physics)(ecs_scene*, s32);
         typedef void (*proc_bake_rigid_body_params)(ecs_scene*, u32);
         typedef void (*proc_bake_material_handles)(ecs_scene*, u32);
-        typedef void (*proc_create_geometry_primitives)();
+        typedef void (*proc_create_geometry_primitives)(void);
         typedef void (*proc_add_geometry_resource)(geometry_resource*);
         typedef void (*proc_add_material_resource)(material_resource*);
         typedef material_resource* (*proc_get_material_resource)(hash_id);
@@ -61,6 +64,7 @@ namespace put {
         typedef u32 (*proc_get_new_entity)(ecs_scene*);
         typedef void (*proc_get_new_entities_contiguous)(ecs_scene*, s32, s32&, s32&);
         typedef void (*proc_get_new_entities_append)(ecs_scene*, s32, s32&, s32&);
+        typedef u32 (*proc_clone_entity)(ecs_scene*, u32, s32, s32, clone_mode, vec3f);
         typedef void (*proc_swap_entities)(ecs_scene*, u32, s32);
         typedef void (*proc_clone_selection_hierarchical)(ecs_scene*, u32**, const c8*);
         typedef void (*proc_instance_entity_range)(ecs_scene*, u32, u32);
@@ -92,6 +96,7 @@ namespace put {
             proc_render_area_light_textures render_area_light_textures;
             proc_clear_scene clear_scene;
             proc_default_scene default_scene;
+            proc_resize_scene_buffers resize_scene_buffers;
             proc_zero_entity_components zero_entity_components;
             proc_delete_entity delete_entity;
             proc_delete_entity_first_pass delete_entity_first_pass;
@@ -104,6 +109,8 @@ namespace put {
             proc_get_extension_component_offset_from_id get_extension_component_offset_from_id;
             proc_save_scene save_scene;
             proc_save_sub_scene save_sub_scene;
+            proc_load_scene load_scene;
+            proc_load_pmm load_pmm;
             proc_load_pma load_pma;
             proc_load_pmv load_pmv;
             proc_optimise_pmm optimise_pmm;
@@ -136,6 +143,7 @@ namespace put {
             proc_get_new_entity get_new_entity;
             proc_get_new_entities_contiguous get_new_entities_contiguous;
             proc_get_new_entities_append get_new_entities_append;
+            proc_clone_entity clone_entity;
             proc_swap_entities swap_entities;
             proc_clone_selection_hierarchical clone_selection_hierarchical;
             proc_instance_entity_range instance_entity_range;
@@ -168,6 +176,7 @@ namespace put {
             ctx->render_area_light_textures = &render_area_light_textures;
             ctx->clear_scene = &clear_scene;
             ctx->default_scene = &default_scene;
+            ctx->resize_scene_buffers = &resize_scene_buffers;
             ctx->zero_entity_components = &zero_entity_components;
             ctx->delete_entity = &delete_entity;
             ctx->delete_entity_first_pass = &delete_entity_first_pass;
@@ -180,6 +189,8 @@ namespace put {
             ctx->get_extension_component_offset_from_id = &get_extension_component_offset_from_id;
             ctx->save_scene = &save_scene;
             ctx->save_sub_scene = &save_sub_scene;
+            ctx->load_scene = &load_scene;
+            ctx->load_pmm = &load_pmm;
             ctx->load_pma = &load_pma;
             ctx->load_pmv = &load_pmv;
             ctx->optimise_pmm = &optimise_pmm;
@@ -212,6 +223,7 @@ namespace put {
             ctx->get_new_entity = &get_new_entity;
             ctx->get_new_entities_contiguous = &get_new_entities_contiguous;
             ctx->get_new_entities_append = &get_new_entities_append;
+            ctx->clone_entity = &clone_entity;
             ctx->swap_entities = &swap_entities;
             ctx->clone_selection_hierarchical = &clone_selection_hierarchical;
             ctx->instance_entity_range = &instance_entity_range;

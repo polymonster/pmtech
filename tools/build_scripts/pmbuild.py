@@ -572,14 +572,6 @@ def run_cr(config):
                 # cant add overloads
                 if func["name"] in added:
                     continue
-                # cant add funcs with default args
-                skip = False
-                for a in func["args"]:
-                    if a["default"]:
-                        skip = True
-                        break
-                if skip:
-                    continue
                 added.append(func["name"])
                 free_funcs.append(func)
 

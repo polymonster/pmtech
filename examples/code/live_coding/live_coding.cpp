@@ -51,7 +51,7 @@ int on_load(ecs::live_context* live_ctx)
     live_ctx->scene->entities[light] |= e_cmp::light;
     live_ctx->scene->entities[light] |= e_cmp::transform;
     
-    f32 ground_size = 500.0f;
+    f32 ground_size = 50.0f;
     u32 ground = live_ctx->get_new_entity(live_ctx->scene);
     live_ctx->scene->transforms[ground].rotation = quat();
     live_ctx->scene->transforms[ground].scale = vec3f(ground_size, 1.0f, ground_size);
@@ -111,7 +111,11 @@ int on_unload()
 }
 
 int ion_update(ecs::live_context* live_ctx)
-{    
+{
+    //live_ctx->add_line(vec3f::zero(), vec3f(0.0f, 100.0f, 0.0f), vec4f::magenta());
+    //live_ctx->add_line(vec3f::zero(), vec3f(100.0f, 100.0f, 0.0f), vec4f::green());
+    //live_ctx->add_line(vec3f::zero(), vec3f(100.0f, 100.0f, 100.0f), vec4f::cyan());
+    
     return 0;
 }
 
