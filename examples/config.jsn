@@ -206,6 +206,15 @@
         ],
     },
     
+    ios-ci(base): {
+        premake: [
+            "xcode4",
+            "--renderer=metal", 
+            "--xcode_target=ios",
+            "--platform_dir=osx"
+        ]
+    },
+    
     //
     // win32
     //

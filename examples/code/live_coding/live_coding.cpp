@@ -92,6 +92,16 @@ int on_load(ecs::live_context* live_ctx)
     live_ctx->instantiate_material(default_material, live_ctx->scene, box);
     live_ctx->instantiate_model_cbuffer(live_ctx->scene, box);
     
+    box = live_ctx->get_new_entity(live_ctx->scene);
+    live_ctx->scene->transforms[box].rotation = quat();
+    live_ctx->scene->transforms[box].scale = vec3f(20.0f, 40.0f, 10.0f);
+    live_ctx->scene->transforms[box].translation = vec3f(100.0f, 4.0f, 0.0f);
+    live_ctx->scene->parents[box] = box;
+    live_ctx->scene->entities[box] |= e_cmp::transform;
+    live_ctx->instantiate_geometry(box_resource, live_ctx->scene, box);
+    live_ctx->instantiate_material(default_material, live_ctx->scene, box);
+    live_ctx->instantiate_model_cbuffer(live_ctx->scene, box);
+    
     return 0;
 }
 
