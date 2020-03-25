@@ -1,5 +1,9 @@
 version: 1.0.{build}
 image: Visual Studio 2017
+environment:
+  VULKAN_SDK: C:/VulkanSDK/1.1.114.0
+cache:
+  - VulkanSDK.exe
 init:
   - curl -L --silent --show-error --output VulkanSDK.exe https://vulkan.lunarg.com/sdk/download/1.1.114.0/windows/VulkanSDK-1.1.114.0-Installer.exe?Human=true
   - VulkanSDK.exe /S
@@ -7,5 +11,5 @@ init:
 environment:
   APPVEYOR_RDP_PASSWORD: PmtechSecret99*
 build_script:
-- cmd: "git submodule update --init --recursive\ncd third_party\nbuild_libs.bat\ncd .. \ncd examples\n..\\\\pmbuild win32-vulkan -premake -vs_version -msbuild\ncd build\\win32\nmsbuild pmtech_examples_win32.sln /p:Configuration=Debug\nmsbuild pmtech_examples_win32.sln /p:Configuration=Release"
+- cmd: "git submodule update --init --recursive\ncd dir C:\\ third_party\nbuild_libs.bat\ncd .. \ncd examples\n..\\\\pmbuild win32-vulkan -premake -vs_version -msbuild\ncd build\\win32\nmsbuild pmtech_examples_win32.sln /p:Configuration=Debug\nmsbuild pmtech_examples_win32.sln /p:Configuration=Release"
 test: off
