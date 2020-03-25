@@ -546,13 +546,6 @@ def run_cr(config):
 
         files = config["cr"]["files"]
 
-        code = cgu.src_line("// codegen_2")
-        code += cgu.src_line("#pragma once")
-        for f in files:
-            code += cgu.src_line('#include ' + cgu.in_quotes(os.path.basename(f)))
-        code += cgu.src_line("namespace put {")
-        code += cgu.src_line("namespace ecs {")
-
         free_funcs = []
         added = []
         for f in files:
@@ -575,34 +568,58 @@ def run_cr(config):
                 added.append(func["name"])
                 free_funcs.append(func)
 
-        # declare function pointer prototypes
-        for func in free_funcs:
-            args = cgu.get_funtion_prototype(func)
-            code += cgu.src_line("typedef " + func["return_type"] + " (*proc_" + func["name"] + ")" + args + ";")
+        # start writing code
+        code = cgu.src_line("// codegen_2")
+        code += cgu.src_line("#pragma once")
+        for f in files:
+            code += cgu.src_line('#include ' + cgu.in_quotes(os.path.basename(f)))
 
-        # start class with members
-        code += cgu.src_line("struct live_context {")
+        # use namespaces
+        code += cgu.src_line("namespace put {")
+
+        # sort by immediate scope
+        scope_funcs = dict()
+        for f in free_funcs:
+            l = len(f["scope"])
+            if l > 0:
+                s = f["scope"][l-1]["name"]
+                if s not in scope_funcs.keys():
+                    scope_funcs[s] = list()
+                scope_funcs[s].append(f)
+
+        # add bindings grouped by scope
+        for scope in scope_funcs:
+            code += cgu.src_line("namespace " + scope + "{")
+            # function pointer typedefs
+            for f in scope_funcs[scope]:
+                args = cgu.get_funtion_prototype(f)
+                code += cgu.src_line("typedef " + f["return_type"] + " (*proc_" + f["name"] + ")" + args + ";")
+            # struct
+            struct_name = "__" + scope
+            code += cgu.src_line("struct " + struct_name + " {")
+            code += cgu.src_line("void* " + struct_name + "_start;")
+            # function pointers members
+            for f in scope_funcs[scope]:
+                code += cgu.src_line("proc_" + f["name"] + " " + f["name"] + ";")
+            code += cgu.src_line("void* " + struct_name + "_end;")
+            code += cgu.src_line("};")
+            # bind function pointers to addresses
+            code += cgu.src_line("#if !DLL")
+            code += cgu.src_line("void generate_bindings(" + struct_name + "* ctx){")
+            for f in scope_funcs[scope]:
+                code += cgu.src_line("ctx->" + f["name"] + " = &" + f["name"] + ";")
+            code += cgu.src_line("}")
+            code += cgu.src_line("#endif")
+            code += cgu.src_line("}")
 
         # pointers to contexts
+        code += cgu.src_line("struct live_context {")
         code += cgu.src_line("pen::render_ctx render;")
-        code += cgu.src_line("ecs_scene* scene;")
-
-        # declare function pointer instances
-        for func in free_funcs:
-            code += cgu.src_line("proc_" + func["name"] + " " + func["name"] + ";")
-
+        code += cgu.src_line("ecs::ecs_scene* scene;")
+        for scope in scope_funcs:
+            code += cgu.src_line(scope + "::__" + scope + "* " + scope + "_funcs;")
         code += cgu.src_line("};")
 
-        # binding function decl
-        code += cgu.src_line("#if !DLL")
-        code += cgu.src_line("void generate_bindings(live_context* ctx) {")
-
-        for func in free_funcs:
-            code += cgu.src_line("ctx->" + func["name"] + " = &" + func["name"] + ";")
-
-        code += cgu.src_line("}")
-        code += cgu.src_line("#endif")
-        code += cgu.src_line("}")  # namespace ecs
         code += cgu.src_line("}")  # namespace put
 
         output_file = open(config["cr"]["output"], "w")

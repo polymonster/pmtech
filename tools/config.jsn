@@ -108,7 +108,8 @@
         	files: [
             	"../core/put/source/ecs/ecs_scene.h",
             	"../core/put/source/ecs/ecs_resources.h",
-            	"../core/put/source/ecs/ecs_utilities.h"
+            	"../core/put/source/ecs/ecs_utilities.h",
+            	"../core/put/source/debug_render.h"
         	],
         	output: "../core/put/source/ecs/ecs_live.h"
         }

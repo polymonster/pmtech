@@ -118,13 +118,16 @@ void* pen::user_entry(void* params)
     // cr
     cr_plugin ctx;
     bool live_lib = cr_plugin_open(ctx, "liblive_lib_d.dylib");
-    ecs::live_context* lc = nullptr;
+    live_context* lc = nullptr;
     if(live_lib)
     {
-        lc = new ecs::live_context;
+        lc = new live_context;
         lc->scene = main_scene;
         lc->render = pen::renderer_get_main_context();
-        ecs::generate_bindings(lc);
+        lc->dbg_funcs = new dbg::__dbg;
+        lc->ecs_funcs = new ecs::__ecs;
+        put::dbg::generate_bindings(lc->dbg_funcs);
+        put::ecs::generate_bindings(lc->ecs_funcs);
     }
 
     f32 dt = 0.0f;

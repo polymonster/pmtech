@@ -20,3 +20,9 @@ create_app_example("pmtech_editor", script_path())
 
 -- dll to hot reload
 create_binary("live_lib", "live_lib", script_path(), "SharedLib" )
+
+project "pmtech_editor":
+	configuration {}
+	postbuildcommands {
+    	"echo hello"
+	}

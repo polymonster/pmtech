@@ -3,8 +3,9 @@
 #include "ecs_scene.h"
 #include "ecs_resources.h"
 #include "ecs_utilities.h"
+#include "debug_render.h"
 namespace put {
-    namespace ecs {
+    namespace ecs{
         typedef ecs_scene* (*proc_create_scene)(const c8*);
         typedef void (*proc_destroy_scene)(ecs_scene*);
         typedef ecs_scene_list* (*proc_get_scenes)(void);
@@ -81,9 +82,8 @@ namespace put {
         typedef Str (*proc_read_parsable_string)(const u32**);
         typedef void (*proc_write_parsable_string)(const Str&, std::ofstream&);
         typedef void (*proc_write_parsable_string_u32)(const Str&, std::ofstream&);
-        struct live_context {
-            pen::render_ctx render;
-            ecs_scene* scene;
+        struct __ecs {
+            void* __ecs_start;
             proc_create_scene create_scene;
             proc_destroy_scene destroy_scene;
             proc_get_scenes get_scenes;
@@ -160,10 +160,11 @@ namespace put {
             proc_read_parsable_string read_parsable_string;
             proc_write_parsable_string write_parsable_string;
             proc_write_parsable_string_u32 write_parsable_string_u32;
+            void* __ecs_end;
         };
 
         #if !DLL
-        void generate_bindings(live_context* ctx) {
+        void generate_bindings(__ecs* ctx){
             ctx->create_scene = &create_scene;
             ctx->destroy_scene = &destroy_scene;
             ctx->get_scenes = &get_scenes;
@@ -244,4 +245,90 @@ namespace put {
 
         #endif
     }
+
+    namespace dbg{
+        typedef void (*proc_init)(void);
+        typedef void (*proc_shutdown)(void);
+        typedef void (*proc_add_line)(const vec3f&, const vec3f&, const vec4f&);
+        typedef void (*proc_add_coord_space)(const mat4&, const f32, u32);
+        typedef void (*proc_add_point)(const vec3f&, f32, const vec4f&);
+        typedef void (*proc_add_grid)(const vec3f&, const vec3f&, const vec3f&);
+        typedef void (*proc_add_aabb)(const vec3f&, const vec3f&, const vec4f&);
+        typedef void (*proc_add_circle)(const vec3f&, const vec3f&, f32, const vec4f&);
+        typedef void (*proc_add_circle_segment)(const vec3f&, const vec3f&, f32, f32, f32, const vec4f&);
+        typedef void (*proc_add_frustum)(const vec3f*, const vec3f*, const vec4f&);
+        typedef void (*proc_add_triangle)(const vec3f&, const vec3f&, const vec3f&, const vec4f&);
+        typedef void (*proc_add_triangle_with_normal)(const vec3f&, const vec3f&, const vec3f&, const vec4f&);
+        typedef void (*proc_add_plane)(const vec3f&, const vec3f&, f32, vec4f);
+        typedef void (*proc_add_obb)(const mat4&, vec4f);
+        typedef void (*proc_add_line_2f)(const vec2f&, const vec2f&, const vec4f&);
+        typedef void (*proc_add_point_2f)(const vec2f&, const vec4f&);
+        typedef void (*proc_add_quad_2f)(const vec2f&, const vec2f&, const vec4f&);
+        typedef void (*proc_add_tri_2f)(const vec2f&, const vec2f&, const vec2f&, const vec4f&);
+        typedef void (*proc_add_text_2f)(const f32, const f32, const pen::viewport&, const vec4f&, const c8*, ...);
+        typedef void (*proc_add_axis_transform_widget)(const mat4&, const f32, u32, u32, const mat4&, const mat4&, const vec2i&);
+        typedef void (*proc_render_2d)(u32);
+        typedef void (*proc_render_3d)(u32);
+        struct __dbg {
+            void* __dbg_start;
+            proc_init init;
+            proc_shutdown shutdown;
+            proc_add_line add_line;
+            proc_add_coord_space add_coord_space;
+            proc_add_point add_point;
+            proc_add_grid add_grid;
+            proc_add_aabb add_aabb;
+            proc_add_circle add_circle;
+            proc_add_circle_segment add_circle_segment;
+            proc_add_frustum add_frustum;
+            proc_add_triangle add_triangle;
+            proc_add_triangle_with_normal add_triangle_with_normal;
+            proc_add_plane add_plane;
+            proc_add_obb add_obb;
+            proc_add_line_2f add_line_2f;
+            proc_add_point_2f add_point_2f;
+            proc_add_quad_2f add_quad_2f;
+            proc_add_tri_2f add_tri_2f;
+            proc_add_text_2f add_text_2f;
+            proc_add_axis_transform_widget add_axis_transform_widget;
+            proc_render_2d render_2d;
+            proc_render_3d render_3d;
+            void* __dbg_end;
+        };
+
+        #if !DLL
+        void generate_bindings(__dbg* ctx){
+            ctx->init = &init;
+            ctx->shutdown = &shutdown;
+            ctx->add_line = &add_line;
+            ctx->add_coord_space = &add_coord_space;
+            ctx->add_point = &add_point;
+            ctx->add_grid = &add_grid;
+            ctx->add_aabb = &add_aabb;
+            ctx->add_circle = &add_circle;
+            ctx->add_circle_segment = &add_circle_segment;
+            ctx->add_frustum = &add_frustum;
+            ctx->add_triangle = &add_triangle;
+            ctx->add_triangle_with_normal = &add_triangle_with_normal;
+            ctx->add_plane = &add_plane;
+            ctx->add_obb = &add_obb;
+            ctx->add_line_2f = &add_line_2f;
+            ctx->add_point_2f = &add_point_2f;
+            ctx->add_quad_2f = &add_quad_2f;
+            ctx->add_tri_2f = &add_tri_2f;
+            ctx->add_text_2f = &add_text_2f;
+            ctx->add_axis_transform_widget = &add_axis_transform_widget;
+            ctx->render_2d = &render_2d;
+            ctx->render_3d = &render_3d;
+        }
+
+        #endif
+    }
+
+    struct live_context {
+        pen::render_ctx render;
+        ecs::ecs_scene* scene;
+        ecs::__ecs* ecs_funcs;
+        dbg::__dbg* dbg_funcs;
+    };
 }

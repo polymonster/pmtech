@@ -26,7 +26,6 @@ namespace put
         void add_coord_space(const mat4& mat, const f32 size, u32 selected = 0);
         void add_point(const vec3f& point, f32 size, const vec4f& col = vec4f::white());
         void add_grid(const vec3f& centre, const vec3f& size, const vec3f& divisions);
-        void add_line_transform(const vec3f& start, vec3f& end, const mat4* matrix, const vec4f& col = vec4f::white());
         void add_aabb(const vec3f& min, const vec3f& max, const vec4f& col = vec4f(1.0f, 1.0f, 1.0f, 1.0f));
         void add_circle(const vec3f& axis, const vec3f& centre, f32 radius, const vec4f& col = vec4f::white());
         void add_circle_segment(const vec3f& axis, const vec3f& centre, f32 radius, f32 min = 0.0, f32 max = M_TWO_PI,
