@@ -64,7 +64,7 @@ namespace put {
         typedef u32 (*proc_get_new_entity)(ecs_scene*);
         typedef void (*proc_get_new_entities_contiguous)(ecs_scene*, s32, s32&, s32&);
         typedef void (*proc_get_new_entities_append)(ecs_scene*, s32, s32&, s32&);
-        typedef u32 (*proc_clone_entity)(ecs_scene*, u32, s32, s32, clone_mode, vec3f);
+        typedef u32 (*proc_clone_entity)(ecs_scene*, u32, s32, s32, clone_mode, vec3f, const c8*);
         typedef void (*proc_swap_entities)(ecs_scene*, u32, s32);
         typedef void (*proc_clone_selection_hierarchical)(ecs_scene*, u32**, const c8*);
         typedef void (*proc_instance_entity_range)(ecs_scene*, u32, u32);
