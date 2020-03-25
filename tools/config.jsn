@@ -3,9 +3,34 @@
     // common
     //
     
+	jsn_vars<windows>: {
+		texturec: "../third_party/texturec/win32/texturec",
+        premake: "../tools/premake/premake5"
+	},
+	
+	jsn_vars<mac>: {
+		texturec: "../third_party/texturec/osx/texturec",
+        premake: "../tools/premake/premake5"
+	},
+	
+	jsn_vars<linux>: {
+		texturec: "../third_party/texturec/linux/texturec",
+        premake: "../tools/premake/premake5_linux"
+	},
+    
     base: {
+		jsn_vars: {
+    		data: "",
+    		bin: "",
+    		platform: ""
+    	},
+    	
         tools: {
-            premake: "premake/premake5"
+            premake: "${premake}",
+            texturec: "${texturec}",
+			pmfx: "../third_party/pmfx-shader/build_pmfx.py",
+            models: "../tools/build_scripts/build_models.py",
+            jsn: "../tools/build_scripts/jsn/jsn.py"
         },
     
         env: {
@@ -13,9 +38,9 @@
         },
     },
     
-    // 
-    // mac
-    // 
+    //
+    // cmdline build of libs for pmbuild dependencies
+    //
     
     mac(base): {
         premake: [
@@ -30,7 +55,7 @@
         	"install_name_tool -add_rpath @executable_path/. bin/osx/mesh_opt"
         ]
     },
-
+    
     linux(base): {
         tools: {
             premake: "../tools/premake/premake5_linux"
@@ -44,7 +69,7 @@
             "cd build/linux/ && make mesh_opt config=release"
         ]
     },
-	
+    
 	win32(base): {
 		premake: [
             "vs2017",
@@ -54,5 +79,62 @@
 		build: [
 			"cd build/win32 && msbuild pmtech_tools_win32.sln /p:Configuration=Release"
 		]
-	}
+	},
+	
+	//
+    // tools workspace, pmtech editor, live lib, mesh opt
+    //
+
+    tools-data(base): {
+        textures: [
+            ["../assets/textures", "${data}/textures"]
+        ],
+        
+        copy: [
+            ["../assets/fonts", "${data}/fonts"],
+            ["../third_party/shared_libs/${platform}", "${bin}"]
+        ],
+        
+        jsn: {
+			files:[
+				["../assets/configs", "${data}/configs"],
+			],
+			import_dirs:[
+				"../assets/configs"
+			]
+        },
+        
+        cr: {
+        	files: [
+            	"../core/put/source/ecs/ecs_scene.h",
+            	"../core/put/source/ecs/ecs_resources.h",
+            	"../core/put/source/ecs/ecs_utilities.h"
+        	],
+        	output: "../core/put/source/ecs/ecs_live.h"
+        }
+    },
+	
+	mac-tools(base, tools-data): {
+    	jsn_vars: {
+    		data: "bin/osx/data",
+    		bin: "bin/osx",
+    		platform: "osx"
+    	},
+    	
+    	premake: [
+            "xcode4",
+            "--renderer=metal", 
+            "--platform_dir=osx"
+        ],
+        
+		pmfx: [
+            "-shader_platform metal",
+            "-metal_sdk macosx",
+            "-i ../assets/shaders",
+            "-o bin/osx/data/pmfx/metal",
+            "-h shader_structs",
+            "-t temp/shaders",
+            "-source"
+        ],
+    },
 }

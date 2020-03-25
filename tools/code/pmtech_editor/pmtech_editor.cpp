@@ -117,7 +117,7 @@ void* pen::user_entry(void* params)
         
     // cr
     cr_plugin ctx;
-    bool live_lib = cr_plugin_open(ctx, "liblive_coding_d.dylib");
+    bool live_lib = cr_plugin_open(ctx, "liblive_lib_d.dylib");
     ecs::live_context* lc = nullptr;
     if(live_lib)
     {

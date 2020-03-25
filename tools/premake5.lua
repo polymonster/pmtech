@@ -16,3 +16,7 @@ dofile "../core/pen/project.lua"
 dofile "../core/put/project.lua"
 
 create_app_example("mesh_opt", script_path())
+create_app_example("pmtech_editor", script_path())
+
+-- dll to hot reload
+create_binary("live_lib", "live_lib", script_path(), "SharedLib" )

@@ -43,7 +43,6 @@ create_app_example( "imgui", script_path() )
 create_app_example( "input", script_path() )
 create_app_example( "audio_player", script_path() )
 create_app_example( "shader_toy", script_path() )
-create_app_example( "pmtech_editor", script_path() )
 create_app_example( "rigid_body_primitives", script_path() )
 create_app_example( "physics_constraints", script_path() )
 create_app_example( "instancing", script_path() )
@@ -71,7 +70,4 @@ create_app_example( "stencil_shadows", script_path() )
 create_app_example( "msaa_resolve", script_path() )
 create_app_example( "compute_demo", script_path() )
 create_app_example( "global_illumination", script_path() )
-
--- dll to hot reload
-create_binary("live_coding", "live_coding", script_path(), "SharedLib" )
 
