@@ -345,6 +345,7 @@ namespace
     std::vector<sampler_binding>         s_sampler_bindings;
     std::vector<filter_kernel>           s_filter_kernels;
     geometry_utility                     s_geometry;
+    std::vector<Str>                     s_script_files;
 
     // ids
 } // namespace
@@ -2472,8 +2473,6 @@ namespace put
             ecs::bake_material_handles();
         }
 
-        std::vector<Str> k_script_files;
-
         void pmfx_config_build()
         {
             Str build_cmd = get_build_cmd();
@@ -2487,7 +2486,7 @@ namespace put
         {
             release_script_resources();
 
-            for (auto& s : k_script_files)
+            for (auto& s : s_script_files)
                 load_script_internal(s.c_str());
         }
 
@@ -2500,7 +2499,7 @@ namespace put
         {
             load_script_internal(filename);
 
-            k_script_files.push_back(filename);
+            s_script_files.push_back(filename);
 
             put::add_file_watcher(filename, pmfx_config_build, pmfx_config_hotload);
         }

@@ -894,7 +894,8 @@ namespace put
             u32 current_counter = 0;
 
             u32 num_pmfx = sb_count(s_pmfx_list);
-
+            u32* reload_list = nullptr;
+            
             for (u32 i = 0; i < num_pmfx; ++i)
             {
                 auto& pmfx_set = s_pmfx_list[i];
@@ -910,25 +911,11 @@ namespace put
                     // to know compilation is completed.
                     if (err == PEN_ERR_OK && current_ts >= pmfx_set.rebuild_ts)
                     {
-                        pen::thread_sleep_ms(1000);
-                        
                         bool complete = pmfx_ready(pmfx_set.filename.c_str());
                         if (complete)
                         {
-                            // load new one
-                            pmfx_shader pmfx_new = load_internal(pmfx_set.filename.c_str());
-
-                            // release existing
-                            release_shader(current_counter);
-
-                            // set exisiting to the new one
-                            pmfx_set = pmfx_new;
-
-                            // no longer invalidated
+                            sb_push(reload_list, i);
                             pmfx_set.invalidated = false;
-
-                            ecs::bake_material_handles();
-                            generate_name_lists();
                         }
                     }
                 }
@@ -961,6 +948,25 @@ namespace put
                 }
 
                 current_counter++;
+            }
+            
+            u32 num_reload = sb_count(reload_list);
+            if(num_reload)
+            {                
+                // load modified
+                for(u32 i = 0; i < num_reload; ++i)
+                {
+                    auto& pmfx_set = s_pmfx_list[reload_list[i]];
+                    pmfx_shader pmfx_new = load_internal(pmfx_set.filename.c_str());
+                    release_shader(current_counter);
+                    pmfx_set = pmfx_new;
+                }
+                
+                // fixup resources / references
+                ecs::bake_material_handles();
+                generate_name_lists();
+        
+                sb_free(reload_list);
             }
         }
 

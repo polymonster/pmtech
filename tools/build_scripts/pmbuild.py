@@ -506,8 +506,13 @@ def run_clean(config):
 
 # generates metadata json to put in data root dir, for doing hot loading and other re-build tasks
 def generate_pmbuild_config(config, profile):
+    print("--------------------------------------------------------------------------------")
+    print("pmbuild live reload config -----------------------------------------------------")
+    print("--------------------------------------------------------------------------------")
     if "data_dir" not in config:
+        print("[error]: did not generate pmbuild_config.json for live reloading")
         return
+    print("writing " + config["data_dir"] + "/" + "pmbuild_config.json")
     wd = os.getcwd()
     md = {
         "profile": profile,
@@ -819,6 +824,8 @@ def print_duration(ts):
 
 # main function
 def main():
+    start_time = time.time()
+
     # must have config.json in working directory
     if not os.path.exists("config.jsn"):
         print("[error] no config.json in current directory.")
@@ -888,6 +895,10 @@ def main():
 
     # finally metadata for rebuilding and hot reloading
     generate_pmbuild_config(config, sys.argv[1])
+
+    print("--------------------------------------------------------------------------------")
+    print("all jobs complete --------------------------------------------------------------")
+    print_duration(start_time)
 
 
 # entry point of pmbuild

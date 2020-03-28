@@ -86,6 +86,8 @@
     //
 
     tools-data(base): {
+    	data_dir: "${data}",
+    	
         textures: [
             ["../assets/textures", "${data}/textures"]
         ],

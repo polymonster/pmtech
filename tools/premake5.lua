@@ -21,8 +21,12 @@ create_app_example("pmtech_editor", script_path())
 -- dll to hot reload
 create_binary("live_lib", "live_lib", script_path(), "SharedLib" )
 
-project "pmtech_editor":
-	configuration {}
+project "pmtech_editor"
+	configuration { "Debug" }
 	postbuildcommands {
-    	"echo hello"
+    	"xcodebuild -scheme live_lib -project live_lib.xcodeproj -configuration Debug -quiet"
+	}
+	configuration { "Release" }
+	postbuildcommands {
+    	"xcodebuild -scheme live_lib -project live_lib.xcodeproj -configuration Release -quiet"
 	}

@@ -33,7 +33,13 @@ import post_process.jsn
     },
         
     views:
-    {                
+    {
+    	editor_main(main_view):
+    	{
+    		raster_state : default,
+    		clear_colour : [0.0, 0.0, 0.0, 1.0]
+    	},
+    	                
         editor_view:
         {
             target             : [main_colour, main_depth],
@@ -106,7 +112,7 @@ import post_process.jsn
             multiple_area_light_views,
             multiple_omni_shadow_views,
             picking_view,
-            main_view,
+            editor_main,
             main_view_alpha_blended,
             editor_view
         ],
