@@ -13,7 +13,7 @@
 - Data-Oriented: Instruction and data cache friendly design for optimal performance. 
 - Multithreaded: Async render, physics, audio and entity component system.  
 - Low-level abstractions: Input, gamepad, timers, threads, window, os, file system, etc. 
-- [Live-reloading](): Dynamically reload c++, shaders and render pipleines.
+- [Live-reloading](https://www.youtube.com/watch?v=dSLwP4D8Fd4): Dynamically reload c++, shaders and render pipleines.
 - [Ecs](https://github.com/polymonster/pmtech/wiki/Ecs): Entity component system and root motion animation system.
 - [Pmfx](https://github.com/polymonster/pmtech/wiki/Pmfx): Scriptable renderer, shader, compute and post-processing system.
 - Tools: Graphical editor, mesh optimiser, volume texture / sdf generator.
