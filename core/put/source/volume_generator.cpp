@@ -1521,8 +1521,9 @@ namespace put
             ec.update_func = &volume_rasteriser_update;
             ec.name = "volume_rasteriser_camera";
             ec.id_name = PEN_HASH(ec.name.c_str());
-
             ecs::register_ecs_controller(scene, ec);
+            
+            pmfx::register_camera(&s_volume_raster_ortho, "volume_rasteriser_camera");
         }
 
         void show_dev_ui()

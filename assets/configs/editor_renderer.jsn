@@ -114,7 +114,8 @@ import post_process.jsn
             picking_view,
             editor_main,
             main_view_alpha_blended,
-            editor_view
+            editor_view,
+            volume_rasteriser
         ],
         
         editor_gi: [

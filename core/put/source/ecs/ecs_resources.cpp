@@ -406,6 +406,16 @@ namespace
         {
             u32 map_type = *p_reader++;
             Str texture_name = read_parsable_string(&p_reader);
+            
+            Str base_dir = filename;
+            u32 dp = pen::str_find(base_dir, "/data/");
+            if(dp != -1)
+            {
+                base_dir = pen::str_substr(base_dir, 0, dp);
+                base_dir.appendf("/%s", texture_name.c_str());
+                texture_name = base_dir;
+            }
+            
             p_mat->texture_handles[map_type] = put::load_texture(texture_name.c_str());
         }
 

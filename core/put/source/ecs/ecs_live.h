@@ -326,6 +326,7 @@ namespace put {
     }
 
     struct live_context {
+        f32 dt;
         pen::render_ctx render;
         ecs::ecs_scene* scene;
         ecs::__ecs* ecs_funcs;

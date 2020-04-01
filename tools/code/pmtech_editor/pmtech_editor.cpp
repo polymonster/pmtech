@@ -22,6 +22,12 @@
 
 #include "maths/vec.h"
 
+#if NDEBUG
+#define LIVE_LIB "liblive_lib.dylib"
+#else
+#define LIVE_LIB "liblive_lib_d.dylib"
+#endif
+
 #define CR_HOST // required in the host only and before including cr.h
 #include "cr/cr.h"
 #include "ecs/ecs_live.h"
@@ -39,7 +45,7 @@ namespace pen
         p.window_width = 1280;
         p.window_height = 720;
         p.window_title = "pmtech_editor";
-        p.window_sample_count = 4;
+        p.window_sample_count = 8;
         p.user_thread_function = user_entry;
         p.flags = pen::e_pen_create_flags::renderer;
         return p;
@@ -61,15 +67,16 @@ void* pen::user_entry(void* params)
     pen::jobs_create_job(physics::physics_thread_main, 1024 * 10, nullptr, pen::e_thread_start_flags::detached);
 
     // create the main scene and camera
-    put::ecs::ecs_scene* main_scene = put::ecs::create_scene("main_scene");
+    ecs::ecs_scene* main_scene = put::ecs::create_scene("main_scene");
 
-    put::camera main_camera;
-    put::camera_create_perspective(&main_camera, 60.0f, put::k_use_window_aspect, 0.1f, 1000.0f);
+    camera main_camera;
+    camera_create_perspective(&main_camera, 60.0f, put::k_use_window_aspect, 0.1f, 1000.0f);
 
     // init systems
-    put::dev_ui::init();
-    put::dbg::init();
-    put::ecs::editor_init(main_scene, &main_camera);
+    dev_ui::init();
+    dbg::init();
+    ecs::editor_init(main_scene, &main_camera);
+    put::init_hot_loader();
 
     // create view renderers
     put::scene_view_renderer svr_main;
@@ -108,16 +115,13 @@ void* pen::user_entry(void* params)
     pmfx::register_scene_view_renderer(svr_shadow_maps);
     pmfx::register_scene_view_renderer(svr_omni_shadow_maps);
     pmfx::register_scene_view_renderer(svr_area_light_textures);
-
     pmfx::register_scene(main_scene, "main_scene");
     pmfx::register_camera(&main_camera, "model_viewer_camera");
-
     pmfx::init("data/configs/editor_renderer.jsn");
-    put::init_hot_loader();
-        
+    
     // cr
     cr_plugin ctx;
-    bool live_lib = cr_plugin_open(ctx, "liblive_lib_d.dylib");
+    bool live_lib = cr_plugin_open(ctx, LIVE_LIB);
     live_context* lc = nullptr;
     if(live_lib)
     {
@@ -145,6 +149,7 @@ void* pen::user_entry(void* params)
         
         if(live_lib)
         {
+            lc->dt = dt;
             ctx.userdata = (void*)lc;
             cr_plugin_update(ctx);
         }

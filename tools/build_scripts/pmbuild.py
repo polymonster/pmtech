@@ -619,6 +619,7 @@ def run_cr(config):
 
         # pointers to contexts
         code += cgu.src_line("struct live_context {")
+        code += cgu.src_line("f32 dt;")
         code += cgu.src_line("pen::render_ctx render;")
         code += cgu.src_line("ecs::ecs_scene* scene;")
         for scope in scope_funcs:

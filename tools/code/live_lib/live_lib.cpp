@@ -9,6 +9,7 @@
 
 #include "renderer.h"
 #include "maths/maths.h"
+#include "../../shader_structs/forward_render.h"
 
 #include <stdio.h>
 
@@ -17,9 +18,28 @@ using namespace put;
 using namespace ecs;
 using namespace dbg;
 
+s32 randri(s32 min, s32 max)
+{
+    s32 range = max - min;
+    if(range == 0)
+        return min;
+    return min + rand()%range;
+}
+
 struct live_lib : public __ecs, public __dbg
 {
-    ecs_scene* scene;
+    const f32           cube_pad = 0.5f;
+    const f32           cube_size = 10.0f;
+    const f32           grid_cube_size = cube_size*2;
+    const vec3f         base_offset = vec3f(-(f32)grid_size*cube_size, 0.0f, -(f32)grid_size*cube_size);
+    static const u32    grid_size = 10;
+    static const u32    num_boxes = grid_size*grid_size;
+    
+    ecs_scene*          scene;
+    u32                 occ[grid_size][grid_size];
+    u32                 box_start;
+    
+    u32 box_count = 0;
     
     void init(live_context* ctx)
     {
@@ -42,8 +62,8 @@ struct live_lib : public __ecs, public __dbg
         instantiate_light(scene, light);
         scene->names[light] = "front_light";
         scene->id_name[light] = PEN_HASH("front_light");
-        scene->lights[light].colour = vec3f(0.5f);
-        scene->lights[light].direction = vec3f::one();
+        scene->lights[light].colour = vec3f(0.3f, 0.5f, 0.8f);
+        scene->lights[light].direction = normalised(vec3f(-1.0f, 0.5f, -0.5f));
         scene->lights[light].type = e_light_type::dir;
         scene->lights[light].flags |= e_light_flags::shadow_map;
         scene->transforms[light].translation = vec3f::zero();
@@ -51,38 +71,13 @@ struct live_lib : public __ecs, public __dbg
         scene->transforms[light].scale = vec3f::one();
         scene->entities[light] |= e_cmp::light;
         scene->entities[light] |= e_cmp::transform;
-                    
-        // ground
-        f32 ground_size = 50.0f;
-        u32 ground = get_new_entity(scene);
-        scene->names[ground] = "ground";
-        scene->id_name[ground] = PEN_HASH("ground");
-        scene->transforms[ground].rotation = quat();
-        scene->transforms[ground].scale = vec3f(ground_size, 1.0f, ground_size);
-        scene->transforms[ground].translation = vec3f(0.0f, -1.0f, 0.0f);
-        scene->parents[ground] = ground;
-        scene->entities[ground] |= e_cmp::transform;
-        instantiate_geometry(box_resource, scene, ground);
-        instantiate_material(default_material, scene, ground);
-        instantiate_model_cbuffer(scene, ground);
         
-        // box
-        u32 box = get_new_entity(scene);
-        scene->names[box] = "box";
-        scene->id_name[box] = PEN_HASH("box");
-        scene->transforms[box].rotation = quat();
-        scene->transforms[box].scale = vec3f(10.0f);
-        scene->transforms[box].translation = vec3f(0.0f, 5.0f, 0.0f);
-        scene->parents[box] = box;
-        scene->entities[box] |= e_cmp::transform;
-        instantiate_geometry(box_resource, scene, box);
-        instantiate_material(default_material, scene, box);
-        instantiate_model_cbuffer(scene, box);
-                
+        load_pmm("/Users/alex.dixon/dev/dr_scientist/bin/osx/data/models/characters/doctor/doctor.pmm", scene, e_pmm_load_flags::all);
+   
         return 0;
     }
     
-    int on_update()
+    int on_update(f32 dt)
     {
         return 0;
     }
@@ -110,7 +105,7 @@ CR_EXPORT int cr_main(struct cr_plugin *ctx, enum cr_op operation)
             break;
     }
     
-    return ll.on_update();
+    return ll.on_update(live_ctx->dt);
 }
 
 namespace pen
@@ -125,4 +120,5 @@ namespace pen
         return nullptr;
     }
 }
+
 
