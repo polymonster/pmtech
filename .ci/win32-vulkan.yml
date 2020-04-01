@@ -1,7 +1,7 @@
 version: 1.0.{build}
 image: Visual Studio 2017
 environment:
-  VULKAN_SDK: C:/VulkanSDK/1.1.114.0
+  VK_SDK_PATH: C:/VulkanSDK/1.1.114.0
   APPVEYOR_RDP_PASSWORD: PmtechSecret99*
 cache:
   - VulkanSDK.exe
