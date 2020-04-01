@@ -21,7 +21,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb/stb_image_write.h"
 
-#define MAX_COMMANDS (1 << 18)
+#define MAX_COMMANDS (1 << 16)
 
 extern pen::window_creation_params pen_window;
 pen::resolve_resources             g_resolve_resources;

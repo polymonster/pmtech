@@ -1366,7 +1366,7 @@ namespace put
 
                 cmp_transform& t = scene->transforms[n];
 
-                bool sm = l.flags & e_light_flags::shadow_map;
+                bool sm = l.flags & e_light_flags::omni_shadow_map;
                 light_buffer.lights[pos].pos_radius = vec4f(t.translation, l.radius);
                 light_buffer.lights[pos].colour = vec4f(l.colour, sm ? 1.0 : 0.0);
 
