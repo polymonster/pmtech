@@ -21,7 +21,7 @@
 
 extern pen::window_creation_params pen_window;
 a_u8                               g_window_resize(0);
-
+2
 using namespace pen;
 
 #define NBB 3                          // num "back buffers" / swap chains / inflight command buffers
@@ -2336,7 +2336,7 @@ namespace pen
 
         void renderer_set_scissor_rect(const rect& r)
         {
-            _state.sr = _renderer_resolve_scissor_ratio(vp);
+            _state.sr = _renderer_resolve_scissor_ratio(r);
         }
 
         void renderer_create_blend_state(const blend_creation_params& bcp, u32 resource_slot)
