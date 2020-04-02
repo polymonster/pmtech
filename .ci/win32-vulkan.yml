@@ -10,5 +10,5 @@ init:
   - VulkanSDK.exe /S
   - rm -f VulkanSDK.exe
 build_script:
-- cmd: "git submodule update --init --recursive\ndir C:\\VulkanSDK\ncd third_party\nbuild_libs.bat\ncd .. \ncd examples\n..\\\\pmbuild win32-vulkan -premake -vs_version -msbuild\ncd build\\win32\nmsbuild pmtech_examples_win32.sln /p:Configuration=Debug\nmsbuild pmtech_examples_win32.sln /p:Configuration=Release"
+- cmd: "git submodule update --init --recursive\nset VK_SDK_PATH=C:\\VulkanSDK\\1.1.114.0\necho %VK_SDK_PATH%\ncd third_party\nbuild_libs.bat\ncd .. \ncd examples\n..\\\\pmbuild win32-vulkan -premake -vs_version -msbuild\ncd build\\win32\nmsbuild pmtech_examples_win32.sln /p:Configuration=Debug\nmsbuild pmtech_examples_win32.sln /p:Configuration=Release"
 test: off
