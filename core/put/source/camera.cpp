@@ -371,16 +371,28 @@ namespace put
         for (s32 i = 0; i < 8; ++i)
         {
             vec3f p = shadow_view.transform_vector(corners[i]);
+            p.z *= -1.0f;
 
-            cmin = vec3f::vmin(cmin, p);
-            cmax = vec3f::vmax(cmax, p);
+            cmin = min_union(cmin, p);
+            cmax = max_union(cmax, p);
         }
-
+        
+        f32 zz = cmax.z - cmin.z;
+        
         // create ortho mat and set view matrix
         p_camera->view = shadow_view;
-        p_camera->proj = mat::create_orthographic_projection(cmin.x, cmax.x, cmin.y, cmax.y, cmin.z, cmax.z);
+        p_camera->proj = mat::create_orthographic_projection(cmin.x, cmax.x, cmin.y, cmax.y, cmax.z * 0.5f, zz);
         p_camera->flags |= e_camera_flags::invalidated | e_camera_flags::orthographic;
-
+        
         camera_update_frustum(p_camera);
+        
+        return;
+        
+        // debug rendering.. to move into ecs
+        for(u32 i = 0; i < 8; ++i)
+            dbg::add_point(corners[i], 5.0f, vec4f::green());
+        
+        dbg::add_aabb(min, max, vec4f::white());
+        dbg::add_frustum(p_camera->camera_frustum.corners[0], p_camera->camera_frustum.corners[1], vec4f::white());
     }
 } // namespace put

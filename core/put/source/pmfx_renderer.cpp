@@ -2827,6 +2827,7 @@ namespace put
                 // generate 3d view proj matrix
                 if (v.camera)
                 {
+                    // cubemap face render
                     if (v.view_flags & e_view_flags::cubemap)
                         put::camera_set_cubemap_face(v.camera, a);
 
@@ -2835,7 +2836,7 @@ namespace put
                 }
                 else
                 {
-                    // this code path is untested.
+                    // orthogonal projections (directional shadow maps)
                     static put::camera c;
                     put::camera_create_orthographic(&c, vvp.x, vvp.width, vvp.y, vvp.height, 0.0f, 1.0f);
                     put::camera_update_shader_constants(&c);

@@ -1260,8 +1260,8 @@ namespace put
                 {
                     vec3f p = scene->world_matrices[n].transform_vector(min + max * corners[c]);
 
-                    tmax = vec3f::vmax(tmax, p);
-                    tmin = vec3f::vmin(tmin, p);
+                    tmax = max_union(tmax, p);
+                    tmin = min_union(tmin, p);
                 }
 
                 f32& trad = scene->bounding_volumes[n].radius;
@@ -1271,8 +1271,8 @@ namespace put
                     continue;
 
                 // also set scene extents
-                scene->renderable_extents.min = vec3f::vmin(tmin, scene->renderable_extents.min);
-                scene->renderable_extents.max = vec3f::vmax(tmax, scene->renderable_extents.max);
+                scene->renderable_extents.min = min_union(tmin, scene->renderable_extents.min);
+                scene->renderable_extents.max = max_union(tmax, scene->renderable_extents.max);
             }
 
             // reverse iterate over scene and expand parents extents by children
@@ -1295,13 +1295,13 @@ namespace put
                 {
                     vec3f pad = vec3f(0.0f);
 
-                    parent_tmin = vec3f::vmin(parent_tmin, tmin - pad);
-                    parent_tmax = vec3f::vmax(parent_tmax, tmax + pad);
+                    parent_tmin = min_union(parent_tmin, tmin - pad);
+                    parent_tmax = max_union(parent_tmax, tmax + pad);
                 }
                 else
                 {
-                    parent_tmin = vec3f::vmin(parent_tmin, tmin);
-                    parent_tmax = vec3f::vmax(parent_tmax, tmax);
+                    parent_tmin = min_union(parent_tmin, tmin);
+                    parent_tmax = max_union(parent_tmax, tmax);
                 }
             }
 

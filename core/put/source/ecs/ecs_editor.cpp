@@ -620,8 +620,8 @@ namespace put
                 vec2f max = -vec2f::flt_max();
                 for (s32 i = 0; i < 4; ++i)
                 {
-                    min = vec2f::vmin(source_points[i], min);
-                    max = vec2f::vmax(source_points[i], max);
+                    min = min_union(source_points[i], min);
+                    max = max_union(source_points[i], max);
                 }
 
                 source_points[0] = vec2f(min.x, max.y);
@@ -3026,7 +3026,7 @@ namespace put
                     break;
             }
         }
-
+        
         void render_light_debug(const scene_view& view)
         {
             bool selected_only = !(view.scene->view_flags & e_scene_view_flags::lights);
@@ -3067,6 +3067,9 @@ namespace put
                         // line only
                         dbg::add_line(vec3f::zero(), scene->lights[n].direction * k_dir_light_offset,
                                       vec4f(scene->lights[n].colour, 1.0f));
+                                      
+                                      
+                        
                         continue;
                     }
                     break;
