@@ -29,42 +29,6 @@ namespace
             return min;
         return min + rand()%range;
     }
-    
-    void xy2d_morton(u64 x, u64 y, u64 *d)
-    {
-        x = (x | (x << 16)) & 0x0000FFFF0000FFFF;
-        x = (x | (x << 8)) & 0x00FF00FF00FF00FF;
-        x = (x | (x << 4)) & 0x0F0F0F0F0F0F0F0F;
-        x = (x | (x << 2)) & 0x3333333333333333;
-        x = (x | (x << 1)) & 0x5555555555555555;
-
-        y = (y | (y << 16)) & 0x0000FFFF0000FFFF;
-        y = (y | (y << 8)) & 0x00FF00FF00FF00FF;
-        y = (y | (y << 4)) & 0x0F0F0F0F0F0F0F0F;
-        y = (y | (y << 2)) & 0x3333333333333333;
-        y = (y | (y << 1)) & 0x5555555555555555;
-
-        *d = x | (y << 1);
-    }
-
-    // morton_1 - extract even bits
-
-    u32 morton_1(u64 x)
-    {
-        x = x & 0x5555555555555555;
-        x = (x | (x >> 1))  & 0x3333333333333333;
-        x = (x | (x >> 2))  & 0x0F0F0F0F0F0F0F0F;
-        x = (x | (x >> 4))  & 0x00FF00FF00FF00FF;
-        x = (x | (x >> 8))  & 0x0000FFFF0000FFFF;
-        x = (x | (x >> 16)) & 0x00000000FFFFFFFF;
-        return (uint32_t)x;
-    }
-
-    void d2xy_morton(u64 d, u64 &x, u64 &y)
-    {
-        x = morton_1(d);
-        y = morton_1(d >> 1);
-    }
 }
 
 struct live_lib : public __ecs, public __dbg
@@ -152,7 +116,7 @@ struct live_lib : public __ecs, public __dbg
             vec3f(1.0f, 0.0f, 0.0f),
             vec3f(1.0f, 0.0f, -1.0f),
         };
-        
+          
         for(u32 q = 0; q < PEN_ARRAY_SIZE(quadrant); ++q)
         {
             vec3f* p = nullptr;

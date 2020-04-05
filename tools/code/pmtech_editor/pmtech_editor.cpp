@@ -75,46 +75,10 @@ void* pen::user_entry(void* params)
     // init systems
     dev_ui::init();
     dbg::init();
+    ecs::init();
     ecs::editor_init(main_scene, &main_camera);
     put::init_hot_loader();
 
-    // create view renderers
-    put::scene_view_renderer svr_main;
-    svr_main.name = "ces_render_scene";
-    svr_main.id_name = PEN_HASH(svr_main.name.c_str());
-    svr_main.render_function = &ecs::render_scene_view;
-
-    put::scene_view_renderer svr_light_volumes;
-    svr_light_volumes.name = "ces_render_light_volumes";
-    svr_light_volumes.id_name = PEN_HASH(svr_light_volumes.name.c_str());
-    svr_light_volumes.render_function = &ecs::render_light_volumes;
-
-    put::scene_view_renderer svr_editor;
-    svr_editor.name = "ces_render_editor";
-    svr_editor.id_name = PEN_HASH(svr_editor.name.c_str());
-    svr_editor.render_function = &ecs::render_scene_editor;
-
-    put::scene_view_renderer svr_shadow_maps;
-    svr_shadow_maps.name = "ces_render_shadow_maps";
-    svr_shadow_maps.id_name = PEN_HASH(svr_shadow_maps.name.c_str());
-    svr_shadow_maps.render_function = &ecs::render_shadow_views;
-
-    put::scene_view_renderer svr_area_light_textures;
-    svr_area_light_textures.name = "ces_render_area_light_textures";
-    svr_area_light_textures.id_name = PEN_HASH(svr_area_light_textures.name.c_str());
-    svr_area_light_textures.render_function = &ecs::render_area_light_textures;
-
-    put::scene_view_renderer svr_omni_shadow_maps;
-    svr_omni_shadow_maps.name = "ces_render_omni_shadow_maps";
-    svr_omni_shadow_maps.id_name = PEN_HASH(svr_omni_shadow_maps.name.c_str());
-    svr_omni_shadow_maps.render_function = &ecs::render_omni_shadow_views;
-
-    pmfx::register_scene_view_renderer(svr_light_volumes);
-    pmfx::register_scene_view_renderer(svr_main);
-    pmfx::register_scene_view_renderer(svr_editor);
-    pmfx::register_scene_view_renderer(svr_shadow_maps);
-    pmfx::register_scene_view_renderer(svr_omni_shadow_maps);
-    pmfx::register_scene_view_renderer(svr_area_light_textures);
     pmfx::register_scene(main_scene, "main_scene");
     pmfx::register_camera(&main_camera, "model_viewer_camera");
     pmfx::init("data/configs/editor_renderer.jsn");

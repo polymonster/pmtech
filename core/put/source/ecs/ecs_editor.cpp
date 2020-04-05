@@ -277,6 +277,14 @@ namespace put
             controller.camera = cam;
 
             ecs::register_ecs_controller(scene, controller);
+            
+            // svr
+            put::scene_view_renderer svr_editor;
+            svr_editor.name = "ces_render_editor";
+            svr_editor.id_name = PEN_HASH(svr_editor.name.c_str());
+            svr_editor.render_function = &ecs::render_scene_editor;
+            
+            pmfx::register_scene_view_renderer(svr_editor);
 
             // volume generator
             put::vgt::init(scene);
@@ -2958,10 +2966,10 @@ namespace put
                     if (!(selected_axis & 1 << (i + 1)))
                         continue;
 
-                    vec3f plane_normal = cross(translation_axis[i], view.camera->view.get_row(1).xyz);
+                    vec3f plane_normal = cross(translation_axis[i], (vec3f)view.camera->view.get_row(1).xyz);
 
                     if (i == 1)
-                        plane_normal = cross(translation_axis[i], view.camera->view.get_row(0).xyz);
+                        plane_normal = cross(translation_axis[i], (vec3f)view.camera->view.get_row(0).xyz);
 
                     axis_pos[i] = maths::ray_plane_intersect(r0, vr, widget_points[0], plane_normal);
 

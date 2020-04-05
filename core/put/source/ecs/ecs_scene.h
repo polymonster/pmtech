@@ -513,6 +513,7 @@ namespace put
         };
         typedef std::vector<ecs_scene_instance> ecs_scene_list;
 
+        void            init();
         ecs_scene*      create_scene(const c8* name);
         void            destroy_scene(ecs_scene* scene);
         ecs_scene_list* get_scenes();

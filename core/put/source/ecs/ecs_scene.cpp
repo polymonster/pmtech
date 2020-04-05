@@ -295,6 +295,41 @@ namespace put
 
             return dst;
         }
+        
+        void init()
+        {
+            // create view renderers
+            put::scene_view_renderer svr_main;
+            svr_main.name = "ces_render_scene";
+            svr_main.id_name = PEN_HASH(svr_main.name.c_str());
+            svr_main.render_function = &ecs::render_scene_view;
+
+            put::scene_view_renderer svr_light_volumes;
+            svr_light_volumes.name = "ces_render_light_volumes";
+            svr_light_volumes.id_name = PEN_HASH(svr_light_volumes.name.c_str());
+            svr_light_volumes.render_function = &ecs::render_light_volumes;
+
+            put::scene_view_renderer svr_shadow_maps;
+            svr_shadow_maps.name = "ces_render_shadow_maps";
+            svr_shadow_maps.id_name = PEN_HASH(svr_shadow_maps.name.c_str());
+            svr_shadow_maps.render_function = &ecs::render_shadow_views;
+
+            put::scene_view_renderer svr_area_light_textures;
+            svr_area_light_textures.name = "ces_render_area_light_textures";
+            svr_area_light_textures.id_name = PEN_HASH(svr_area_light_textures.name.c_str());
+            svr_area_light_textures.render_function = &ecs::render_area_light_textures;
+
+            put::scene_view_renderer svr_omni_shadow_maps;
+            svr_omni_shadow_maps.name = "ces_render_omni_shadow_maps";
+            svr_omni_shadow_maps.id_name = PEN_HASH(svr_omni_shadow_maps.name.c_str());
+            svr_omni_shadow_maps.render_function = &ecs::render_omni_shadow_views;
+
+            pmfx::register_scene_view_renderer(svr_main);
+            pmfx::register_scene_view_renderer(svr_light_volumes);
+            pmfx::register_scene_view_renderer(svr_shadow_maps);
+            pmfx::register_scene_view_renderer(svr_omni_shadow_maps);
+            pmfx::register_scene_view_renderer(svr_area_light_textures);
+        }
 
         ecs_scene* create_scene(const c8* name)
         {
@@ -475,9 +510,9 @@ namespace put
                     // spot
                     camera_create_perspective(&cam, 100.0f, 1.0f, 0.01f, 500.0f);
 
-                    cam.view.set_row(0, vec4f(normalised(scene->world_matrices[n].get_column(2).xyz), 0.0f));
-                    cam.view.set_row(1, vec4f(normalised(scene->world_matrices[n].get_column(0).xyz), 0.0f));
-                    cam.view.set_row(2, vec4f(normalised(scene->world_matrices[n].get_column(1).xyz), 0.0f));
+                    cam.view.set_row(0, vec4f(normalised((vec3f)scene->world_matrices[n].get_column(2).xyz), 0.0f));
+                    cam.view.set_row(1, vec4f(normalised((vec3f)scene->world_matrices[n].get_column(0).xyz), 0.0f));
+                    cam.view.set_row(2, vec4f(normalised((vec3f)scene->world_matrices[n].get_column(1).xyz), 0.0f));
                     cam.view.set_row(3, vec4f(0.0f, 0.0f, 0.0f, 1.0f));
 
                     mat4 translate = mat::create_translation(-scene->world_matrices[n].get_translation());
