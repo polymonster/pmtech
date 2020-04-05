@@ -116,6 +116,9 @@ struct live_lib : public __ecs, public __dbg
             vec3f(1.0f, 0.0f, 0.0f),
             vec3f(1.0f, 0.0f, -1.0f),
         };
+        
+        vec3f v3 = vec3f::one();
+        v3.xy = vec2f(10.0f, 11.0f) + vec2f(2.0f, 3.0f);
           
         for(u32 q = 0; q < PEN_ARRAY_SIZE(quadrant); ++q)
         {

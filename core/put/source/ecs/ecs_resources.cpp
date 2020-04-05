@@ -615,9 +615,9 @@ namespace
                 scene->transforms[current_node].translation = matrix.get_translation();
                 scene->transforms[current_node].rotation.from_matrix(matrix);
 
-                f32 sx = mag(matrix.get_row(0).xyz);
-                f32 sy = mag(matrix.get_row(1).xyz);
-                f32 sz = mag(matrix.get_row(2).xyz);
+                f32 sx = mag((vec3f)matrix.get_row(0).xyz);
+                f32 sy = mag((vec3f)matrix.get_row(1).xyz);
+                f32 sz = mag((vec3f)matrix.get_row(2).xyz);
 
                 scene->transforms[current_node].scale = vec3f(sx, sy, sz);
             }
@@ -1500,9 +1500,9 @@ namespace put
                                     //tq[0][m] = normalised(rot);
                                     tq[0][m] = rot;
 
-                                    f32 sx = mag(mat.get_row(0).xyz);
-                                    f32 sy = mag(mat.get_row(1).xyz);
-                                    f32 sz = mag(mat.get_row(2).xyz);
+                                    f32 sx = mag((vec3f)mat.get_row(0).xyz);
+                                    f32 sy = mag((vec3f)mat.get_row(1).xyz);
+                                    f32 sz = mag((vec3f)mat.get_row(2).xyz);
 
                                     vec3f scale = vec3f(sx, sy, sz);
 
