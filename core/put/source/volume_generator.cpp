@@ -1161,7 +1161,7 @@ namespace put
                     index_offset = vertices.size();
                     for (u32 i = 0; i < r.num_vertices; ++i)
                     {
-                        vec3f tv = sdf_job->scene->world_matrices[n].transform_vector(vertex_positions[i].xyz);
+                        vec3f tv = sdf_job->scene->world_matrices[n].transform_vector((vec3f)vertex_positions[i].xyz);
                         vertices.push_back(tv);
                     }
 

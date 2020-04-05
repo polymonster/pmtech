@@ -590,9 +590,9 @@ namespace put
                     vertex_model* vm = (vertex_model*)vb_data_pos;
 
                     vm[v].pos = wm.transform_vector(vm[v].pos);
-                    vm[v].normal.xyz = rm.transform_vector(vm[v].normal.xyz);
-                    vm[v].tangent.xyz = rm.transform_vector(vm[v].tangent.xyz);
-                    vm[v].bitangent.xyz = rm.transform_vector(vm[v].bitangent.xyz);
+                    vm[v].normal.xyz = rm.transform_vector((vec3f)vm[v].normal.xyz);
+                    vm[v].tangent.xyz = rm.transform_vector((vec3f)vm[v].tangent.xyz);
+                    vm[v].bitangent.xyz = rm.transform_vector((vec3f)vm[v].bitangent.xyz);
                 }
 
                 vb_data_pos += vb_stride;
