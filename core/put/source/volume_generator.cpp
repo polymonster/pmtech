@@ -372,7 +372,7 @@ namespace put
                             for (u32 n = 0; n < PEN_ARRAY_SIZE(nb); ++n)
                             {
                                 vec3i nn = vec3i(x + nb[n].x, y + nb[n].y, z + nb[n].z);
-                                nn = vclamp(nn, clamp_min, clamp_max);
+                                nn = clamp(nn, clamp_min, clamp_max);
 
                                 u32 noffset = get_texel_offset(sp, rp, bs, nn.x, nn.y, nn.z);
 

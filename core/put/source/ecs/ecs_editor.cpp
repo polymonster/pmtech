@@ -2737,8 +2737,8 @@ namespace put
                 vec3f& _min = scene->bounding_volumes[s].transformed_min_extents;
                 vec3f& _max = scene->bounding_volumes[s].transformed_max_extents;
 
-                min = vec3f::vmin(min, _min);
-                max = vec3f::vmax(max, _max);
+                min = min_union(min, _min);
+                max = max_union(max, _max);
 
                 pos += _min + (_max - _min) * 0.5f;
             }

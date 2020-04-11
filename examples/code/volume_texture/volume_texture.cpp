@@ -23,7 +23,7 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     clear_scene(scene);
 
     geometry_resource* cube = get_geometry_resource(PEN_HASH("cube"));
-
+        
     // create a simple 3d texture
     u32 block_size = 4;
     u32 volume_dimension = 64;
@@ -32,7 +32,7 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     u8* volume_data = (u8*)pen::memory_alloc(data_size);
     u32 row_pitch = volume_dimension * block_size;
     u32 slice_pitch = volume_dimension * row_pitch;
-
+    
     for (u32 z = 0; z < volume_dimension; ++z)
     {
         for (u32 y = 0; y < volume_dimension; ++y)
