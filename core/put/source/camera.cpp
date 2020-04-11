@@ -386,7 +386,7 @@ namespace put
         
         camera_update_frustum(p_camera);
         
-        return;
+        //return;
         
         // debug rendering.. to move into ecs
         for(u32 i = 0; i < 8; ++i)
