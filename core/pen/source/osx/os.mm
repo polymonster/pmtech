@@ -629,8 +629,6 @@ namespace pen
 {
     bool os_update()
     {
-        NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
-
         static bool thread_started = false;
         if (!thread_started)
         {
@@ -639,72 +637,73 @@ namespace pen
             pen::jobs_create_default(thread_info);
             thread_started = true;
         }
-
-        [NSApp updateWindows];
-
-        for (;;)
-        {
-            NSEvent* peek_event = [NSApp nextEventMatchingMask:NSEventMaskAny
-                                                     untilDate:[NSDate distantPast] // do not wait for event
-                                                        inMode:NSDefaultRunLoopMode
-                                                       dequeue:YES];
-
-            if (!peek_event)
-                break;
-
-            if (!handle_event(peek_event))
-                [NSApp sendEvent:peek_event];
-        }
-
-        // input update
-        f32 x, y;
-        get_mouse_pos(x, y);
-        pen::input_set_mouse_pos(x, y);
-        input_gamepad_update();
-
-        // process commands
-        os_cmd* cmd = s_cmd_buffer.get();
-        while (cmd)
-        {
-            // process cmd
-            switch (cmd->cmd_index)
-            {
-                case OS_CMD_SET_WINDOW_FRAME:
-                {
-                    NSRect frame = [_window frame];
-
-                    frame.origin.x = cmd->frame.x;
-                    frame.origin.y = cmd->frame.y;
-                    frame.size.width = cmd->frame.width;
-                    frame.size.height = cmd->frame.height;
-
-                    [_window setFrame:frame display:YES animate:NO];
-                }
-                case OS_CMD_SET_WINDOW_SIZE:
-                {
-                    NSRect frame = [_window frame];
-                    frame.size.width = cmd->frame.width;
-                    frame.size.height = cmd->frame.height;
-
-                    [_window setFrame:frame display:YES animate:NO];
-                }
-                break;
-                default:
-                    break;
-            }
-
-            // get next
-            cmd = s_cmd_buffer.get();
-        }
-
-        [pool drain];
-
+        
         if (pen_terminate_app)
         {
             if (pen::jobs_terminate_all())
                 return false;
+            
+            return true;
         }
+        
+        @autoreleasepool {
+            [NSApp updateWindows];
 
+            for (;;)
+            {
+                NSEvent* peek_event = [NSApp nextEventMatchingMask:NSEventMaskAny
+                                                         untilDate:[NSDate distantPast] // do not wait for event
+                                                            inMode:NSDefaultRunLoopMode
+                                                           dequeue:YES];
+
+                if (!peek_event)
+                    break;
+
+                if (!handle_event(peek_event))
+                    [NSApp sendEvent:peek_event];
+            }
+
+            // input update
+            f32 x, y;
+            get_mouse_pos(x, y);
+            pen::input_set_mouse_pos(x, y);
+            input_gamepad_update();
+
+            // process commands
+            os_cmd* cmd = s_cmd_buffer.get();
+            while (cmd)
+            {
+                // process cmd
+                switch (cmd->cmd_index)
+                {
+                    case OS_CMD_SET_WINDOW_FRAME:
+                    {
+                        NSRect frame = [_window frame];
+
+                        frame.origin.x = cmd->frame.x;
+                        frame.origin.y = cmd->frame.y;
+                        frame.size.width = cmd->frame.width;
+                        frame.size.height = cmd->frame.height;
+
+                        [_window setFrame:frame display:YES animate:NO];
+                    }
+                    case OS_CMD_SET_WINDOW_SIZE:
+                    {
+                        NSRect frame = [_window frame];
+                        frame.size.width = cmd->frame.width;
+                        frame.size.height = cmd->frame.height;
+
+                        [_window setFrame:frame display:YES animate:NO];
+                    }
+                    break;
+                    default:
+                        break;
+                }
+
+                // get next
+                cmd = s_cmd_buffer.get();
+            }
+        }
         return true;
     }
 

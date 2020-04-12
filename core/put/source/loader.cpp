@@ -459,6 +459,9 @@ namespace
                 cmd = s_hot_loader_cmd_buffer.get();
             }
 
+            if(pen::semaphore_try_wait(p_thread_info->p_sem_exit))
+                break;
+                
             // plenty of sleep
             pen::thread_sleep_ms(16);
         }
