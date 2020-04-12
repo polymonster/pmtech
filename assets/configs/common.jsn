@@ -195,7 +195,7 @@
             depth_stencil_state: default,
             scene              : main_scene,
             camera             : model_viewer_camera,
-            scene_views        : ["ces_render_scene"],
+            scene_views        : ["ecs_render_scene"],
             render_flags       : ["forward_lit"],
             
             sampler_bindings:
@@ -216,7 +216,7 @@
             depth_stencil_state: default,
             scene              : main_scene,
             camera             : model_viewer_camera,
-            scene_views        : ["ces_render_scene"],
+            scene_views        : ["ecs_render_scene"],
             render_flags       : ["forward_lit", "alpha_blended"],
             
             sampler_bindings:
@@ -239,7 +239,7 @@
             pmfx_shader        : forward_render,
             technique          : zonly,
             scene              : main_scene,
-            scene_views        : ["ces_render_shadow_maps"],
+            scene_views        : ["ecs_render_shadow_maps"],
             render_flags       : ["shadow_map"]
         },
         
@@ -256,7 +256,7 @@
             scene              : main_scene,
 			pmfx_shader        : forward_render,
             technique          : single_light_directional,
-            scene_views        : ["ces_render_shadow_maps"],
+            scene_views        : ["ecs_render_shadow_maps"],
             render_flags       : ["forward_lit"]
         },
 
@@ -272,7 +272,7 @@
             pmfx_shader        : forward_render,
             technique          : omni_shadow,
             scene              : main_scene,
-            scene_views        : ["ces_render_omni_shadow_maps"],
+            scene_views        : ["ecs_render_omni_shadow_maps"],
             render_flags       : ["shadow_map"]
         },
         
@@ -289,7 +289,7 @@
             pmfx_shader        : forward_render,
             technique          : zonly,
             scene              : main_scene,
-            scene_views        : ["ces_render_area_light_textures"],
+            scene_views        : ["ecs_render_area_light_textures"],
             render_flags       : ["area_light_textures"],
             generate_mip_maps  : true
         },

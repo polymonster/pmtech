@@ -18,108 +18,44 @@ namespace pen
     }
 } // namespace pen
 
-struct forward_lit_material
-{
-    vec4f albedo;
-    f32   roughness;
-    f32   reflectivity;
-};
-
-namespace
-{
-    u32 pillar_start;
-}
-
 void example_setup(ecs_scene* scene, camera& cam)
 {
-    //pmfx::set_view_set("editor_gi");
+    pmfx::set_view_set("editor_gi");
 
     clear_scene(scene);
 
-    material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
-    geometry_resource* box_resource = get_geometry_resource(PEN_HASH("cube"));
-
-    // add lights
-    u32 light;
-
-    // directional
-    light = get_new_entity(scene);
-    instantiate_light(scene, light);
-    scene->names[light] = "front_light";
-    scene->id_name[light] = PEN_HASH("front_light");
-    scene->lights[light].colour = vec3f::one();
-    scene->lights[light].direction = vec3f::one();
-    scene->lights[light].type = e_light_type::dir;
-    scene->lights[light].flags |= e_light_flags::global_illumination;
-    scene->transforms[light].translation = vec3f::zero();
-    scene->transforms[light].rotation = quat();
-    scene->transforms[light].scale = vec3f::one();
-    scene->entities[light] |= e_cmp::light;
-    scene->entities[light] |= e_cmp::transform;
-
-    // add ground
-    f32 ground_size = 100.0f;
-    u32 ground = get_new_entity(scene);
-    scene->transforms[ground].rotation = quat();
-    scene->transforms[ground].scale = vec3f(ground_size, 1.0f, ground_size);
-    scene->transforms[ground].translation = vec3f::zero();
-    scene->parents[ground] = ground;
-    scene->entities[ground] |= e_cmp::transform;
-
-    instantiate_geometry(box_resource, scene, ground);
-    instantiate_material(default_material, scene, ground);
-    instantiate_model_cbuffer(scene, ground);
-
-    forward_lit_material* m = (forward_lit_material*)&scene->material_data[ground].data[0];
-    m->albedo = vec4f::one() * 0.7f;
-    m->roughness = 1.0f;
-    m->reflectivity = 0.0f;
-
-    // add some pillars for shadow casters
+    geometry_resource* cube = get_geometry_resource(PEN_HASH("cube"));
     
-    // deterministic results
-    srand(10);
+    // create material for volume ray trace
+    material_resource* volume_material = new material_resource;
+    volume_material->material_name = "volume_material";
+    volume_material->shader_name = "pmfx_utility";
+    volume_material->id_shader = PEN_HASH("pmfx_utility");
+    volume_material->id_technique = PEN_HASH("volume_texture");
+    add_material_resource(volume_material);
 
-    // the old classic
-    f32   num_pillar_rows = 3;
-    f32   pillar_size = 8.0f;
-    f32   d = ground_size * 0.5f;
-    vec3f start_pos = vec3f(-d, pillar_size, -d);
-    vec3f pos = start_pos;
-    for (s32 i = 0; i < num_pillar_rows; ++i)
-    {
-        pos.z = start_pos.z;
+    // create scene node
+    u32 new_prim = get_new_entity(scene);
+    scene->names[new_prim] = "volume_gi";
+    scene->names[new_prim].appendf("%i", new_prim);
+    scene->transforms[new_prim].rotation = quat();
+    scene->transforms[new_prim].scale = vec3f(10.0f);
+    scene->transforms[new_prim].translation = vec3f::zero();
+    scene->entities[new_prim] |= e_cmp::transform;
+    scene->parents[new_prim] = new_prim;
+    scene->samplers[new_prim].sb[0].handle = pmfx::get_render_target(PEN_HASH("volume_gi"))->handle;
+    scene->samplers[new_prim].sb[0].sampler_unit = e_texture::volume;
+    scene->samplers[new_prim].sb[0].sampler_state =
+        pmfx::get_render_state(PEN_HASH("clamp_point"), pmfx::e_render_state::sampler);
 
-        for (s32 j = 0; j < num_pillar_rows; ++j)
-        {
-            u32 pillar = get_new_entity(scene);
-            if (i == 0 && j == 0)
-                pillar_start = pillar;
+    instantiate_geometry(cube, scene, new_prim);
+    instantiate_material(volume_material, scene, new_prim);
+    instantiate_model_cbuffer(scene, new_prim);
 
-            scene->transforms[pillar].rotation = quat();
-            scene->transforms[pillar].scale = vec3f(8.0f, 8.0f, 8.0f);
-            scene->transforms[pillar].translation = pos;
-            scene->parents[pillar] = pillar;
-            scene->entities[pillar] |= e_cmp::transform;
-
-            instantiate_geometry(box_resource, scene, pillar);
-            instantiate_material(default_material, scene, pillar);
-            instantiate_model_cbuffer(scene, pillar);
-
-            forward_lit_material* m = (forward_lit_material*)&scene->material_data[pillar].data[0];
-            m->albedo = vec4f::one() * 0.7f;
-            m->roughness = 1.0f;
-            m->reflectivity = 0.0f;
-
-            pos.z += d / 2;
-        }
-
-        pos.x += d / 2;
-    }
-
-    // add spinning pillars
+    bake_material_handles();
 }
 
 void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
 {
+
 }

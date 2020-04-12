@@ -86,7 +86,7 @@
             technique          : gbuffer,
             scene              : main_scene,
             camera             : model_viewer_camera,
-            scene_views        : ["ces_render_scene"]
+            scene_views        : ["ecs_render_scene"]
         },
          
         deferred_lights_view:
@@ -102,7 +102,7 @@
             shader             : deferred_render,
             scene              : main_scene,
             camera             : model_viewer_camera,
-            scene_views        : ["ces_render_light_volumes"],
+            scene_views        : ["ecs_render_light_volumes"],
             
             sampler_bindings:
             [

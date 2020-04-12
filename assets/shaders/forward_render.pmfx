@@ -428,8 +428,9 @@ ps_output ps_forward_lit( vs_output input )
     if:(INSTANCED)
     {
         roughness = input.colour.a;
+        albedo.a = 1.0;
     }
-    
+        
     if:(SDF_SHADOW)
     {            
         n = input.normal.rgb;
@@ -749,7 +750,7 @@ ps_output ps_forward_lit( vs_output input )
     
     if(albedo.a <= 0.0)
     	discard;
-
+    	
     return output;
 }
 

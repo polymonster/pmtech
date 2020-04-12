@@ -1076,6 +1076,10 @@ namespace pen
         renderer_cmd cmd;
 
         PEN_ASSERT(tcp.width != 0 && tcp.height != 0);
+        if(tcp.collection_type == pen::TEXTURE_COLLECTION_ARRAY)
+        {
+            PEN_ASSERT(tcp.num_arrays > 0);
+        }
 
         cmd.command_index = CMD_CREATE_RENDER_TARGET;
 

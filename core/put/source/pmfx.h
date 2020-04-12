@@ -259,6 +259,7 @@ namespace put
             // todo replace with tcp..?
             s32 width = 0;
             s32 height = 0;
+            s32 depth = 0;
             f32 ratio = 0;
             s32 num_mips = 0;
             u32 num_arrays = 0;

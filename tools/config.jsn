@@ -49,7 +49,7 @@
             "--platform_dir=osx"
         ],
         build: [
-        	"cd build/osx && make config=release",
+        	"cd build/osx && make mesh_opt config=release",
         	"cd ../..",
         	"rsync ../third_party/shared_libs/osx/libfmod.dylib bin/osx/",
         	"install_name_tool -add_rpath @executable_path/. bin/osx/mesh_opt"

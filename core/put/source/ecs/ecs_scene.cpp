@@ -300,35 +300,41 @@ namespace put
         {
             // create view renderers
             put::scene_view_renderer svr_main;
-            svr_main.name = "ces_render_scene";
+            svr_main.name = "ecs_render_scene";
             svr_main.id_name = PEN_HASH(svr_main.name.c_str());
             svr_main.render_function = &ecs::render_scene_view;
 
             put::scene_view_renderer svr_light_volumes;
-            svr_light_volumes.name = "ces_render_light_volumes";
+            svr_light_volumes.name = "ecs_render_light_volumes";
             svr_light_volumes.id_name = PEN_HASH(svr_light_volumes.name.c_str());
             svr_light_volumes.render_function = &ecs::render_light_volumes;
 
             put::scene_view_renderer svr_shadow_maps;
-            svr_shadow_maps.name = "ces_render_shadow_maps";
+            svr_shadow_maps.name = "ecs_render_shadow_maps";
             svr_shadow_maps.id_name = PEN_HASH(svr_shadow_maps.name.c_str());
             svr_shadow_maps.render_function = &ecs::render_shadow_views;
 
             put::scene_view_renderer svr_area_light_textures;
-            svr_area_light_textures.name = "ces_render_area_light_textures";
+            svr_area_light_textures.name = "ecs_render_area_light_textures";
             svr_area_light_textures.id_name = PEN_HASH(svr_area_light_textures.name.c_str());
             svr_area_light_textures.render_function = &ecs::render_area_light_textures;
 
             put::scene_view_renderer svr_omni_shadow_maps;
-            svr_omni_shadow_maps.name = "ces_render_omni_shadow_maps";
+            svr_omni_shadow_maps.name = "ecs_render_omni_shadow_maps";
             svr_omni_shadow_maps.id_name = PEN_HASH(svr_omni_shadow_maps.name.c_str());
             svr_omni_shadow_maps.render_function = &ecs::render_omni_shadow_views;
+            
+            put::scene_view_renderer svr_volume_gi;
+            svr_volume_gi.name = "ecs_compute_volume_gi";
+            svr_volume_gi.id_name = PEN_HASH(svr_volume_gi.name.c_str());
+            svr_volume_gi.render_function = &ecs::compute_volume_gi;
 
             pmfx::register_scene_view_renderer(svr_main);
             pmfx::register_scene_view_renderer(svr_light_volumes);
             pmfx::register_scene_view_renderer(svr_shadow_maps);
             pmfx::register_scene_view_renderer(svr_omni_shadow_maps);
             pmfx::register_scene_view_renderer(svr_area_light_textures);
+            pmfx::register_scene_view_renderer(svr_volume_gi);
         }
 
         ecs_scene* create_scene(const c8* name)
@@ -510,9 +516,9 @@ namespace put
                     // spot
                     camera_create_perspective(&cam, 100.0f, 1.0f, 0.1f, 500.0f);
                     
-                    cam.view.set_row(0, vec4f(normalised(scene->world_matrices[n].get_column(2).xyz), 0.0f));
-                    cam.view.set_row(1, vec4f(normalised(scene->world_matrices[n].get_column(0).xyz), 0.0f));
-                    cam.view.set_row(2, vec4f(normalised(scene->world_matrices[n].get_column(1).xyz), 0.0f));
+                    cam.view.set_row(0, vec4f((vec3f)normalised(scene->world_matrices[n].get_column(2).xyz), 0.0f));
+                    cam.view.set_row(1, vec4f((vec3f)normalised(scene->world_matrices[n].get_column(0).xyz), 0.0f));
+                    cam.view.set_row(2, vec4f((vec3f)normalised(scene->world_matrices[n].get_column(1).xyz), 0.0f));
                     cam.view.set_row(3, vec4f(0.0f, 0.0f, 0.0f, 1.0f));
                                         
                     mat4 translate = mat::create_translation(-scene->world_matrices[n].get_translation());
@@ -563,7 +569,7 @@ namespace put
                                             sizeof(mat4) * e_scene_limits::max_shadow_maps);
             }
         }
-
+        
         void render_omni_shadow_views(const scene_view& view)
         {
             ecs_scene* scene = view.scene;
@@ -719,6 +725,16 @@ namespace put
                     pen::renderer_set_depth_stencil_state(view.depth_stencil_state);
                 }
             }
+        }
+        
+        void compute_volume_gi(const scene_view& view)
+        {
+            u32 volume_gi_tex = pmfx::get_render_target(PEN_HASH("volume_gi"))->handle;
+            pmfx::set_technique_perm(view.pmfx_shader, view.technique, 0);
+                    
+            pen::renderer_set_texture(volume_gi_tex, 0, 0, pen::TEXTURE_BIND_CS);
+
+            pen::renderer_dispatch_compute({256, 256, 256}, {8, 8, 8});
         }
 
         void render_scene_view(const scene_view& view)
@@ -1607,14 +1623,17 @@ namespace put
             const pmfx::render_target* gism = pmfx::get_render_target(PEN_HASH("colour_shadow_map"));
             if (gism)
             {
-                pmfx::rt_resize_params rrp;
-                rrp.width = gism->width;
-                rrp.height = gism->height;
-                rrp.format = nullptr;
-                rrp.num_arrays = num_gi_maps;
-                rrp.num_mips = 1;
-                rrp.collection = pen::TEXTURE_COLLECTION_ARRAY;
-                pmfx::resize_render_target(PEN_HASH("colour_shadow_map"), rrp);
+                if(gism->num_arrays < num_gi_maps)
+                {
+                    pmfx::rt_resize_params rrp;
+                    rrp.width = gism->width;
+                    rrp.height = gism->height;
+                    rrp.format = nullptr;
+                    rrp.num_arrays = num_gi_maps;
+                    rrp.num_mips = 1;
+                    rrp.collection = pen::TEXTURE_COLLECTION_ARRAY;
+                    pmfx::resize_render_target(PEN_HASH("colour_shadow_map"), rrp);
+                }
             }
             
             // Update pre skinned vertex buffers

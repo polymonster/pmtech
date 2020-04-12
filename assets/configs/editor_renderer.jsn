@@ -29,6 +29,13 @@ import post_process.jsn
         {
             size  : [128,128],
             format: d24s8,
+        },
+        
+        volume_gi:
+        {
+			size : [256, 256, 256],
+            format : rgba8,
+            gpu_write : true
         }
     },
         
@@ -52,7 +59,7 @@ import post_process.jsn
             technique          : constant_colour,
             scene              : main_scene,
             camera             : model_viewer_camera,
-            scene_views        : ["ces_render_editor"]
+            scene_views        : ["ecs_render_editor"]
         },
         
         picking_view:
@@ -74,7 +81,7 @@ import post_process.jsn
             technique          : picking,
             scene              : main_scene,
             camera             : model_viewer_camera,
-            scene_views        : ["ces_render_scene"]
+            scene_views        : ["ecs_render_scene"]
         },
                         
         volume_rasteriser:
@@ -91,14 +98,23 @@ import post_process.jsn
             camera             : volume_rasteriser_camera,
             pmfx_shader        : pmfx_utility,
             technique          : volume_raster_albedo,
-            scene_views        : ["ces_render_scene"],
+            scene_views        : ["ecs_render_scene"],
             render_flags       : ["forward_lit"],
             
             sampler_bindings:
             [
                 { texture: shadow_map, unit: 15, state: wrap_linear, shader: ps },
             ],
-        }
+        },
+        
+        volume_gi_compute:
+        {
+        	type: "compute",
+        	target: [volume_gi],
+			pmfx_shader : "compute",
+            technique : "volume_gi",
+            scene_views : ["ecs_compute_volume_gi"]
+        },
     },
     
     view_sets: 
@@ -121,6 +137,7 @@ import post_process.jsn
 			multiple_colour_shadow_views,
             multiple_area_light_views,
             multiple_omni_shadow_views,
+            volume_gi_compute,
 			picking_view,
 			main_view,
             editor_view

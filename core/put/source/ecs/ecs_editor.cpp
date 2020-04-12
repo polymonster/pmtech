@@ -280,7 +280,7 @@ namespace put
             
             // svr
             put::scene_view_renderer svr_editor;
-            svr_editor.name = "ces_render_editor";
+            svr_editor.name = "ecs_render_editor";
             svr_editor.id_name = PEN_HASH(svr_editor.name.c_str());
             svr_editor.render_function = &ecs::render_scene_editor;
             

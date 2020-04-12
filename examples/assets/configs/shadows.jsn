@@ -15,7 +15,7 @@ import common.jsn
             technique          : zonly,
             scene              : main_scene,
             camera             : shadow_camera,
-            scene_views        : ["ces_render_scene"],
+            scene_views        : ["ecs_render_scene"],
             render_flags       : ["forward_lit"]
         },
         

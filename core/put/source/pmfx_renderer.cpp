@@ -1100,9 +1100,16 @@ namespace put
                         pen::json size = r["size"];
                         if (size.size() == 2)
                         {
-                            // explicit size
+                            // explicit size 2d
                             new_info.width = size[0].as_s32();
                             new_info.height = size[1].as_s32();
+                        }
+                        else if (size.size() == 3)
+                        {
+                            // explicit size 3d
+                            new_info.width = size[0].as_s32();
+                            new_info.height = size[1].as_s32();
+                            new_info.depth = size[2].as_s32();
                         }
                         else
                         {
@@ -1143,6 +1150,13 @@ namespace put
                             new_info.num_mips = pen::calc_num_mips(new_info.width, new_info.height);
                             tcp.num_mips = new_info.num_mips;
                         }
+                        
+                        // 3d volume
+                        if(new_info.depth)
+                        {
+                            tcp.collection_type = pen::TEXTURE_COLLECTION_VOLUME;
+                            tcp.num_arrays = new_info.depth;
+                        }
 
                         // cubes and arrays
                         Str type = r["type"].as_str("");
@@ -1164,10 +1178,11 @@ namespace put
                                 tcp.num_arrays = r["num_arrays"].as_u32(6);
                             }
                         }
+                                                
                         new_info.collection = tcp.collection_type;
                         new_info.num_arrays = tcp.num_arrays;
 
-                        // flags
+                        // cpu flags
                         tcp.cpu_access_flags = 0;
 
                         if (r["cpu_read"].as_bool(false))
@@ -1175,6 +1190,7 @@ namespace put
 
                         if (r["cpu_write"].as_bool(false))
                             tcp.cpu_access_flags |= PEN_CPU_ACCESS_WRITE;
+                            
 
                         static hash_id id_write = PEN_HASH("write");
                         if (r["pp"].as_hash_id() == id_write)
@@ -1205,6 +1221,10 @@ namespace put
                         }
 
                         tcp.bind_flags = rt_format[f].flags | PEN_BIND_SHADER_RESOURCE;
+                        
+                        // rw flags for compute
+                        if (r["gpu_write"].as_bool(false))
+                            tcp.bind_flags |= PEN_BIND_SHADER_WRITE;
 
                         // msaa
                         tcp.sample_count = r["samples"].as_u32(1);

@@ -901,6 +901,14 @@ namespace // pen consts -> metal consts
     {
         if (_state.cmd_buffer == nil)
             _state.cmd_buffer = [_state.command_queue commandBuffer];
+            
+        // finish render encoding
+        if (_state.render_encoder)
+        {
+            [_state.render_encoder endEncoding];
+            _state.render_encoder = nil;
+            _state.pipeline_hash = 0;
+        }
 
         if (!_state.compute_encoder)
             _state.compute_encoder = [_state.cmd_buffer computeCommandEncoder];
