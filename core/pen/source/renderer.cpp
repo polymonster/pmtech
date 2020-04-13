@@ -198,6 +198,7 @@ namespace
     {
         u32 command_index;
         u32 resource_slot;
+        u64 frame_index;
 
         union {
             u32                              command_data_index;
@@ -246,6 +247,8 @@ namespace
         pen::semaphore*           continue_semaphore = nullptr;
         pen::slot_resources       renderer_slot_resources;
         ring_buffer<renderer_cmd> cmd_buffer;
+        ring_buffer<renderer_cmd> release_cmd_buffer;
+        u32*                      free_slots = nullptr;
     };
     static fe_render_ctx* _ctx;
     static render_ctx     _main_ctx;
@@ -536,6 +539,15 @@ namespace pen
     {
         if (semaphore_try_wait(_ctx->consume_semaphore))
         {
+            // free slots we have now deleted the resources for
+            u32 ns = sb_count(_ctx->free_slots);
+            for(u32 i = 0; i < ns; ++i)
+            {
+                slot_resources_free(&_ctx->renderer_slot_resources, _ctx->free_slots[i]);
+            }
+            sb_free(_ctx->free_slots);
+            _ctx->free_slots = nullptr;
+            
             // some api's need to set the current context on the caller thread.
             direct::renderer_new_frame();
 
@@ -548,6 +560,23 @@ namespace pen
             {
                 exec_cmd(*cmd);
                 cmd = _ctx->cmd_buffer.get();
+            }
+            
+            // check the release cmd_buffer.. we need to wait a few frames before releasing resources
+            // so they arent in flight on the gpu
+            static const u32 k_waitFrames = 6;
+            for(;;)
+            {
+                renderer_cmd* cmd = _ctx->release_cmd_buffer.check();
+                u64 cf = pen::_renderer_frame_index();
+                if(!cmd || cf - cmd->frame_index < k_waitFrames)
+                    break;
+                    
+                cmd = _ctx->release_cmd_buffer.get();
+                if(cmd)
+                    exec_cmd(*cmd);
+                    
+                sb_push(_ctx->free_slots, cmd->resource_slot);
             }
 
             direct::renderer_end_frame();
@@ -774,6 +803,7 @@ namespace pen
     {
         fe_render_ctx* new_ctx = new fe_render_ctx();
         new_ctx->cmd_buffer.create(MAX_COMMANDS);
+        new_ctx->release_cmd_buffer.create(1024);
         new_ctx->present_timer = timer_create();
         timer_start(new_ctx->present_timer);
         new_ctx->present_time = 0.0f;
@@ -1132,49 +1162,6 @@ namespace pen
         return resource_slot;
     }
 
-    void renderer_release_shader(u32 shader_index, u32 shader_type)
-    {
-        renderer_cmd cmd;
-
-        if (!slot_resources_free(&_ctx->renderer_slot_resources, shader_index))
-            return;
-
-        cmd.command_index = CMD_RELEASE_SHADER;
-
-        cmd.set_shader.shader_index = shader_index;
-        cmd.set_shader.shader_type = shader_type;
-
-        _ctx->cmd_buffer.put(cmd);
-    }
-
-    void renderer_release_buffer(u32 buffer_index)
-    {
-        renderer_cmd cmd;
-
-        if (!slot_resources_free(&_ctx->renderer_slot_resources, buffer_index))
-            return;
-
-        cmd.command_index = CMD_RELEASE_BUFFER;
-
-        cmd.command_data_index = buffer_index;
-
-        _ctx->cmd_buffer.put(cmd);
-    }
-
-    void renderer_release_texture(u32 texture_index)
-    {
-        renderer_cmd cmd;
-
-        if (!slot_resources_free(&_ctx->renderer_slot_resources, texture_index))
-            return;
-
-        cmd.command_index = CMD_RELEASE_TEXTURE_2D;
-
-        cmd.command_data_index = texture_index;
-
-        _ctx->cmd_buffer.put(cmd);
-    }
-
     u32 renderer_create_sampler(const sampler_creation_params& scp)
     {
         renderer_cmd cmd;
@@ -1194,7 +1181,7 @@ namespace pen
     void renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 bind_flags)
     {
         renderer_cmd cmd;
-
+        
         cmd.command_index = CMD_SET_TEXTURE;
 
         cmd.set_texture.texture_index = texture_index;
@@ -1264,20 +1251,6 @@ namespace pen
         _ctx->cmd_buffer.put(cmd);
     }
 
-    void renderer_release_raster_state(u32 raster_state_index)
-    {
-        renderer_cmd cmd;
-
-        if (!slot_resources_free(&_ctx->renderer_slot_resources, raster_state_index))
-            return;
-
-        cmd.command_index = CMD_RELEASE_RASTER_STATE;
-
-        cmd.command_data_index = raster_state_index;
-
-        _ctx->cmd_buffer.put(cmd);
-    }
-
     u32 renderer_create_blend_state(const blend_creation_params& bcp)
     {
         renderer_cmd cmd;
@@ -1315,7 +1288,7 @@ namespace pen
     void renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
     {
         renderer_cmd cmd;
-
+        
         cmd.command_index = CMD_SET_CONSTANT_BUFFER;
 
         cmd.set_buffer.buffer_index = buffer_index;
@@ -1411,88 +1384,125 @@ namespace pen
 
         _ctx->cmd_buffer.put(cmd);
     }
+    
+    void renderer_release_shader(u32 shader_index, u32 shader_type)
+    {
+        renderer_cmd cmd;
+
+        cmd.command_index = CMD_RELEASE_SHADER;
+        cmd.frame_index = pen::_renderer_frame_index();
+        cmd.resource_slot = shader_index;
+        cmd.set_shader.shader_index = shader_index;
+        cmd.set_shader.shader_type = shader_type;
+
+        _ctx->release_cmd_buffer.put(cmd);
+    }
+
+    void renderer_release_buffer(u32 buffer_index)
+    {
+        renderer_cmd cmd;
+
+        cmd.command_index = CMD_RELEASE_BUFFER;
+        cmd.frame_index = pen::_renderer_frame_index();
+        cmd.resource_slot = buffer_index;
+        cmd.command_data_index = buffer_index;
+
+        _ctx->release_cmd_buffer.put(cmd);
+    }
+
+    void renderer_release_texture(u32 texture_index)
+    {
+        renderer_cmd cmd;
+
+        cmd.command_index = CMD_RELEASE_TEXTURE_2D;
+        cmd.resource_slot = texture_index;
+        cmd.command_data_index = texture_index;
+        cmd.frame_index = pen::_renderer_frame_index();
+
+        _ctx->release_cmd_buffer.put(cmd);
+    }
 
     void renderer_release_blend_state(u32 blend_state)
     {
         renderer_cmd cmd;
 
-        if (!slot_resources_free(&_ctx->renderer_slot_resources, blend_state))
-            return;
-
         cmd.command_index = CMD_RELEASE_BLEND_STATE;
+        cmd.frame_index = pen::_renderer_frame_index();
+        cmd.resource_slot = blend_state;
         cmd.command_data_index = blend_state;
 
-        _ctx->cmd_buffer.put(cmd);
+        _ctx->release_cmd_buffer.put(cmd);
     }
 
     void renderer_release_render_target(u32 render_target)
     {
         renderer_cmd cmd;
 
-        if (!slot_resources_free(&_ctx->renderer_slot_resources, render_target))
-            return;
-
         cmd.command_index = CMD_RELEASE_RENDER_TARGET;
-
+        cmd.frame_index = pen::_renderer_frame_index();
+        cmd.resource_slot = render_target;
         cmd.command_data_index = render_target;
 
-        _ctx->cmd_buffer.put(cmd);
+        _ctx->release_cmd_buffer.put(cmd);
     }
 
     void renderer_release_clear_state(u32 clear_state)
     {
         renderer_cmd cmd;
 
-        if (!slot_resources_free(&_ctx->renderer_slot_resources, clear_state))
-            return;
-
         cmd.command_index = CMD_RELEASE_CLEAR_STATE;
-
+        cmd.frame_index = pen::_renderer_frame_index();
+        cmd.resource_slot = clear_state;
         cmd.command_data_index = clear_state;
 
-        _ctx->cmd_buffer.put(cmd);
+        _ctx->release_cmd_buffer.put(cmd);
     }
 
     void renderer_release_input_layout(u32 input_layout)
     {
         renderer_cmd cmd;
 
-        if (!slot_resources_free(&_ctx->renderer_slot_resources, input_layout))
-            return;
-
         cmd.command_index = CMD_RELEASE_INPUT_LAYOUT;
-
+        cmd.frame_index = pen::_renderer_frame_index();
+        cmd.resource_slot = input_layout;
         cmd.command_data_index = input_layout;
 
-        _ctx->cmd_buffer.put(cmd);
+        _ctx->release_cmd_buffer.put(cmd);
     }
 
     void renderer_release_sampler(u32 sampler)
     {
         renderer_cmd cmd;
 
-        if (!slot_resources_free(&_ctx->renderer_slot_resources, sampler))
-            return;
-
         cmd.command_index = CMD_RELEASE_SAMPLER;
-
+        cmd.frame_index = pen::_renderer_frame_index();
+        cmd.resource_slot = sampler;
         cmd.command_data_index = sampler;
 
-        _ctx->cmd_buffer.put(cmd);
+        _ctx->release_cmd_buffer.put(cmd);
     }
 
     void renderer_release_depth_stencil_state(u32 depth_stencil_state)
     {
         renderer_cmd cmd;
 
-        if (!slot_resources_free(&_ctx->renderer_slot_resources, depth_stencil_state))
-            return;
-
         cmd.command_index = CMD_RELEASE_DEPTH_STENCIL_STATE;
-
+        cmd.frame_index = pen::_renderer_frame_index();
+        cmd.resource_slot = depth_stencil_state;
         cmd.command_data_index = depth_stencil_state;
 
-        _ctx->cmd_buffer.put(cmd);
+        _ctx->release_cmd_buffer.put(cmd);
+    }
+    
+    void renderer_release_raster_state(u32 raster_state_index)
+    {
+        renderer_cmd cmd;
+
+        cmd.command_index = CMD_RELEASE_RASTER_STATE;
+        cmd.resource_slot = raster_state_index;
+        cmd.command_data_index = raster_state_index;
+
+        _ctx->release_cmd_buffer.put(cmd);
     }
 
     void renderer_set_stream_out_target(u32 buffer_index)
@@ -1500,9 +1510,8 @@ namespace pen
         renderer_cmd cmd;
 
         cmd.command_index = CMD_SET_SO_TARGET;
-
         cmd.command_data_index = buffer_index;
-
+        
         _ctx->cmd_buffer.put(cmd);
     }
 

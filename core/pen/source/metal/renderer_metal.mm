@@ -708,18 +708,6 @@ namespace // pen consts -> metal consts
             _state.pipeline_hash = 0;
         }
 
-        // create new cmd buffer
-        if (_state.cmd_buffer == nil)
-            _state.cmd_buffer = [_state.command_queue commandBuffer];
-
-        // finish render encoding
-        if (_state.render_encoder)
-        {
-            [_state.render_encoder endEncoding];
-            _state.render_encoder = nil;
-            _state.pipeline_hash = 0;
-        }
-
         u32* colour_targets = _state.colour_targets;
         u32  colour_slice = _state.colour_slice;
         u32  depth_target = _state.depth_target;
@@ -2124,11 +2112,6 @@ namespace pen
             _res_pool.get(shader_index).shader.lib = nil;
         }
 
-        void renderer_release_clear_state(u32 clear_state)
-        {
-            // no allocs
-        }
-
         void renderer_release_buffer(u32 buffer_index)
         {
             for (u32 i = 0; i < NBB; ++i)
@@ -2150,14 +2133,6 @@ namespace pen
             samp = nil;
         }
 
-        void renderer_release_raster_state(u32 raster_state_index)
-        {
-        }
-
-        void renderer_release_blend_state(u32 blend_state)
-        {
-        }
-
         void renderer_release_render_target(u32 render_target)
         {
             _renderer_untrack_managed_render_target(render_target);
@@ -2170,9 +2145,25 @@ namespace pen
             [vd release];
             vd = nil;
         }
+        
+        void renderer_release_clear_state(u32 clear_state)
+        {
+            // no allocs
+        }
+        
+        void renderer_release_raster_state(u32 raster_state_index)
+        {
+            // no alloc, part of pipeline
+        }
+
+        void renderer_release_blend_state(u32 blend_state)
+        {
+            // no alloc, part of pipeline
+        }
 
         void renderer_release_depth_stencil_state(u32 depth_stencil_state)
         {
+            // no alloc, part of pipeline
         }
     }
 }

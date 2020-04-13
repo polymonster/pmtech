@@ -346,6 +346,7 @@ namespace
     std::vector<filter_kernel>           s_filter_kernels;
     geometry_utility                     s_geometry;
     std::vector<Str>                     s_script_files;
+    bool                                 s_reload = false;
 
     // ids
 } // namespace
@@ -2514,6 +2515,15 @@ namespace put
         {
             pmfx_config_hotload();
         }
+        
+        void reload()
+        {
+            if(s_reload)
+            {
+                pmfx_config_hotload();
+                s_reload = false;
+            }
+        }
 
         void init(const c8* filename)
         {
@@ -2948,6 +2958,8 @@ namespace put
 
         void render()
         {
+            reload();
+            
             for (auto& v : s_views)
             {
                 if (v.view_flags & e_view_flags::template_view)
@@ -3446,7 +3458,7 @@ namespace put
                         view_info_ui(v);
 
                     if (invalidated)
-                        pmfx_config_hotload();
+                        s_reload = true;
 
                     ImGui::Unindent();
                 }

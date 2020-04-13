@@ -102,6 +102,7 @@ namespace pen
         void create(u32 capacity);
         void put(const T& item);
         T*   get();
+        T*   check();
     };
 
     // lockless single producer multiple consumer - thread safe resource pool which will grow to accomodate contents
@@ -259,6 +260,15 @@ namespace pen
 
         get_pos = (get_pos + 1) % _capacity;
 
+        return &data[gp];
+    }
+    
+    template <typename T>
+    pen_inline T* ring_buffer<T>::check()
+    {
+        u32 gp = get_pos;
+        if (gp == put_pos)
+            return nullptr;
         return &data[gp];
     }
 

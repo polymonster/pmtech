@@ -89,7 +89,7 @@ import post_process.jsn
             depth_stencil_state: default,
             scene : main_scene,
             camera : model_viewer_camera,
-            scene_views : ["ces_render_scene"],
+            scene_views : ["ecs_render_scene"],
             render_flags : ["forward_lit"],
             pmfx_shader : "forward_render",
             technique : "forward_lit",

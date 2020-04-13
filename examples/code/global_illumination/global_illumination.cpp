@@ -24,6 +24,7 @@ void example_setup(ecs_scene* scene, camera& cam)
 
     clear_scene(scene);
 
+    material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
     geometry_resource* cube = get_geometry_resource(PEN_HASH("cube"));
     
     // create material for volume ray trace
@@ -34,7 +35,55 @@ void example_setup(ecs_scene* scene, camera& cam)
     volume_material->id_technique = PEN_HASH("volume_texture");
     add_material_resource(volume_material);
 
-    // create scene node
+    // directional light
+    u32 light = get_new_entity(scene);
+    instantiate_light(scene, light);
+    scene->names[light] = "front_light";
+    scene->id_name[light] = PEN_HASH("front_light");
+    scene->lights[light].colour = vec3f(0.8f, 0.8f, 0.8f);
+    scene->lights[light].direction = normalised(vec3f(-0.7f, 0.6f, -0.4f));
+    scene->lights[light].type = e_light_type::dir;
+    scene->lights[light].flags |= e_light_flags::global_illumination;
+    scene->transforms[light].translation = vec3f::zero();
+    scene->transforms[light].rotation = quat();
+    scene->transforms[light].scale = vec3f::one();
+    scene->entities[light] |= e_cmp::light;
+    scene->entities[light] |= e_cmp::transform;
+    
+    vec2f dim = vec2f(100.0f, 100.0f);
+    u32 ground = get_new_entity(scene);
+    scene->transforms[ground].rotation = quat();
+    scene->transforms[ground].scale = vec3f(dim.x, 1.0f, dim.y);
+    scene->transforms[ground].translation = vec3f::zero();
+    scene->parents[ground] = ground;
+    scene->entities[ground] |= e_cmp::transform;
+    instantiate_geometry(cube, scene, ground);
+    instantiate_material(default_material, scene, ground);
+    instantiate_model_cbuffer(scene, ground);
+    
+    u32 wall = get_new_entity(scene);
+    scene->transforms[wall].rotation = quat();
+    scene->transforms[wall].scale = vec3f(1.0f, dim.x, dim.y);
+    scene->transforms[wall].translation = vec3f(50.0f, 0.0f, 0.0f);
+    scene->parents[wall] = wall;
+    scene->entities[wall] |= e_cmp::transform;
+    instantiate_geometry(cube, scene, wall);
+    instantiate_material(default_material, scene, wall);
+    instantiate_model_cbuffer(scene, wall);
+    
+    u32 box = get_new_entity(scene);
+    scene->transforms[box].rotation = quat();
+    scene->transforms[box].scale = vec3f(10.0f, 10.0f, 10.0f);
+    scene->transforms[box].translation = vec3f(0.0f, 10.0f, 0.0f);
+    scene->parents[box] = box;
+    scene->entities[box] |= e_cmp::transform;
+
+    instantiate_geometry(cube, scene, box);
+    instantiate_material(default_material, scene, box);
+    instantiate_model_cbuffer(scene, box);
+
+    // create scene nodefor gi
+    /*
     u32 new_prim = get_new_entity(scene);
     scene->names[new_prim] = "volume_gi";
     scene->names[new_prim].appendf("%i", new_prim);
@@ -53,6 +102,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     instantiate_model_cbuffer(scene, new_prim);
 
     bake_material_handles();
+    */
 }
 
 void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
