@@ -12,8 +12,8 @@ namespace pen
     pen_creation_params pen_entry(int argc, char** argv)
     {
         pen::pen_creation_params p;
-        p.window_width = 1920;
-        p.window_height = 1080;
+        p.window_width = 1280;
+        p.window_height = 720;
         p.window_title = "sss";
         p.window_sample_count = 4;
         p.user_thread_function = user_entry;
