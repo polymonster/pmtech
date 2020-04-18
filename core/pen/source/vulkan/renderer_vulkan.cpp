@@ -21,7 +21,6 @@
 
 extern pen::window_creation_params pen_window;
 a_u8                               g_window_resize(0);
-2
 using namespace pen;
 
 #define NBB 3                          // num "back buffers" / swap chains / inflight command buffers
