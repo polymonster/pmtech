@@ -472,6 +472,32 @@ namespace put
                     break;
             }
         }
+        
+        void shadow_camera_from_entity(camera& cam, const ecs_scene* scene, u32 n)
+        {
+            if (scene->lights[n].type == e_light_type::dir)
+            {
+                vec3f light_dir = normalised(-scene->lights[n].direction);
+                camera_update_shadow_frustum(&cam, light_dir, scene->renderable_extents.min - vec3f(0.1f),
+                                             scene->renderable_extents.max + vec3f(0.1f));
+            }
+            else
+            {
+                // spot
+                camera_create_perspective(&cam, 100.0f, 1.0f, 0.1f, 500.0f);
+                
+                cam.view.set_row(0, vec4f((vec3f)normalised(scene->world_matrices[n].get_column(2).xyz), 0.0f));
+                cam.view.set_row(1, vec4f((vec3f)normalised(scene->world_matrices[n].get_column(0).xyz), 0.0f));
+                cam.view.set_row(2, vec4f((vec3f)normalised(scene->world_matrices[n].get_column(1).xyz), 0.0f));
+                cam.view.set_row(3, vec4f(0.0f, 0.0f, 0.0f, 1.0f));
+                                    
+                mat4 translate = mat::create_translation(-scene->world_matrices[n].get_translation());
+
+                cam.view = cam.view * translate;
+                
+                camera_update_frustum(&cam);
+            }
+        }
 
         void render_shadow_views(const scene_view& view)
         {
@@ -505,28 +531,7 @@ namespace put
 
                 // create a shadow camera
                 camera cam;
-                if (scene->lights[n].type == e_light_type::dir)
-                {
-                    vec3f light_dir = normalised(-scene->lights[n].direction);
-                    camera_update_shadow_frustum(&cam, light_dir, scene->renderable_extents.min - vec3f(0.1f),
-                                                 scene->renderable_extents.max + vec3f(0.1f));
-                }
-                else
-                {
-                    // spot
-                    camera_create_perspective(&cam, 100.0f, 1.0f, 0.1f, 500.0f);
-                    
-                    cam.view.set_row(0, vec4f((vec3f)normalised(scene->world_matrices[n].get_column(2).xyz), 0.0f));
-                    cam.view.set_row(1, vec4f((vec3f)normalised(scene->world_matrices[n].get_column(0).xyz), 0.0f));
-                    cam.view.set_row(2, vec4f((vec3f)normalised(scene->world_matrices[n].get_column(1).xyz), 0.0f));
-                    cam.view.set_row(3, vec4f(0.0f, 0.0f, 0.0f, 1.0f));
-                                        
-                    mat4 translate = mat::create_translation(-scene->world_matrices[n].get_translation());
-
-                    cam.view = cam.view * translate;
-                    
-                    camera_update_frustum(&cam);
-                }
+                shadow_camera_from_entity(cam, scene, n);
 
                 // update view and camera
                 scene_view vv = view;
@@ -729,12 +734,54 @@ namespace put
         
         void compute_volume_gi(const scene_view& view)
         {
+            ecs_scene* scene = view.scene;
+            
+            static u32    cb_info = -1;
+            if (!is_valid(cb_info))
+            {
+                pen::buffer_creation_params bcp;
+                bcp.usage_flags = PEN_USAGE_DYNAMIC;
+                bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+                bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+                bcp.buffer_size = sizeof(mat4);
+                bcp.data = nullptr;
+                cb_info = pen::renderer_create_buffer(bcp);
+            }
+            
             u32 volume_gi_tex = pmfx::get_render_target(PEN_HASH("volume_gi"))->handle;
-            pmfx::set_technique_perm(view.pmfx_shader, view.technique, 0);
-                    
+            u32 colour_shadow_map = pmfx::get_render_target(PEN_HASH("shadow_map"))->handle;
+            
+            // clear
+            pmfx::set_technique_perm(view.pmfx_shader, PEN_HASH("clear_volume_gi"), 0);
             pen::renderer_set_texture(volume_gi_tex, 0, 0, pen::TEXTURE_BIND_CS);
+            pen::renderer_dispatch_compute({64, 64, 64}, {8, 8, 8});
+            
+            // write
+            pmfx::set_technique_perm(view.pmfx_shader, view.technique, 0);
+            pen::renderer_set_texture(volume_gi_tex, 0, 0, pen::TEXTURE_BIND_CS);
+            pen::renderer_set_texture(colour_shadow_map, 0, 1, pen::TEXTURE_BIND_CS);
+            
+            for (u32 n = 0; n < scene->num_entities; ++n)
+            {
+                if (!(scene->entities[n] & e_cmp::light))
+                    continue;
 
-            pen::renderer_dispatch_compute({256, 256, 256}, {8, 8, 8});
+                if (!(scene->lights[n].flags & e_light_flags::shadow_map))
+                    continue;
+                    
+                camera cam;
+                shadow_camera_from_entity(cam, scene, n);
+                
+                mat4 vp = cam.proj * cam.view;
+                vp = mat::inverse4x4(vp);
+                pen::renderer_update_buffer(cb_info, &vp, sizeof(mat4));
+                
+                pen::renderer_set_constant_buffer(cb_info, 1, pen::CBUFFER_BIND_CS);
+                pen::renderer_dispatch_compute({1024, 1024, 1}, {16, 16, 1});
+            }
+
+            pen::renderer_set_texture(0, 0, 0, pen::TEXTURE_BIND_CS);
+            pen::renderer_set_texture(0, 0, 1, pen::TEXTURE_BIND_CS);
         }
 
         void render_scene_view(const scene_view& view)

@@ -9,6 +9,7 @@
 #include "renderer_shared.h"
 #include "str/Str.h"
 #include "threads.h"
+#include "timer.h"
 
 #import <Availability.h>
 #import <Metal/Metal.h>
@@ -2059,6 +2060,7 @@ namespace pen
             waits++;
 
             [_state.cmd_buffer addCompletedHandler:^(id<MTLCommandBuffer> cb) {
+                g_gpu_total = 69;
               waits--;
             }];
 

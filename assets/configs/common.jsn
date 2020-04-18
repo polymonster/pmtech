@@ -246,7 +246,7 @@
 		multiple_colour_shadow_views:
         {
             target             : [colour_shadow_map, shadow_map],
-            clear_colour	   : [0.0, 0.0, 0.0, 0.0],
+            clear_colour	   : [0.0, 1.0, 1.0, 1.0],
             clear_depth        : 1.0,
             colour_write_mask  : 0xf,
             blend_state        : disabled,

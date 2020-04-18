@@ -337,9 +337,6 @@ vs_output vs_main( vs_input_multi input, vs_instance_input instance_input )
         output.texcoord *= float4(m_uv_scale.x * xs, m_uv_scale.y * ys, m_uv_scale.x, m_uv_scale.y);
     }
         
-    //output.position /= output.position.w;
-    //remap_z_clip_space(output.position.z);
-    
     return output;
 }
 

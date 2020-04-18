@@ -514,10 +514,11 @@ def generate_pmbuild_config(config, profile):
         return
     print("writing " + config["data_dir"] + "/" + "pmbuild_config.json")
     wd = os.getcwd()
+    pmd = util.sanitize_file_path(config["env"]["pmtech_dir"])
     md = {
         "profile": profile,
-        "pmtech_dir": config["env"]["pmtech_dir"],
-        "pmbuild": "cd " + wd + " && " + config["env"]["pmtech_dir"] + "pmbuild " + profile + " "
+        "pmtech_dir": pmd,
+        "pmbuild": "cd " + wd + " && " + pmd + "pmbuild " + profile + " "
     }
     util.create_dir(config["data_dir"])
     f = open(os.path.join(config["data_dir"], "pmbuild_config.json"), "w+")

@@ -1,8 +1,12 @@
 declare_texture_samplers
 {
+	// greyscale
     texture2d_r( input_rgb, 0 );
     texture2d_w( output_l, 1 );
+    
+    // gi
     texture3d_w( volume_gi, 0 );
+    texture2d_array_r( shadow_map, 1 );
 };
 
 cbuffer per_pass : register(b0)
@@ -17,10 +21,40 @@ void cs_main_greyscale(uint3 gid : SV_DispatchThreadID)
     write_texture(output_l, float4(grey, grey, grey, 1.0), gid.xy);
 }
 
-void cs_main_volume_gi(uint3 gid : SV_DispatchThreadID)
+cbuffer gi_info : register(b1)
 {
-	write_texture(volume_gi, float4(1.0, 0.0, 1.0, 1.0), gid.xyz);
+	float4x4 inv_mat;
+};
+
+void cs_main_volume_gi(uint2 gid : SV_DispatchThreadID)
+{
+	float4 sm = read_texture_array( shadow_map, gid.xy, 0 );
 	
+	// projected coord
+	float3 ndc = float3(gid.x/2048.0, gid.y/2048.0, sm.r) * 2.0 - 1.0;
+	float4 p = float4(ndc.xyz, 1.0);
+	
+	float4 up = mul(p, inv_mat); 
+	up /= up.w;
+		
+	// convert world to texture coord
+	float3 ws = float3(100.0, 100.0, 100.0);
+	float3 ts = float3(64.0, 64.0, 64.0);
+	float3 ns = (up.xyz / ws) * 0.5 + 0.5;
+	float3 tp = ns * ts; 
+	
+	float3 w2 = p.xyy * ts;
+	write_texture(volume_gi, float4(sm.r, 1.0, 1.0, 1.0), uint3(ns.x, ns.y, ns.z));
+	
+	float2 tx = (float2(gid.xy) / 2048.0) * 64.0;
+	write_texture(volume_gi, float4(sm.r, 1.0, 0.0, 1.0), uint3(tx.x, tx.y, 7));
+	
+	//write_texture(volume_gi, float4(0.0, 1.0, 0.0, 1.0), uint3(32, 32, 32));
+}
+
+void cs_main_clear_volume_gi(uint3 gid : SV_DispatchThreadID)
+{
+	write_texture(volume_gi, float4(0.0, 0.0, 0.0, 0.0), gid);
 }
 
 pmfx:
@@ -38,6 +72,19 @@ pmfx:
         "threads": [16, 16, 1]
     },
     
+	"clear_volume_gi":
+    {
+        "supported_platforms":
+        {
+            "hlsl": ["5_0"],
+            "metal": ["all"],
+            "glsl": ["450"]
+        },
+        
+        "cs" : "cs_main_clear_volume_gi",
+        "threads": [8, 8, 8]
+    },
+    
 	"volume_gi":
     {
         "supported_platforms":
@@ -48,7 +95,7 @@ pmfx:
         },
         
         "cs" : "cs_main_volume_gi",
-        "threads": [8, 8, 8]
+        "threads": [16, 16, 1]
     }
 }
 

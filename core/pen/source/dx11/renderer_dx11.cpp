@@ -410,18 +410,34 @@ namespace
 		return 0;
 	}
 
-	pen_inline bool is_array(u32 srv)
+	bool is_array(u32 srv)
 	{
 		return srv == D3D_SRV_DIMENSION_TEXTURE2DARRAY || 
 			srv == D3D_SRV_DIMENSION_TEXTURECUBEARRAY ||
 			srv == D3D_SRV_DIMENSION_TEXTURECUBE;
 	}
 
-	pen_inline bool is_cube(u32 srv)
+	bool is_cube(u32 srv)
 	{
 		return srv == D3D_SRV_DIMENSION_TEXTURECUBEARRAY || 
 			srv == D3D_SRV_DIMENSION_TEXTURECUBE;
 	}
+
+    D3D_SRV_DIMENSION to_d3d11_srv_dimension(u32 pen_collection_type, bool ms)
+    {
+        switch (pen_collection_type)
+        {
+        case pen::TEXTURE_COLLECTION_CUBE:
+            return D3D_SRV_DIMENSION_TEXTURECUBE;
+        case pen::TEXTURE_COLLECTION_ARRAY:
+            return ms ? D3D_SRV_DIMENSION_TEXTURE2DMSARRAY : D3D_SRV_DIMENSION_TEXTURE2DARRAY;
+        case pen::TEXTURE_COLLECTION_CUBE_ARRAY:
+            return D3D_SRV_DIMENSION_TEXTURECUBEARRAY;
+        case pen::TEXTURE_COLLECTION_VOLUME:
+            return D3D_SRV_DIMENSION_TEXTURE3D;
+        }
+        return ms ? D3D_SRV_DIMENSION_TEXTURE2DMS : D3D_SRV_DIMENSION_TEXTURE2D;
+    }
 
     //
     // perf markers
@@ -698,18 +714,18 @@ namespace pen
 
     struct texture_resource
     {
-        ID3D11Resource*            resource = nullptr;
+        ID3D11Resource*            texture = nullptr;
         ID3D11ShaderResourceView*  srv = nullptr;
         ID3D11UnorderedAccessView* uav = nullptr;
     };
 
     struct render_target_internal
     {
-        texture2d_internal			tex;
+        texture_resource			tex;
         ID3D11RenderTargetView**	rt;
-        texture2d_internal			tex_msaa;
+        texture_resource			tex_msaa;
         ID3D11RenderTargetView**	rt_msaa;
-        texture2d_internal			tex_read_back;
+        texture_resource			tex_read_back;
         texture2d_internal			tex_resolve;
         bool						msaa_resolve_readback = false;
         DXGI_FORMAT					format;
@@ -721,11 +737,11 @@ namespace pen
 
     struct depth_stencil_target_internal
     {
-        texture2d_internal			tex;
+        texture_resource			tex;
         ID3D11DepthStencilView**	ds;
-        texture2d_internal			tex_msaa;
+        texture_resource			tex_msaa;
         ID3D11DepthStencilView**	ds_msaa;
-        texture2d_internal			tex_read_back;
+        texture_resource			tex_read_back;
         DXGI_FORMAT					format;
         texture_creation_params*	tcp;
         u32							invalidate;
@@ -1169,7 +1185,7 @@ namespace pen
         s_immediate_context->DrawIndexedInstanced(index_count, instance_count, start_index, base_vertex, start_instance);
     }
 
-    void renderer_create_render_target_multi(const texture_creation_params& tcp, texture2d_internal* texture_container,
+    void renderer_create_render_target_multi(const texture_creation_params& tcp, texture_resource* texture_container,
                                              ID3D11DepthStencilView*** dsv, ID3D11RenderTargetView*** rtv)
     {
         // create an empty texture
@@ -1187,28 +1203,28 @@ namespace pen
         }
 
         u32  array_size = texture_desc.ArraySize;
-        bool texture2dms = texture_desc.SampleDesc.Count > 1;
+        bool ms = texture_desc.SampleDesc.Count > 1;
+        u32  num_mips = tcp.num_mips;
 
-        if (array_size > 1 && texture2dms)
+        if (array_size > 1 && ms)
         {
             // arrays and cubes don't support msaa yet
             PEN_ASSERT(0);
         }
 
-        u32 num_mips = tcp.num_mips;
-
-        CHECK_CALL(s_device->CreateTexture2D(&texture_desc, nullptr, &texture_container->texture));
+        if (tcp.collection_type == pen::TEXTURE_COLLECTION_VOLUME)
+        {
+            // 3d render targets are writable textures
+            PEN_ASSERT(0);
+        }
+        else
+        {
+            CHECK_CALL(s_device->CreateTexture2D(&texture_desc, nullptr, (ID3D11Texture2D**)&texture_container->texture));
+        }
 
         D3D11_SHADER_RESOURCE_VIEW_DESC resource_view_desc;
-
-        D3D_SRV_DIMENSION srv_dimension = texture2dms ? D3D11_SRV_DIMENSION_TEXTURE2DMS : D3D11_SRV_DIMENSION_TEXTURE2D;
-
-        if (tcp.collection_type == pen::TEXTURE_COLLECTION_CUBE)
-            srv_dimension = D3D_SRV_DIMENSION_TEXTURECUBE;
-        else if (tcp.collection_type == pen::TEXTURE_COLLECTION_ARRAY)
-            srv_dimension = D3D_SRV_DIMENSION_TEXTURE2DARRAY;
-        else if (tcp.collection_type == pen::TEXTURE_COLLECTION_CUBE_ARRAY)
-            srv_dimension = D3D_SRV_DIMENSION_TEXTURECUBEARRAY;
+        D3D_SRV_DIMENSION srv_dimension = ms ? D3D11_SRV_DIMENSION_TEXTURE2DMS : D3D11_SRV_DIMENSION_TEXTURE2D;
+        srv_dimension = to_d3d11_srv_dimension(tcp.collection_type, ms);
 
         if (texture_desc.BindFlags & D3D11_BIND_DEPTH_STENCIL)
         {
@@ -1230,7 +1246,7 @@ namespace pen
             if (!is_array(srv_dimension))
             {
                 // single rt
-                dsv_desc.ViewDimension = texture2dms ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
+                dsv_desc.ViewDimension = ms ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
                 dsv_desc.Texture2D.MipSlice = 0;
 
                 CHECK_CALL(s_device->CreateDepthStencilView(texture_container->texture, &dsv_desc, &_dsv[0]));
@@ -1283,7 +1299,7 @@ namespace pen
             if (!is_array(srv_dimension))
             {
                 // single rt
-                rtv_desc.ViewDimension = texture2dms ? D3D11_RTV_DIMENSION_TEXTURE2DMS : D3D11_RTV_DIMENSION_TEXTURE2D;
+                rtv_desc.ViewDimension = ms ? D3D11_RTV_DIMENSION_TEXTURE2DMS : D3D11_RTV_DIMENSION_TEXTURE2D;
                 rtv_desc.Texture2D.MipSlice = 0;
 
                 CHECK_CALL(s_device->CreateRenderTargetView(texture_container->texture, &rtv_desc, &_rtv[0]));
@@ -1328,6 +1344,12 @@ namespace pen
 
     void direct::renderer_create_render_target(const texture_creation_params& tcp, u32 resource_slot, bool track)
     {
+        if (tcp.collection_type == pen::TEXTURE_COLLECTION_VOLUME)
+        {
+            renderer_create_texture(tcp, resource_slot);
+            return;
+        }
+
         _res_pool.grow(resource_slot);
 
         u32 resource_index = resource_slot;
@@ -1374,7 +1396,7 @@ namespace pen
             memcpy(&texture_desc, (void*)&read_back_tcp, sizeof(D3D11_TEXTURE2D_DESC));
 
             CHECK_CALL(s_device->CreateTexture2D(&texture_desc, NULL,
-                                                 &_res_pool[resource_index].render_target->tex_read_back.texture));
+                (ID3D11Texture2D**)&_res_pool[resource_index].render_target->tex_read_back.texture));
 
             _tcp.cpu_access_flags = 0;
         }
@@ -1545,7 +1567,7 @@ namespace pen
 
                     u32 sub = D3D11CalcSubresource(i, a, tcp.num_mips);
 
-                    s_immediate_context->UpdateSubresource(tex_res->resource, sub, nullptr, image_data, row_pitch,
+                    s_immediate_context->UpdateSubresource(tex_res->texture, sub, nullptr, image_data, row_pitch,
                                                            slice_pitch);
 
                     image_data += depth_pitch;
@@ -1564,7 +1586,7 @@ namespace pen
         resource_view_desc.Texture2D.MipLevels = -1;
         resource_view_desc.Texture2D.MostDetailedMip = 0;
 
-        CHECK_CALL(s_device->CreateShaderResourceView(tex_res->resource, &resource_view_desc, &tex_res->srv));
+        CHECK_CALL(s_device->CreateShaderResourceView(tex_res->texture, &resource_view_desc, &tex_res->srv));
 
         tex_res->uav = nullptr;
 
@@ -1572,11 +1594,23 @@ namespace pen
         {
             D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
             ZeroMemory(&uav_desc, sizeof(uav_desc));
-            uav_desc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
-            uav_desc.Format = DXGI_FORMAT_UNKNOWN;
-            uav_desc.Texture2D.MipSlice = 0;
 
-            CHECK_CALL(s_device->CreateUnorderedAccessView(tex_res->resource, &uav_desc, &tex_res->uav));
+            if (tcp.collection_type == pen::TEXTURE_COLLECTION_VOLUME)
+            {
+                uav_desc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
+                uav_desc.Format = DXGI_FORMAT_UNKNOWN;
+                uav_desc.Texture3D.WSize = -1;
+                uav_desc.Texture3D.FirstWSlice = 0;
+                uav_desc.Texture3D.MipSlice = 0;
+            }
+            else
+            {
+                uav_desc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
+                uav_desc.Format = DXGI_FORMAT_UNKNOWN;
+                uav_desc.Texture2D.MipSlice = 0;
+            }
+
+            CHECK_CALL(s_device->CreateUnorderedAccessView(tex_res->texture, &uav_desc, &tex_res->uav));
         }
     }
 
@@ -2175,11 +2209,11 @@ namespace pen
         rb_desc.BindFlags = 0;
         rb_desc.Usage = D3D11_USAGE_DEFAULT;
 
-        CHECK_CALL(s_device->CreateTexture2D(&rb_desc, nullptr, &_res_pool[crtv].render_target->tex_resolve.texture));
+        CHECK_CALL(s_device->CreateTexture2D(&rb_desc, nullptr, (ID3D11Texture2D**)&_res_pool[crtv].render_target->tex_resolve.texture));
 
         rb_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
         rb_desc.Usage = D3D11_USAGE_STAGING;
-        CHECK_CALL(s_device->CreateTexture2D(&rb_desc, nullptr, &_res_pool[crtv].render_target->tex_read_back.texture));
+        CHECK_CALL(s_device->CreateTexture2D(&rb_desc, nullptr, (ID3D11Texture2D**)&_res_pool[crtv].render_target->tex_read_back.texture));
 
         g_context.active_depth_target = PEN_BACK_BUFFER_DEPTH;
         g_context.active_colour_target[0] = PEN_BACK_BUFFER_COLOUR;
@@ -2202,7 +2236,7 @@ namespace pen
         descDepth.CPUAccessFlags = 0;
         descDepth.MiscFlags = 0;
 
-        CHECK_CALL(s_device->CreateTexture2D(&descDepth, nullptr, &_res_pool[dsv].depth_target->tex.texture));
+        CHECK_CALL(s_device->CreateTexture2D(&descDepth, nullptr, (ID3D11Texture2D**)&_res_pool[dsv].depth_target->tex.texture));
 
         // Create the depth stencil view
         D3D11_DEPTH_STENCIL_VIEW_DESC descDSV;
