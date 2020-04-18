@@ -110,6 +110,17 @@ import post_process.jsn
         volume_gi_compute:
         {
         	type: "compute",
+        	scene: main_scene,
+        	target: [volume_gi],
+			pmfx_shader : "compute",
+            technique : "volume_gi",
+            scene_views : ["ecs_compute_volume_gi"]
+        },
+        
+        volume_gi_clear:
+        {
+        	type: "compute",
+        	scene: main_scene,
         	target: [volume_gi],
 			pmfx_shader : "compute",
             technique : "volume_gi",
@@ -134,7 +145,7 @@ import post_process.jsn
         
         editor_gi: [
         	multiple_shadow_views,
-			multiple_colour_shadow_views,
+			// multiple_colour_shadow_views,
             multiple_area_light_views,
             multiple_omni_shadow_views,
             volume_gi_compute,

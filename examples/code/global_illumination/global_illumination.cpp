@@ -34,6 +34,24 @@ void example_setup(ecs_scene* scene, camera& cam)
     volume_material->id_shader = PEN_HASH("pmfx_utility");
     volume_material->id_technique = PEN_HASH("volume_texture");
     add_material_resource(volume_material);
+    
+    // create scene nodefor gi
+    u32 new_prim = get_new_entity(scene);
+    scene->names[new_prim] = "volume_gi";
+    scene->names[new_prim].appendf("%i", new_prim);
+    scene->transforms[new_prim].rotation = quat();
+    scene->transforms[new_prim].scale = vec3f(100.0f);
+    scene->transforms[new_prim].translation = vec3f::zero();
+    scene->entities[new_prim] |= e_cmp::transform;
+    scene->parents[new_prim] = new_prim;
+    scene->samplers[new_prim].sb[0].handle = pmfx::get_render_target(PEN_HASH("volume_gi"))->handle;
+    scene->samplers[new_prim].sb[0].sampler_unit = e_texture::volume;
+    scene->samplers[new_prim].sb[0].sampler_state =
+        pmfx::get_render_state(PEN_HASH("clamp_point"), pmfx::e_render_state::sampler);
+
+    instantiate_geometry(cube, scene, new_prim);
+    instantiate_material(volume_material, scene, new_prim);
+    instantiate_model_cbuffer(scene, new_prim);
 
     // directional light
     u32 light = get_new_entity(scene);
@@ -43,7 +61,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->lights[light].colour = vec3f(0.8f, 0.8f, 0.8f);
     scene->lights[light].direction = normalised(vec3f(-0.7f, 0.6f, -0.4f));
     scene->lights[light].type = e_light_type::dir;
-    scene->lights[light].flags |= e_light_flags::global_illumination;
+    scene->lights[light].flags |= e_light_flags::shadow_map;
     scene->transforms[light].translation = vec3f::zero();
     scene->transforms[light].rotation = quat();
     scene->transforms[light].scale = vec3f::one();
@@ -82,27 +100,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     instantiate_material(default_material, scene, box);
     instantiate_model_cbuffer(scene, box);
 
-    // create scene nodefor gi
-    /*
-    u32 new_prim = get_new_entity(scene);
-    scene->names[new_prim] = "volume_gi";
-    scene->names[new_prim].appendf("%i", new_prim);
-    scene->transforms[new_prim].rotation = quat();
-    scene->transforms[new_prim].scale = vec3f(10.0f);
-    scene->transforms[new_prim].translation = vec3f::zero();
-    scene->entities[new_prim] |= e_cmp::transform;
-    scene->parents[new_prim] = new_prim;
-    scene->samplers[new_prim].sb[0].handle = pmfx::get_render_target(PEN_HASH("volume_gi"))->handle;
-    scene->samplers[new_prim].sb[0].sampler_unit = e_texture::volume;
-    scene->samplers[new_prim].sb[0].sampler_state =
-        pmfx::get_render_state(PEN_HASH("clamp_point"), pmfx::e_render_state::sampler);
-
-    instantiate_geometry(cube, scene, new_prim);
-    instantiate_material(volume_material, scene, new_prim);
-    instantiate_model_cbuffer(scene, new_prim);
-
     bake_material_handles();
-    */
 }
 
 void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
