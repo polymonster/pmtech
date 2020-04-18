@@ -777,7 +777,7 @@ namespace put
                 pen::renderer_update_buffer(cb_info, &vp, sizeof(mat4));
                 
                 pen::renderer_set_constant_buffer(cb_info, 1, pen::CBUFFER_BIND_CS);
-                pen::renderer_dispatch_compute({1024, 1024, 1}, {16, 16, 1});
+                pen::renderer_dispatch_compute({2048, 2048, 1}, {16, 16, 1});
             }
 
             pen::renderer_set_texture(0, 0, 0, pen::TEXTURE_BIND_CS);

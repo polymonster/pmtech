@@ -27,11 +27,11 @@ cbuffer gi_info : register(b1)
 };
 
 void cs_main_volume_gi(uint2 gid : SV_DispatchThreadID)
-{
+{	
 	float4 sm = read_texture_array( shadow_map, gid.xy, 0 );
 	
 	// projected coord
-	float3 ndc = float3(gid.x/2048.0, gid.y/2048.0, sm.r) * 2.0 - 1.0;
+	float3 ndc = float3(gid.x/2048.0, 1.0 - (gid.y/2048.0), sm.r) * 2.0 - 1.0;
 	float4 p = float4(ndc.xyz, 1.0);
 	
 	float4 up = mul(p, inv_mat); 
@@ -41,15 +41,15 @@ void cs_main_volume_gi(uint2 gid : SV_DispatchThreadID)
 	float3 ws = float3(100.0, 100.0, 100.0);
 	float3 ts = float3(64.0, 64.0, 64.0);
 	float3 ns = (up.xyz / ws) * 0.5 + 0.5;
-	float3 tp = ns * ts; 
+	uint3 tp = uint3(ns * ts);
+
+	if(tp.x == 0 || tp.y == 0 || tp.z == 0)
+		return;
 	
-	float3 w2 = p.xyy * ts;
-	write_texture(volume_gi, float4(sm.r, 1.0, 1.0, 1.0), uint3(ns.x, ns.y, ns.z));
+	if(tp.x == 63 || tp.y == 63 || tp.z == 63)
+		return;
 	
-	float2 tx = (float2(gid.xy) / 2048.0) * 64.0;
-	write_texture(volume_gi, float4(sm.r, 1.0, 0.0, 1.0), uint3(tx.x, tx.y, 7));
-	
-	//write_texture(volume_gi, float4(0.0, 1.0, 0.0, 1.0), uint3(32, 32, 32));
+	write_texture(volume_gi, float4(sm.r, 1.0, 1.0, 1.0), tp);
 }
 
 void cs_main_clear_volume_gi(uint3 gid : SV_DispatchThreadID)
