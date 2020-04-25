@@ -10,6 +10,7 @@ import shutil
 import time
 import dependencies
 import glob
+import threading
 import jsn.jsn as jsn
 import cgu.cgu as cgu
 
@@ -348,11 +349,26 @@ def run_copy(config):
             util.copy_file_create_dir_if_newer(f[0], f[1])
 
 
+# single jsn job to run on a thread
+def run_jsn_thread(f, ii, config, jsn_tasks):
+    cmd = python_tool_to_platform(config["tools"]["jsn"])
+    cmd += " -i " + f[0] + " -o " + f[1] + ii
+    imports = jsn.get_import_file_list(f[0], jsn_tasks["import_dirs"])
+    inputs = [f[0], config["tools"]["jsn"]]
+    for im in imports:
+        inputs.append(im)
+    dep = dependencies.create_dependency_info(inputs, [f[1]], cmd)
+    if not dependencies.check_up_to_date_single(f[1], dep):
+        subprocess.call(cmd, shell=True)
+        dependencies.write_to_file_single(dep, util.change_ext(f[1], ".dep"))
+
+
 # convert jsn to json for use at runtime
 def run_jsn(config):
     print("--------------------------------------------------------------------------------")
     print("jsn ----------------------------------------------------------------------------")
     print("--------------------------------------------------------------------------------")
+    threads = []
     jsn_tasks = config["jsn"]
     ii = " -I "
     for i in jsn_tasks["import_dirs"]:
@@ -363,16 +379,11 @@ def run_jsn(config):
             if not os.path.exists(f[0]):
                 print("[warning]: file or directory " + f[0] + " does not exist!")
                 continue
-            cmd = python_tool_to_platform(config["tools"]["jsn"])
-            cmd += " -i " + f[0] + " -o " + f[1] + ii
-            imports = jsn.get_import_file_list(f[0], jsn_tasks["import_dirs"])
-            inputs = [f[0], config["tools"]["jsn"]]
-            for im in imports:
-                inputs.append(im)
-            dep = dependencies.create_dependency_info(inputs, [f[1]], cmd)
-            if not dependencies.check_up_to_date_single(f[1], dep):
-                subprocess.call(cmd, shell=True)
-                dependencies.write_to_file_single(dep, util.change_ext(f[1], ".dep"))
+            x = threading.Thread(target=run_jsn_thread, args=(f, ii, config, jsn_tasks))
+            threads.append(x)
+            x.start()
+    for t in threads:
+        t.join()
 
 
 # premake
@@ -406,12 +417,19 @@ def run_pmfx(config):
     subprocess.call(cmd, shell=True)
 
 
+# single model build / optimise ran on a separate thread
+def run_models_thread(cmd):
+    p = subprocess.Popen(cmd, shell=True)
+    p.wait()
+
+
 # models
 def run_models(config):
     print("--------------------------------------------------------------------------------")
     print("models -------------------------------------------------------------------------")
     print("--------------------------------------------------------------------------------")
     tool_cmd = python_tool_to_platform(config["tools"]["models"])
+    threads = []
     for task in config["models"]:
         task_files = get_task_files(task)
         mesh_opt = ""
@@ -421,9 +439,11 @@ def run_models(config):
             cmd = " -i " + f[0] + " -o " + os.path.dirname(f[1])
             if len(mesh_opt) > 0:
                 cmd += " -mesh_opt " + mesh_opt
-            p = subprocess.Popen(tool_cmd + cmd, shell=True)
-            p.wait()
-    pass
+            x = threading.Thread(target=run_models_thread, args=(tool_cmd + cmd,))
+            threads.append(x)
+            x.start()
+    for t in threads:
+        t.join()
 
 
 # build third_party libs
