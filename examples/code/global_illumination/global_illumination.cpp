@@ -36,22 +36,25 @@ void example_setup(ecs_scene* scene, camera& cam)
     add_material_resource(volume_material);
     
     // create scene node for gi
-    u32 new_prim = get_new_entity(scene);
-    scene->names[new_prim] = "volume_gi";
-    scene->names[new_prim].appendf("%i", new_prim);
-    scene->transforms[new_prim].rotation = quat();
-    scene->transforms[new_prim].scale = vec3f(100.0f);
-    scene->transforms[new_prim].translation = vec3f(0.0f, 0.0f, 0.0f);
-    scene->entities[new_prim] |= e_cmp::transform;
-    scene->parents[new_prim] = new_prim;
-    scene->samplers[new_prim].sb[0].handle = pmfx::get_render_target(PEN_HASH("volume_gi"))->handle;
-    scene->samplers[new_prim].sb[0].sampler_unit = e_texture::volume;
-    scene->samplers[new_prim].sb[0].sampler_state =
-        pmfx::get_render_state(PEN_HASH("clamp_point"), pmfx::e_render_state::sampler);
+    if (0)
+    {
+        u32 new_prim = get_new_entity(scene);
+        scene->names[new_prim] = "volume_gi";
+        scene->names[new_prim].appendf("%i", new_prim);
+        scene->transforms[new_prim].rotation = quat();
+        scene->transforms[new_prim].scale = vec3f(100.0f);
+        scene->transforms[new_prim].translation = vec3f(0.0f, 0.0f, 200.0f);
+        scene->entities[new_prim] |= e_cmp::transform;
+        scene->parents[new_prim] = new_prim;
+        scene->samplers[new_prim].sb[0].handle = pmfx::get_render_target(PEN_HASH("volume_gi"))->handle;
+        scene->samplers[new_prim].sb[0].sampler_unit = e_texture::volume;
+        scene->samplers[new_prim].sb[0].sampler_state =
+            pmfx::get_render_state(PEN_HASH("clamp_point"), pmfx::e_render_state::sampler);
 
-    instantiate_geometry(cube, scene, new_prim);
-    instantiate_material(volume_material, scene, new_prim);
-    instantiate_model_cbuffer(scene, new_prim);
+        instantiate_geometry(cube, scene, new_prim);
+        instantiate_material(volume_material, scene, new_prim);
+        instantiate_model_cbuffer(scene, new_prim);
+    }
 
     // directional light
     u32 light = get_new_entity(scene);

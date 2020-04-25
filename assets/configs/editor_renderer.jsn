@@ -33,7 +33,7 @@ import post_process.jsn
         
         volume_gi:
         {
-			size : [64, 64, 64],
+			size : [256, 256, 256],
             format : rgba8,
             gpu_write : true
         }
@@ -46,7 +46,21 @@ import post_process.jsn
     		raster_state : default,
     		clear_colour : [0.0, 0.0, 0.0, 1.0]
     	},
-    	                
+		
+		editor_main_gi(main_view):
+    	{
+    		raster_state : default,
+    		clear_colour : [0.0, 0.0, 0.0, 1.0],
+			
+			sampler_bindings:
+            [
+                { texture: shadow_map, unit: 15, state: wrap_linear, shader: ps },
+                { texture: area_light_textures, unit: 11, state: clamp_linear, shader: ps },
+                { texture: omni_shadow_map, unit: 10, state: clamp_linear, shader: ps },
+				{ texture: volume_gi, unit: 9, state: clamp_linear, shader: ps },
+            ],
+    	},
+	    	                
         editor_view:
         {
             target             : [main_colour, main_depth],
@@ -145,12 +159,12 @@ import post_process.jsn
         
         editor_gi: [
         	multiple_shadow_views,
-			// multiple_colour_shadow_views,
+			multiple_colour_shadow_views,
             multiple_area_light_views,
             multiple_omni_shadow_views,
             volume_gi_compute,
 			picking_view,
-			main_view,
+			editor_main_gi,
             editor_view
         ],
         

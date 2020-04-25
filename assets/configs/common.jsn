@@ -157,19 +157,26 @@
             format: d24s8,
             type: array
         },
-        
-        colour_shadow_map:
-        {
-			size: [2048, 2048],
-            format: rgba8,
-            type: array
-        },
-        
+                
         omni_shadow_map:
         {
             size: [512, 512],
             format: d24s8,
             type: cube_array
+        },
+		
+		colour_shadow_map:
+        {
+			size: [1024, 1024],
+            format: rgba8,
+            type: array
+        },
+		
+		colour_shadow_map_depth:
+        {
+			size: [1024, 1024],
+            format: d24s8,
+            type: array
         },
         
         area_light_textures:
@@ -245,7 +252,7 @@
         
 		multiple_colour_shadow_views:
         {
-            target             : [colour_shadow_map, shadow_map],
+            target             : [colour_shadow_map_depth],
             clear_colour	   : [0.0, 1.0, 1.0, 1.0],
             clear_depth        : 1.0,
             colour_write_mask  : 0xf,
@@ -255,7 +262,7 @@
             depth_stencil_state: default,
             scene              : main_scene,
 			pmfx_shader        : forward_render,
-            technique          : single_light_directional,
+            technique          : zonly,
             scene_views        : ["ecs_render_shadow_maps"],
             render_flags       : ["forward_lit"]
         },

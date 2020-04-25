@@ -140,12 +140,12 @@ shader_resources
     texture_3d( sdf_volume, 14 );
     texture_2d( ltc_mat, 13 );
     texture_2d( ltc_mag, 12 );
-    
     if:(PMFX_TEXTURE_CUBE_ARRAY) {
         texture_cube_array( omni_shadow_texture, 10 );
     }
     texture_2d_array( shadowmap_texture, 15 );
     texture_2d_array( area_light_textures, 11 );
+	texture_3d( volume_gi, 9 );
 };
 
 vs_output_zonly vs_main_zonly( vs_input_position_only input, vs_instance_input instance_input )
@@ -744,8 +744,85 @@ ps_output ps_forward_lit( vs_output input )
             lit_colour += light_col;
         }
     }
+	
+	// gi tracing wip..
+	if(0)
+	{    			
+		// geometry tb for casting rays
+		float3 gn = input.normal.xyz;
+		float3 gt = input.tangent.xyz;
+		float3 gb = input.bitangent.xyz;
+		
+		// step in world space, locked at texels
+		//float3 dim = float3(200, 200, 200);
+		// float3 tex_size = float3(64, 64, 64);
+		
+		float3 dim = gi_scene_size.xyz;
+		float3 tex_size = gi_volume_size.xyz;
+		float3 step = dim / tex_size;
+		
+		float3 to_uvx = dim * 0.5;
+						
+		// start offset slightly from the normal
+		float3 sp = input.world_pos.xyz + gn;
+		
+		float3 rays[16];
+		rays[0] = float3(0.57735, 0.57735, 0.57735);
+		rays[1] = float3(0.57735, -0.57735, -0.57735);
+		rays[2] = float3(-0.57735, 0.57735, -0.57735);
+		rays[3] = float3(-0.57735, -0.57735, 0.57735);
+		rays[4] = float3(-0.903007, -0.182696, -0.388844);
+		rays[5] = float3(-0.903007, 0.182696, 0.388844);
+		rays[6] = float3(0.903007, -0.182696, 0.388844);
+		rays[7] = float3(0.903007, 0.182696, -0.388844);
+		rays[8] = float3(-0.388844, -0.903007, -0.182696);
+		rays[9] = float3(0.388844, -0.903007, 0.182696);
+		rays[10] = float3(0.388844, 0.903007, -0.182696);
+		rays[11] = float3(-0.388844, 0.903007, 0.182696);
+		rays[12] = float3(-0.182696, -0.388844, -0.903007);
+		rays[13] = float3(0.182696, 0.388844, -0.903007);
+		rays[14] = float3(-0.182696, 0.388844, 0.903007);
+		rays[15] = float3(0.182696, -0.388844, 0.903007);
+		
+		float3 uvw = (sp / 100.0) * 0.5 + 0.5;
+		//float4 samp = sample_texture( volume_gi, uvw );
+		
+		float3 vddx = ddx( uvw );
+		float3 vddy = ddy( uvw );
+		
+		int num_rays = 16;
+		int num_samples = 16;
+		
+		float occlusion = 0.0;
+		for(int i = 0; i < num_rays; ++i)
+		{
+			// start outside occlusion
+			float3 ray = chebyshev_normalize(rays[i]);
+			ray *= dot(ray, gn) < 0 ? -1 : 1;
+			
+			sp = input.world_pos.xyz + ray * step.x * 1.3;
+			
+			// gather occlusion
+			float d = 1.0;
+			for(int s = 0; s < num_samples; ++s)
+			{
+				uvw = (sp / to_uvx) * 0.5 + 0.5;
+				float4 o = sample_texture_grad( volume_gi, uvw, vddx, vddy );
+				if(o.a > 0)
+				{
+					occlusion += 1.0 - saturate(length(input.world_pos.xyz - sp)/50.0);
+					break;
+				}
+				
+				d -= 1.0/float(num_samples);
+				sp += ray * step.x;
+			}
+		}
+		occlusion = 1.0 - saturate(occlusion/float(num_rays));
+		output.colour.rgb = float3(occlusion, occlusion, occlusion);
+	}
 
-    output.colour.rgb = lit_colour.rgb * albedo.a;    
+    //output.colour.rgb = lit_colour.rgb * albedo.a;    
     output.colour.a = albedo.a;
 	    
     if(albedo.a <= 0.0)

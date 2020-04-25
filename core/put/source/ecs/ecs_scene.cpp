@@ -610,7 +610,7 @@ namespace put
                     continue;
 
                 cam_omni_shadow.pos = scene->transforms[n].translation;
-                put::camera_create_cubemap(&cam_omni_shadow, 0.1f, scene->lights[n].radius * 2.0);
+                put::camera_create_cubemap(&cam_omni_shadow, 0.1f, scene->lights[n].radius * 2.0f);
                 put::camera_set_cubemap_face(&cam_omni_shadow, array_face);
                 put::camera_update_shader_constants(&cam_omni_shadow);
 
@@ -735,21 +735,42 @@ namespace put
         void compute_volume_gi(const scene_view& view)
         {
             ecs_scene* scene = view.scene;
+ 
+            struct gi_info
+            {
+                mat4    inv_mat;
+                vec4f   scene_size;
+                vec4f   volume_size;
+                vec4f   shadow_map_size;
+            };
+
+            struct gi_dim
+            {
+                vec4f   scene_size;
+                vec4f   volume_size;
+            };
             
-            static u32    cb_info = -1;
+            static u32 cb_info = -1; //
+            static u32 cb_dim = -1; //
             if (!is_valid(cb_info))
             {
                 pen::buffer_creation_params bcp;
                 bcp.usage_flags = PEN_USAGE_DYNAMIC;
                 bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
                 bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-                bcp.buffer_size = sizeof(mat4);
+                bcp.buffer_size = sizeof(gi_info);
                 bcp.data = nullptr;
                 cb_info = pen::renderer_create_buffer(bcp);
+
+                bcp.buffer_size = sizeof(gi_dim);
+                cb_dim = pen::renderer_create_buffer(bcp);
             }
-            
-            u32 volume_gi_tex = pmfx::get_render_target(PEN_HASH("volume_gi"))->handle;
-            u32 colour_shadow_map = pmfx::get_render_target(PEN_HASH("shadow_map"))->handle;
+
+            // get render targets
+            const pmfx::render_target* gi_rt = pmfx::get_render_target(PEN_HASH("volume_gi"));
+            const pmfx::render_target* sm_rt = pmfx::get_render_target(PEN_HASH("colour_shadow_map_depth"));
+            u32 volume_gi_tex = gi_rt->handle;
+            u32 colour_shadow_map = sm_rt->handle;
             
             // clear
             pmfx::set_technique_perm(view.pmfx_shader, PEN_HASH("clear_volume_gi"), 0);
@@ -760,7 +781,14 @@ namespace put
             pmfx::set_technique_perm(view.pmfx_shader, view.technique, 0);
             pen::renderer_set_texture(volume_gi_tex, 0, 0, pen::TEXTURE_BIND_CS);
             pen::renderer_set_texture(colour_shadow_map, 0, 1, pen::TEXTURE_BIND_CS);
-            
+
+            // make info
+            gi_info info;
+            pmfx::get_render_target_dimensions(sm_rt, info.shadow_map_size.x, info.shadow_map_size.y);
+            pmfx::get_render_target_dimensions(gi_rt, info.volume_size.x, info.volume_size.y);
+            info.volume_size.z = info.volume_size.x;
+            info.scene_size.xyz = scene->renderable_extents.max - scene->renderable_extents.min;
+
             for (u32 n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & e_cmp::light))
@@ -771,15 +799,23 @@ namespace put
                     
                 camera cam;
                 shadow_camera_from_entity(cam, scene, n);
-                
                 mat4 vp = cam.proj * cam.view;
-                vp = mat::inverse4x4(vp);
-                pen::renderer_update_buffer(cb_info, &vp, sizeof(mat4));
+
+                info.inv_mat = mat::inverse4x4(vp);
+                pen::renderer_update_buffer(cb_info, &info, sizeof(gi_info));
                 
                 pen::renderer_set_constant_buffer(cb_info, 1, pen::CBUFFER_BIND_CS);
-                pen::renderer_dispatch_compute({2048, 2048, 1}, {16, 16, 1});
+                pen::renderer_dispatch_compute({(u32)info.shadow_map_size.x, (u32)info.shadow_map_size.y, 1}, {16, 16, 1});
             }
 
+            // info for the ray marching
+            gi_dim dim;
+            dim.volume_size = info.volume_size;
+            dim.scene_size = info.scene_size;
+            pen::renderer_update_buffer(cb_dim, &dim, sizeof(gi_dim));
+            pen::renderer_set_constant_buffer(cb_dim, 11, pen::CBUFFER_BIND_PS);
+
+            // unbind textures to silence validation warnings
             pen::renderer_set_texture(0, 0, 0, pen::TEXTURE_BIND_CS);
             pen::renderer_set_texture(0, 0, 1, pen::TEXTURE_BIND_CS);
         }
@@ -1229,7 +1265,7 @@ namespace put
         void update_scene(ecs_scene* scene, f32 dt)
         {
             // static anim time to pass into draw calls etc..
-            f32 anim_time = pen::get_time_ms() / 1000.0;
+            f32 anim_time = pen::get_time_ms() / 1000.0f;
 
             u32 num_controllers = sb_count(scene->controllers);
             u32 num_extensions = sb_count(scene->extensions);

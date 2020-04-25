@@ -909,7 +909,7 @@ namespace put
 
                     // wait until info is newer than the current info file,
                     // to know compilation is completed.
-                    if (err == PEN_ERR_OK && current_ts >= pmfx_set.rebuild_ts)
+                    if (err == PEN_ERR_OK && current_ts > pmfx_set.rebuild_ts)
                     {
                         bool complete = pmfx_ready(pmfx_set.filename.c_str());
                         if (complete)

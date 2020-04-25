@@ -306,7 +306,7 @@ namespace put
             vec3f       colour;
             f32         radius = 10.0f;
             f32         spot_falloff = 0.05f;
-            f32         cos_cutoff = -M_PI / 4.0f;
+            f32         cos_cutoff = -(f32)M_PI / 4.0f;
             f32         azimuth;
             f32         altitude;
             vec3f       direction;
@@ -434,7 +434,7 @@ namespace put
 
             ecs_scene()
             {
-                num_base_components = (((size_t)&num_base_components) - ((size_t)&entities)) / sizeof(generic_cmp_array);
+                num_base_components = (u32)(((size_t)&num_base_components) - ((size_t)&entities)) / sizeof(generic_cmp_array);
                 num_components = num_base_components;
             };
 
