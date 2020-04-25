@@ -149,12 +149,12 @@ namespace pen
 
     inline uint32_t hashMurmur2A(const char* _data)
     {
-        return hashMurmur2A(_data, strlen(_data));
+        return hashMurmur2A(_data, (u32)strlen(_data));
     }
 
     inline uint32_t hashMurmur2A(char* _data)
     {
-        return hashMurmur2A(_data, strlen(_data));
+        return hashMurmur2A(_data, (u32)strlen(_data));
     }
 
     inline uint32_t hashMurmur2A(const Str& s)

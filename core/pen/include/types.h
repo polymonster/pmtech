@@ -114,7 +114,7 @@ inline f16 float_to_half(f32 f)
     v.si ^= sign;
     sign >>= shift_sign; // logical shift
     s.si = mulN;
-    s.si = s.f * v.f; // correct subnormals
+    s.si = (int32_t)(s.f * v.f); // correct subnormals
     v.si ^= (s.si ^ v.si) & -(minN > v.si);
     v.si ^= (infN ^ v.si) & -((infN > v.si) & (v.si > maxN));
     v.si ^= (nanN ^ v.si) & -((nanN > v.si) & (v.si > infN));
