@@ -55,5 +55,11 @@ namespace deferred_render
     {
         light_data single_light;
     };
+    struct cbuffer_gi_volume
+    {
+        float4 scene_size;
+        float4 volume_size;
+        float4 shadow_map_size;
+    };
     #define POINT_LIGHT_MSAA 2
 }

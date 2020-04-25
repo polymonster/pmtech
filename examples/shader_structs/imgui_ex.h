@@ -55,6 +55,12 @@ namespace imgui_ex
     {
         light_data single_light;
     };
+    struct cbuffer_gi_volume
+    {
+        float4 scene_size;
+        float4 volume_size;
+        float4 shadow_map_size;
+    };
     struct per_pass_vs
     {
         float4x4 projection_matrix;

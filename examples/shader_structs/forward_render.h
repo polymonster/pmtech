@@ -59,6 +59,12 @@ namespace forward_render
     {
         light_data single_light;
     };
+    struct cbuffer_gi_volume
+    {
+        float4 scene_size;
+        float4 volume_size;
+        float4 shadow_map_size;
+    };
     struct single_light_directional
     {
         float4 m_albedo;
