@@ -775,7 +775,7 @@ namespace put
             // clear
             pmfx::set_technique_perm(view.pmfx_shader, PEN_HASH("clear_volume_gi"), 0);
             pen::renderer_set_texture(volume_gi_tex, 0, 0, pen::TEXTURE_BIND_CS);
-            pen::renderer_dispatch_compute({64, 64, 64}, {8, 8, 8});
+            pen::renderer_dispatch_compute({64, 64, 64}, {10, 10, 10});
             
             // write
             pmfx::set_technique_perm(view.pmfx_shader, view.technique, 0);

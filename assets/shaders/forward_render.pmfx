@@ -745,6 +745,9 @@ ps_output ps_forward_lit( vs_output input )
         }
     }
 	
+	output.colour.rgb = lit_colour.rgb * albedo.a;    
+    output.colour.a = albedo.a;
+	
 	// gi tracing wip..
 	if(0)
 	{    			
@@ -785,13 +788,13 @@ ps_output ps_forward_lit( vs_output input )
 		rays[15] = float3(0.182696, -0.388844, 0.903007);
 		
 		float3 uvw = (sp / 100.0) * 0.5 + 0.5;
-		//float4 samp = sample_texture( volume_gi, uvw );
-		
+		float4 samp = sample_texture_level( volume_gi, uvw, 4 );
+
 		float3 vddx = ddx( uvw );
 		float3 vddy = ddy( uvw );
 		
 		int num_rays = 16;
-		int num_samples = 16;
+		int num_samples = 9;
 		
 		float occlusion = 0.0;
 		for(int i = 0; i < num_rays; ++i)
@@ -806,24 +809,29 @@ ps_output ps_forward_lit( vs_output input )
 			float d = 1.0;
 			for(int s = 0; s < num_samples; ++s)
 			{
+				step = dim / tex_size;
+				 
 				uvw = (sp / to_uvx) * 0.5 + 0.5;
-				float4 o = sample_texture_grad( volume_gi, uvw, vddx, vddy );
+				float4 o = sample_texture_level( volume_gi, uvw, s );
+				
 				if(o.a > 0)
 				{
-					occlusion += 1.0 - saturate(length(input.world_pos.xyz - sp)/50.0);
+					float oc = 1.0 - saturate(length(input.world_pos.xyz - sp)/50.0);
+					occlusion += oc / (s+1);
 					break;
 				}
 				
 				d -= 1.0/float(num_samples);
-				sp += ray * step.x;
+				sp += ray * step.x;				
 			}
 		}
 		occlusion = 1.0 - saturate(occlusion/float(num_rays));
-		output.colour.rgb = float3(occlusion, occlusion, occlusion);
+		occlusion = min(length(lit_colour.rgb), occlusion);
+		
+		output.colour.rgb += float3(occlusion, occlusion, occlusion) * 0.3;
+		
+		//output.colour.rgb = samp.rgb;
 	}
-
-    output.colour.rgb = lit_colour.rgb * albedo.a;    
-    output.colour.a = albedo.a;
 	    
     if(albedo.a <= 0.0)
     	discard;

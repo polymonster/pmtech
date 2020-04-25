@@ -58,7 +58,6 @@ void cs_main_clear_volume_gi(uint3 gid : SV_DispatchThreadID)
 {
 	write_texture(volume_gi, float4(0.0, 0.0, 0.0, 0.0), gid);
 }
-
 pmfx:
 {    
     "greyscale":
@@ -84,7 +83,7 @@ pmfx:
         },
         
         "cs" : "cs_main_clear_volume_gi",
-        "threads": [8, 8, 8]
+        "threads": [10, 10, 10]
     },
     
 	"volume_gi":

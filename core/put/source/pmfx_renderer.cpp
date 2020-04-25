@@ -2781,6 +2781,9 @@ namespace put
                 for (s32 rf = 0; rf < v.render_functions.size(); ++rf)
                     v.render_functions[rf](sv);
 
+                if (v.view_flags & (e_view_flags::resolve | e_view_flags::generate_mips))
+                    resolve_view_targets(v);
+
                 return;
             }
 

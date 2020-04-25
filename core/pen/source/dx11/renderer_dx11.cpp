@@ -1508,6 +1508,12 @@ namespace pen
             num_slices = tcp.num_arrays;
             num_arrays = 1;
 
+            u32 extra_flags = 0;
+            if (tcp.num_mips > 1)
+            {
+                extra_flags |= D3D11_RESOURCE_MISC_GENERATE_MIPS;
+            }
+
             D3D11_TEXTURE3D_DESC texture_desc = {tcp.width,
                                                  tcp.height,
                                                  tcp.num_arrays,
@@ -1516,7 +1522,7 @@ namespace pen
                                                  to_d3d11_usage(tcp.usage),
                                                  to_d3d11_bind_flags(tcp.bind_flags),
                                                  to_d3d11_cpu_access_flags(tcp.cpu_access_flags),
-                                                 tcp.flags};
+                                                 tcp.flags | extra_flags };
 
             _res_pool[resource_index].type = RES_TEXTURE_3D;
             _res_pool[resource_index].texture_3d = (texture3d_internal*)memory_alloc(sizeof(texture3d_internal));
@@ -1524,7 +1530,7 @@ namespace pen
         }
         else
         {
-            // texture 2d, arrays and cubemaps, cubemap arrays
+            // texture 2d, arrays, cubemaps, cubemap arrays
             D3D11_TEXTURE2D_DESC texture_desc;
             memcpy(&texture_desc, (void*)&tcp, sizeof(D3D11_TEXTURE2D_DESC));
             texture_desc.Format = to_d3d11_texture_format(tcp.format);
@@ -2034,6 +2040,15 @@ namespace pen
 
     void direct::renderer_resolve_target(u32 target, e_msaa_resolve_type type, resolve_resources res)
     {
+        if (type == RESOLVE_GENERATE_MIPS)
+        {
+            // 3d texture render targets are just 3d textures
+            if (_res_pool[target].type == RES_TEXTURE_3D)
+                s_immediate_context->GenerateMips(_res_pool[target].texture_3d->srv);
+
+            return;
+        }
+
         render_target_internal* rti = _res_pool[target].render_target;
 
         if (!rti->tcp)
