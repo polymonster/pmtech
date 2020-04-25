@@ -57,9 +57,8 @@ namespace post_process
     };
     struct cbuffer_gi_volume
     {
-        float4 scene_size;
-        float4 volume_size;
-        float4 shadow_map_size;
+        float4 gi_scene_size;
+        float4 gi_volume_size;
     };
     struct src_info
     {
