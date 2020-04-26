@@ -385,6 +385,16 @@ namespace put
             bcp.data = nullptr;
 
             new_instance.scene->area_light_buffer = pen::renderer_create_buffer(bcp);
+            
+            // gi volume
+            bcp.usage_flags = PEN_USAGE_DYNAMIC;
+            bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+            bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+            bcp.buffer_size = sizeof(gi_volume_info);
+            bcp.data = nullptr;
+
+            new_instance.scene->gi_volume_buffer = pen::renderer_create_buffer(bcp);
+            
 
             return new_instance.scene;
         }
@@ -744,14 +754,8 @@ namespace put
                 vec4f   shadow_map_size;
             };
 
-            struct gi_dim
-            {
-                vec4f   scene_size;
-                vec4f   volume_size;
-            };
             
             static u32 cb_info = -1; //
-            static u32 cb_dim = -1; //
             if (!is_valid(cb_info))
             {
                 pen::buffer_creation_params bcp;
@@ -761,9 +765,6 @@ namespace put
                 bcp.buffer_size = sizeof(gi_info);
                 bcp.data = nullptr;
                 cb_info = pen::renderer_create_buffer(bcp);
-
-                bcp.buffer_size = sizeof(gi_dim);
-                cb_dim = pen::renderer_create_buffer(bcp);
             }
 
             // get render targets
@@ -812,11 +813,10 @@ namespace put
             }
 
             // info for the ray marching
-            gi_dim dim;
-            dim.volume_size = info.volume_size;
-            dim.scene_size = info.scene_size;
-            pen::renderer_update_buffer(cb_dim, &dim, sizeof(gi_dim));
-            pen::renderer_set_constant_buffer(cb_dim, 11, pen::CBUFFER_BIND_PS);
+            gi_volume_info gi_info;
+            gi_info.volume_size = info.volume_size;
+            gi_info.scene_size = info.scene_size;
+            pen::renderer_update_buffer(scene->gi_volume_buffer, &gi_info, sizeof(gi_info));
 
             // unbind textures to silence validation warnings
             pen::renderer_set_texture(0, 0, 0, pen::TEXTURE_BIND_CS);
@@ -1016,6 +1016,10 @@ namespace put
                     // info for sdf
                     pen::renderer_set_constant_buffer(scene->sdf_shadow_buffer, 5, pen::CBUFFER_BIND_PS);
                 }
+                
+                // gi volume
+                pen::renderer_set_constant_buffer(scene->gi_volume_buffer, 11, pen::CBUFFER_BIND_PS);
+
 
                 // draw
 
