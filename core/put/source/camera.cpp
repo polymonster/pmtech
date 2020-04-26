@@ -4,6 +4,7 @@
 
 #include "camera.h"
 #include "debug_render.h"
+#include "dev_ui.h"
 
 #include "input.h"
 #include "os.h"
@@ -381,12 +382,12 @@ namespace put
         
         // create ortho mat and set view matrix
         p_camera->view = shadow_view;
-        p_camera->proj = mat::create_orthographic_projection(cmin.x, cmax.x, cmin.y, cmax.y, cmax.z * 0.5f, zz);
+        p_camera->proj = mat::create_orthographic_projection(cmin.x, cmax.x, cmin.y, cmax.y, cmin.z, cmax.z);
         p_camera->flags |= e_camera_flags::invalidated | e_camera_flags::orthographic;
-        
+
         camera_update_frustum(p_camera);
         
-        return;
+        //return;
         
         // debug rendering.. to move into ecs
         for(u32 i = 0; i < 8; ++i)

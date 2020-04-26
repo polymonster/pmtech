@@ -769,8 +769,10 @@ namespace put
             // get render targets
             const pmfx::render_target* gi_rt = pmfx::get_render_target(PEN_HASH("volume_gi"));
             const pmfx::render_target* sm_rt = pmfx::get_render_target(PEN_HASH("colour_shadow_map_depth"));
+            const pmfx::render_target* col_sm_rt = pmfx::get_render_target(PEN_HASH("colour_shadow_map"));
             u32 volume_gi_tex = gi_rt->handle;
-            u32 colour_shadow_map = sm_rt->handle;
+            u32 colour_shadow_map = col_sm_rt->handle;
+            u32 colour_shadow_map_depth = sm_rt->handle;
             
             // clear
             pmfx::set_technique_perm(view.pmfx_shader, PEN_HASH("clear_volume_gi"), 0);
@@ -781,6 +783,7 @@ namespace put
             pmfx::set_technique_perm(view.pmfx_shader, view.technique, 0);
             pen::renderer_set_texture(volume_gi_tex, 0, 0, pen::TEXTURE_BIND_CS);
             pen::renderer_set_texture(colour_shadow_map, 0, 1, pen::TEXTURE_BIND_CS);
+            pen::renderer_set_texture(colour_shadow_map_depth, 0, 2, pen::TEXTURE_BIND_CS);
 
             // make info
             gi_info info;
@@ -818,6 +821,7 @@ namespace put
             // unbind textures to silence validation warnings
             pen::renderer_set_texture(0, 0, 0, pen::TEXTURE_BIND_CS);
             pen::renderer_set_texture(0, 0, 1, pen::TEXTURE_BIND_CS);
+            pen::renderer_set_texture(0, 0, 2, pen::TEXTURE_BIND_CS);
         }
 
         void render_scene_view(const scene_view& view)

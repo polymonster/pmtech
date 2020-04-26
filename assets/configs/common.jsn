@@ -252,7 +252,7 @@
         
 		multiple_colour_shadow_views:
         {
-            target             : [colour_shadow_map_depth],
+            target             : [colour_shadow_map, colour_shadow_map_depth],
             clear_colour	   : [0.0, 1.0, 1.0, 1.0],
             clear_depth        : 1.0,
             colour_write_mask  : 0xf,
@@ -262,7 +262,7 @@
             depth_stencil_state: default,
             scene              : main_scene,
 			pmfx_shader        : forward_render,
-            technique          : zonly,
+            technique          : gi,
             scene_views        : ["ecs_render_shadow_maps"],
             render_flags       : ["forward_lit"]
         },

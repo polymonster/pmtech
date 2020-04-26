@@ -1,4 +1,5 @@
 #include "../example_common.h"
+#include "../../shader_structs/forward_render.h"
 
 using namespace put;
 using namespace ecs;
@@ -102,6 +103,9 @@ void example_setup(ecs_scene* scene, camera& cam)
     instantiate_geometry(cube, scene, box);
     instantiate_material(default_material, scene, box);
     instantiate_model_cbuffer(scene, box);
+
+    forward_render::forward_lit* mat = (forward_render::forward_lit*) & scene->material_data[box].data[0];
+    mat->m_albedo = vec4f(1.0f, 0.5f, 0.0f, 1.0f);
 
     bake_material_handles();
 }

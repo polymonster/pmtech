@@ -183,7 +183,7 @@ vs_output_zonly vs_main_zonly( vs_input_position_only input, vs_instance_input i
     }
       
     // for d3d 0 - 1 clip space    
-    output.position /= output.position.w;
+    //output.position /= output.position.w;
     remap_z_clip_space(output.position.z);
     return output;
 }
@@ -797,22 +797,29 @@ ps_output ps_forward_lit( vs_output input )
 		int num_samples = 9;
 		
 		float occlusion = 0.0;
+		
+		float4 gi = float4(0.0, 0.0, 0.0, 0.0);
 		for(int i = 0; i < num_rays; ++i)
 		{
 			// start outside occlusion
 			float3 ray = chebyshev_normalize(rays[i]);
 			ray *= dot(ray, gn) < 0 ? -1 : 1;
 			
-			sp = input.world_pos.xyz + ray * step.x * 1.3;
+			tex_size = gi_volume_size.xyz;
+			step = dim / tex_size;
+			sp = input.world_pos.xyz + ray * step.x * 3;
 			
 			// gather occlusion
+			/*
 			float d = 1.0;
 			for(int s = 0; s < num_samples; ++s)
-			{
+			{				 
 				step = dim / tex_size;
-				 
+				
 				uvw = (sp / to_uvx) * 0.5 + 0.5;
 				float4 o = sample_texture_level( volume_gi, uvw, s );
+				
+				gi += dot(n, ray) * o.rgb;
 				
 				if(o.a > 0)
 				{
@@ -822,15 +829,37 @@ ps_output ps_forward_lit( vs_output input )
 				}
 				
 				d -= 1.0/float(num_samples);
-				sp += ray * step.x;				
+				sp += ray * step.x;
+				tex_size / 2;				
 			}
+			*/
+			
+			// gather gi
+			float4 ray_gi = float4(0.0, 0.0, 0.0, 0.0);
+			for(int s = 0; s < num_samples; ++s)
+			{		
+				step = dim / tex_size;
+				
+				uvw = (sp / to_uvx) * 0.5 + 0.5;
+				float4 g = sample_texture_level( volume_gi, uvw, min(s, 4) );
+				ray_gi.rgb = ray_gi.rgb + g.rgb;
+							
+				sp += ray * step.x;
+				
+				if(s < 4)
+					tex_size / 2;	
+			}
+			gi += ray_gi;
 		}
+		
+		gi /= float(num_rays);
+		
 		occlusion = 1.0 - saturate(occlusion/float(num_rays));
-		occlusion = min(length(lit_colour.rgb), occlusion);
+		//occlusion = min(length(lit_colour.rgb), occlusion);
 		
-		output.colour.rgb += float3(occlusion, occlusion, occlusion) * 0.3;
+		output.colour.rgb = occlusion;
+		output.colour.rgb = gi.rgb + lit_colour.rgb * 0.5;
 		
-		//output.colour.rgb = samp.rgb;
 	}
 	    
     if(albedo.a <= 0.0)
@@ -890,21 +919,15 @@ ps_output_depth ps_omni_shadow( vs_output_zonly_wp input )
     return output;
 }
 
+ps_output ps_albedo( vs_output_zonly input )
+{
+    ps_output output;
+    output.colour = m_albedo;
+    return output;
+}
+
 pmfx:
 {    
-    single_light_directional:
-    {
-        vs: vs_main,
-        ps: ps_single_light,
-                
-        constants:
-        {
-            albedo       : { type: float4, widget: colour, default: [1.0, 1.0, 1.0, 1.0] },
-            roughness    : { type: float, widget: slider, min: 0, max: 1, default: 0.5 },
-            reflectivity : { type: float, widget: slider, min: 0, max: 1, default: 0.3 }
-        }
-    },
-    
     omni_shadow:
     {
         vs: vs_main_zonly_wp,
@@ -1018,6 +1041,20 @@ pmfx:
             SKINNED: [31, [0,1]],
             INSTANCED: [30, [0,1]]
         }
+    },
+	
+	gi:
+    {
+        vs: vs_main_zonly,
+        ps: ps_albedo,
+        
+        permutations:
+        {
+            SKINNED: [31, [0,1]],
+            INSTANCED: [30, [0,1]]
+        },
+		
+		inherit_constants: [forward_lit]
     },
     
     pre_skin:

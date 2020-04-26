@@ -7,6 +7,7 @@ declare_texture_samplers
     // gi
     texture3d_w( volume_gi, 0 );
     texture2d_array_r( shadow_map, 1 );
+	texture2d_array_r( shadow_map_depth, 2 );
 };
 
 cbuffer per_pass : register(b0)
@@ -31,7 +32,8 @@ cbuffer gi_info : register(b1)
 
 void cs_main_volume_gi(uint2 gid : SV_DispatchThreadID)
 {	
-	float4 sm = read_texture_array( shadow_map, gid.xy, 0 );
+	float4 sm = read_texture_array( shadow_map_depth, gid.xy, 0 );
+	float4 col = read_texture_array( shadow_map, gid.xy, 0 );
 	
 	// projected coord
 	float3 ndc = float3(gid.x/shadow_map_size.x, 1.0 - (gid.y/shadow_map_size.y), sm.r) * 2.0 - 1.0;
@@ -51,7 +53,7 @@ void cs_main_volume_gi(uint2 gid : SV_DispatchThreadID)
 		if(tp[i] == volume_size[i]-1 || tp[i] == 0)
 			return;
 	
-	write_texture(volume_gi, float4(sm.r, 1.0, 1.0, 1.0), tp);
+	write_texture(volume_gi, float4(col.x, col.y, col.z, 1.0), tp);
 }
 
 void cs_main_clear_volume_gi(uint3 gid : SV_DispatchThreadID)
