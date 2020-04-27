@@ -713,7 +713,7 @@ namespace // pen consts -> metal consts
         u32  colour_slice = _state.colour_slice;
         u32  depth_target = _state.depth_target;
         u32  depth_slice = _state.depth_slice;
-
+        
         _state.pass = [MTLRenderPassDescriptor renderPassDescriptor];
 
         _state.formats.colour_attachments[0] = MTLPixelFormatInvalid;
@@ -930,7 +930,7 @@ namespace // pen consts -> metal consts
         }
 
         // create a new pipeline
-        MTLRenderPipelineDescriptor* pipeline_desc = [MTLRenderPipelineDescriptor new];
+        MTLRenderPipelineDescriptor* pipeline_desc = [[MTLRenderPipelineDescriptor alloc] init];
 
         pipeline_desc.vertexFunction = _state.vertex_shader;
         pipeline_desc.fragmentFunction = _state.fragment_shader;
@@ -979,6 +979,8 @@ namespace // pen consts -> metal consts
         sb_push(_state.cached_pipelines, cp);
 
         [_state.render_encoder setRenderPipelineState:pipeline];
+        
+        [pipeline_desc release];
     }
 
     void bind_compute_pipeline()
@@ -1009,24 +1011,26 @@ namespace pen
     const renderer_info& renderer_get_info()
     {
         static renderer_info info;
+        
+        @autoreleasepool {
+            const Str device_name = (const char*)[_metal_device.name UTF8String];
+            const Str version_name = get_metal_version_string();
 
-        const Str device_name = (const char*)[_metal_device.name UTF8String];
-        const Str version_name = get_metal_version_string();
+            info.api_version = version_name.c_str();
+            info.shader_version = "metal";
+            info.renderer_cmd = "-renderer metal";
+            info.renderer = device_name.c_str();
+            info.vendor = device_name.c_str();
 
-        info.api_version = version_name.c_str();
-        info.shader_version = "metal";
-        info.renderer_cmd = "-renderer metal";
-        info.renderer = device_name.c_str();
-        info.vendor = device_name.c_str();
-
-        // macos caps.. todo ios
-        info.caps |= PEN_CAPS_TEX_FORMAT_BC1;
-        info.caps |= PEN_CAPS_TEX_FORMAT_BC2;
-        info.caps |= PEN_CAPS_TEX_FORMAT_BC3;
-        info.caps |= PEN_CAPS_TEX_FORMAT_BC4;
-        info.caps |= PEN_CAPS_TEX_FORMAT_BC5;
-        info.caps |= PEN_CAPS_COMPUTE;
-        info.caps |= PEN_CAPS_TEXTURE_CUBE_ARRAY;
+            // macos caps.. todo ios
+            info.caps |= PEN_CAPS_TEX_FORMAT_BC1;
+            info.caps |= PEN_CAPS_TEX_FORMAT_BC2;
+            info.caps |= PEN_CAPS_TEX_FORMAT_BC3;
+            info.caps |= PEN_CAPS_TEX_FORMAT_BC4;
+            info.caps |= PEN_CAPS_TEX_FORMAT_BC5;
+            info.caps |= PEN_CAPS_COMPUTE;
+            info.caps |= PEN_CAPS_TEXTURE_CUBE_ARRAY;
+        }
 
         return info;
     }
@@ -1261,7 +1265,7 @@ namespace pen
             {
                 input_layout_desc& il = params.input_layout[i];
 
-                MTLVertexAttributeDescriptor* ad = [MTLVertexAttributeDescriptor new];
+                MTLVertexAttributeDescriptor* ad = [[MTLVertexAttributeDescriptor alloc] init];
                 ad.format = to_metal_vertex_format(il.format);
                 ad.offset = il.aligned_byte_offset;
                 ad.bufferIndex = il.input_slot;
@@ -1337,7 +1341,7 @@ namespace pen
 
                 [_state.render_encoder setVertexBuffer:bb.read() offset:offsets[i] atIndex:start_slot + i];
 
-                MTLVertexBufferLayoutDescriptor* layout = [MTLVertexBufferLayoutDescriptor new];
+                MTLVertexBufferLayoutDescriptor* layout = [[MTLVertexBufferLayoutDescriptor alloc] init];
 
                 layout.stride = stride;
                 layout.stepFunction = i == 0 ? MTLVertexStepFunctionPerVertex : MTLVertexStepFunctionPerInstance;
@@ -1584,7 +1588,7 @@ namespace pen
         void renderer_create_sampler(const sampler_creation_params& scp, u32 resource_slot)
         {
             // create sampler state
-            MTLSamplerDescriptor* sd = [MTLSamplerDescriptor new];
+            MTLSamplerDescriptor* sd = [[MTLSamplerDescriptor alloc] init];
 
             sd.sAddressMode = to_metal_sampler_address_mode(scp.address_u);
             sd.tAddressMode = to_metal_sampler_address_mode(scp.address_v);
@@ -1633,7 +1637,9 @@ namespace pen
             else if (bind_flags & pen::TEXTURE_BIND_CS)
             {
                 validate_compute_encoder();
-                [_state.compute_encoder setTexture:_res_pool.get(texture_index).texture.tex atIndex:resource_slot];
+                auto t = _res_pool.get(texture_index).texture;
+                t.invalidate = true; // will trigger mips to generate if required
+                [_state.compute_encoder setTexture:t.tex atIndex:resource_slot];
             }
         }
 
@@ -1713,7 +1719,7 @@ namespace pen
         {
             _res_pool.insert(resource(), resource_slot);
 
-            MTLDepthStencilDescriptor* dsd = [MTLDepthStencilDescriptor new];
+            MTLDepthStencilDescriptor* dsd = [[MTLDepthStencilDescriptor alloc] init];
             dsd.depthCompareFunction = to_metal_compare_function(dscp.depth_func);
             dsd.depthWriteEnabled = dscp.depth_write_mask > 0 ? YES : NO;
 
@@ -1886,7 +1892,7 @@ namespace pen
                     return;
                 }
 
-                if (t.num_mips > 1 && t.invalidate)
+                if (t.num_mips > 1)
                 {
                     t.invalidate = 0;
 
@@ -2037,6 +2043,8 @@ namespace pen
                     _state.cmd_buffer = nil;
 
                     rrbp.call_back_function([stage contents], rrbp.row_pitch, rrbp.depth_pitch, rrbp.block_size);
+                    
+                    [stage release];
                 }
             }
         }

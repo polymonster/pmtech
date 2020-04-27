@@ -490,6 +490,8 @@ namespace
                 pen::input_set_key_up(pen_key_code);
             }
         }
+        
+        [key release];
     }
 
     bool handle_event(NSEvent* event)
