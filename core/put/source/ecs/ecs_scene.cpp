@@ -778,7 +778,7 @@ namespace put
             // clear
             pmfx::set_technique_perm(view.pmfx_shader, PEN_HASH("clear_volume_gi"), 0);
             pen::renderer_set_texture(volume_gi_tex, 0, 0, pen::TEXTURE_BIND_CS);
-            pen::renderer_dispatch_compute({64, 64, 64}, {10, 10, 10});
+            pen::renderer_dispatch_compute({256, 256, 256}, {8, 8, 8});
             
             // write
             pmfx::set_technique_perm(view.pmfx_shader, view.technique, 0);
@@ -1250,6 +1250,7 @@ namespace put
 
         void update(f32 dt)
         {
+            /*
             static f32 fft = 1.0f / 60.0f;
             bool       bdt = dev_ui::get_program_preference("dynamic_timestep").as_bool(true);
             f32        ft = dev_ui::get_program_preference("fixed_timestep").as_f32(fft);
@@ -1258,6 +1259,7 @@ namespace put
             {
                 dt = ft;
             }
+            */
 
             for (auto& si : s_scenes)
             {
