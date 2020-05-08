@@ -147,6 +147,7 @@ enum filter_mode
 
 enum comparison
 {
+    PEN_COMPARISON_DISABLED,
     PEN_COMPARISON_NEVER,
     PEN_COMPARISON_LESS,
     PEN_COMPARISON_EQUAL,

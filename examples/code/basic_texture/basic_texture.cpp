@@ -115,7 +115,7 @@ void* pen::user_entry(void* params)
     scp.address_u = PEN_TEXTURE_ADDRESS_CLAMP;
     scp.address_v = PEN_TEXTURE_ADDRESS_CLAMP;
     scp.address_w = PEN_TEXTURE_ADDRESS_CLAMP;
-    scp.comparison_func = PEN_COMPARISON_ALWAYS;
+    scp.comparison_func = PEN_COMPARISON_DISABLED;
     scp.min_lod = 0.0f;
     scp.max_lod = 4.0f;
 

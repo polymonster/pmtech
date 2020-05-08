@@ -245,6 +245,19 @@ namespace
         return D3D11_FILTER_MIN_MAG_MIP_POINT;
     }
 
+    D3D11_FILTER to_d3d11_comparison_filter_mode(u32 pen_filter_mode)
+    {
+        switch (pen_filter_mode)
+        {
+        case PEN_FILTER_MIN_MAG_MIP_POINT:
+            return D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT;
+        case PEN_FILTER_MIN_MAG_MIP_LINEAR:
+            return D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+        }
+        PEN_ASSERT(0);
+        return D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT;
+    }
+
     D3D11_TEXTURE_ADDRESS_MODE to_d3d11_texture_address_mode(u32 pen_texture_address_mode)
     {
         switch (pen_texture_address_mode)
@@ -1631,7 +1644,11 @@ namespace pen
         desc.AddressU = to_d3d11_texture_address_mode(scp.address_u);
         desc.AddressV = to_d3d11_texture_address_mode(scp.address_v);
         desc.AddressW = to_d3d11_texture_address_mode(scp.address_w);
-        desc.ComparisonFunc = to_d3d11_comparison(scp.comparison_func);
+        if (scp.comparison_func != PEN_COMPARISON_DISABLED)
+        {
+            desc.ComparisonFunc = to_d3d11_comparison(scp.comparison_func);
+            desc.Filter = to_d3d11_comparison_filter_mode(scp.filter);
+        }
 
         CHECK_CALL(s_device->CreateSamplerState(&desc, &_res_pool[resource_index].sampler_state));
     }

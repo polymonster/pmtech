@@ -210,7 +210,7 @@ namespace
         scp.address_u = PEN_TEXTURE_ADDRESS_WRAP;
         scp.address_v = PEN_TEXTURE_ADDRESS_WRAP;
         scp.address_w = PEN_TEXTURE_ADDRESS_WRAP;
-        scp.comparison_func = PEN_COMPARISON_ALWAYS;
+        scp.comparison_func = PEN_COMPARISON_DISABLED;
         scp.min_lod = 0.0f;
         scp.max_lod = 1000.0f;
 

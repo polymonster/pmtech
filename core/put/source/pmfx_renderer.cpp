@@ -619,7 +619,7 @@ namespace put
                 scp.max_anisotropy = state["max_anisotropy"].as_u32(0);
 
                 scp.comparison_func =
-                    mode_from_string(k_comparison_mode_map, state["comparison_func"].as_cstr(), PEN_COMPARISON_ALWAYS);
+                    mode_from_string(k_comparison_mode_map, state["comparison_func"].as_cstr(), PEN_COMPARISON_DISABLED);
 
                 pen::json border = state["border"];
                 if (border.type() == JSMN_ARRAY)
@@ -2886,6 +2886,9 @@ namespace put
                 // bind view samplers.. render targets, global textures
                 for (auto& sb : v.sampler_bindings)
                 {
+                    if (sb.sampler_unit == 15)
+                        u32 a = 0;
+
                     pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit, sb.bind_flags);
                 }
 

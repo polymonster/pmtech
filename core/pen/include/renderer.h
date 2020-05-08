@@ -224,7 +224,7 @@ namespace pen
         u32 address_w = PEN_TEXTURE_ADDRESS_WRAP;
         f32 mip_lod_bias = 0.0f;
         u32 max_anisotropy = 0;
-        u32 comparison_func = PEN_COMPARISON_ALWAYS;
+        u32 comparison_func = PEN_COMPARISON_DISABLED;
         f32 border_color[4] = {0.0f};
         f32 min_lod = -1.0f;
         f32 max_lod = -1.0f;
