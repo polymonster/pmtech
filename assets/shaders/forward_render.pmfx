@@ -143,9 +143,12 @@ shader_resources
     if:(PMFX_TEXTURE_CUBE_ARRAY) {
         texture_cube_array( omni_shadow_texture, 10 );
     }
-    texture_2d_array( shadowmap_texture, 15 );
     texture_2d_array( area_light_textures, 11 );
 	texture_3d( volume_gi, 9 );
+	
+	// need 2 shadow map for sss because gl does not allow regular sampling of sampler2DShadow
+	depth_2d_array( shadowmap_texture, 15 );
+	texture_2d_array( shadowmap_texture_sss, 8);
 };
 
 vs_output_zonly vs_main_zonly( vs_input_position_only input, vs_instance_input instance_input )
@@ -520,12 +523,28 @@ ps_output ps_forward_lit( vs_output input )
             sp.xyz /= sp.w;
             sp.y *= -1.0;
             sp.xyz = sp.xyz * 0.5 + 0.5;
-
-            float4 sm = sample_texture_array_level( shadowmap_texture, sp.xy, float(shadow_map_index), 0 );
-            d = sm.r;
             
-            shadow = sp.z < d ? 1.0 : 0.0;
-
+            // move to sample function
+            float2 samples[9];
+            float2 inv_sm_size = float2(1.0/2048.0, 1.0/2048.0);
+            samples[0] = float2(-1.0, -1.0) * inv_sm_size;
+            samples[1] = float2(-1.0, 0.0) * inv_sm_size;
+            samples[2] = float2(-1.0, 1.0) * inv_sm_size;
+            samples[3] = float2(0.0, -1.0) * inv_sm_size;
+            samples[4] = float2(0.0, 0.0) * inv_sm_size;
+            samples[5] = float2(0.0, 1.0) * inv_sm_size;
+            samples[6] = float2(1.0, -1.0) * inv_sm_size;
+            samples[7] = float2(1.0, 0.0) * inv_sm_size;
+            samples[8] = float2(1.0, 1.0) * inv_sm_size;
+            
+            shadow = 0.0;
+            for(int j = 0; j < 9; ++j)
+            {
+            	shadow += sample_depth_compare_array(shadowmap_texture, sp.xy + samples[j], float(shadow_map_index), sp.z);
+            }
+            shadow /= 9.0;
+            
+            
             lit_colour += light_col * shadow;
             
             if:(SSS)
@@ -539,9 +558,9 @@ ps_output ps_forward_lit( vs_output input )
                 sp.y *= -1.0;
                 sp.xyz = sp.xyz * 0.5 + 0.5;
                 
-                sm = sample_texture_array_level( shadowmap_texture, sp.xy, float(shadow_map_index), 0 );
+                float4 sm = sample_texture_array_level( shadowmap_texture_sss, sp.xy, float(shadow_map_index), 0 );
                 d = sm.r;
-            
+                
                 float fp = 1.0;
                 float3 light_dir = input.world_pos.xyz - lights[i].pos_radius.xyz;
             
@@ -691,10 +710,7 @@ ps_output ps_forward_lit( vs_output input )
             sp.y *= -1.0;
             sp.xyz = sp.xyz * 0.5 + 0.5;
 
-            float4 sm = sample_texture_array_level( shadowmap_texture, sp.xy, float(shadow_map_index), 0 );
-            d = sm.r;
-            
-            shadow = sp.z < d ? 1.0 : 0.0;
+            shadow = sample_depth_compare_array( shadowmap_texture, sp.xy, float(shadow_map_index), sp.z );
 
             lit_colour += light_col * shadow;
             
@@ -764,7 +780,7 @@ ps_output ps_forward_lit( vs_output input )
     output.colour.a = albedo.a;
 	
 	// gi tracing wip..
-	if(0)
+	if(false)
 	{    			
 		// geometry tb for casting rays
 		float3 gn = input.normal.xyz;
@@ -801,7 +817,7 @@ ps_output ps_forward_lit( vs_output input )
 		{
 			// start outside occlusion
 			float3 tex_size = gi_volume_size.xyz;
-			float3 noise = (hash_33(input.world_pos.xyz) * 0.3);
+			float3 noise = (hash_33(input.world_pos.xyz) * 0.33);
 			float3 ray = chebyshev_normalize(rays[i] + noise);
 			float3 cn = chebyshev_normalize(n);
 			
@@ -840,23 +856,27 @@ ps_output ps_forward_lit( vs_output input )
 			
 			// gather gi
 			float4 ray_gi = float4(0.0, 0.0, 0.0, 0.0);
-			for(int j = 0; j < 5; ++j)
+			for(int j = 0; j < 4; ++j)
 			{					
 				for(int k = 0; k < 2; ++k)
 				{
-					step = dim / tex_size;
+					step = (dim*2.0) / tex_size;
 				
 					float3 uvw = saturate((sp / to_uvx) * 0.5 + 0.5);					
-					float4 g = sample_texture_level( volume_gi, uvw, j);
+					float4 g = sample_texture_level( volume_gi, uvw, min(j, 4));
 										
 					float d = length(input.world_pos.xyz - sp);
 					d = smoothstep(0.0, 20.0, d);
 					
 					ray_gi.rgb = ray_gi.rgb + g.rgb * d;
+					ray_gi.a += g.a;
 							
 					sp += ray * step.x;							
 				}
 				tex_size /= 2;
+				
+				if(ray_gi.a >= 1.0 && j > 1)
+					break;
 			}
 			gi += ray_gi;
 		}

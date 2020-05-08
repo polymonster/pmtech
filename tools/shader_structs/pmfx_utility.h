@@ -59,6 +59,11 @@ namespace pmfx_utility
     {
         light_data single_light;
     };
+    struct cbuffer_gi_volume
+    {
+        float4 gi_scene_size;
+        float4 gi_volume_size;
+    };
     #define SKINNING_DEBUG_WEIGHTS 2
     struct skinning_debug
     {

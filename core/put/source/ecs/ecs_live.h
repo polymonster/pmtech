@@ -6,6 +6,7 @@
 #include "debug_render.h"
 namespace put {
     namespace ecs{
+        typedef void (*proc_init)(void);
         typedef ecs_scene* (*proc_create_scene)(const c8*);
         typedef void (*proc_destroy_scene)(ecs_scene*);
         typedef ecs_scene_list* (*proc_get_scenes)(void);
@@ -16,6 +17,7 @@ namespace put {
         typedef void (*proc_render_shadow_views)(const scene_view&);
         typedef void (*proc_render_omni_shadow_views)(const scene_view&);
         typedef void (*proc_render_area_light_textures)(const scene_view&);
+        typedef void (*proc_compute_volume_gi)(const scene_view&);
         typedef void (*proc_clear_scene)(ecs_scene*);
         typedef void (*proc_default_scene)(ecs_scene*);
         typedef void (*proc_resize_scene_buffers)(ecs_scene*, s32);
@@ -84,6 +86,7 @@ namespace put {
         typedef void (*proc_write_parsable_string_u32)(const Str&, std::ofstream&);
         struct __ecs {
             void* __ecs_start;
+            proc_init init;
             proc_create_scene create_scene;
             proc_destroy_scene destroy_scene;
             proc_get_scenes get_scenes;
@@ -94,6 +97,7 @@ namespace put {
             proc_render_shadow_views render_shadow_views;
             proc_render_omni_shadow_views render_omni_shadow_views;
             proc_render_area_light_textures render_area_light_textures;
+            proc_compute_volume_gi compute_volume_gi;
             proc_clear_scene clear_scene;
             proc_default_scene default_scene;
             proc_resize_scene_buffers resize_scene_buffers;
@@ -165,6 +169,7 @@ namespace put {
 
         #if !DLL
         void generate_bindings(__ecs* ctx){
+            ctx->init = &init;
             ctx->create_scene = &create_scene;
             ctx->destroy_scene = &destroy_scene;
             ctx->get_scenes = &get_scenes;
@@ -175,6 +180,7 @@ namespace put {
             ctx->render_shadow_views = &render_shadow_views;
             ctx->render_omni_shadow_views = &render_omni_shadow_views;
             ctx->render_area_light_textures = &render_area_light_textures;
+            ctx->compute_volume_gi = &compute_volume_gi;
             ctx->clear_scene = &clear_scene;
             ctx->default_scene = &default_scene;
             ctx->resize_scene_buffers = &resize_scene_buffers;
@@ -247,7 +253,6 @@ namespace put {
     }
 
     namespace dbg{
-        typedef void (*proc_init)(void);
         typedef void (*proc_shutdown)(void);
         typedef void (*proc_add_line)(const vec3f&, const vec3f&, const vec4f&);
         typedef void (*proc_add_coord_space)(const mat4&, const f32, u32);
@@ -271,7 +276,6 @@ namespace put {
         typedef void (*proc_render_3d)(u32);
         struct __dbg {
             void* __dbg_start;
-            proc_init init;
             proc_shutdown shutdown;
             proc_add_line add_line;
             proc_add_coord_space add_coord_space;
@@ -298,7 +302,6 @@ namespace put {
 
         #if !DLL
         void generate_bindings(__dbg* ctx){
-            ctx->init = &init;
             ctx->shutdown = &shutdown;
             ctx->add_line = &add_line;
             ctx->add_coord_space = &add_coord_space;

@@ -59,12 +59,10 @@ namespace forward_render
     {
         light_data single_light;
     };
-    struct single_light_directional
+    struct cbuffer_gi_volume
     {
-        float4 m_albedo;
-        float m_roughness;
-        float m_reflectivity;
-        float2 m_padding;
+        float4 gi_scene_size;
+        float4 gi_volume_size;
     };
     #define OMNI_SHADOW_SKINNED 2147483648
     #define OMNI_SHADOW_INSTANCED 1073741824
@@ -398,4 +396,34 @@ namespace forward_render
     };
     #define ZONLY_SKINNED 2147483648
     #define ZONLY_INSTANCED 1073741824
+    #define GI_SKINNED 2147483648
+    #define GI_INSTANCED 1073741824
+    struct gi
+    {
+        float4 m_albedo;
+        float m_roughness;
+        float m_reflectivity;
+        float2 m_padding;
+    };
+    struct gi_skinned
+    {
+        float4 m_albedo;
+        float m_roughness;
+        float m_reflectivity;
+        float2 m_padding;
+    };
+    struct gi_instanced
+    {
+        float4 m_albedo;
+        float m_roughness;
+        float m_reflectivity;
+        float2 m_padding;
+    };
+    struct gi_instanced_skinned
+    {
+        float4 m_albedo;
+        float m_roughness;
+        float m_reflectivity;
+        float2 m_padding;
+    };
 }

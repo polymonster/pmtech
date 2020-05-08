@@ -162,9 +162,8 @@ namespace
                 return GL_COMPUTE_SHADER;
 #endif
         }
-        // unimplemented cs
-        PEN_ASSERT(0);
-        return 0;
+        // unimplemented cs on some platforms
+        return -1;
     }
 
     u32 to_gl_polygon_mode(u32 pen_polygon_mode)
@@ -1115,11 +1114,6 @@ namespace pen
         
         g_bound_state = { };
 
-        // reset state, something horrible is left over
-        // CHECK_CALL(glEnable(GL_DEPTH_TEST));
-        // CHECK_CALL(glDepthFunc(GL_ALWAYS));
-        // CHECK_CALL(glDepthMask(true));
-
 // gpu counters
 #ifndef __linux__
         if (s_frame > 0)
@@ -1139,6 +1133,9 @@ namespace pen
         resource_allocation& res = _res_pool[resource_slot];
 
         u32 internal_type = to_gl_shader_type(params.type);
+        if(internal_type == -1)
+            return;
+        
         res.handle = CHECK_CALL(glCreateShader(internal_type));
 
         CHECK_CALL(glShaderSource(res.handle, 1, (const c8**)&params.byte_code, (s32*)&params.byte_code_size));
@@ -2100,7 +2097,9 @@ namespace pen
         sampler->address_u = to_gl_texture_address_mode(scp.address_u);
         sampler->address_v = to_gl_texture_address_mode(scp.address_v);
         sampler->address_w = to_gl_texture_address_mode(scp.address_w);
-        sampler->comparison_func = to_gl_comparison(scp.comparison_func);
+        sampler->comparison_func = 0;
+        if(scp.comparison_func != PEN_COMPARISON_ALWAYS)
+            sampler->comparison_func = to_gl_comparison(scp.comparison_func);
         to_gl_filter_mode(scp.filter, &sampler->min_filter, &sampler->mag_filter);
     }
 
@@ -2205,6 +2204,19 @@ namespace pen
         if (sampler_state->min_lod > -1.0f)
         {
             CHECK_CALL(glTexParameterf(target, GL_TEXTURE_MIN_LOD, sampler_state->min_lod));
+        }
+
+        if(sampler_state->comparison_func)
+        {
+            CHECK_CALL(glTexParameteri(target, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE));
+            CHECK_CALL(glTexParameteri(target, GL_TEXTURE_COMPARE_FUNC, sampler_state->comparison_func ));
+            
+            
+        }
+        else
+        {
+            CHECK_CALL(glTexParameteri(target, GL_TEXTURE_COMPARE_MODE, GL_NONE));
+            CHECK_CALL(glTexParameteri(target, GL_TEXTURE_COMPARE_FUNC, GL_ALWAYS));
         }
     }
 

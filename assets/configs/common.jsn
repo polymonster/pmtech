@@ -46,6 +46,13 @@
             filter : point,
             address: clamp
         },
+        
+        shadow_compare:
+        {
+			filter : linear,
+            address: clamp,
+            comparison_func: less
+        }
     },
     
     depth_stencil_states:

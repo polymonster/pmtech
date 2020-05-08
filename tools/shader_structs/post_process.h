@@ -55,6 +55,11 @@ namespace post_process
     {
         light_data single_light;
     };
+    struct cbuffer_gi_volume
+    {
+        float4 gi_scene_size;
+        float4 gi_volume_size;
+    };
     struct src_info
     {
         float2 inv_texel_size[8];

@@ -34,11 +34,10 @@ namespace
 struct live_lib : public __ecs, public __dbg
 {
     ecs_scene*          scene;
-    u32                 box_start;
+    u32                 box_start = 0;
     u32                 box_end;
     u32                 quadrant_size = 0;
-    
-    u32 box_count = 0;
+    u32                 box_count = 0;
     
     void init(live_context* ctx)
     {
@@ -50,6 +49,8 @@ struct live_lib : public __ecs, public __dbg
     int on_load(live_context* ctx)
     {
         init(ctx);
+        
+        box_count = 0;
         
         material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
         geometry_resource* box_resource = get_geometry_resource(PEN_HASH("cube"));
@@ -64,80 +65,115 @@ struct live_lib : public __ecs, public __dbg
         scene->lights[light].colour = vec3f(0.8f, 0.8f, 0.8f);
         scene->lights[light].direction = normalised(vec3f(-0.7f, 0.6f, -0.4f));
         scene->lights[light].type = e_light_type::dir;
-        scene->lights[light].flags |= e_light_flags::global_illumination;
+        scene->lights[light].flags |= e_light_flags::shadow_map;
         scene->transforms[light].translation = vec3f::zero();
         scene->transforms[light].rotation = quat();
         scene->transforms[light].scale = vec3f::one();
         scene->entities[light] |= e_cmp::light;
         scene->entities[light] |= e_cmp::transform;
         
-        vec2f dim = vec2f(100.0f, 100.0f);
+        f32 dim = 128.0f;
+        f32 inset = 16.0f;
+        
         u32 ground = get_new_entity(scene);
         scene->transforms[ground].rotation = quat();
-        scene->transforms[ground].scale = vec3f(dim.x, 1.0f, dim.y);
-        scene->transforms[ground].translation = vec3f::zero();
+        scene->transforms[ground].scale = vec3f(dim, 1.0f, dim);
+        scene->transforms[ground].translation = vec3f(0.0f, -dim + inset, 0.0f);
         scene->parents[ground] = ground;
         scene->entities[ground] |= e_cmp::transform;
         instantiate_geometry(box_resource, scene, ground);
         instantiate_material(default_material, scene, ground);
         instantiate_model_cbuffer(scene, ground);
         
+        forward_render::forward_lit* mat = (forward_render::forward_lit*) & scene->material_data[ground].data[0];
+        //mat->m_albedo = vec4f(0.0f, 0.5f, 0.5f, 1.0f);
+        
         u32 wall = get_new_entity(scene);
         scene->transforms[wall].rotation = quat();
-        scene->transforms[wall].scale = vec3f(1.0f, dim.x, dim.y);
-        scene->transforms[wall].translation = vec3f(50.0f, 0.0f, 0.0f);
+        scene->transforms[wall].scale = vec3f(1.0f, dim, dim);
+        scene->transforms[wall].translation = vec3f(dim - inset, 0.0f, 0.0f);
         scene->parents[wall] = wall;
         scene->entities[wall] |= e_cmp::transform;
         instantiate_geometry(box_resource, scene, wall);
         instantiate_material(default_material, scene, wall);
         instantiate_model_cbuffer(scene, wall);
         
-        u32 box = get_new_entity(scene);
-        scene->transforms[box].rotation = quat();
-        scene->transforms[box].scale = vec3f(10.0f, 10.0f, 10.0f);
-        scene->transforms[box].translation = vec3f(0.0f, 10.0f, 0.0f);
-        scene->parents[box] = box;
-        scene->entities[box] |= e_cmp::transform;
-
-        instantiate_geometry(box_resource, scene, box);
-        instantiate_material(default_material, scene, box);
-        instantiate_model_cbuffer(scene, box);
+        wall = get_new_entity(scene);
+        scene->transforms[wall].rotation = quat();
+        scene->transforms[wall].scale = vec3f(dim, dim, 1.0);
+        scene->transforms[wall].translation = vec3f(0.0f, 0.0f, dim - inset);
+        scene->parents[wall] = wall;
+        scene->entities[wall] |= e_cmp::transform;
+        instantiate_geometry(box_resource, scene, wall);
+        instantiate_material(default_material, scene, wall);
+        instantiate_model_cbuffer(scene, wall);
         
-    
-        // create material for volume ray trace
-        /*
-        material_resource* volume_material = new material_resource;
-        volume_material->material_name = "volume_material";
-        volume_material->shader_name = "pmfx_utility";
-        volume_material->id_shader = PEN_HASH("pmfx_utility");
-        volume_material->id_technique = PEN_HASH("volume_texture");
-        add_material_resource(volume_material);
+        for(u32 side = 0; side < 8; ++side)
+        {
+            for(u32 i = 0; i < 3; ++i)
+            {
+                for(int j = 0; j < 3; ++j)
+                {
+                    u32 box = get_new_entity(scene);
+                    scene->transforms[box].rotation = quat();
+                    scene->transforms[box].scale = vec3f(5.0f, 5.0f, 5.0f);
+                    
+                    scene->transforms[box].translation = vec3f(i * 20.0f, -dim + inset + 12.0f *((f32)side+1), j * 20.0f);
+                    scene->transforms[box].translation  += vec3f(60.0f, 0.0f, 60.0f);
+                    scene->transforms[box].scale = vec3f::zero();
+                    
+                    scene->parents[box] = box;
+                    scene->entities[box] |= e_cmp::transform;
 
-        // create scene node
-        u32 new_prim = get_new_entity(scene);
-        scene->names[new_prim] = "volume_gi";
-        scene->names[new_prim].appendf("%i", new_prim);
-        scene->transforms[new_prim].rotation = quat();
-        scene->transforms[new_prim].scale = vec3f(10.0f);
-        scene->transforms[new_prim].translation = vec3f::zero();
-        scene->entities[new_prim] |= e_cmp::transform;
-        scene->parents[new_prim] = new_prim;
-        scene->samplers[new_prim].sb[0].handle = pmfx::get_render_target(PEN_HASH("volume_gi"))->handle;
-        scene->samplers[new_prim].sb[0].sampler_unit = e_texture::volume;
-        scene->samplers[new_prim].sb[0].sampler_state =
-            pmfx::get_render_state(PEN_HASH("clamp_point"), pmfx::e_render_state::sampler);
+                    instantiate_geometry(box_resource, scene, box);
+                    instantiate_material(default_material, scene, box);
+                    instantiate_model_cbuffer(scene, box);
+                    
+                    forward_render::forward_lit* mat = (forward_render::forward_lit*) & scene->material_data[box].data[0];
+                    mat->m_albedo = vec4f(1.0f, 1.0f - side/8.0f, 1.0f - side/8.0f, 1.0f);
+                    
+                    vec4f rr = vec4f(1.0f - side/8.0f, 1.0f, 1.0f, 1.0f);
+                    
+                    mat->m_albedo = rr;
+                    mat->m_albedo = rr.yxxw;
+                    
+                    if(box_start == 0)
+                        box_start = box;
+                    
+                    box_count++;
+                }
+            }
+        }
 
-        instantiate_geometry(box_resource, scene, new_prim);
-        instantiate_material(volume_material, scene, new_prim);
-        instantiate_model_cbuffer(scene, new_prim);
-        */
-            
+                    
         return 0;
     }
     
     int on_update(f32 dt)
     {
-
+        static f32 track = box_start - 1;
+        static f32 dir = 1.0f;
+        for(u32 i = box_start; i < box_start + box_count; ++i)
+        {
+            if(track > i)
+            {
+                scene->transforms[i].scale = lerp(scene->transforms[i].scale, vec3f(5.0f, 5.0f, 5.0f), 0.8f);
+            }
+            else
+            {
+                scene->transforms[i].scale = lerp(scene->transforms[i].scale, vec3f(0.0f, 0.0f, 0.0f), 0.8f);
+            }
+                        
+            scene->entities[i] |= e_cmp::transform;
+        }
+        
+        if(track > box_start + box_count)
+            dir = -1.0f;
+        
+        if(track <= box_start - 1)
+            dir = 1.0f;
+        
+        track +=  dt * 10.0f * dir;
         return 0;
     }
     

@@ -4,4 +4,11 @@ namespace compute
     {
         float4 output_buffer_dimension;
     };
+    struct gi_info
+    {
+        float4x4 inv_mat;
+        float4 scene_size;
+        float4 volume_size;
+        float4 shadow_map_size;
+    };
 }

@@ -1597,6 +1597,8 @@ namespace pen
             sd.minFilter = to_metal_min_mag_filter(scp.filter);
             sd.magFilter = to_metal_min_mag_filter(scp.filter);
             sd.mipFilter = to_metal_mip_filter(scp.filter);
+            
+            sd.compareFunction = to_metal_compare_function(scp.comparison_func);
 
             sd.lodMinClamp = scp.min_lod;
             sd.lodMaxClamp = scp.max_lod;
@@ -1895,11 +1897,17 @@ namespace pen
                 if (t.num_mips > 1)
                 {
                     t.invalidate = 0;
+                    
+                    if (_state.compute_encoder)
+                    {
+                        [_state.compute_encoder endEncoding];
+                        _state.compute_encoder = nil;
+                    }
 
                     [_state.render_encoder endEncoding];
                     _state.render_encoder = nil;
                     _state.pipeline_hash = 0;
-
+                    
                     validate_blit_encoder();
 
                     [_state.blit_encoder generateMipmapsForTexture:t.tex];
