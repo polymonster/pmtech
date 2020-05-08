@@ -178,5 +178,5 @@ import post_process.jsn
         ],
     },
     
-    view_set: editor_gi
+    view_set: editor
 }
