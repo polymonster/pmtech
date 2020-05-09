@@ -290,7 +290,7 @@
         
         pmfx: [
             "-shader_platform glsl",
-            "-shader_version 330",
+            "-shader_version 420",
             "-i assets/shaders ../assets/shaders",
             "-o bin/win32/data/pmfx/glsl",
             "-h shader_structs",

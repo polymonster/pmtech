@@ -64,7 +64,6 @@
 #endif
 #endif
 
-
 extern pen::window_creation_params pen_window;
 
 // these are required for platform specific gl implementation calls.
@@ -76,7 +75,11 @@ namespace
     u64   s_frame = 0;
     GLint s_backbuffer_fbo = -1;
 
+#if _DEBUG
+#define GL_DEBUG_LEVEL 1
+#else
 #define GL_DEBUG_LEVEL 0
+#endif
 
 #if GL_DEBUG_LEVEL > 1
 #define GL_ASSERT(V) PEN_ASSERT(V)
@@ -846,8 +849,8 @@ namespace pen
             GLuint                         handle;
             texture_info                   texture;
             pen::render_target             render_target;
-            gl_sampler*                    sampler_state;
             pen::shader_program*           shader_program;
+            u32                            sampler_object;
         };
     };
     static res_pool<resource_allocation> _res_pool;
@@ -1246,11 +1249,12 @@ namespace pen
                 case CT_CBUFFER:
                 {
                     loc = CHECK_CALL(glGetUniformBlockIndex(prog, constant.name));
-                    PEN_ASSERT(loc < MAX_UNIFORM_BUFFERS);
-
-                    linked_program->uniform_block_location[constant.location] = loc;
-
-                    CHECK_CALL(glUniformBlockBinding(prog, loc, constant.location));
+                    if (loc != -1)
+                    {
+                        PEN_ASSERT(loc < MAX_UNIFORM_BUFFERS);
+                        linked_program->uniform_block_location[constant.location] = loc;
+                        CHECK_CALL(glUniformBlockBinding(prog, loc, constant.location));
+                    }
                 }
                 break;
 
@@ -2090,17 +2094,50 @@ namespace pen
     {
         _res_pool.grow(resource_slot);
 
-        _res_pool[resource_slot].sampler_state = (gl_sampler*)memory_alloc(sizeof(gl_sampler));
-        memcpy(_res_pool[resource_slot].sampler_state, &scp, sizeof(scp));
+        gl_sampler sampler;
+        sampler.address_u = to_gl_texture_address_mode(scp.address_u);
+        sampler.address_v = to_gl_texture_address_mode(scp.address_v);
+        sampler.address_w = to_gl_texture_address_mode(scp.address_w);
+        sampler.comparison_func = PEN_COMPARISON_DISABLED;
+        if(scp.comparison_func != PEN_COMPARISON_DISABLED)
+            sampler.comparison_func = to_gl_comparison(scp.comparison_func);
+        to_gl_filter_mode(scp.filter, &sampler.min_filter, &sampler.mag_filter);
 
-        gl_sampler* sampler = _res_pool[resource_slot].sampler_state;
-        sampler->address_u = to_gl_texture_address_mode(scp.address_u);
-        sampler->address_v = to_gl_texture_address_mode(scp.address_v);
-        sampler->address_w = to_gl_texture_address_mode(scp.address_w);
-        sampler->comparison_func = 0;
-        if(scp.comparison_func != PEN_COMPARISON_ALWAYS)
-            sampler->comparison_func = to_gl_comparison(scp.comparison_func);
-        to_gl_filter_mode(scp.filter, &sampler->min_filter, &sampler->mag_filter);
+        u32 sampler_object;
+        glGenSamplers(1, &sampler_object);
+
+        // handle unmipped textures or textures with missing mips
+        CHECK_CALL(glSamplerParameteri(sampler_object, GL_TEXTURE_MIN_FILTER, sampler.min_filter));
+        CHECK_CALL(glSamplerParameteri(sampler_object, GL_TEXTURE_MAG_FILTER, sampler.mag_filter));
+
+        CHECK_CALL(glSamplerParameteri(sampler_object, GL_TEXTURE_WRAP_S, sampler.address_u));
+        CHECK_CALL(glSamplerParameteri(sampler_object, GL_TEXTURE_WRAP_T, sampler.address_v));
+        CHECK_CALL(glSamplerParameteri(sampler_object, GL_TEXTURE_WRAP_R, sampler.address_w));
+
+        // mip control
+#ifdef GL_TEXTURE_LOD_BIAS
+        CHECK_CALL(glSamplerParameterf(sampler_object, GL_TEXTURE_LOD_BIAS, sampler.mip_lod_bias));
+#endif
+        if (sampler.max_lod > -1.0f)
+            CHECK_CALL(glSamplerParameterf(sampler_object, GL_TEXTURE_MAX_LOD, 0));
+
+        if (sampler.min_lod > -1.0f)
+            CHECK_CALL(glSamplerParameterf(sampler_object, GL_TEXTURE_MIN_LOD, 0));
+
+        if (sampler.comparison_func != PEN_COMPARISON_DISABLED)
+        {
+            CHECK_CALL(glSamplerParameteri(sampler_object, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE));
+            CHECK_CALL(glSamplerParameteri(sampler_object, GL_TEXTURE_COMPARE_FUNC, GL_LESS));
+        }
+        else
+        {
+            CHECK_CALL(glSamplerParameteri(sampler_object, GL_TEXTURE_COMPARE_MODE, GL_NONE));
+            CHECK_CALL(glSamplerParameteri(sampler_object, GL_TEXTURE_COMPARE_FUNC, GL_ALWAYS));
+        }
+
+        CHECK_CALL(glSamplerParameteri(sampler_object, GL_TEXTURE_CUBE_MAP_SEAMLESS, 1));
+
+        _res_pool[resource_slot].sampler_object = sampler_object;
     }
 
     void direct::renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 bind_flags)
@@ -2169,55 +2206,21 @@ namespace pen
             }
         }
 
+        // unbind sampler typically this is for cs texture binds, they dont need a sampler
         if (sampler_index == 0)
+        {
+            glBindSampler(resource_slot, 0);
             return;
+        }
 
-        auto* sampler_state = _res_pool[sampler_index].sampler_state;
+        u32 sampler_object = _res_pool[sampler_index].sampler_object;
+        glBindSampler(resource_slot, sampler_object);
 
-        // handle unmipped textures or textures with missing mips
-        CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, max_mip));
-
-        if (!sampler_state)
-            return;
-
-        CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MIN_FILTER, sampler_state->min_filter));
-        CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MAG_FILTER, sampler_state->mag_filter));
-
-        // address mode
+        // handling textures with no mips
         if (target == GL_TEXTURE_2D_ARRAY)
-            CHECK_CALL(glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BASE_LEVEL, 0));
+            CHECK_CALL(glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, 0));
 
-        CHECK_CALL(glTexParameteri(target, GL_TEXTURE_WRAP_S, sampler_state->address_u));
-        CHECK_CALL(glTexParameteri(target, GL_TEXTURE_WRAP_T, sampler_state->address_v));
-        CHECK_CALL(glTexParameteri(target, GL_TEXTURE_WRAP_R, sampler_state->address_w));
-
-        // mip control
-#ifdef GL_TEXTURE_LOD_BIAS
-        CHECK_CALL(glTexParameterf(target, GL_TEXTURE_LOD_BIAS, sampler_state->mip_lod_bias));
-#endif
-
-        if (sampler_state->max_lod > -1.0f)
-        {
-            CHECK_CALL(glTexParameterf(target, GL_TEXTURE_MAX_LOD, sampler_state->max_lod));
-        }
-
-        if (sampler_state->min_lod > -1.0f)
-        {
-            CHECK_CALL(glTexParameterf(target, GL_TEXTURE_MIN_LOD, sampler_state->min_lod));
-        }
-
-        if(sampler_state->comparison_func)
-        {
-            CHECK_CALL(glTexParameteri(target, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE));
-            CHECK_CALL(glTexParameteri(target, GL_TEXTURE_COMPARE_FUNC, sampler_state->comparison_func ));
-            
-            
-        }
-        else
-        {
-            CHECK_CALL(glTexParameteri(target, GL_TEXTURE_COMPARE_MODE, GL_NONE));
-            CHECK_CALL(glTexParameteri(target, GL_TEXTURE_COMPARE_FUNC, GL_ALWAYS));
-        }
+        CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, max_mip));
     }
 
     void direct::renderer_create_rasterizer_state(const rasteriser_state_creation_params& rscp, u32 resource_slot)
@@ -2536,8 +2539,7 @@ namespace pen
     void direct::renderer_release_sampler(u32 sampler)
     {
         resource_allocation& res = _res_pool[sampler];
-
-        memory_free(res.sampler_state);
+        glDeleteSamplers(1, &res.sampler_object);
     }
 
     void direct::renderer_release_depth_stencil_state(u32 depth_stencil_state)
