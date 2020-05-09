@@ -1,13 +1,13 @@
 declare_texture_samplers
 {
 	// greyscale
-    texture2d_r( input_rgb, 0 );
-    texture2d_w( output_l, 1 );
+    texture_2d_r( input_rgb, 0 );
+    texture_2d_w( output_l, 1 );
     
     // gi
-    texture3d_w( volume_gi, 0 );
-    texture2d_array_r( shadow_map, 1 );
-	texture2d_array_r( shadow_map_depth, 2 );
+    texture_3d_w( volume_gi, 0 );
+    texture_2d_array_r( shadow_map, 1 );
+	texture_2d_array_r( shadow_map_depth, 2 );
 };
 
 cbuffer per_pass : register(b0)
