@@ -1598,7 +1598,8 @@ namespace pen
             sd.magFilter = to_metal_min_mag_filter(scp.filter);
             sd.mipFilter = to_metal_mip_filter(scp.filter);
             
-            sd.compareFunction = to_metal_compare_function(scp.comparison_func);
+            if(scp.comparison_func != PEN_COMPARISON_DISABLED)
+                sd.compareFunction = to_metal_compare_function(scp.comparison_func);
 
             sd.lodMinClamp = scp.min_lod;
             sd.lodMaxClamp = scp.max_lod;

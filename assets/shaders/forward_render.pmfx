@@ -524,26 +524,7 @@ ps_output ps_forward_lit( vs_output input )
             sp.y *= -1.0;
             sp.xyz = sp.xyz * 0.5 + 0.5;
             
-            // move to sample function
-            float2 samples[9];
-            float2 inv_sm_size = float2(1.0/2048.0, 1.0/2048.0);
-            samples[0] = float2(-1.0, -1.0) * inv_sm_size;
-            samples[1] = float2(-1.0, 0.0) * inv_sm_size;
-            samples[2] = float2(-1.0, 1.0) * inv_sm_size;
-            samples[3] = float2(0.0, -1.0) * inv_sm_size;
-            samples[4] = float2(0.0, 0.0) * inv_sm_size;
-            samples[5] = float2(0.0, 1.0) * inv_sm_size;
-            samples[6] = float2(1.0, -1.0) * inv_sm_size;
-            samples[7] = float2(1.0, 0.0) * inv_sm_size;
-            samples[8] = float2(1.0, 1.0) * inv_sm_size;
-            
-            shadow = 0.0;
-            for(int j = 0; j < 9; ++j)
-            {
-            	shadow += sample_depth_compare_array(shadowmap_texture, sp.xy + samples[j], float(shadow_map_index), sp.z);
-            }
-            shadow /= 9.0;
-            
+            shadow = sample_shadow_array_pcf_9(float(shadow_map_index), sp.xyz);
             
             lit_colour += light_col * shadow;
             
@@ -710,7 +691,7 @@ ps_output ps_forward_lit( vs_output input )
             sp.y *= -1.0;
             sp.xyz = sp.xyz * 0.5 + 0.5;
 
-            shadow = sample_depth_compare_array( shadowmap_texture, sp.xy, float(shadow_map_index), sp.z );
+            shadow = sample_shadow_array_pcf_9(float(shadow_map_index), sp.xyz);
 
             lit_colour += light_col * shadow;
             
