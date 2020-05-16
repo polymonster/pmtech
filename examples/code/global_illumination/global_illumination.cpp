@@ -12,7 +12,7 @@ namespace pen
         p.window_width = 1280;
         p.window_height = 720;
         p.window_title = "global_illumination";
-        p.window_sample_count = 4;
+        p.window_sample_count = 1;
         p.user_thread_function = user_entry;
         p.flags = pen::e_pen_create_flags::renderer;
         return p;

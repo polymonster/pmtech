@@ -193,6 +193,24 @@
             type: array,
             mips: true
         },
+        
+        temporal_history:
+        {
+        	format: rgba8,
+        	ratio: equal
+        },
+        
+        taa_colour:
+        {
+			format: rgba8,
+        	size: equal
+        },
+        
+        taa_depth:
+        {
+        	format: d24s8,
+        	size: equal
+        }
     },
     
     views:
@@ -314,6 +332,12 @@
             post_process : editor_default,
             resolve: ["average_4x", "max_4x"]
         },
+        
+        main_view_temporal_aa(main_view):
+        {
+        	target: [taa_colour, taa_depth],
+        	post_process : taa_resolve
+        }
     }
 }
 

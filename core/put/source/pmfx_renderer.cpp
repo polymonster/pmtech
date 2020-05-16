@@ -2886,9 +2886,6 @@ namespace put
                 // bind view samplers.. render targets, global textures
                 for (auto& sb : v.sampler_bindings)
                 {
-                    if (sb.sampler_unit == 15)
-                        u32 a = 0;
-
                     pen::renderer_set_texture(sb.handle, sb.sampler_state, sb.sampler_unit, sb.bind_flags);
                 }
 

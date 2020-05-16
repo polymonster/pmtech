@@ -339,7 +339,7 @@ vs_output vs_main( vs_input_multi input, vs_instance_input instance_input )
     
         output.texcoord *= float4(m_uv_scale.x * xs, m_uv_scale.y * ys, m_uv_scale.x, m_uv_scale.y);
     }
-        
+            
     return output;
 }
 
@@ -798,7 +798,7 @@ ps_output ps_forward_lit( vs_output input )
 		{
 			// start outside occlusion
 			float3 tex_size = gi_volume_size.xyz;
-			float3 noise = (hash_33(input.world_pos.xyz) * 0.33);
+			float3 noise = (hash_33(input.world_pos.xyz) * 0.5);
 			float3 ray = chebyshev_normalize(rays[i] + noise);
 			float3 cn = chebyshev_normalize(n);
 			

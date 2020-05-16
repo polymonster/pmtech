@@ -236,7 +236,20 @@
             pmfx_shader        : post_process,
             technique          : crt,
             camera             : model_viewer_camera
-        }
+        },
+        
+        taa_resolve:
+        {
+            colour_write_mask  : 0xf,
+            clear_colour       : [0.0, 1.0, 0.0, 1.0],
+            clear_depth        : 1.0,
+            blend_state        : disabled,
+            viewport           : [0.0, 0.0, 1.0, 1.0],
+            raster_state       : post_process,
+            depth_stencil_state: disabled,
+            pmfx_shader        : post_process,
+            technique          : taa_resolve
+        },
     },
     
     post_processes:
@@ -544,6 +557,21 @@
                     { texture: post_process_depth, unit: 1, state: clamp_linear, shader: ps },
                 ]
             }
+        ],
+        
+        taa_resolve: [
+        	{
+        		inherit         : taa_resolve,
+                target          : [pp_output_full],
+                technique       : taa_resolve,
+                camera          : model_viewer_camera,
+                
+                sampler_bindings:
+                [
+                    { texture: taa_colour, unit: 0, state: clamp_linear, shader: ps },
+                    { texture: taa_depth, unit: 1, state: clamp_point, shader: ps }
+                ]
+        	}
         ]
     },
     
@@ -558,6 +586,11 @@
         editor_default: 
         { 
             chain: [ blit_depth, blit_post_process ]
+        },
+        
+        taa_resolve:
+        {
+        	chain : [ taa_resolve, blit_post_process ]
         }
     }
 }

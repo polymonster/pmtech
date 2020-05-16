@@ -515,6 +515,15 @@ ps_output ps_sss_reflectance( vs_output input )
     return output;
 }
 
+ps_output ps_taa_resolve( vs_output input )
+{
+	ps_output output;
+	
+	float2 tc = input.texcoord.xy;
+    output.colour = sample_texture(src_texture_0, tc);
+    return output;
+}
+
 pmfx:
 {    
     "blit":
@@ -654,6 +663,12 @@ pmfx:
     {
         "vs": "vs_ndc_quad",
         "ps": "ps_sss_reflectance"
+    },
+    
+    taa_resolve:
+    {
+        "vs": "vs_ndc_quad",
+        "ps": "ps_taa_resolve"
     }
 }
 

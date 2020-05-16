@@ -48,7 +48,7 @@ import post_process.jsn
     		clear_colour : [0.0, 0.0, 0.0, 1.0]
     	},
 		
-		editor_main_gi(main_view):
+		editor_main_gi(main_view_temporal_aa):
     	{
     		raster_state : default,
     		clear_colour : [0.0, 0.0, 0.0, 1.0],
