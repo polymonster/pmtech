@@ -69,6 +69,12 @@ namespace post_process
         float4 filter_info;
         float4 filter_offset_weight[16];
     };
+    struct taa_cbuffer
+    {
+        float4x4 frame_inv_view_projection;
+        float4x4 prev_view_projection;
+        float2 jitter;
+    };
     struct high_pass
     {
         float m_threshold;

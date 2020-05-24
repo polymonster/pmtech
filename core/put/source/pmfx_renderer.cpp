@@ -57,7 +57,8 @@ namespace
             resolve = (1<<4),           // after view has completed, render targets are resolved.
             generate_mips = (1 << 5),   // generate mip maps for the render target after resolving
             compute = (1<<6),           // runs a compute job instead of render job
-            cubemap_array = (1<<7)
+            cubemap_array = (1<<7),
+            jitter = 1<<8               // apply jitter to the camera for taa
         };
     }
 
@@ -198,6 +199,30 @@ namespace
         "abstract", e_view_flags::abstract,
         "compute", e_view_flags::compute
     };
+    
+    vec2f halton(u32 index)
+    {
+        static const vec2f h[] = {
+			vec2f(0.5000000000f, 0.3333333333f),
+			vec2f(0.2500000000f, 0.6666666667f),
+			vec2f(0.7500000000f, 0.1111111111f),
+			vec2f(0.1250000000f, 0.4444444444f),
+			vec2f(0.6250000000f, 0.7777777778f),
+			vec2f(0.3750000000f, 0.2222222222f),
+			vec2f(0.8750000000f, 0.5555555556f),
+			vec2f(0.0625000000f, 0.8888888889f),
+			vec2f(0.5625000000f, 0.0370370370f),
+			vec2f(0.3125000000f, 0.3703703704f),
+			vec2f(0.8125000000f, 0.7037037037f),
+			vec2f(0.1875000000f, 0.1481481481f),
+			vec2f(0.6875000000f, 0.4814814815f),
+			vec2f(0.4375000000f, 0.8148148148f),
+			vec2f(0.9375000000f, 0.2592592593f),
+			vec2f(0.0312500000f, 0.5925925926f)
+        };
+        
+        return h[index%PEN_ARRAY_SIZE(h)] * 2.0f - 1.0f;
+    }
     // clang-format on
 
     struct view_params
@@ -1809,6 +1834,10 @@ namespace put
                 {
                     new_view.render_flags |= mode_from_string(render_flags_map, render_flags[f].as_cstr(), 0);
                 }
+                
+                // camera jitter
+                if(view["jitter"].as_bool(false))
+                    new_view.view_flags |= e_view_flags::jitter;
 
                 // scene views
                 pen::json scene_views = view["scene_views"];
@@ -2850,6 +2879,17 @@ namespace put
             sv.cb_2d_view = cb_2d;
             sv.pmfx_shader = v.pmfx_shader;
             sv.permutation = v.technique_permutation;
+            
+            // set camera jitter for taa
+            if(v.view_flags & e_view_flags::jitter)
+            {
+                if(v.camera)
+                {
+                    v.camera->jitter = halton(pen::_renderer_frame_index());
+                    v.camera->jitter /= vec2f(vvp.width, vvp.height);
+                    v.camera->flags |= e_camera_flags::apply_jitter;
+                }
+            }
 
             // render passes.. multi pass for cubemaps or arrays
             for (u32 a = 0; a < v.num_arrays; ++a)
@@ -2952,8 +2992,9 @@ namespace put
 
             for (auto& v : v.post_process_views)
             {
-                v.render_functions.clear();
-                v.render_functions.push_back(&fullscreen_quad);
+                // default to fs quad
+                if(v.render_functions.empty())
+                    v.render_functions.push_back(&fullscreen_quad);
 
                 render_view(v);
             }

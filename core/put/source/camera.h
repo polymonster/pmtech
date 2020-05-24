@@ -21,7 +21,8 @@ namespace put
         {
             invalidated = 1 << 1,
             orthographic = 1 << 3,
-            window_aspect = 1 << 4
+            window_aspect = 1 << 4,
+            apply_jitter = 1 << 5
         };
     }
     typedef u32 camera_flags;
@@ -57,6 +58,8 @@ namespace put
         vec2f        rot = vec2f(-0.5f, 0.5f);
         mat4         view;
         mat4         proj;
+        mat4         view_projection;
+        vec2f        jitter;
         f32          fov = 0.0f;
         f32          aspect;
         f32          near_plane;

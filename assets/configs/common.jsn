@@ -194,12 +194,12 @@
             mips: true
         },
         
-        temporal_history:
+        taa_history:
         {
         	format: rgba8,
-        	ratio: equal
+        	size: equal
         },
-        
+                
         taa_colour:
         {
 			format: rgba8,
@@ -336,7 +336,8 @@
         main_view_temporal_aa(main_view):
         {
         	target: [taa_colour, taa_depth],
-        	post_process : taa_resolve
+        	post_process : taa_resolve,
+        	jitter: true
         }
     }
 }

@@ -12,7 +12,7 @@ namespace pen
         p.window_width = 1280;
         p.window_height = 720;
         p.window_title = "global_illumination";
-        p.window_sample_count = 1;
+        p.window_sample_count = 4;
         p.user_thread_function = user_entry;
         p.flags = pen::e_pen_create_flags::renderer;
         return p;
@@ -79,6 +79,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->transforms[ground].translation = vec3f::zero();
     scene->parents[ground] = ground;
     scene->entities[ground] |= e_cmp::transform;
+    scene->material_permutation[ground] |= FORWARD_LIT_GI;
     instantiate_geometry(cube, scene, ground);
     instantiate_material(default_material, scene, ground);
     instantiate_model_cbuffer(scene, ground);
@@ -89,6 +90,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->transforms[wall].translation = vec3f(50.0f, 0.0f, 0.0f);
     scene->parents[wall] = wall;
     scene->entities[wall] |= e_cmp::transform;
+    scene->material_permutation[wall] |= FORWARD_LIT_GI;
     instantiate_geometry(cube, scene, wall);
     instantiate_material(default_material, scene, wall);
     instantiate_model_cbuffer(scene, wall);
@@ -99,7 +101,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->transforms[box].translation = vec3f(0.0f, 10.0f, 0.0f);
     scene->parents[box] = box;
     scene->entities[box] |= e_cmp::transform;
-
+    scene->material_permutation[box] |= FORWARD_LIT_GI;
     instantiate_geometry(cube, scene, box);
     instantiate_material(default_material, scene, box);
     instantiate_model_cbuffer(scene, box);

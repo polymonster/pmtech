@@ -478,6 +478,18 @@
             }
         ],
         
+        blit_taa_depth: [
+            { 
+                inherit         : blit_depth,
+                target          : [main_depth],
+                camera          : model_viewer_camera,
+                sampler_bindings:
+                [
+                    { texture: taa_depth, unit: 0, state: clamp_linear, shader: ps },
+                ]
+            }
+        ],
+        
         blit_post_process: [
             { 
                 inherit         : blit,
@@ -565,13 +577,25 @@
                 target          : [pp_output_full],
                 technique       : taa_resolve,
                 camera          : model_viewer_camera,
+                scene_views		: ["ecs_taa_resolve"],
                 
                 sampler_bindings:
                 [
                     { texture: taa_colour, unit: 0, state: clamp_linear, shader: ps },
-                    { texture: taa_depth, unit: 1, state: clamp_point, shader: ps }
+                    { texture: taa_depth, unit: 1, state: clamp_point, shader: ps },
+                    { texture: taa_history, unit: 2, state: clamp_linear, shader: ps },
                 ]
-        	}
+        	},
+        	{ 
+                inherit         : blit,
+                target          : [taa_history],
+                pp_write_non_aux: true,
+                camera          : model_viewer_camera,
+                sampler_bindings:
+                [
+                    { texture: pp_output_full, unit: 0, state: clamp_linear, shader: ps },
+                ]
+            }
         ]
     },
     
@@ -590,7 +614,7 @@
         
         taa_resolve:
         {
-        	chain : [ taa_resolve, blit_post_process ]
+        	chain : [ taa_resolve, blit_taa_depth, blit_post_process ]
         }
     }
 }

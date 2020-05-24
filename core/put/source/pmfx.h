@@ -293,7 +293,6 @@ namespace put
         void release_script_resources();
         void render();
         void render_view(hash_id id_name);
-
         void register_scene(ecs::ecs_scene* scene, const char* name);
         void register_camera(camera* cam, const char* name);
         void register_scene_view_renderer(const scene_view_renderer& svr);

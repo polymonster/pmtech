@@ -328,6 +328,11 @@ namespace put
             svr_volume_gi.name = "ecs_compute_volume_gi";
             svr_volume_gi.id_name = PEN_HASH(svr_volume_gi.name.c_str());
             svr_volume_gi.render_function = &ecs::compute_volume_gi;
+            
+            put::scene_view_renderer svr_taa_resolve;
+            svr_taa_resolve.name = "ecs_taa_resolve";
+            svr_taa_resolve.id_name = PEN_HASH(svr_taa_resolve.name.c_str());
+            svr_taa_resolve.render_function = &ecs::render_taa_resolve;
 
             pmfx::register_scene_view_renderer(svr_main);
             pmfx::register_scene_view_renderer(svr_light_volumes);
@@ -335,6 +340,7 @@ namespace put
             pmfx::register_scene_view_renderer(svr_omni_shadow_maps);
             pmfx::register_scene_view_renderer(svr_area_light_textures);
             pmfx::register_scene_view_renderer(svr_volume_gi);
+            pmfx::register_scene_view_renderer(svr_taa_resolve);
         }
 
         ecs_scene* create_scene(const c8* name)
@@ -822,6 +828,43 @@ namespace put
             pen::renderer_set_texture(0, 0, 0, pen::TEXTURE_BIND_CS);
             pen::renderer_set_texture(0, 0, 1, pen::TEXTURE_BIND_CS);
             pen::renderer_set_texture(0, 0, 2, pen::TEXTURE_BIND_CS);
+        }
+        
+        struct taa_buffer
+        {
+            mat4    frame_inv_view_projection;
+            mat4    prev_view_projection;
+            float4  jitter;
+        };
+        
+        void render_taa_resolve(const scene_view& view)
+        {
+            static u32 cb_info = -1; //
+            if (!is_valid(cb_info))
+            {
+                pen::buffer_creation_params bcp;
+                bcp.usage_flags = PEN_USAGE_DYNAMIC;
+                bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+                bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+                bcp.buffer_size = sizeof(taa_buffer);
+                bcp.data = nullptr;
+                cb_info = pen::renderer_create_buffer(bcp);
+            }
+            
+            static mat4 prev_view_projection = view.camera->view_projection;
+            
+            taa_buffer buf;
+            buf.frame_inv_view_projection = mat::inverse4x4(view.camera->view_projection);
+            buf.prev_view_projection = prev_view_projection;
+            buf.jitter.xy = view.camera->jitter.xy;
+            
+            pen::renderer_update_buffer(cb_info, &buf, sizeof(taa_buffer));
+            pen::renderer_set_constant_buffer(cb_info, 3, pen::CBUFFER_BIND_PS);
+        
+            pmfx::fullscreen_quad(view);
+            
+            // store for next frame
+            prev_view_projection = view.camera->view_projection;
         }
 
         void render_scene_view(const scene_view& view)

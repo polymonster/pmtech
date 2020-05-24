@@ -761,7 +761,7 @@ ps_output ps_forward_lit( vs_output input )
     output.colour.a = albedo.a;
 	
 	// gi tracing wip..
-	if(false)
+	if:(GI)
 	{    			
 		// geometry tb for casting rays
 		float3 gn = input.normal.xyz;
@@ -837,8 +837,11 @@ ps_output ps_forward_lit( vs_output input )
 			
 			// gather gi
 			float4 ray_gi = float4(0.0, 0.0, 0.0, 0.0);
+			
+			// first 4 levels make the main contribution, after 4 its hard to notice any difference
 			for(int j = 0; j < 4; ++j)
 			{					
+				// 2 steps per level
 				for(int k = 0; k < 2; ++k)
 				{
 					step = (dim*2.0) / tex_size;
@@ -956,7 +959,8 @@ pmfx:
             INSTANCED: [30, [0,1]],
             UV_SCALE: [1, [0,1]],
             SSS: [2, [0,1]],
-            SDF_SHADOW: [3, [0,1]]
+            SDF_SHADOW: [3, [0,1]],
+            GI: [4, [0, 1]]
         },
         
         constants:
