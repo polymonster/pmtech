@@ -781,11 +781,6 @@ namespace put
             u32 colour_shadow_map = col_sm_rt->handle;
             u32 colour_shadow_map_depth = sm_rt->handle;
             
-            // clear
-            //pmfx::set_technique_perm(view.pmfx_shader, PEN_HASH("clear_volume_gi"), 0);
-            //pen::renderer_set_texture(volume_gi_tex, 0, 0, pen::TEXTURE_BIND_CS);
-            //pen::renderer_dispatch_compute({256, 256, 256}, {8, 8, 8});
-            
             // write
             pmfx::set_technique_perm(view.pmfx_shader, view.technique, 0);
             pen::renderer_set_texture(volume_gi_tex, 0, 0, pen::TEXTURE_BIND_CS);

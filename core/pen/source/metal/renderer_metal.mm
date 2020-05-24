@@ -997,8 +997,17 @@ namespace // pen consts -> metal consts
     void create_clear_kernels()
     {
         // d3d11 is faster calling clear uav than using a compute shader, these shaders allow metal to emulate the d3d path
-        const c8* ct2d = "#include <metal_stdlib>\nusing namespace metal;\nkernel void cs_main(uint2 gid[[thread_position_in_grid]], texture2d<float, access::write> clear_tex [[texture(0)]])\n{\nclear_tex.write(float4(0.0, 0.0, 0.0, 0.0), gid);\n}\n";
-        const c8* ct3d = "#include <metal_stdlib>\nusing namespace metal;\nkernel void cs_main(uint3 gid[[thread_position_in_grid]], texture3d<float, access::write> clear_tex [[texture(0)]])\n{\nclear_tex.write(float4(0.0, 0.0, 0.0, 0.0), gid);\n}\n";
+        const c8* ct2d = "#include <metal_stdlib>\nusing namespace metal;\n"
+        "kernel void cs_main(uint2 gid[[thread_position_in_grid]], "
+        "constant float4 &clear_col [[buffer(0)]], "
+        "texture2d<float, access::write> clear_tex [[texture(0)]])\n"
+        "{\nclear_tex.write(clear_col, gid);\n}\n";
+        
+        const c8* ct3d = "#include <metal_stdlib>\nusing namespace metal;\n"
+        "kernel void cs_main(uint3 gid[[thread_position_in_grid]], "
+        "constant float4 &clear_col [[buffer(0)]], "
+        "texture3d<float, access::write> clear_tex [[texture(0)]])\n"
+        "{\nclear_tex.write(clear_col, gid);\n}\n";
         
         const c8* clears[] = {
             ct2d,
@@ -1214,6 +1223,7 @@ namespace pen
             
             validate_compute_encoder();
             
+            const resource& cr = _res_pool.get(clear_state_index);
             const resource& r = _res_pool.get(texture);
             const texture_creation_params& tcp = r.texture.tcp;
             u32 depth = 1;
@@ -1229,6 +1239,15 @@ namespace pen
                                                                                             error:&error];
 
             [_state.compute_encoder setComputePipelineState:pipeline];
+            
+            // set clear colour as float
+            f32 clear_col[4] = {
+                (f32)cr.clear.colour[0].red,
+                (f32)cr.clear.colour[0].green,
+                (f32)cr.clear.colour[0].blue,
+                (f32)cr.clear.colour[0].alpha,
+            };
+            [_state.compute_encoder setBytes:&clear_col[0] length:sizeof(clear_col) atIndex:0];
             
             direct::renderer_set_texture(texture, 0, 0, pen::TEXTURE_BIND_CS);
             

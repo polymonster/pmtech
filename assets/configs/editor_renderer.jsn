@@ -125,23 +125,14 @@ import post_process.jsn
         volume_gi_compute:
         {
         	type: "compute",
-        	scene: main_scene,
         	target: [volume_gi],
+        	clear_colour: [0.0, 0.0, 0.0, 0.0],
 			pmfx_shader : "compute",
             technique : "volume_gi",
+            scene: main_scene,
             scene_views : ["ecs_compute_volume_gi"],
-			generate_mip_maps : true
-        },
-        
-        volume_gi_clear:
-        {
-        	type: "compute",
-        	scene: main_scene,
-        	target: [volume_gi],
-			pmfx_shader : "compute",
-            technique : "volume_gi",
-            scene_views : ["ecs_compute_volume_gi"]
-        },
+			generate_mip_maps : true,
+        }
     },
     
     view_sets: 

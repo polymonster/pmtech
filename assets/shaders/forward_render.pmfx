@@ -850,7 +850,7 @@ ps_output ps_forward_lit( vs_output input )
 					float4 g = sample_texture_level( volume_gi, uvw, min(j, 4));
 										
 					float d = length(input.world_pos.xyz - sp);
-					d = smoothstep(0.0, 20.0, d);
+					d = smoothstep(0.0, 17.0, d);
 					
 					ray_gi.rgb = ray_gi.rgb + g.rgb * d;
 					ray_gi.a += g.a;
