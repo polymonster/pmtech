@@ -893,9 +893,15 @@ namespace pen
 
     void direct::renderer_clear_texture(u32 clear_state_index, u32 texture)
     {
-        FLOAT v[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+        if (!clear_state_index)
+            return;
 
-        s_immediate_context->ClearUnorderedAccessViewFloat(_res_pool[texture].texture_3d->uav, &v[0]);
+        clear_state_internal* cs = _res_pool[clear_state_index].clear_state;
+
+        if (!(cs->flags & PEN_CLEAR_COLOUR_BUFFER))
+            return;
+
+        s_immediate_context->ClearUnorderedAccessViewFloat(_res_pool[texture].texture_3d->uav, &cs->rgba[0]);
     }
 
     void direct::renderer_clear(u32 clear_state_index, u32 colour_face, u32 depth_face)
