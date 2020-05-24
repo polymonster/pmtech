@@ -1953,6 +1953,11 @@ namespace pen
             res = cs;
         }
 
+        void direct::renderer_clear_texture(u32 clear_state_index, u32 texture)
+        {
+
+        }
+
         void renderer_clear(u32 clear_state_index, u32 colour_face, u32 depth_face)
         {
             _state.clear_state = clear_state_index;

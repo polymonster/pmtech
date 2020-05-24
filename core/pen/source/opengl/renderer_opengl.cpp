@@ -1060,6 +1060,10 @@ namespace pen
         // unused on this platform
     }
 
+    void direct::renderer_clear_texture(u32 clear_state_index, u32 texture)
+    {
+    }
+
     void direct::renderer_clear(u32 clear_state_index, u32 colour_face, u32 depth_face)
     {
         resource_allocation&  rc = _res_pool[clear_state_index];
