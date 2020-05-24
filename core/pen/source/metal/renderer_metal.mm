@@ -991,6 +991,45 @@ namespace // pen consts -> metal consts
 
         [_state.compute_encoder setComputePipelineState:pipeline];
     }
+    
+    id<MTLFunction>* _clear_kernels;
+    
+    void create_clear_kernels()
+    {
+        // d3d11 is faster calling clear uav than using a compute shader, these shaders allow metal to emulate the d3d path
+        const c8* ct2d = "#include <metal_stdlib>\nusing namespace metal;\nkernel void cs_main(uint2 gid[[thread_position_in_grid]], texture2d<float, access::write> clear_tex [[texture(0)]])\n{\nclear_tex.write(float4(0.0, 0.0, 0.0, 0.0), gid);\n}\n";
+        const c8* ct3d = "#include <metal_stdlib>\nusing namespace metal;\nkernel void cs_main(uint3 gid[[thread_position_in_grid]], texture3d<float, access::write> clear_tex [[texture(0)]])\n{\nclear_tex.write(float4(0.0, 0.0, 0.0, 0.0), gid);\n}\n";
+        
+        const c8* clears[] = {
+            ct2d,
+            ct3d
+        };
+        
+        for(u32 i = 0; i < PEN_ARRAY_SIZE(clears); ++i)
+        {
+            NSString* str = [[NSString alloc] initWithBytes:clears[i]
+                                                 length:strlen(clears[i])
+                                               encoding:NSASCIIStringEncoding];
+
+            NSError*           err = nil;
+            MTLCompileOptions* opts = [MTLCompileOptions alloc];
+            opts.fastMathEnabled = YES;
+
+            id<MTLLibrary> lib = [_metal_device newLibraryWithSource:str options:opts error:&err];
+
+            if (err)
+            {
+                if (err.code == 3)
+                {
+                    NSLog(@" error => %@ ", err);
+                }
+            }
+            else
+            {
+                sb_push(_clear_kernels, [lib newFunctionWithName:@"cs_main"]);
+            }
+        }
+    }
 }
 
 namespace pen
@@ -1080,7 +1119,9 @@ namespace pen
 
             // shared init (stretchy buffer, resolve resources etc)
             _renderer_shared_init();
-
+            
+            create_clear_kernels();
+            
             return 1;
         }
 
@@ -1169,7 +1210,45 @@ namespace pen
         
         void renderer_clear_texture(u32 clear_state_index, u32 texture)
         {
-            u32 a = 0;
+            // to emulate d3d's clear uav
+            
+            validate_compute_encoder();
+            
+            const resource& r = _res_pool.get(texture);
+            const texture_creation_params& tcp = r.texture.tcp;
+            u32 depth = 1;
+            u32 kernel = 0;
+            if(tcp.collection_type == pen::TEXTURE_COLLECTION_VOLUME)
+            {
+                kernel = 1;
+                depth = tcp.num_arrays;
+            }
+            
+            NSError* error = nil;
+            id<MTLComputePipelineState> pipeline = [_metal_device newComputePipelineStateWithFunction:_clear_kernels[kernel]
+                                                                                            error:&error];
+
+            [_state.compute_encoder setComputePipelineState:pipeline];
+            
+            direct::renderer_set_texture(texture, 0, 0, pen::TEXTURE_BIND_CS);
+            
+            uint3 grid = {r.texture.tcp.width, r.texture.tcp.height, depth};
+            uint3 num_threads = {8, 8, 8};
+            
+            MTLSize tgs = MTLSizeMake(num_threads.x, num_threads.y, num_threads.z);
+
+            MTLSize tgc;
+            tgc.width = (grid.x + num_threads.x - 1) / num_threads.x;
+            tgc.height = (grid.y + num_threads.y - 1) / num_threads.y;
+            tgc.depth = (grid.z + num_threads.z - 1) / num_threads.z;
+
+            [_state.compute_encoder dispatchThreadgroups:tgc threadsPerThreadgroup:tgs];
+
+            if (_state.compute_encoder)
+            {
+                [_state.compute_encoder endEncoding];
+                _state.compute_encoder = nil;
+            }
         }
 
         void renderer_clear(u32 clear_state_index, u32 colour_face, u32 depth_face)
@@ -1520,7 +1599,7 @@ namespace pen
 
             td.usage = to_metal_texture_usage(_tcp.bind_flags);
             td.storageMode = to_metal_storage_mode(_tcp);
-
+            
             texture = [_metal_device newTextureWithDescriptor:td];
 
             if (tcp.data)
