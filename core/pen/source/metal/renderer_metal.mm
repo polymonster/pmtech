@@ -1166,6 +1166,11 @@ namespace pen
             mc.depth_clear = cs.depth;
             mc.stencil_clear = (u32)cs.stencil;
         }
+        
+        void renderer_clear_texture(u32 clear_state_index, u32 texture)
+        {
+            u32 a = 0;
+        }
 
         void renderer_clear(u32 clear_state_index, u32 colour_face, u32 depth_face)
         {
