@@ -782,9 +782,9 @@ namespace put
             u32 colour_shadow_map_depth = sm_rt->handle;
             
             // clear
-            pmfx::set_technique_perm(view.pmfx_shader, PEN_HASH("clear_volume_gi"), 0);
-            pen::renderer_set_texture(volume_gi_tex, 0, 0, pen::TEXTURE_BIND_CS);
-            pen::renderer_dispatch_compute({256, 256, 256}, {8, 8, 8});
+            //pmfx::set_technique_perm(view.pmfx_shader, PEN_HASH("clear_volume_gi"), 0);
+            //pen::renderer_set_texture(volume_gi_tex, 0, 0, pen::TEXTURE_BIND_CS);
+            //pen::renderer_dispatch_compute({256, 256, 256}, {8, 8, 8});
             
             // write
             pmfx::set_technique_perm(view.pmfx_shader, view.technique, 0);
@@ -797,7 +797,9 @@ namespace put
             pmfx::get_render_target_dimensions(sm_rt, info.shadow_map_size.x, info.shadow_map_size.y);
             pmfx::get_render_target_dimensions(gi_rt, info.volume_size.x, info.volume_size.y);
             info.volume_size.z = info.volume_size.x;
-            info.scene_size.xyz = scene->renderable_extents.max - scene->renderable_extents.min;
+
+            f32 max_dim = max(scene->renderable_extents.max - scene->renderable_extents.min);
+            info.scene_size.xyz = vec3f(max_dim);
 
             for (u32 n = 0; n < scene->num_entities; ++n)
             {

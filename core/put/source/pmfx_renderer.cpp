@@ -2807,6 +2807,9 @@ namespace put
                 sv.pmfx_shader = v.pmfx_shader;
                 sv.permutation = v.technique_permutation;
 
+                // faster clear for d3d uav
+                pen::renderer_clear_texture(v.clear_state, v.render_targets[0]);
+
                 for (s32 rf = 0; rf < v.render_functions.size(); ++rf)
                     v.render_functions[rf](sv);
 
@@ -2885,9 +2888,7 @@ namespace put
             {
                 if(v.camera)
                 {
-                    v.camera->jitter = halton(pen::_renderer_frame_index());
-                    v.camera->jitter /= vec2f(vvp.width, vvp.height);
-                    v.camera->flags |= e_camera_flags::apply_jitter;
+
                 }
             }
 
@@ -2900,6 +2901,14 @@ namespace put
                 // generate 3d view proj matrix
                 if (v.camera)
                 {
+                    // set jitter
+                    if (v.view_flags & e_view_flags::jitter)
+                    {
+                        v.camera->jitter = halton(pen::_renderer_frame_index());
+                        v.camera->jitter /= vec2f(vvp.width, vvp.height);
+                        v.camera->flags |= e_camera_flags::apply_jitter;
+                    }
+
                     // cubemap face render
                     if (v.view_flags & e_view_flags::cubemap)
                         put::camera_set_cubemap_face(v.camera, a);

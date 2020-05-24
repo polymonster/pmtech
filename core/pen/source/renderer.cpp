@@ -34,6 +34,7 @@ namespace
     {
         CMD_NONE = 0,
         CMD_CLEAR,
+        CMD_CLEAR_TEXTURE,
         CMD_PRESENT,
         CMD_LOAD_SHADER,
         CMD_SET_SHADER,
@@ -108,6 +109,7 @@ namespace
     {
         u32 clear_state;
         u32 array_index;
+        u32 texture_index;
     };
 
     struct set_vertex_buffer_cmd
@@ -272,7 +274,9 @@ namespace pen
             case CMD_CLEAR:
                 direct::renderer_clear(cmd.clear.clear_state, cmd.clear.array_index, cmd.clear.array_index);
                 break;
-
+            case CMD_CLEAR_TEXTURE:
+                direct::renderer_clear_texture(cmd.clear.clear_state, cmd.clear.texture_index);
+                break;
             case CMD_PRESENT:
                 direct::renderer_present();
                 _ctx->present_time = timer_elapsed_ms(_ctx->present_timer);
@@ -573,10 +577,13 @@ namespace pen
                     break;
                     
                 cmd = _ctx->release_cmd_buffer.get();
-                if(cmd)
-                    exec_cmd(*cmd);
-                    
-                sb_push(_ctx->free_slots, cmd->resource_slot);
+                if (cmd->resource_slot)
+                {
+                    if (cmd)
+                        exec_cmd(*cmd);
+
+                    sb_push(_ctx->free_slots, cmd->resource_slot);
+                }
             }
 
             direct::renderer_end_frame();
@@ -850,6 +857,17 @@ namespace pen
         cmd.command_index = CMD_CLEAR;
         cmd.clear.clear_state = clear_state_index;
         cmd.clear.array_index = array_index;
+
+        _ctx->cmd_buffer.put(cmd);
+    }
+
+    void renderer_clear_texture(u32 clear_state_index, u32 texture)
+    {
+        renderer_cmd cmd;
+
+        cmd.command_index = CMD_CLEAR_TEXTURE;
+        cmd.clear.clear_state = clear_state_index;
+        cmd.clear.texture_index = texture;
 
         _ctx->cmd_buffer.put(cmd);
     }

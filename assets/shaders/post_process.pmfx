@@ -527,7 +527,7 @@ ps_output ps_taa_resolve( vs_output input )
 	ps_output output;
 	
 	// unjittered tc
-	float2 ctc = input.texcoord.xy - (jitter * 0.5);
+	float2 ctc = input.texcoord.xy; // - (jitter * 0.5);
 	float2 tc = input.texcoord.xy;
 	float  frame_depth = 1.0;
 	
@@ -609,13 +609,9 @@ ps_output ps_taa_resolve( vs_output input )
 		alpha = 1.0;
 		break;
 	}
-	
-	//float sub_pix = frac(max(abs(vel.x)*g_xFrame_InternalResolution.x, abs(velocity.y)*g_xFrame_InternalResolution.y)) * 0.5;
-	
+		
 	float4 blended = lerp(history_colour, frame_colour, alpha);
     output.colour = clamp(blended, nh_min, nh_max);
-    
-    //output.colour = frame_colour;
     
     return output;
 }
