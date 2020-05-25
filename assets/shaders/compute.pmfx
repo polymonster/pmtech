@@ -5,7 +5,7 @@ declare_texture_samplers
     texture_2d_w( output_l, 1 );
     
     // gi
-    texture_3d_w( volume_gi, 0 );
+    texture_3d_rw( volume_gi, 0 );
     texture_2d_array_r( shadow_map, 1 );
 	texture_2d_array_r( shadow_map_depth, 2 );
 };
@@ -24,16 +24,18 @@ void cs_main_greyscale(uint3 gid : SV_DispatchThreadID)
 
 cbuffer gi_info : register(b1)
 {
-	float4x4 	inv_mat;
 	float4 		scene_size;
 	float4		volume_size;
 	float4		shadow_map_size;
+	float4x4 	inv_mat;
 };
 
 void cs_main_volume_gi(uint2 gid : SV_DispatchThreadID)
-{	
-	float4 sm = read_texture_array( shadow_map_depth, gid.xy, 0 );
-	float4 col = read_texture_array( shadow_map, gid.xy, 0 );
+{
+	int ism = int(shadow_map_size.z);
+	
+	float4 sm = read_texture_array( shadow_map_depth, gid.xy, ism );
+	float4 col = read_texture_array( shadow_map, gid.xy, ism );
 	
 	// projected coord
 	float3 ndc = float3(gid.x/shadow_map_size.x, 1.0 - (gid.y/shadow_map_size.y), sm.r) * 2.0 - 1.0;
@@ -41,7 +43,7 @@ void cs_main_volume_gi(uint2 gid : SV_DispatchThreadID)
 	
 	float4 up = mul(p, inv_mat); 
 	up /= up.w;
-		
+	
 	// convert world to texture coord
 	float3 ws = scene_size.xyz * 0.5;
 	float3 ts = volume_size.xyz;
@@ -53,7 +55,8 @@ void cs_main_volume_gi(uint2 gid : SV_DispatchThreadID)
 		if(tp[i] == volume_size[i]-1 || tp[i] == 0)
 			return;
 	
-	write_texture(volume_gi, float4(col.x, col.y, col.z, 1.0), tp);
+	float4 cur = read_texture(volume_gi, tp);
+	write_texture(volume_gi, cur + col, tp);
 }
 
 void cs_main_clear_volume_gi(uint3 gid : SV_DispatchThreadID)

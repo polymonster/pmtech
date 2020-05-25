@@ -65,7 +65,21 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->lights[light].colour = vec3f(0.8f, 0.8f, 0.8f);
     scene->lights[light].direction = normalised(vec3f(-0.7f, 0.6f, -0.4f));
     scene->lights[light].type = e_light_type::dir;
-    scene->lights[light].flags |= e_light_flags::shadow_map;
+    scene->lights[light].flags |= e_light_flags::global_illumination | e_light_flags::shadow_map;
+    scene->transforms[light].translation = vec3f::zero();
+    scene->transforms[light].rotation = quat();
+    scene->transforms[light].scale = vec3f::one();
+    scene->entities[light] |= e_cmp::light;
+    scene->entities[light] |= e_cmp::transform;
+    
+    light = get_new_entity(scene);
+    instantiate_light(scene, light);
+    scene->names[light] = "front_light";
+    scene->id_name[light] = PEN_HASH("front_light");
+    scene->lights[light].colour = vec3f(0.8f, 0.8f, 0.8f);
+    scene->lights[light].direction = normalised(vec3f(0.7f, 0.6f, 0.4f));
+    scene->lights[light].type = e_light_type::dir;
+    scene->lights[light].flags |= e_light_flags::global_illumination | e_light_flags::shadow_map;
     scene->transforms[light].translation = vec3f::zero();
     scene->transforms[light].rotation = quat();
     scene->transforms[light].scale = vec3f::one();

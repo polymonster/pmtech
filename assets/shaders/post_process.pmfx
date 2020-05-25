@@ -527,7 +527,7 @@ ps_output ps_taa_resolve( vs_output input )
 	ps_output output;
 	
 	// unjittered tc
-	float2 ctc = input.texcoord.xy; // - (jitter * 0.5);
+	float2 ctc = input.texcoord.xy - (jitter * 0.5);
 	float2 tc = input.texcoord.xy;
 	float  frame_depth = 1.0;
 	
@@ -552,16 +552,26 @@ ps_output ps_taa_resolve( vs_output input )
 	float4 nh_min5 = float4(1.0, 1.0, 1.0, 1.0);
 	float4 nh_max5 = float4(0.0, 0.0, 0.0, 0.0);
 	
+	// moments for variance clipping
+	float4 m1 = float4(0.0, 0.0, 0.0, 0.0);
+	float4 m2 = float4(0.0, 0.0, 0.0, 0.0);
+	
 	for(int i = 0; i < 9; ++i)
 	{
-		float2 tcc = ctc + samples[i];
+		float2 tcc = tc + samples[i];
 		float d = sample_texture(src_texture_1, tcc).r;
 		float4 c = sample_texture(src_texture_0, tcc); 
+		
+		m1 += c;
+		m2 += c * c;
 		
 		if(i < 5)
 		{
 			nh_min5 = min(nh_min5, c);
 			nh_max5 = max(nh_max5, c);
+			
+			m1 += c;
+			m2 += c * c;
 		}
 		
 		nh_min9 = min(nh_min9, c);
@@ -569,14 +579,23 @@ ps_output ps_taa_resolve( vs_output input )
 		
 		if(d < frame_depth)
 		{
-			tc2 = tcc;
+			tc2 = ctc + samples[i];
 			frame_depth = d;
 		}
 	}
 	
+	// basic colour clipping
 	float4 nh_min = lerp(nh_min9, nh_min5, 0.5);
 	float4 nh_max = lerp(nh_max9, nh_max5, 0.5);
-		
+	
+	// variance clipping
+	float4 mu = m1 / 14;
+	float4 sigma = sqrt(m2 / 14 - mu * mu);
+	float gamma = 0.5;
+	
+	nh_min = mu - gamma * sigma;
+	nh_max = mu + gamma * sigma;
+
 	// to normalised device coordinates
 	float2 ndc = tc2 * float2(2.0, 2.0) - float2(1.0, 1.0);
 		
@@ -609,10 +628,12 @@ ps_output ps_taa_resolve( vs_output input )
 		alpha = 1.0;
 		break;
 	}
-		
+	
+	float vv = saturate(length(vel)*100);
+			
 	float4 blended = lerp(history_colour, frame_colour, alpha);
-    output.colour = clamp(blended, nh_min, nh_max);
-    
+	output.colour = lerp(clamp(blended, nh_min, nh_max), frame_colour, vv);
+	
     return output;
 }
 

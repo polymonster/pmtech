@@ -754,10 +754,10 @@ namespace put
  
             struct gi_info
             {
-                mat4    inv_mat;
                 vec4f   scene_size;
                 vec4f   volume_size;
                 vec4f   shadow_map_size;
+                mat4    inv_mat;
             };
 
             
@@ -782,10 +782,7 @@ namespace put
             u32 colour_shadow_map_depth = sm_rt->handle;
             
             // write
-            pmfx::set_technique_perm(view.pmfx_shader, view.technique, 0);
-            pen::renderer_set_texture(volume_gi_tex, 0, 0, pen::TEXTURE_BIND_CS);
-            pen::renderer_set_texture(colour_shadow_map, 0, 1, pen::TEXTURE_BIND_CS);
-            pen::renderer_set_texture(colour_shadow_map_depth, 0, 2, pen::TEXTURE_BIND_CS);
+            
 
             // make info
             gi_info info;
@@ -796,12 +793,14 @@ namespace put
             f32 max_dim = max(scene->renderable_extents.max - scene->renderable_extents.min);
             info.scene_size.xyz = vec3f(max_dim);
 
+            // get inv shadow matrices
+            u32 i = 0;
             for (u32 n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & e_cmp::light))
                     continue;
 
-                if (!(scene->lights[n].flags & e_light_flags::shadow_map))
+                if (!(scene->lights[n].flags & e_light_flags::global_illumination))
                     continue;
                     
                 camera cam;
@@ -809,12 +808,17 @@ namespace put
                 mat4 vp = cam.proj * cam.view;
 
                 info.inv_mat = mat::inverse4x4(vp);
+                info.shadow_map_size.z = i++;
+                                
+                pmfx::set_technique_perm(view.pmfx_shader, view.technique, 0);
+                pen::renderer_set_texture(volume_gi_tex, 0, 0, pen::TEXTURE_BIND_CS);
+                pen::renderer_set_texture(colour_shadow_map, 0, 1, pen::TEXTURE_BIND_CS);
+                pen::renderer_set_texture(colour_shadow_map_depth, 0, 2, pen::TEXTURE_BIND_CS);
                 pen::renderer_update_buffer(cb_info, &info, sizeof(gi_info));
-                
                 pen::renderer_set_constant_buffer(cb_info, 1, pen::CBUFFER_BIND_CS);
                 pen::renderer_dispatch_compute({(u32)info.shadow_map_size.x, (u32)info.shadow_map_size.y, 1}, {16, 16, 1});
             }
-
+            
             // info for the ray marching
             gi_volume_info gi_info;
             gi_info.volume_size = info.volume_size;
@@ -1766,6 +1770,7 @@ namespace put
                     rrp.num_mips = 1;
                     rrp.collection = pen::TEXTURE_COLLECTION_ARRAY;
                     pmfx::resize_render_target(PEN_HASH("colour_shadow_map"), rrp);
+                    pmfx::resize_render_target(PEN_HASH("colour_shadow_map_depth"), rrp);
                 }
             }
             

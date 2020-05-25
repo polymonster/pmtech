@@ -806,7 +806,7 @@ ps_output ps_forward_lit( vs_output input )
 			float3 step = (dim*2.0) / tex_size;
 			
 			float3 sp = input.world_pos.xyz + (cn * step);
-						
+			
 			// gather occlusion
 			/*
 			float d = 1.0;
@@ -866,6 +866,11 @@ ps_output ps_forward_lit( vs_output input )
 		}
 		gi /= float(num_rays);
 				
+
+		float3 uvw = saturate((input.world_pos.xyz / to_uvx) * 0.5 + 0.5);
+		float4 raw = sample_texture_level( volume_gi, uvw, 0);
+		//output.colour.rgb = raw.rgb;
+		
 		output.colour.rgb = gi.rgb;
 		output.colour.rgb = gi.rgb + lit_colour.rgb;
 	}

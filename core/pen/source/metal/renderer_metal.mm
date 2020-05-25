@@ -1220,10 +1220,14 @@ namespace pen
         void renderer_clear_texture(u32 clear_state_index, u32 texture)
         {
             // to emulate d3d's clear uav
+            if(!clear_state_index)
+                return;
+            
+            const resource& cr = _res_pool.get(clear_state_index);
+            //
             
             validate_compute_encoder();
             
-            const resource& cr = _res_pool.get(clear_state_index);
             const resource& r = _res_pool.get(texture);
             const texture_creation_params& tcp = r.texture.tcp;
             u32 depth = 1;
