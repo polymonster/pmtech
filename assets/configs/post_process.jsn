@@ -95,6 +95,12 @@
                 0.5829348, -0.09794202,
                 0.3691838, 0.4140642
             ]
+        },
+        
+        unjitter:
+        {
+        	offsets: [],
+        	weights: []
         }
     },
     
@@ -481,6 +487,7 @@
         blit_taa_depth: [
             { 
                 inherit         : blit_depth,
+                technique		: blit_depth_unjittered,
                 target          : [main_depth],
                 camera          : model_viewer_camera,
                 sampler_bindings:

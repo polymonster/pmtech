@@ -62,18 +62,22 @@ namespace post_process
     };
     struct src_info
     {
-        float2 inv_texel_size[8];
+        float4 inv_texel_size[8];
     };
     struct filter_kernel
     {
         float4 filter_info;
         float4 filter_offset_weight[16];
     };
+    struct pp_info
+    {
+        float4 frame_jitter;
+    };
     struct taa_cbuffer
     {
         float4x4 frame_inv_view_projection;
         float4x4 prev_view_projection;
-        float2 jitter;
+        float4 jitter;
     };
     struct high_pass
     {

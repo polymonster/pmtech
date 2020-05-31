@@ -22,7 +22,8 @@ namespace put
             invalidated = 1 << 1,
             orthographic = 1 << 3,
             window_aspect = 1 << 4,
-            apply_jitter = 1 << 5
+            apply_jitter = 1 << 5,
+            apply_scale_bias = 1 << 6
         };
     }
     typedef u32 camera_flags;

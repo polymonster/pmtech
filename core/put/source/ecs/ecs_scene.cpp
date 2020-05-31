@@ -329,18 +329,12 @@ namespace put
             svr_volume_gi.id_name = PEN_HASH(svr_volume_gi.name.c_str());
             svr_volume_gi.render_function = &ecs::compute_volume_gi;
             
-            put::scene_view_renderer svr_taa_resolve;
-            svr_taa_resolve.name = "ecs_taa_resolve";
-            svr_taa_resolve.id_name = PEN_HASH(svr_taa_resolve.name.c_str());
-            svr_taa_resolve.render_function = &ecs::render_taa_resolve;
-
             pmfx::register_scene_view_renderer(svr_main);
             pmfx::register_scene_view_renderer(svr_light_volumes);
             pmfx::register_scene_view_renderer(svr_shadow_maps);
             pmfx::register_scene_view_renderer(svr_omni_shadow_maps);
             pmfx::register_scene_view_renderer(svr_area_light_textures);
             pmfx::register_scene_view_renderer(svr_volume_gi);
-            pmfx::register_scene_view_renderer(svr_taa_resolve);
         }
 
         ecs_scene* create_scene(const c8* name)
@@ -552,7 +546,11 @@ namespace put
                 // update view and camera
                 scene_view vv = view;
                 vv.camera = &cam;
-                mat4 shadow_vp = cam.proj * cam.view;
+                
+                mat4 scale = mat::create_scale(vec3f(1.0f, 1.0f, 0.5f));
+                mat4 bias = mat::create_translation(vec3f(0.0f, 0.0f, 0.5f));
+                
+                mat4 shadow_vp = bias * scale * cam.proj * cam.view;
                 pen::renderer_update_buffer(cb_view, &shadow_vp, sizeof(mat4));
                 shadow_matrices[shadow_index - 1] = shadow_vp;
                 vv.cb_view = cb_view;
@@ -760,7 +758,6 @@ namespace put
                 mat4    inv_mat;
             };
 
-            
             static u32 cb_info = -1; //
             if (!is_valid(cb_info))
             {
@@ -781,9 +778,6 @@ namespace put
             u32 colour_shadow_map = col_sm_rt->handle;
             u32 colour_shadow_map_depth = sm_rt->handle;
             
-            // write
-            
-
             // make info
             gi_info info;
             pmfx::get_render_target_dimensions(sm_rt, info.shadow_map_size.x, info.shadow_map_size.y);
@@ -831,43 +825,6 @@ namespace put
             pen::renderer_set_texture(0, 0, 2, pen::TEXTURE_BIND_CS);
         }
         
-        struct taa_buffer
-        {
-            mat4    frame_inv_view_projection;
-            mat4    prev_view_projection;
-            float4  jitter;
-        };
-        
-        void render_taa_resolve(const scene_view& view)
-        {
-            static u32 cb_info = -1; //
-            if (!is_valid(cb_info))
-            {
-                pen::buffer_creation_params bcp;
-                bcp.usage_flags = PEN_USAGE_DYNAMIC;
-                bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
-                bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-                bcp.buffer_size = sizeof(taa_buffer);
-                bcp.data = nullptr;
-                cb_info = pen::renderer_create_buffer(bcp);
-            }
-            
-            static mat4 prev_view_projection = view.camera->view_projection;
-            
-            taa_buffer buf;
-            buf.frame_inv_view_projection = mat::inverse4x4(view.camera->view_projection);
-            buf.prev_view_projection = prev_view_projection;
-            buf.jitter.xy = view.camera->jitter.xy;
-            
-            pen::renderer_update_buffer(cb_info, &buf, sizeof(taa_buffer));
-            pen::renderer_set_constant_buffer(cb_info, 3, pen::CBUFFER_BIND_PS);
-        
-            pmfx::fullscreen_quad(view);
-            
-            // store for next frame
-            prev_view_projection = view.camera->view_projection;
-        }
-
         void render_scene_view(const scene_view& view)
         {
             ecs_scene* scene = view.scene;

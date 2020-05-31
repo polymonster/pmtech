@@ -11,6 +11,7 @@ solution ("pmtech_tools_" .. platform)
 	configurations { "Debug", "Release" }
 	buildoptions { build_cmd }
 	linkoptions { link_cmd }
+	includedirs { "." }
 		
 dofile "../core/pen/project.lua"
 dofile "../core/put/project.lua"
@@ -30,3 +31,4 @@ project "pmtech_editor"
 	postbuildcommands {
     	"xcodebuild -scheme live_lib -project live_lib.xcodeproj -configuration Release -quiet"
 	}
+	

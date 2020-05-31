@@ -13,9 +13,11 @@ solution ("pmtech_examples_" .. platform)
 	startproject "empty_project"
 	buildoptions { build_cmd }
 	linkoptions { link_cmd }
+	
+	-- to include shader_structs/
 	includedirs
 	{
-	    "shader_structs"
+	    "."
 	}
 	
 -- Engine Project	

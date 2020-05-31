@@ -136,11 +136,7 @@ import post_process.jsn
     },
     
     view_sets: 
-    {
-        editor_d: [
-            editor_view
-        ],
-        
+    {        
         editor: [
             multiple_shadow_views,
             multiple_area_light_views,

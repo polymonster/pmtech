@@ -21,6 +21,8 @@
 
 #include <fstream>
 
+#include "shader_structs/post_process.h"
+
 using namespace put;
 using namespace pmfx;
 using namespace pen;
@@ -42,7 +44,8 @@ namespace
             none,
             enabled = 1<<0,
             edited = 1<<1,
-            write_non_aux = 1<<2
+            write_non_aux = 1<<2,
+            bind_info = 1<<3
         };
     }
     
@@ -2145,6 +2148,10 @@ namespace put
 
             void bake_post_process_targets(std::vector<view_params>& pp_views)
             {
+                // set flag to identify pp views
+                for (auto& v : pp_views)
+                    v.post_process_flags |= e_pp_flags::bind_info;
+                    
                 // find render target aliases and generate automatic ping pongs
 
                 // first create virtual rt for each unique target / texture
@@ -2556,6 +2563,14 @@ namespace put
 
         void init(const c8* filename)
         {
+            // scene view renderers
+            put::scene_view_renderer svr_taa_resolve;
+            svr_taa_resolve.name = "ecs_taa_resolve";
+            svr_taa_resolve.id_name = PEN_HASH(svr_taa_resolve.name.c_str());
+            svr_taa_resolve.render_function = &render_taa_resolve;
+            
+            pmfx::register_scene_view_renderer(svr_taa_resolve);
+        
             load_script_internal(filename);
 
             s_script_files.push_back(filename);
@@ -2625,6 +2640,39 @@ namespace put
 
             // clear vectors of remaining stuff
             s_scene_view_renderers.clear();
+        }
+        
+        void render_taa_resolve(const scene_view& view)
+        {
+            static u32 cb_info = -1; //
+            if (!is_valid(cb_info))
+            {
+                pen::buffer_creation_params bcp;
+                bcp.usage_flags = PEN_USAGE_DYNAMIC;
+                bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+                bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+                bcp.buffer_size = sizeof(post_process::taa_cbuffer);
+                bcp.data = nullptr;
+                cb_info = pen::renderer_create_buffer(bcp);
+            }
+            
+            static mat4 prev_view_projection = view.camera->view_projection;
+            static bool ff = true;
+            
+            post_process::taa_cbuffer buf;
+            buf.frame_inv_view_projection = mat::inverse4x4(view.camera->view_projection);
+            buf.prev_view_projection = prev_view_projection;
+            buf.jitter.xy = view.camera->jitter.xy;
+            buf.jitter.z = ff ? 1.0f : 0.0f;
+            
+            pen::renderer_update_buffer(cb_info, &buf, sizeof(buf));
+            pen::renderer_set_constant_buffer(cb_info, 3, pen::CBUFFER_BIND_PS);
+        
+            pmfx::fullscreen_quad(view);
+            
+            // store for next frame
+            prev_view_projection = view.camera->view_projection;
+            ff = false;
         }
 
         void fullscreen_quad(const scene_view& sv)
@@ -2833,19 +2881,26 @@ namespace put
 
             static u32 cb_2d = PEN_INVALID_HANDLE;
             static u32 cb_sampler_info = PEN_INVALID_HANDLE;
+            static u32 cb_pp_info = PEN_INVALID_HANDLE;
             if (!is_valid(cb_2d))
             {
                 pen::buffer_creation_params bcp;
                 bcp.usage_flags = PEN_USAGE_DYNAMIC;
                 bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
                 bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-                bcp.buffer_size = sizeof(float) * 20;
                 bcp.data = (void*)nullptr;
 
+                // cb for 2d ortho
+                bcp.buffer_size = sizeof(float) * 20;
                 cb_2d = pen::renderer_create_buffer(bcp);
-
+                
+                // cb for sampler info
                 bcp.buffer_size = sizeof(vec4f) * 16; // 16 samplers worth, x = 1.0 / width, y = 1.0 / height
                 cb_sampler_info = pen::renderer_create_buffer(bcp);
+                
+                // cb for post process info
+                bcp.buffer_size = sizeof(post_process::pp_info);
+                cb_pp_info = pen::renderer_create_buffer(bcp);
             }
 
             // unbind samplers to stop validation layers complaining, render targets may still be bound on output.
@@ -2882,15 +2937,6 @@ namespace put
             sv.cb_2d_view = cb_2d;
             sv.pmfx_shader = v.pmfx_shader;
             sv.permutation = v.technique_permutation;
-            
-            // set camera jitter for taa
-            if(v.view_flags & e_view_flags::jitter)
-            {
-                if(v.camera)
-                {
-
-                }
-            }
 
             // render passes.. multi pass for cubemaps or arrays
             for (u32 a = 0; a < v.num_arrays; ++a)
@@ -2968,6 +3014,16 @@ namespace put
                     pen::renderer_update_buffer(v.cbuffer_technique, v.technique_constants.data,
                                                 sizeof(technique_constant_data));
                     pen::renderer_set_constant_buffer(v.cbuffer_technique, e_cbuffer_location::material_constants,
+                                                      pen::CBUFFER_BIND_PS);
+                }
+                
+                // generic buffer for post process shaders
+                if(v.post_process_flags & e_pp_flags::bind_info)
+                {
+                    post_process::pp_info pp_info;
+                    pp_info.frame_jitter.xy = halton(pen::_renderer_frame_index());
+                    pen::renderer_update_buffer(cb_pp_info, &pp_info, sizeof(pp_info));
+                    pen::renderer_set_constant_buffer(cb_pp_info, e_cbuffer_location::post_process_info,
                                                       pen::CBUFFER_BIND_PS);
                 }
 

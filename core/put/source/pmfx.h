@@ -146,7 +146,8 @@ namespace put
                 per_pass_area_lights = 6,
                 material_constants = 7,
                 sampler_info = 10,
-                post_process_info = 3
+                post_process_info = 4,
+                taa_resolve_info = 3
             };
         }
 
@@ -312,7 +313,9 @@ namespace put
         c8**                 get_render_state_list(u32 type);    // call sb_free on return value when done
         hash_id*             get_render_state_id_list(u32 type); // call sb_free on return value when don
 
-        void fullscreen_quad(const scene_view& sv);
+        // render funcs
+        void                 fullscreen_quad(const scene_view& sv);
+        void                 render_taa_resolve(const scene_view& view);
 
         // pmfx shader -----------------------------------------------------------------------------------------------------
 

@@ -19,53 +19,38 @@ namespace pen
     }
 } // namespace pen
 
+struct lane
+{
+    u32*     entities;
+    u32*     entity_target;
+    vec3f*   targets;
+};
+    
+u32                 box_start = 0;
+u32                 box_end;
+u32                 quadrant_size = 0;
+u32                 box_count = 0;
+static const s32    lanes = 5;
+lane                lane_info[lanes] = { 0 };
+
 void example_setup(ecs_scene* scene, camera& cam)
 {
     pmfx::set_view_set("editor_gi");
-
+        
+    material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
+    geometry_resource* box_resource = get_geometry_resource(PEN_HASH("cube"));
+        
     clear_scene(scene);
 
-    material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
-    geometry_resource* cube = get_geometry_resource(PEN_HASH("cube"));
-    
-    // create material for volume ray trace
-    material_resource* volume_material = new material_resource;
-    volume_material->material_name = "volume_material";
-    volume_material->shader_name = "pmfx_utility";
-    volume_material->id_shader = PEN_HASH("pmfx_utility");
-    volume_material->id_technique = PEN_HASH("volume_texture");
-    add_material_resource(volume_material);
-    
-    // create scene node for gi
-    if (0)
-    {
-        u32 new_prim = get_new_entity(scene);
-        scene->names[new_prim] = "volume_gi";
-        scene->names[new_prim].appendf("%i", new_prim);
-        scene->transforms[new_prim].rotation = quat();
-        scene->transforms[new_prim].scale = vec3f(100.0f);
-        scene->transforms[new_prim].translation = vec3f(0.0f, 0.0f, 200.0f);
-        scene->entities[new_prim] |= e_cmp::transform;
-        scene->parents[new_prim] = new_prim;
-        scene->samplers[new_prim].sb[0].handle = pmfx::get_render_target(PEN_HASH("volume_gi"))->handle;
-        scene->samplers[new_prim].sb[0].sampler_unit = e_texture::volume;
-        scene->samplers[new_prim].sb[0].sampler_state =
-            pmfx::get_render_state(PEN_HASH("clamp_point"), pmfx::e_render_state::sampler);
-
-        instantiate_geometry(cube, scene, new_prim);
-        instantiate_material(volume_material, scene, new_prim);
-        instantiate_model_cbuffer(scene, new_prim);
-    }
-
-    // directional light
+    // directional lights
     u32 light = get_new_entity(scene);
     instantiate_light(scene, light);
     scene->names[light] = "front_light";
     scene->id_name[light] = PEN_HASH("front_light");
-    scene->lights[light].colour = vec3f(0.8f, 0.8f, 0.8f);
+    scene->lights[light].colour = vec3f(0.8f, 0.8f, 0.8f) * 0.5f;
     scene->lights[light].direction = normalised(vec3f(-0.7f, 0.6f, -0.4f));
     scene->lights[light].type = e_light_type::dir;
-    scene->lights[light].flags |= e_light_flags::global_illumination | e_light_flags::shadow_map;
+    scene->lights[light].flags |= e_light_flags::shadow_map | e_light_flags::global_illumination;
     scene->transforms[light].translation = vec3f::zero();
     scene->transforms[light].rotation = quat();
     scene->transforms[light].scale = vec3f::one();
@@ -74,59 +59,142 @@ void example_setup(ecs_scene* scene, camera& cam)
     
     light = get_new_entity(scene);
     instantiate_light(scene, light);
-    scene->names[light] = "front_light";
-    scene->id_name[light] = PEN_HASH("front_light");
-    scene->lights[light].colour = vec3f(0.8f, 0.8f, 0.8f);
-    scene->lights[light].direction = normalised(vec3f(0.7f, 0.6f, 0.4f));
+    scene->names[light] = "opposite_light";
+    scene->id_name[light] = PEN_HASH("opposite_light");
+    scene->lights[light].colour = vec3f(0.8f, 0.8f, 0.8f) * 0.5f;
+    scene->lights[light].direction = normalised(vec3f(0.7f, 0.8f, 0.3f));
     scene->lights[light].type = e_light_type::dir;
-    scene->lights[light].flags |= e_light_flags::global_illumination | e_light_flags::shadow_map;
+    scene->lights[light].flags |= e_light_flags::shadow_map | e_light_flags::global_illumination;
     scene->transforms[light].translation = vec3f::zero();
     scene->transforms[light].rotation = quat();
     scene->transforms[light].scale = vec3f::one();
     scene->entities[light] |= e_cmp::light;
     scene->entities[light] |= e_cmp::transform;
     
-    vec2f dim = vec2f(100.0f, 100.0f);
+    f32 dim = 64.0f;
+    
     u32 ground = get_new_entity(scene);
     scene->transforms[ground].rotation = quat();
-    scene->transforms[ground].scale = vec3f(dim.x, 1.0f, dim.y);
-    scene->transforms[ground].translation = vec3f::zero();
+    scene->transforms[ground].scale = vec3f(dim, 1.0f, dim);
+    scene->transforms[ground].translation = vec3f(0.0f, -1.0f, 0.0f);
     scene->parents[ground] = ground;
     scene->entities[ground] |= e_cmp::transform;
     scene->material_permutation[ground] |= FORWARD_LIT_GI;
-    instantiate_geometry(cube, scene, ground);
+    instantiate_geometry(box_resource, scene, ground);
     instantiate_material(default_material, scene, ground);
     instantiate_model_cbuffer(scene, ground);
     
+    vec3f lane_space = vec3f(0.0f, 0.0f, 8.0f);
+            
+    // x wall
     u32 wall = get_new_entity(scene);
     scene->transforms[wall].rotation = quat();
-    scene->transforms[wall].scale = vec3f(1.0f, dim.x, dim.y);
-    scene->transforms[wall].translation = vec3f(50.0f, 0.0f, 0.0f);
+    scene->transforms[wall].scale = vec3f(10.0f, 10.0f, 3.0f);
+    scene->transforms[wall].translation = vec3f(0.0f, 0.0f, -35.0f);
     scene->parents[wall] = wall;
     scene->entities[wall] |= e_cmp::transform;
     scene->material_permutation[wall] |= FORWARD_LIT_GI;
-    instantiate_geometry(cube, scene, wall);
+    instantiate_geometry(box_resource, scene, wall);
     instantiate_material(default_material, scene, wall);
     instantiate_model_cbuffer(scene, wall);
     
-    u32 box = get_new_entity(scene);
-    scene->transforms[box].rotation = quat();
-    scene->transforms[box].scale = vec3f(10.0f, 10.0f, 10.0f);
-    scene->transforms[box].translation = vec3f(0.0f, 10.0f, 0.0f);
-    scene->parents[box] = box;
-    scene->entities[box] |= e_cmp::transform;
-    scene->material_permutation[box] |= FORWARD_LIT_GI;
-    instantiate_geometry(cube, scene, box);
-    instantiate_material(default_material, scene, box);
-    instantiate_model_cbuffer(scene, box);
+    // z wall
+    wall = get_new_entity(scene);
+    scene->transforms[wall].rotation = quat();
+    scene->transforms[wall].scale = vec3f(3.0f, 15.0f, 15.0f);
+    scene->transforms[wall].translation = vec3f(35.0f, 0.0f, 0.0f);
+    scene->parents[wall] = wall;
+    scene->entities[wall] |= e_cmp::transform;
+    scene->material_permutation[wall] |= FORWARD_LIT_GI;
+    instantiate_geometry(box_resource, scene, wall);
+    instantiate_material(default_material, scene, wall);
+    instantiate_model_cbuffer(scene, wall);
+    
+    vec4f lane_colours[] = {
+        {180.0f, 237.0f, 210.0f, 255.0f},
+        {200.0f, 40.0f, 255.0f, 255.0f},
+        {160.0f, 207.0f, 211.0f, 255.0f},
+        {255.0f, 128.0f, 40.0f, 255.0f},
+        {141.0f, 148.0f, 186.0f, 255.0f}
+    };
+    
+    vec3f space = vec3f(8.0f, 0.0f, 0.0);
+    vec3f start = vec3f(0.0f, 3.0f, 0.0) - (space * ((f32)lanes-1.0f) * 0.5f) - (lane_space * ((f32)lanes-1.0f) * 0.5f);
+    for(u32 i = 0; i < lanes; ++i)
+    {
+        for(u32 j = 0; j < lanes; ++j)
+        {
+            u32 box = get_new_entity(scene);
+            scene->transforms[box].rotation = quat();
+            scene->transforms[box].scale = vec3f(3.0f, 3.0f, 3.0f);
+            scene->transforms[box].translation = start + space * (f32)j;
+            scene->parents[box] = box;
+            scene->entities[box] |= e_cmp::transform;
+            scene->material_permutation[box] |= FORWARD_LIT_GI;
+            instantiate_geometry(box_resource, scene, box);
+            instantiate_material(default_material, scene, box);
+            instantiate_model_cbuffer(scene, box);
+            
+            forward_render::forward_lit* mat = (forward_render::forward_lit*) & scene->material_data[box].data[0];
+            mat->m_albedo = lane_colours[i]/255.0f;
+            box_count++;
+            
+            sb_push(lane_info[i].entities, box);
+            sb_push(lane_info[i].entity_target, 0);
+            
+        }
+        
+        start += lane_space;
+    }
+    
+    start = vec3f(0.0f, 3.0f, 0.0) - (space * ((f32)lanes-1.0f) * 0.5f) - (lane_space * ((f32)lanes-1.0f) * 0.5f);
+    
+    // setup movement targets
+    sb_push(lane_info[1].targets, start + lane_space * 1.0f - space);
+    sb_push(lane_info[1].targets, start + lane_space * 5.0f - space);
+    sb_push(lane_info[1].targets, start + lane_space * 5.0f + space * 5.0f);
+    sb_push(lane_info[1].targets, start + lane_space * 1.0f + space * 5.0f);
 
-    forward_render::forward_lit* mat = (forward_render::forward_lit*) & scene->material_data[box].data[0];
-    mat->m_albedo = vec4f(1.0f, 0.5f, 0.0f, 1.0f);
-
+    sb_push(lane_info[3].targets, start + lane_space * 3.0f + space * 5.0f);
+    sb_push(lane_info[3].targets, start - lane_space * 1.0f + space * 5.0f);
+    sb_push(lane_info[3].targets, start - lane_space * 1.0f - space);
+    sb_push(lane_info[3].targets, start + lane_space * 3.0f - space);
+        
     bake_material_handles();
 }
 
 void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
 {
+    //
+    for(u32 l = 0; l < lanes; ++l)
+    {
+        if(l != 1 && l != 3)
+            continue;
+            
+        u32 num = sb_count(lane_info[l].entities);
+        u32 num_targets = sb_count(lane_info[l].targets);
+        for(u32 i = 0; i < num; ++i)
+        {
+            u32 e = lane_info[l].entities[i];
+            vec3f target = lane_info[l].targets[lane_info[l].entity_target[i]];
+            vec3f& t = scene->transforms[e].translation;
+            vec3f v = target - t;
+            f32 d = mag2(v);
+            if(d < 36.0f)
+            {
+                t = lerp(t, target, 0.2f);
+                
+                if(d < 0.01f)
+                {
+                    lane_info[l].entity_target[i] = (lane_info[l].entity_target[i] + 1) % num_targets;
+                    continue;
+                }
 
+            }
+            
+            t += normalised(v) * 1.0f/60.0f * 10.0f;
+            
+            scene->entities[e] |= e_cmp::transform;
+        }
+    }
 }

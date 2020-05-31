@@ -34,13 +34,25 @@ struct ps_output_colour_depth
 
 cbuffer src_info : register(b10)
 {
-    float2 inv_texel_size[8];
+    float4 inv_texel_size[8];
 };
 
 cbuffer filter_kernel : register(b2)
 {
-    float4 filter_info; //xy = mask / direction, z = num samples, w = unused
+    float4 filter_info; 				// xy = mask / direction, z = num samples, w = unused
     float4 filter_offset_weight[16];
+};
+
+cbuffer pp_info : register(b4)
+{
+    float4 frame_jitter;
+};
+
+cbuffer taa_cbuffer : register(b3)
+{
+    float4x4 frame_inv_view_projection;
+    float4x4 prev_view_projection;
+    float4	 jitter;
 };
 
 // samplers
@@ -119,6 +131,16 @@ ps_output_depth ps_blit_depth( vs_output input )
     return output;
 }
 
+ps_output_depth ps_blit_depth_unjittered( vs_output input ) 
+{
+    ps_output_depth output;
+    
+    float2 uj = inv_texel_size[0].xy * frame_jitter.xy * 0.5;
+    output.depth = sample_texture( src_texture_0, input.texcoord.xy - uj ).r;
+    
+    return output;
+}
+
 ps_output_colour_depth ps_blit_colour_depth( vs_output input ) 
 {
     ps_output_colour_depth output;
@@ -146,7 +168,7 @@ ps_output ps_filter( vs_output input )
 {
     ps_output output;
 
-    float2 inv_texel = inv_texel_size[0];
+    float2 inv_texel = inv_texel_size[0].xy;
         
     output.colour = float4(0.0, 0.0, 0.0, 1.0);
     int lc = int(filter_info.z);
@@ -167,7 +189,7 @@ ps_output ps_downsample_2x2( vs_output input )
 {
     ps_output output;
 
-    float2 inv_texel = inv_texel_size[0];
+    float2 inv_texel = inv_texel_size[0].xy;
     
     float2 offset[4];
     offset[0] = float2(0.0, 0.0) * inv_texel;
@@ -190,7 +212,7 @@ ps_output ps_downsample_average( vs_output input )
 {
     ps_output output;
 
-    float2 inv_texel = inv_texel_size[0];
+    float2 inv_texel = inv_texel_size[0].xy;
     
     float2 offset[9];
     offset[0] = float2(0.0, 0.0) * inv_texel;
@@ -436,7 +458,7 @@ ps_output ps_crt( vs_output input )
     
     tc = tc * (tc + cc * (1.0 + dist) * dist) / tc;
     
-    float2 inv_texel = inv_texel_size[0];
+    float2 inv_texel = inv_texel_size[0].xy;
     
     float2 ca = float2(inv_texel.x * 2.0, 0.0);
     
@@ -504,7 +526,7 @@ ps_output ps_sss_reflectance( vs_output input )
     
     float3 col = sample_texture(src_texture_0, tc).rgb * sss_kernel[0].rgb;
 
-    float2 it = inv_texel_size[0];
+    float2 it = inv_texel_size[0].xy;
     for(int i = 1; i < 25; ++i)
     {
         float2 offset = sss_kernel[i].a * it.xy * final_step;
@@ -515,24 +537,17 @@ ps_output ps_sss_reflectance( vs_output input )
     return output;
 }
 
-cbuffer taa_cbuffer : register(b3)
-{
-    float4x4 frame_inv_view_projection;
-    float4x4 prev_view_projection;
-    float2	 jitter;
-};
-
 ps_output ps_taa_resolve( vs_output input )
 {
 	ps_output output;
 	
 	// unjittered tc
-	float2 ctc = input.texcoord.xy - (jitter * 0.5);
+	float2 ctc = input.texcoord.xy - (jitter.xy * 0.5);
 	float2 tc = input.texcoord.xy;
 	float  frame_depth = 1.0;
 	
 	float2 samples[9];
-	float2 inv_sm_size = inv_texel_size[0];
+	float2 inv_sm_size = inv_texel_size[0].xy;
 	samples[0] = float2(-1.0, -1.0) * inv_sm_size;
 	samples[1] = float2(1.0, -1.0) * inv_sm_size;
 	samples[2] = float2(-1.0, 1.0) * inv_sm_size;
@@ -551,27 +566,17 @@ ps_output ps_taa_resolve( vs_output input )
 	
 	float4 nh_min5 = float4(1.0, 1.0, 1.0, 1.0);
 	float4 nh_max5 = float4(0.0, 0.0, 0.0, 0.0);
-	
-	// moments for variance clipping
-	float4 m1 = float4(0.0, 0.0, 0.0, 0.0);
-	float4 m2 = float4(0.0, 0.0, 0.0, 0.0);
-	
+		
 	for(int i = 0; i < 9; ++i)
 	{
-		float2 tcc = tc + samples[i];
+		float2 tcc = ctc + samples[i];
 		float d = sample_texture(src_texture_1, tcc).r;
 		float4 c = sample_texture(src_texture_0, tcc); 
-		
-		m1 += c;
-		m2 += c * c;
-		
+				
 		if(i < 5)
 		{
 			nh_min5 = min(nh_min5, c);
 			nh_max5 = max(nh_max5, c);
-			
-			m1 += c;
-			m2 += c * c;
 		}
 		
 		nh_min9 = min(nh_min9, c);
@@ -587,14 +592,6 @@ ps_output ps_taa_resolve( vs_output input )
 	// basic colour clipping
 	float4 nh_min = lerp(nh_min9, nh_min5, 0.5);
 	float4 nh_max = lerp(nh_max9, nh_max5, 0.5);
-	
-	// variance clipping
-	float4 mu = m1 / 14;
-	float4 sigma = sqrt(m2 / 14 - mu * mu);
-	float gamma = 0.5;
-	
-	nh_min = mu - gamma * sigma;
-	nh_max = mu + gamma * sigma;
 
 	// to normalised device coordinates
 	float2 ndc = tc2 * float2(2.0, 2.0) - float2(1.0, 1.0);
@@ -630,6 +627,10 @@ ps_output ps_taa_resolve( vs_output input )
 	}
 	
 	float vv = saturate(length(vel)*100);
+	
+	// resets the taa history
+	if(jitter.z == 1.0)
+		vv = 1.0;
 			
 	float4 blended = lerp(history_colour, frame_colour, alpha);
 	output.colour = lerp(clamp(blended, nh_min, nh_max), frame_colour, vv);
@@ -655,6 +656,12 @@ pmfx:
     {
         "vs": "vs_ndc_quad",
         "ps": "ps_blit_depth"
+    },
+    
+    "blit_depth_unjittered":
+    {
+        "vs": "vs_ndc_quad",
+        "ps": "ps_blit_depth_unjittered"
     },
     
     "blit_colour_depth":

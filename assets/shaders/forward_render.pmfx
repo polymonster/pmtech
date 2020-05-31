@@ -107,7 +107,6 @@ struct vs_output_zonly_wp
     float4 world_pos : TEXCOORD0;
 };
 
-
 struct vs_output_picking
 {
     float4 position : SV_POSITION;
@@ -187,7 +186,9 @@ vs_output_zonly vs_main_zonly( vs_input_position_only input, vs_instance_input i
       
     // for d3d 0 - 1 clip space    
     //output.position /= output.position.w;
-    remap_z_clip_space(output.position.z);
+    
+    //remap_z_clip_space(output.position.z);
+    
     return output;
 }
 
@@ -339,7 +340,7 @@ vs_output vs_main( vs_input_multi input, vs_instance_input instance_input )
     
         output.texcoord *= float4(m_uv_scale.x * xs, m_uv_scale.y * ys, m_uv_scale.x, m_uv_scale.y);
     }
-            
+         
     return output;
 }
 
@@ -433,6 +434,7 @@ ps_output ps_forward_lit( vs_output input )
         normal_sample );
         
     albedo *= input.colour;
+    float4 metalness = float4(1.0, 1.0, 1.0, 1.0);
     
     float3 lit_colour = float3( 0.0, 0.0, 0.0 );
         
@@ -441,7 +443,7 @@ ps_output ps_forward_lit( vs_output input )
     float roughness = saturate(user_data.y); 
 
     reflectivity = m_reflectivity;
-    roughness = ro_sample.x;
+    roughness = 0.3;
     
     if:(INSTANCED)
     {
@@ -486,10 +488,10 @@ ps_output ps_forward_lit( vs_output input )
             input.world_pos.xyz,
             camera_view_pos.xyz,
             albedo.rgb,
-            specular_sample.rgb,
+            metalness.rgb,
             roughness,
             reflectivity
-        );    
+        );
         
         light_col += oren_nayar( 
             lights[i].pos_radius, 
@@ -497,7 +499,7 @@ ps_output ps_forward_lit( vs_output input )
             n,
             input.world_pos.xyz,
             camera_view_pos.xyz,
-            roughness,
+            1.0 - roughness,
             albedo.rgb
         );
         
@@ -522,7 +524,7 @@ ps_output ps_forward_lit( vs_output input )
             float4 sp = mul( offset_pos, shadow_matrix[i] );
             sp.xyz /= sp.w;
             sp.y *= -1.0;
-            sp.xyz = sp.xyz * 0.5 + 0.5;
+            sp.xy = sp.xy * 0.5 + 0.5;
             
             shadow = sample_shadow_array_pcf_9(float(shadow_map_index), sp.xyz);
             
@@ -586,7 +588,7 @@ ps_output ps_forward_lit( vs_output input )
             input.world_pos.xyz,
             camera_view_pos.xyz,
             albedo.rgb,
-            specular_sample.rgb,
+            metalness.rgb,
             roughness,
             reflectivity
         );    
@@ -647,7 +649,7 @@ ps_output ps_forward_lit( vs_output input )
             input.world_pos.xyz,
             camera_view_pos.xyz,
             albedo.rgb,
-            specular_sample.rgb,
+            metalness.rgb,
             roughness,
             reflectivity
         );    
@@ -807,34 +809,6 @@ ps_output ps_forward_lit( vs_output input )
 			
 			float3 sp = input.world_pos.xyz + (cn * step);
 			
-			// gather occlusion
-			/*
-			float d = 1.0;
-			for(int s = 0; s < num_samples; ++s)
-			{				 
-				step = dim / tex_size;
-				
-				uvw = (sp / to_uvx) * 0.5 + 0.5;
-				float4 o = sample_texture_level( volume_gi, uvw, s );
-				
-				gi += dot(n, ray) * o.rgb;
-				
-				if(o.a > 0)
-				{
-					float oc = 1.0 - saturate(length(input.world_pos.xyz - sp)/50.0);
-					occlusion += oc / (s+1);
-					break;
-				}
-				
-				d -= 1.0/float(num_samples);
-				sp += ray * step.x;
-				tex_size / 2;				
-			}
-			occlusion = 1.0 - saturate(occlusion/float(num_rays));
-			//occlusion = min(length(lit_colour.rgb), occlusion);
-			output.colour.rgb = occlusion;
-			*/
-			
 			// gather gi
 			float4 ray_gi = float4(0.0, 0.0, 0.0, 0.0);
 			
@@ -850,7 +824,7 @@ ps_output ps_forward_lit( vs_output input )
 					float4 g = sample_texture_level( volume_gi, uvw, min(j, 4));
 										
 					float d = length(input.world_pos.xyz - sp);
-					d = smoothstep(0.0, 17.0, d);
+					d = smoothstep(0.0, 10.0, d);
 					
 					ray_gi.rgb = ray_gi.rgb + g.rgb * d;
 					ray_gi.a += g.a;
@@ -865,14 +839,13 @@ ps_output ps_forward_lit( vs_output input )
 			gi += ray_gi;
 		}
 		gi /= float(num_rays);
-				
-
-		float3 uvw = saturate((input.world_pos.xyz / to_uvx) * 0.5 + 0.5);
-		float4 raw = sample_texture_level( volume_gi, uvw, 0);
-		//output.colour.rgb = raw.rgb;
 		
 		output.colour.rgb = gi.rgb;
 		output.colour.rgb = gi.rgb + lit_colour.rgb;
+		
+		float3 uvw = saturate((input.world_pos.xyz / to_uvx) * 0.5 + 0.5);
+		float4 raw = sample_texture_level( volume_gi, uvw, 0);
+		//output.colour.rgb = raw.rgb;
 	}
 	    
     if(albedo.a <= 0.0)
@@ -936,6 +909,21 @@ ps_output ps_albedo( vs_output_zonly input )
 {
     ps_output output;
     output.colour = m_albedo;
+    output.colour.a = 1.0;
+    return output;
+}
+
+ps_output ps_single_light( vs_output input )
+{
+    ps_output output;
+    
+    float3 l = normalize(single_light.pos_radius.xyz - input.world_pos.xyz);
+    float3 lc = single_light.colour.rgb;
+    
+    output.colour.rgb = (m_albedo.rgb * dot(input.normal, l) * lc);
+    output.colour.rgb += m_albedo.rgb * 0.3;
+    output.colour.a = 1.0;
+    
     return output;
 }
 
@@ -1059,8 +1047,8 @@ pmfx:
 	
 	gi:
     {
-        vs: vs_main_zonly,
-        ps: ps_albedo,
+        vs: vs_main,
+        ps: ps_single_light,
         
         permutations:
         {

@@ -82,6 +82,7 @@ void* pen::user_entry(void* params)
     pmfx::register_scene(main_scene, "main_scene");
     pmfx::register_camera(&main_camera, "model_viewer_camera");
     pmfx::init("data/configs/editor_renderer.jsn");
+    pmfx::set_view_set("editor_gi");
     
     // cr
     cr_plugin ctx;

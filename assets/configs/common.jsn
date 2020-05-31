@@ -174,14 +174,14 @@
 		
 		colour_shadow_map:
         {
-			size: [1024, 1024],
+			size: [512, 512],
             format: rgba8,
             type: array
         },
 		
 		colour_shadow_map_depth:
         {
-			size: [1024, 1024],
+			size: [512, 512],
             format: d24s8,
             type: array
         },
