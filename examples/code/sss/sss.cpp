@@ -1,6 +1,6 @@
 #include "../example_common.h"
 
-#include "forward_render.h"
+#include "shader_structs/forward_render.h"
 #include "maths/vec.h"
 
 using namespace put;
