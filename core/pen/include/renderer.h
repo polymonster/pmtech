@@ -365,6 +365,7 @@ namespace pen
     // general accessors
     const c8*            renderer_get_shader_platform();
     bool                 renderer_viewport_vup();
+    bool                 renderer_depth_0_to_1();
     const renderer_info& renderer_get_info();
 
     // setup / hook functions

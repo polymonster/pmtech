@@ -525,6 +525,7 @@ ps_output ps_forward_lit( vs_output input )
             sp.xyz /= sp.w;
             sp.y *= -1.0;
             sp.xy = sp.xy * 0.5 + 0.5;
+			sp.z = remap_depth(sp.z);
             
             shadow = sample_shadow_array_pcf_9(float(shadow_map_index), sp.xyz);
             
@@ -691,7 +692,8 @@ ps_output ps_forward_lit( vs_output input )
             float4 sp = mul( offset_pos, shadow_matrix[shadow_map_index] );
             sp.xyz /= sp.w;
             sp.y *= -1.0;
-            sp.xyz = sp.xyz * 0.5 + 0.5;
+            sp.xy = sp.xy * 0.5 + 0.5;
+			sp.z = remap_depth(sp.z);
 
             shadow = sample_shadow_array_pcf_9(float(shadow_map_index), sp.xyz);
 
@@ -913,7 +915,7 @@ ps_output ps_albedo( vs_output_zonly input )
     return output;
 }
 
-ps_output ps_single_light( vs_output input )
+ps_output ps_single_light_diffuse( vs_output input )
 {
     ps_output output;
     
@@ -1048,7 +1050,7 @@ pmfx:
 	gi:
     {
         vs: vs_main,
-        ps: ps_single_light,
+        ps: ps_single_light_diffuse,
         
         permutations:
         {

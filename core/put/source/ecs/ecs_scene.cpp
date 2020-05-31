@@ -547,10 +547,22 @@ namespace put
                 scene_view vv = view;
                 vv.camera = &cam;
                 
-                mat4 scale = mat::create_scale(vec3f(1.0f, 1.0f, 0.5f));
-                mat4 bias = mat::create_translation(vec3f(0.0f, 0.0f, 0.5f));
-                
-                mat4 shadow_vp = bias * scale * cam.proj * cam.view;
+                mat4 shadow_vp;
+
+                // handle different clip spaces
+                if (pen::renderer_depth_0_to_1())
+                {
+                    // if clip space is 0-1 scale and bias the depth buffer 
+                    mat4 scale = mat::create_scale(vec3f(1.0f, 1.0f, 0.5f));
+                    mat4 bias = mat::create_translation(vec3f(0.0f, 0.0f, 0.5f));
+                    shadow_vp = bias * scale * cam.proj * cam.view;
+                }
+                else
+                {
+                    // opengl has -1 to 1 z so no need for the scale + bias
+                    shadow_vp = cam.proj * cam.view;
+                }
+
                 pen::renderer_update_buffer(cb_view, &shadow_vp, sizeof(mat4));
                 shadow_matrices[shadow_index - 1] = shadow_vp;
                 vv.cb_view = cb_view;

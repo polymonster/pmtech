@@ -1840,6 +1840,11 @@ namespace pen
         return false;
     }
 
+    bool renderer_depth_0_to_1()
+    {
+        return false;
+    }
+
     namespace direct
     {
         void new_frame(u32 next_frame)
@@ -2666,5 +2671,6 @@ namespace pen
         void renderer_release_depth_stencil_state(u32 depth_stencil_state)
         {
         }
+
     } // namespace direct
 } // namespace pen

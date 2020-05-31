@@ -2659,4 +2659,9 @@ namespace pen
     {
         return true;
     }
+
+    bool renderer_depth_0_to_1()
+    {
+        return false;
+    }
 } // namespace pen

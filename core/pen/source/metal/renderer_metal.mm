@@ -1051,6 +1051,11 @@ namespace pen
         return false;
     }
 
+    bool renderer_depth_0_to_1()
+    {
+        return true;
+    }
+
     const c8* renderer_get_shader_platform()
     {
         return "metal";
