@@ -26,7 +26,8 @@
 - All features in pmtech are demonstarted and unit tested through [examples](https://github.com/polymonster/pmtech/wiki/Examples). 
 
 **Media**  
-
+[<img src="https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/gi_demo.gif" width="1280" />](https://github.com/polymonster/pmtech/blob/master/examples/code/global_illumincation/global_illumincation.cpp)
+<sup>Global Illumination + Temporal Anti-Aliasing.</sup>
 [<img src="https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/area-lights.gif" width="1280" />](https://github.com/polymonster/pmtech/blob/master/examples/code/area_lights/area_lights.cpp)
 <sup>Area Lights.</sup>
 [<img src="https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/sss.gif" width="1280" />](https://github.com/polymonster/pmtech/blob/master/examples/code/sss/sss.cpp)
