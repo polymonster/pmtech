@@ -7,6 +7,7 @@
 #include "hash.h"
 #include "renderer.h"
 #include "types.h"
+#include "pen_json.h"
 
 #include "str/Str.h"
 
@@ -236,6 +237,8 @@ namespace put
             hash_id id_name;
             hash_id id_sub_type;
             Str     name;
+            bool    loaded = false;
+            pen::json info;
 
             u32 vertex_shader;
             u32 pixel_shader;

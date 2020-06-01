@@ -39,6 +39,7 @@ void example_setup(ecs_scene* scene, camera& cam)
         
     material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
     geometry_resource* box_resource = get_geometry_resource(PEN_HASH("cube"));
+    geometry_resource* sphere_resource = get_geometry_resource(PEN_HASH("sphere"));
         
     clear_scene(scene);
 
@@ -131,7 +132,9 @@ void example_setup(ecs_scene* scene, camera& cam)
             scene->parents[box] = box;
             scene->entities[box] |= e_cmp::transform;
             scene->material_permutation[box] |= FORWARD_LIT_GI;
-            instantiate_geometry(box_resource, scene, box);
+            
+            
+            instantiate_geometry(sphere_resource, scene, box);
             instantiate_material(default_material, scene, box);
             instantiate_model_cbuffer(scene, box);
             

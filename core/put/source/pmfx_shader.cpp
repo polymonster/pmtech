@@ -38,7 +38,7 @@ namespace
         "BLENDINDICES"
     };
 
-    shader_program null_shader = {0};
+    shader_program null_shader = {};
 
     hash_id id_widgets[] = {
 		PEN_HASH("slider"), 
@@ -296,10 +296,10 @@ namespace put
                 }
             }
         }
-
-        shader_program load_shader_technique(const c8* fx_filename, pen::json& j_technique, pen::json& j_info)
+        
+        shader_program preload_shader_technique(const c8* fx_filename, pen::json& j_technique, pen::json& j_info)
         {
-            shader_program program = {0};
+            shader_program program = {};
 
             Str name = j_technique["name"].as_str();
 
@@ -308,6 +308,23 @@ namespace put
             program.id_sub_type = PEN_HASH("");
             program.permutation_id = j_technique["permutation_id"].as_u32();
             program.permutation_option_mask = j_technique["permutation_option_mask"].as_u32();
+            program.info = j_technique;
+            
+            return program;
+        }
+        
+        shader_program load_shader_technique(const c8* fx_filename, pen::json& j_technique, pen::json& j_info)
+        {
+            shader_program program = {};
+
+            Str name = j_technique["name"].as_str();
+
+            program.name = name;
+            program.id_name = PEN_HASH(name.c_str());
+            program.id_sub_type = PEN_HASH("");
+            program.permutation_id = j_technique["permutation_id"].as_u32();
+            program.permutation_option_mask = j_technique["permutation_option_mask"].as_u32();
+            program.info = j_technique;
 
             const c8* sfp = pen::renderer_get_shader_platform();
 
@@ -582,6 +599,16 @@ namespace put
 
             return program;
         }
+        
+        void lazy_load_shader_technique(shader_program& t, u32 shader)
+        {
+            auto& s = s_pmfx_list[shader];
+            if(!t.loaded)
+            {
+                t = load_shader_technique(s.filename.c_str(), t.info, s.info);
+                t.loaded = true;
+            }
+        }
 
         void initialise_constant_defaults(u32 shader, u32 technique_index, f32* data)
         {
@@ -702,8 +729,10 @@ namespace put
         {
             if (technique_index >= sb_count(s_pmfx_list[shader].techniques))
                 return;
-
+                
             auto& t = s_pmfx_list[shader].techniques[technique_index];
+
+            lazy_load_shader_technique(t, shader);
 
             if (t.stream_out_shader)
             {
@@ -731,6 +760,10 @@ namespace put
 
             if (!is_valid(technique_index))
                 return false;
+                
+            auto& t = s_pmfx_list[shader].techniques[technique_index];
+            
+            lazy_load_shader_technique(t, shader);
 
             set_technique(shader, technique_index);
 
@@ -751,6 +784,8 @@ namespace put
 
                 if (t.permutation_id != masked_permutation)
                     continue;
+                    
+                lazy_load_shader_technique(t, shader);
 
                 return i;
             }
@@ -817,7 +852,7 @@ namespace put
             for (s32 i = 0; i < _techniques.size(); ++i)
             {
                 pen::json      t = _techniques[i];
-                shader_program new_technique = load_shader_technique(filename, t, new_pmfx.info);
+                shader_program new_technique = preload_shader_technique(filename, t, new_pmfx.info);
 
                 sb_push(new_pmfx.techniques, new_technique);
             }

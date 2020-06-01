@@ -481,8 +481,8 @@ namespace put
 
         void create_sphere_primitive()
         {
-            static const s32 segments = 16;
-            static const s32 rows = 16;
+            static const s32 segments = 24;
+            static const s32 rows = 24;
 
             static const u32   num_verts = segments * rows;
             vertex_model       v[num_verts];

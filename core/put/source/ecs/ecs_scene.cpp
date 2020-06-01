@@ -797,7 +797,7 @@ namespace put
             info.volume_size.z = info.volume_size.x;
 
             f32 max_dim = max(scene->renderable_extents.max - scene->renderable_extents.min);
-            info.scene_size.xyz = vec3f(max_dim);
+            info.scene_size.xyz = vec3f(min(max_dim, 128.0f));
 
             // get inv shadow matrices
             u32 i = 0;
