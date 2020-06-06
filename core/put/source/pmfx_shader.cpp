@@ -761,10 +761,6 @@ namespace put
             if (!is_valid(technique_index))
                 return false;
                 
-            auto& t = s_pmfx_list[shader].techniques[technique_index];
-            
-            lazy_load_shader_technique(t, shader);
-
             set_technique(shader, technique_index);
 
             return true;

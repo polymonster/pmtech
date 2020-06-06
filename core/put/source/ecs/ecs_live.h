@@ -4,6 +4,8 @@
 #include "ecs_resources.h"
 #include "ecs_utilities.h"
 #include "debug_render.h"
+#include "camera.h"
+#include "pmfx.h"
 namespace put {
     namespace ecs{
         typedef void (*proc_init)(void);
@@ -328,11 +330,204 @@ namespace put {
         #endif
     }
 
+    namespace cam{
+        typedef void (*proc_camera_create_perspective)(camera*, f32, f32, f32, f32);
+        typedef void (*proc_camera_create_orthographic)(camera*, f32, f32, f32, f32, f32, f32);
+        typedef void (*proc_camera_create_cubemap)(camera*, f32, f32);
+        typedef void (*proc_camera_set_cubemap_face)(camera*, u32);
+        typedef void (*proc_camera_update_look_at)(camera*);
+        typedef void (*proc_camera_update_projection_matrix)(camera*);
+        typedef void (*proc_camera_update_frustum)(camera*);
+        typedef void (*proc_camera_update_modelling)(camera*, bool, camera_settings);
+        typedef void (*proc_camera_update_fly)(camera*, bool, camera_settings);
+        typedef void (*proc_camera_update_shader_constants)(camera*);
+        typedef void (*proc_camera_update_shadow_frustum)(put::camera*, vec3f, vec3f, vec3f);
+        struct __cam {
+            void* __cam_start;
+            proc_camera_create_perspective camera_create_perspective;
+            proc_camera_create_orthographic camera_create_orthographic;
+            proc_camera_create_cubemap camera_create_cubemap;
+            proc_camera_set_cubemap_face camera_set_cubemap_face;
+            proc_camera_update_look_at camera_update_look_at;
+            proc_camera_update_projection_matrix camera_update_projection_matrix;
+            proc_camera_update_frustum camera_update_frustum;
+            proc_camera_update_modelling camera_update_modelling;
+            proc_camera_update_fly camera_update_fly;
+            proc_camera_update_shader_constants camera_update_shader_constants;
+            proc_camera_update_shadow_frustum camera_update_shadow_frustum;
+            void* __cam_end;
+        };
+
+        #if !DLL
+        void generate_bindings(__cam* ctx){
+            ctx->camera_create_perspective = &camera_create_perspective;
+            ctx->camera_create_orthographic = &camera_create_orthographic;
+            ctx->camera_create_cubemap = &camera_create_cubemap;
+            ctx->camera_set_cubemap_face = &camera_set_cubemap_face;
+            ctx->camera_update_look_at = &camera_update_look_at;
+            ctx->camera_update_projection_matrix = &camera_update_projection_matrix;
+            ctx->camera_update_frustum = &camera_update_frustum;
+            ctx->camera_update_modelling = &camera_update_modelling;
+            ctx->camera_update_fly = &camera_update_fly;
+            ctx->camera_update_shader_constants = &camera_update_shader_constants;
+            ctx->camera_update_shadow_frustum = &camera_update_shadow_frustum;
+        }
+
+        #endif
+    }
+
+    namespace pmfx{
+        typedef void (*proc_show_dev_ui)(void);
+        typedef void (*proc_release_script_resources)(void);
+        typedef void (*proc_render)(void);
+        typedef void (*proc_render_view)(hash_id);
+        typedef void (*proc_register_scene)(ecs::ecs_scene*, const char*);
+        typedef void (*proc_register_camera)(camera*, const char*);
+        typedef void (*proc_register_scene_view_renderer)(const scene_view_renderer&);
+        typedef void (*proc_resize_render_target)(hash_id, u32, u32, const c8*);
+        typedef void (*proc_resize_viewports)(void);
+        typedef void (*proc_set_view_set)(const c8*);
+        typedef camera* (*proc_get_camera)(hash_id);
+        typedef camera** (*proc_get_cameras)(void);
+        typedef const render_target* (*proc_get_render_target)(hash_id);
+        typedef void (*proc_get_render_target_dimensions)(const render_target*, f32&, f32&);
+        typedef u32 (*proc_get_render_state)(hash_id, u32);
+        typedef Str (*proc_get_render_state_name)(u32);
+        typedef c8** (*proc_get_render_state_list)(u32);
+        typedef hash_id* (*proc_get_render_state_id_list)(u32);
+        typedef void (*proc_fullscreen_quad)(const scene_view&);
+        typedef void (*proc_render_taa_resolve)(const scene_view&);
+        typedef u32 (*proc_load_shader)(const c8*);
+        typedef void (*proc_release_shader)(u32);
+        typedef void (*proc_set_technique)(u32, u32);
+        typedef bool (*proc_set_technique_perm)(u32, hash_id, u32);
+        typedef void (*proc_initialise_constant_defaults)(u32, u32, f32*);
+        typedef void (*proc_initialise_sampler_defaults)(u32, u32, sampler_set&);
+        typedef u32 (*proc_get_technique_list_index)(u32, hash_id);
+        typedef const c8** (*proc_get_shader_list)(u32&);
+        typedef const c8** (*proc_get_technique_list)(u32, u32&);
+        typedef const c8* (*proc_get_shader_name)(u32);
+        typedef const c8* (*proc_get_technique_name)(u32, hash_id);
+        typedef hash_id (*proc_get_technique_id)(u32, u32);
+        typedef u32 (*proc_get_technique_index_perm)(u32, hash_id, u32);
+        typedef technique_constant* (*proc_get_technique_constants)(u32, u32);
+        typedef technique_constant* (*proc_get_technique_constant)(hash_id, u32, u32);
+        typedef u32 (*proc_get_technique_cbuffer_size)(u32, u32);
+        typedef technique_sampler* (*proc_get_technique_samplers)(u32, u32);
+        typedef technique_sampler* (*proc_get_technique_sampler)(hash_id, u32, u32);
+        typedef bool (*proc_show_technique_ui)(u32, u32, f32*, sampler_set&, u32*);
+        typedef bool (*proc_has_technique_permutations)(u32, u32);
+        typedef bool (*proc_has_technique_constants)(u32, u32);
+        typedef bool (*proc_has_technique_samplers)(u32, u32);
+        typedef bool (*proc_has_technique_params)(u32, u32);
+        typedef void (*proc_poll_for_changes)(void);
+        struct __pmfx {
+            void* __pmfx_start;
+            proc_show_dev_ui show_dev_ui;
+            proc_release_script_resources release_script_resources;
+            proc_render render;
+            proc_render_view render_view;
+            proc_register_scene register_scene;
+            proc_register_camera register_camera;
+            proc_register_scene_view_renderer register_scene_view_renderer;
+            proc_resize_render_target resize_render_target;
+            proc_resize_viewports resize_viewports;
+            proc_set_view_set set_view_set;
+            proc_get_camera get_camera;
+            proc_get_cameras get_cameras;
+            proc_get_render_target get_render_target;
+            proc_get_render_target_dimensions get_render_target_dimensions;
+            proc_get_render_state get_render_state;
+            proc_get_render_state_name get_render_state_name;
+            proc_get_render_state_list get_render_state_list;
+            proc_get_render_state_id_list get_render_state_id_list;
+            proc_fullscreen_quad fullscreen_quad;
+            proc_render_taa_resolve render_taa_resolve;
+            proc_load_shader load_shader;
+            proc_release_shader release_shader;
+            proc_set_technique set_technique;
+            proc_set_technique_perm set_technique_perm;
+            proc_initialise_constant_defaults initialise_constant_defaults;
+            proc_initialise_sampler_defaults initialise_sampler_defaults;
+            proc_get_technique_list_index get_technique_list_index;
+            proc_get_shader_list get_shader_list;
+            proc_get_technique_list get_technique_list;
+            proc_get_shader_name get_shader_name;
+            proc_get_technique_name get_technique_name;
+            proc_get_technique_id get_technique_id;
+            proc_get_technique_index_perm get_technique_index_perm;
+            proc_get_technique_constants get_technique_constants;
+            proc_get_technique_constant get_technique_constant;
+            proc_get_technique_cbuffer_size get_technique_cbuffer_size;
+            proc_get_technique_samplers get_technique_samplers;
+            proc_get_technique_sampler get_technique_sampler;
+            proc_show_technique_ui show_technique_ui;
+            proc_has_technique_permutations has_technique_permutations;
+            proc_has_technique_constants has_technique_constants;
+            proc_has_technique_samplers has_technique_samplers;
+            proc_has_technique_params has_technique_params;
+            proc_poll_for_changes poll_for_changes;
+            void* __pmfx_end;
+        };
+
+        #if !DLL
+        void generate_bindings(__pmfx* ctx){
+            ctx->show_dev_ui = &show_dev_ui;
+            ctx->release_script_resources = &release_script_resources;
+            ctx->render = &render;
+            ctx->render_view = &render_view;
+            ctx->register_scene = &register_scene;
+            ctx->register_camera = &register_camera;
+            ctx->register_scene_view_renderer = &register_scene_view_renderer;
+            ctx->resize_render_target = &resize_render_target;
+            ctx->resize_viewports = &resize_viewports;
+            ctx->set_view_set = &set_view_set;
+            ctx->get_camera = &get_camera;
+            ctx->get_cameras = &get_cameras;
+            ctx->get_render_target = &get_render_target;
+            ctx->get_render_target_dimensions = &get_render_target_dimensions;
+            ctx->get_render_state = &get_render_state;
+            ctx->get_render_state_name = &get_render_state_name;
+            ctx->get_render_state_list = &get_render_state_list;
+            ctx->get_render_state_id_list = &get_render_state_id_list;
+            ctx->fullscreen_quad = &fullscreen_quad;
+            ctx->render_taa_resolve = &render_taa_resolve;
+            ctx->load_shader = &load_shader;
+            ctx->release_shader = &release_shader;
+            ctx->set_technique = &set_technique;
+            ctx->set_technique_perm = &set_technique_perm;
+            ctx->initialise_constant_defaults = &initialise_constant_defaults;
+            ctx->initialise_sampler_defaults = &initialise_sampler_defaults;
+            ctx->get_technique_list_index = &get_technique_list_index;
+            ctx->get_shader_list = &get_shader_list;
+            ctx->get_technique_list = &get_technique_list;
+            ctx->get_shader_name = &get_shader_name;
+            ctx->get_technique_name = &get_technique_name;
+            ctx->get_technique_id = &get_technique_id;
+            ctx->get_technique_index_perm = &get_technique_index_perm;
+            ctx->get_technique_constants = &get_technique_constants;
+            ctx->get_technique_constant = &get_technique_constant;
+            ctx->get_technique_cbuffer_size = &get_technique_cbuffer_size;
+            ctx->get_technique_samplers = &get_technique_samplers;
+            ctx->get_technique_sampler = &get_technique_sampler;
+            ctx->show_technique_ui = &show_technique_ui;
+            ctx->has_technique_permutations = &has_technique_permutations;
+            ctx->has_technique_constants = &has_technique_constants;
+            ctx->has_technique_samplers = &has_technique_samplers;
+            ctx->has_technique_params = &has_technique_params;
+            ctx->poll_for_changes = &poll_for_changes;
+        }
+
+        #endif
+    }
+
     struct live_context {
         f32 dt;
         pen::render_ctx render;
         ecs::ecs_scene* scene;
         ecs::__ecs* ecs_funcs;
         dbg::__dbg* dbg_funcs;
+        cam::__cam* cam_funcs;
+        pmfx::__pmfx* pmfx_funcs;
     };
 }

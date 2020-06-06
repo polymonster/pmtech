@@ -571,6 +571,7 @@ def run_cr(config):
         print(config["cr"]["output"])
 
         files = config["cr"]["files"]
+        scope_lookup = config["cr"]["scopes"]
 
         free_funcs = []
         added = []
@@ -591,6 +592,7 @@ def run_cr(config):
                 # cant add overloads
                 if func["name"] in added:
                     continue
+                func["file"] = os.path.basename(f)
                 added.append(func["name"])
                 free_funcs.append(func)
 
@@ -598,7 +600,8 @@ def run_cr(config):
         code = cgu.src_line("// codegen_2")
         code += cgu.src_line("#pragma once")
         for f in files:
-            code += cgu.src_line('#include ' + cgu.in_quotes(os.path.basename(f)))
+            bn = os.path.basename(f)
+            code += cgu.src_line('#include ' + cgu.in_quotes(bn))
 
         # use namespaces
         code += cgu.src_line("namespace put {")
@@ -606,9 +609,12 @@ def run_cr(config):
         # sort by immediate scope
         scope_funcs = dict()
         for f in free_funcs:
+            ff = f["file"]
             l = len(f["scope"])
             if l > 0:
                 s = f["scope"][l-1]["name"]
+                if ff in scope_lookup:
+                    s = scope_lookup[ff]
                 if s not in scope_funcs.keys():
                     scope_funcs[s] = list()
                 scope_funcs[s].append(f)

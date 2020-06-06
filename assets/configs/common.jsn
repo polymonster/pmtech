@@ -210,7 +210,13 @@
         {
         	format: d24s8,
         	size: equal
-        }
+        },
+        
+        velocity_buffer:
+        {
+        	format: r32f,
+        	size: equal
+        },
     },
     
     views:
@@ -338,7 +344,24 @@
         	target: [taa_colour, taa_depth],
         	post_process : taa_resolve,
         	jitter: true
-        }
+        },
+        
+        velocity_buffer:
+        {
+            target             : [velocity_buffer],
+            clear_colour       : [0.0, 0.0, 0.0, 0.0],
+            colour_write_mask  : 0xf,
+            blend_state        : disabled,
+            viewport           : [0.0, 0.0, 1.0, 1.0],
+            raster_state       : default,
+            depth_stencil_state: default,
+            scene              : main_scene,
+			pmfx_shader        : forward_render,
+            technique          : per_pixel_velocity,
+            camera             : model_viewer_camera,
+            scene_views        : ["ecs_render_scene"],
+            render_flags       : ["forward_lit"],
+        },
     }
 }
 

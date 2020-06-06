@@ -183,12 +183,7 @@ vs_output_zonly vs_main_zonly( vs_input_position_only input, vs_instance_input i
     {
         output.position = mul( input.position, wvp );
     }
-      
-    // for d3d 0 - 1 clip space    
-    //output.position /= output.position.w;
-    
-    //remap_z_clip_space(output.position.z);
-    
+          
     return output;
 }
 
@@ -765,7 +760,7 @@ ps_output ps_forward_lit( vs_output input )
 	output.colour.rgb = lit_colour.rgb * albedo.a;    
     output.colour.a = albedo.a;
 	
-	// gi tracing wip..
+	// gi volume tracing..
 	if:(GI)
 	{    			
 		// geometry tb for casting rays
@@ -773,9 +768,12 @@ ps_output ps_forward_lit( vs_output input )
 		float3 gt = input.tangent.xyz;
 		float3 gb = input.bitangent.xyz;
 		
+		// scene / volume dimensions
 		float3 dim = gi_scene_size.xyz;	
 		float3 to_uvx = dim * 0.5;
 		
+		// 16 rays on sphere surface
+		int num_rays = 16;
 		float3 rays[16];
 		rays[0] = float3(0.57735, 0.57735, 0.57735);
 		rays[1] = float3(0.57735, -0.57735, -0.57735);
@@ -794,11 +792,9 @@ ps_output ps_forward_lit( vs_output input )
 		rays[14] = float3(-0.182696, 0.388844, 0.903007);
 		rays[15] = float3(0.182696, -0.388844, 0.903007);
 				
-		int num_rays = 16;
-		int num_samples = 9;
-		
 		float4 gi = float4(0.0, 0.0, 0.0, 0.0);
-		float occlusion = 0.0;
+
+		// trace rays
 		for(int i = 0; i < num_rays; ++i)
 		{
 			// start outside occlusion
@@ -806,28 +802,29 @@ ps_output ps_forward_lit( vs_output input )
 			float3 noise = (hash_33(input.world_pos.xyz) * 0.5);
 			float3 ray = chebyshev_normalize(rays[i] + noise);
 			float3 cn = chebyshev_normalize(n);
-			
-			ray *= dot(ray, gn) < 0 ? -1 : 1;
 			float3 step = (dim*2.0) / tex_size;
-			
 			float3 sp = input.world_pos.xyz + (cn * step);
+			
+			// ensure ray is pointing in normals hemisphere
+			ray *= dot(ray, gn) < 0 ? -1 : 1;
 			
 			// gather gi
 			float4 ray_gi = float4(0.0, 0.0, 0.0, 0.0);
 			
+			// sample each mip map level
 			// first 4 levels make the main contribution, after 4 its hard to notice any difference
 			for(int j = 0; j < 4; ++j)
 			{					
-				// 2 steps per level
+				// 2 steps per level to cover the distance of 1 texel in mip j+1
 				for(int k = 0; k < 2; ++k)
 				{
 					step = (dim*2.0) / tex_size;
 				
 					float3 uvw = saturate((sp / to_uvx) * 0.5 + 0.5);					
-					float4 g = sample_texture_level( volume_gi, uvw, min(j, 4));
+					float4 g = sample_texture_level( volume_gi, uvw, j);
 										
 					float d = length(input.world_pos.xyz - sp);
-					d = smoothstep(0.0, 10.0, d);
+					d = smoothstep(0.0, 8.0, d);
 					
 					ray_gi.rgb = ray_gi.rgb + g.rgb * d;
 					ray_gi.a += g.a;
@@ -836,6 +833,7 @@ ps_output ps_forward_lit( vs_output input )
 				}
 				tex_size /= 2;
 				
+				// break if we reach 1 alpha but accumulate mip 0 for better coverage at contact points
 				if(ray_gi.a >= 1.0 && j > 1)
 					break;
 			}
@@ -843,11 +841,12 @@ ps_output ps_forward_lit( vs_output input )
 		}
 		gi /= float(num_rays);
 		
-		output.colour.rgb = gi.rgb;
+		// could multiply gi with albedo but additive gi gives a stronger effect
 		output.colour.rgb = gi.rgb + lit_colour.rgb;
 		
-		float3 uvw = saturate((input.world_pos.xyz / to_uvx) * 0.5 + 0.5);
-		float4 raw = sample_texture_level( volume_gi, uvw, 0);
+		// debug to render the gi volume
+		//float3 uvw = saturate((input.world_pos.xyz / to_uvx) * 0.5 + 0.5);
+		//float4 raw = sample_texture_level( volume_gi, uvw, 0);
 		//output.colour.rgb = raw.rgb;
 	}
 	    
@@ -926,6 +925,15 @@ ps_output ps_single_light_diffuse( vs_output input )
     output.colour.rgb = (m_albedo.rgb * dot(input.normal, l) * lc);
     output.colour.rgb += m_albedo.rgb * 0.3;
     output.colour.a = 1.0;
+    
+    return output;
+}
+
+ps_output ps_per_pixel_velocity( vs_output input )
+{
+	ps_output output;
+    
+    output.colour = float4(1.0, 0.0, 0.0, 0.0);
     
     return output;
 }
@@ -1072,6 +1080,12 @@ pmfx:
     {
         vs: vs_main_extrude,
         ps: ps_dbg
+    },
+    
+    per_pixel_velocity:
+    {	
+    	vs: vs_main,
+    	ps: ps_per_pixel_velocity
     }
 }
 

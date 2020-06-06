@@ -82,7 +82,6 @@ void* pen::user_entry(void* params)
     pmfx::register_scene(main_scene, "main_scene");
     pmfx::register_camera(&main_camera, "model_viewer_camera");
     pmfx::init("data/configs/editor_renderer.jsn");
-    pmfx::set_view_set("editor_gi");
     
     // cr
     cr_plugin ctx;
@@ -95,8 +94,12 @@ void* pen::user_entry(void* params)
         lc->render = pen::renderer_get_main_context();
         lc->dbg_funcs = new dbg::__dbg;
         lc->ecs_funcs = new ecs::__ecs;
+        lc->pmfx_funcs = new pmfx::__pmfx;
+        lc->cam_funcs = new cam::__cam;
         put::dbg::generate_bindings(lc->dbg_funcs);
         put::ecs::generate_bindings(lc->ecs_funcs);
+        put::cam::generate_bindings(lc->cam_funcs);
+        put::pmfx::generate_bindings(lc->pmfx_funcs);
     }
 
     f32 dt = 0.0f;
@@ -158,3 +161,5 @@ void* pen::user_entry(void* params)
 
     return PEN_THREAD_OK;
 }
+
+
