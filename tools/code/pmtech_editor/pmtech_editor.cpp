@@ -89,17 +89,8 @@ void* pen::user_entry(void* params)
     live_context* lc = nullptr;
     if(live_lib)
     {
-        lc = new live_context;
+        lc = new live_context();
         lc->scene = main_scene;
-        lc->render = pen::renderer_get_main_context();
-        lc->dbg_funcs = new dbg::__dbg;
-        lc->ecs_funcs = new ecs::__ecs;
-        lc->pmfx_funcs = new pmfx::__pmfx;
-        lc->cam_funcs = new cam::__cam;
-        put::dbg::generate_bindings(lc->dbg_funcs);
-        put::ecs::generate_bindings(lc->ecs_funcs);
-        put::cam::generate_bindings(lc->cam_funcs);
-        put::pmfx::generate_bindings(lc->pmfx_funcs);
     }
 
     f32 dt = 0.0f;

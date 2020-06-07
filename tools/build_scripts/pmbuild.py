@@ -571,8 +571,6 @@ def run_cr(config):
         print(config["cr"]["output"])
 
         files = config["cr"]["files"]
-        scope_lookup = config["cr"]["scopes"]
-
         free_funcs = []
         added = []
         for f in files:
@@ -603,8 +601,11 @@ def run_cr(config):
             bn = os.path.basename(f)
             code += cgu.src_line('#include ' + cgu.in_quotes(bn))
 
-        # use namespaces
-        code += cgu.src_line("namespace put {")
+        code += cgu.src_line("using namespace pen;")
+        code += cgu.src_line("using namespace put;")
+        code += cgu.src_line("using namespace pmfx;")
+        code += cgu.src_line("using namespace ecs;")
+        code += cgu.src_line("using namespace dbg;")
 
         # sort by immediate scope
         scope_funcs = dict()
@@ -613,15 +614,12 @@ def run_cr(config):
             l = len(f["scope"])
             if l > 0:
                 s = f["scope"][l-1]["name"]
-                if ff in scope_lookup:
-                    s = scope_lookup[ff]
                 if s not in scope_funcs.keys():
                     scope_funcs[s] = list()
                 scope_funcs[s].append(f)
 
         # add bindings grouped by scope
         for scope in scope_funcs:
-            code += cgu.src_line("namespace " + scope + "{")
             # function pointer typedefs
             for f in scope_funcs[scope]:
                 args = cgu.get_funtion_prototype(f)
@@ -635,26 +633,33 @@ def run_cr(config):
                 code += cgu.src_line("proc_" + f["name"] + " " + f["name"] + ";")
             code += cgu.src_line("void* " + struct_name + "_end;")
             code += cgu.src_line("};")
-            # bind function pointers to addresses
-            code += cgu.src_line("#if !DLL")
-            code += cgu.src_line("void generate_bindings(" + struct_name + "* ctx){")
-            for f in scope_funcs[scope]:
-                code += cgu.src_line("ctx->" + f["name"] + " = &" + f["name"] + ";")
-            code += cgu.src_line("}")
-            code += cgu.src_line("#endif")
-            code += cgu.src_line("}")
 
         # pointers to contexts
-        code += cgu.src_line("struct live_context {")
+        inherit = ""
+        for scope in scope_funcs:
+            if len(inherit) > 0:
+                inherit += ", "
+            inherit += "public __" + scope
+        code += cgu.src_line("struct live_context:")
+        code += cgu.src_line(inherit + "{")
         code += cgu.src_line("f32 dt;")
-        code += cgu.src_line("pen::render_ctx render;")
         code += cgu.src_line("ecs::ecs_scene* scene;")
         for scope in scope_funcs:
-            code += cgu.src_line(scope + "::__" + scope + "* " + scope + "_funcs;")
+            code += cgu.src_line("__" + scope + "* " + scope + "_funcs;")
+        code += cgu.src_line("live_context() {")
+        # bind function pointers to addresses
+        code += cgu.src_line("#if !DLL")
+        for scope in scope_funcs:
+            for f in scope_funcs[scope]:
+                full_scope = ""
+                for q in f["scope"]:
+                    if q["type"] == "namespace":
+                        full_scope += q["name"] + "::"
+                code += cgu.src_line(f["name"] + " = &" + full_scope + f["name"] + ";")
+        code += cgu.src_line("#endif")
+        code += cgu.src_line("}")
+
         code += cgu.src_line("};")
-
-        code += cgu.src_line("}")  # namespace put
-
         output_file = open(config["cr"]["output"], "w")
         output_file.write(cgu.format_source(code, 4))
         return

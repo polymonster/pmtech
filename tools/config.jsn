@@ -113,11 +113,9 @@
             	"../core/put/source/ecs/ecs_utilities.h",
             	"../core/put/source/debug_render.h",
             	"../core/put/source/camera.h",
-            	"../core/put/source/pmfx.h"
+            	"../core/put/source/pmfx.h",
+            	"../core/pen/include/timer.h"
         	],
-        	scopes: {
-        		"camera.h": "cam"
-        	},
         	output: "../core/put/source/ecs/ecs_live.h"
         }
     },
