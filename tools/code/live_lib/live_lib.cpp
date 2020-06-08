@@ -39,7 +39,7 @@ struct live_lib : public live_context
         
         f32 space = 10.0f;
         f32 size = 1.0f;
-        f32 num = 64.0f;
+        f32 num = 16.0f;
         
         vec3f start = - (vec3f(space) * num) * 0.5f;
         vec3f pos = start;
@@ -364,6 +364,44 @@ struct live_lib : public live_context
 #endif
     }
     
+    void frustum_cull_aabb_scalar(const ecs_scene* scene, const camera* cam, const u32* entities_in, u32** visible_entities_out)
+    {
+        static timer* ct = timer_create();
+        timer_start(ct);
+        
+        const frustum& frust = cam->camera_frustum;
+                
+        u32 n = sb_count(entities_in);
+        for(u32 i = 0; i < n; ++i)
+        {
+            u32 e = entities_in[i];
+            
+            const vec3f& min = scene->bounding_volumes[e].transformed_min_extents;
+            const vec3f& max = scene->bounding_volumes[e].transformed_max_extents;
+            vec3f pos = min + (max - min) * 0.5f;
+            vec3f extent = max - pos;
+            
+            bool inside = true;
+            for (s32 p = 0; p < 6; ++p)
+            {
+                f32 pd = maths::plane_distance(frust.p[p], frust.n[p]);
+                f32 d = dot(pos + extent * -1.0f, frust.n[p]);
+                if(d > -pd)
+                {
+                    inside = false;
+                }
+            }
+            
+            if(inside)
+            {
+                sb_push(*visible_entities_out, e);
+            }
+        }
+        
+        f64 us = timer_elapsed_us(ct);
+        PEN_LOG("spahere aabb cull time %f (us)", us);
+    }
+    
     void frustum_cull_sphere_scalar(const ecs_scene* scene, const camera* cam, const u32* entities_in, u32** visible_entities_out)
     {
         static timer* ct = timer_create();
@@ -417,7 +455,8 @@ struct live_lib : public live_context
         u32* visible_entities = nullptr;
         //frustum_cull_sphere_scalar(scene, &cull_cam, filtered_entities, &visible_entities);
         //frustum_cull_sphere_simd128(scene, &cull_cam, filtered_entities, &visible_entities);
-        frustum_cull_sphere_simd256(scene, &cull_cam, filtered_entities, &visible_entities);
+        //frustum_cull_sphere_simd256(scene, &cull_cam, filtered_entities, &visible_entities);
+        //frustum_cull_aabb_scalar(scene, &cull_cam, filtered_entities, &visible_entities);
         
         u32 n = sb_count(visible_entities);
         for(u32 i = 0; i < n; ++i)
