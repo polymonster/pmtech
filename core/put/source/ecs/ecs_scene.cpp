@@ -1425,6 +1425,12 @@ namespace put
 
                 f32& trad = scene->bounding_volumes[n].radius;
                 trad = mag(tmax - tmin) * 0.5f;
+                
+                // pos extent for faster aabb and sphere culling
+                auto& pe = scene->pos_extent[n];
+                pe.pos.xyz = tmin + (tmax - tmin) * 0.5f;
+                pe.extent.xyz = tmax - pe.pos.xyz;
+                pe.extent.w = trad;
 
                 if (!(scene->entities[n] & e_cmp::geometry))
                     continue;

@@ -123,25 +123,13 @@ struct live_lib : public live_context
         const frustum& frust = cam->camera_frustum;
         
         // splat constants
-        __m256 point_five = _mm256_set1_ps(0.5f);
         __m256 zero = _mm256_set1_ps(0.0f);
-        
-        // min max extents
-        __m256 minx;
-        __m256 miny;
-        __m256 minz;
-        __m256 maxx;
-        __m256 maxy;
-        __m256 maxz;
         
         // sphere radius and position
         __m256 radius;
         __m256 posx;
         __m256 posy;
         __m256 posz;
-        __m256 sizex;
-        __m256 sizey;
-        __m256 sizez;
         
         // plane normal
         __m256 pnx[6];
@@ -172,50 +160,28 @@ struct live_lib : public live_context
                 e[j] = entities_in[i+j];
 
             // load entities values
-            auto& bv_min_0 = scene->bounding_volumes[e[0]].transformed_min_extents;
-            auto& bv_min_1 = scene->bounding_volumes[e[1]].transformed_min_extents;
-            auto& bv_min_2 = scene->bounding_volumes[e[2]].transformed_min_extents;
-            auto& bv_min_3 = scene->bounding_volumes[e[3]].transformed_min_extents;
-            auto& bv_min_4 = scene->bounding_volumes[e[4]].transformed_min_extents;
-            auto& bv_min_5 = scene->bounding_volumes[e[5]].transformed_min_extents;
-            auto& bv_min_6 = scene->bounding_volumes[e[6]].transformed_min_extents;
-            auto& bv_min_7 = scene->bounding_volumes[e[7]].transformed_min_extents;
+            auto& p0 = scene->pos_extent[e[0]].pos;
+            auto& p1 = scene->pos_extent[e[1]].pos;
+            auto& p2 = scene->pos_extent[e[2]].pos;
+            auto& p3 = scene->pos_extent[e[3]].pos;
+            auto& p4 = scene->pos_extent[e[4]].pos;
+            auto& p5 = scene->pos_extent[e[5]].pos;
+            auto& p6 = scene->pos_extent[e[6]].pos;
+            auto& p7 = scene->pos_extent[e[7]].pos;
+            auto& r0 = scene->pos_extent[e[0]].extent;
+            auto& r1 = scene->pos_extent[e[1]].extent;
+            auto& r2 = scene->pos_extent[e[2]].extent;
+            auto& r3 = scene->pos_extent[e[3]].extent;
+            auto& r4 = scene->pos_extent[e[4]].extent;
+            auto& r5 = scene->pos_extent[e[5]].extent;
+            auto& r6 = scene->pos_extent[e[6]].extent;
+            auto& r7 = scene->pos_extent[e[7]].extent;
             
-            auto& bv_max_0 = scene->bounding_volumes[e[0]].transformed_max_extents;
-            auto& bv_max_1 = scene->bounding_volumes[e[1]].transformed_max_extents;
-            auto& bv_max_2 = scene->bounding_volumes[e[2]].transformed_max_extents;
-            auto& bv_max_3 = scene->bounding_volumes[e[3]].transformed_max_extents;
-            auto& bv_max_4 = scene->bounding_volumes[e[4]].transformed_max_extents;
-            auto& bv_max_5 = scene->bounding_volumes[e[5]].transformed_max_extents;
-            auto& bv_max_6 = scene->bounding_volumes[e[6]].transformed_max_extents;
-            auto& bv_max_7 = scene->bounding_volumes[e[7]].transformed_max_extents;
-            
-            auto& r0 = scene->bounding_volumes[e[0]].radius;
-            auto& r1 = scene->bounding_volumes[e[1]].radius;
-            auto& r2 = scene->bounding_volumes[e[2]].radius;
-            auto& r3 = scene->bounding_volumes[e[3]].radius;
-            auto& r4 = scene->bounding_volumes[e[4]].radius;
-            auto& r5 = scene->bounding_volumes[e[5]].radius;
-            auto& r6 = scene->bounding_volumes[e[6]].radius;
-            auto& r7 = scene->bounding_volumes[e[7]].radius;
-            
-            minx = _mm256_set_ps(bv_min_0.x, bv_min_1.x, bv_min_2.x, bv_min_3.x, bv_min_4.x, bv_min_5.x, bv_min_6.x, bv_min_7.x);
-            miny = _mm256_set_ps(bv_min_0.y, bv_min_1.y, bv_min_2.y, bv_min_3.y, bv_min_4.y, bv_min_5.y, bv_min_6.y, bv_min_7.y);
-            minz = _mm256_set_ps(bv_min_0.z, bv_min_1.z, bv_min_2.z, bv_min_3.z, bv_min_4.z, bv_min_5.z, bv_min_6.z, bv_min_7.z);
-            
-            maxx = _mm256_set_ps(bv_max_0.x, bv_max_1.x, bv_max_2.x, bv_max_3.x, bv_max_4.x, bv_max_5.x, bv_max_6.x, bv_max_7.x);
-            maxy = _mm256_set_ps(bv_max_0.y, bv_max_1.y, bv_max_2.y, bv_max_3.y, bv_max_4.y, bv_max_5.y, bv_max_6.y, bv_max_7.y);
-            maxz = _mm256_set_ps(bv_max_0.z, bv_max_1.z, bv_max_2.z, bv_max_3.z, bv_max_4.z, bv_max_5.z, bv_max_6.z, bv_max_7.z);
-            
-            radius = _mm256_set_ps(r0, r1, r2, r3, r4, r5, r6, r7);
-            
-            sizex = _mm256_sub_ps(maxx, minx);
-            sizey = _mm256_sub_ps(maxy, miny);
-            sizez = _mm256_sub_ps(maxz, minz);
-            
-            posx = _mm256_fmadd_ps(sizex, point_five, minx);
-            posy = _mm256_fmadd_ps(sizex, point_five, miny);
-            posz = _mm256_fmadd_ps(sizex, point_five, minz);
+            radius = _mm256_set_ps(r0.w, r1.w, r2.w, r3.w, r4.w, r5.w, r6.w, r7.w);
+                        
+            posx = _mm256_set_ps(p0.x, p1.x, p2.x, p3.x, p4.x, p5.x, p6.x, p7.x);
+            posy = _mm256_set_ps(p0.y, p1.y, p2.y, p3.y, p4.y, p5.y, p6.y, p7.y);
+            posz = _mm256_set_ps(p0.z, p1.z, p2.z, p3.z, p4.z, p5.z, p6.z, p7.z);
             
             __m256 inside = _mm256_set1_ps(0.0f);
             
@@ -254,27 +220,13 @@ struct live_lib : public live_context
         timer_start(ct);
         
         const frustum& frust = cam->camera_frustum;
-        
-        // splat constants
-        __m128 point_five = _mm_set1_ps(0.5f);
-        
-        // min max extents
-        __m128 minx;
-        __m128 miny;
-        __m128 minz;
-        __m128 maxx;
-        __m128 maxy;
-        __m128 maxz;
-        
+                
         // sphere radius and position
         __m128 radius;
         __m128 posx;
         __m128 posy;
         __m128 posz;
-        __m128 sizex;
-        __m128 sizey;
-        __m128 sizez;
-        
+
         // plane normal
         __m128 pnx[6];
         __m128 pny[6];
@@ -284,7 +236,6 @@ struct live_lib : public live_context
         __m128 pd[6];
         
         f32 result[4];
-        
         u32 e[4];
         
         // load camera planes
@@ -305,37 +256,21 @@ struct live_lib : public live_context
                 e[j] = entities_in[i+j];
 
             // load entities values
-            auto& bv_min_0 = scene->bounding_volumes[e[0]].transformed_min_extents;
-            auto& bv_min_1 = scene->bounding_volumes[e[1]].transformed_min_extents;
-            auto& bv_min_2 = scene->bounding_volumes[e[2]].transformed_min_extents;
-            auto& bv_min_3 = scene->bounding_volumes[e[3]].transformed_min_extents;
-            auto& bv_max_0 = scene->bounding_volumes[e[0]].transformed_max_extents;
-            auto& bv_max_1 = scene->bounding_volumes[e[1]].transformed_max_extents;
-            auto& bv_max_2 = scene->bounding_volumes[e[2]].transformed_max_extents;
-            auto& bv_max_3 = scene->bounding_volumes[e[3]].transformed_max_extents;
+            auto& p0 = scene->pos_extent[e[0]].pos;
+            auto& p1 = scene->pos_extent[e[1]].pos;
+            auto& p2 = scene->pos_extent[e[2]].pos;
+            auto& p3 = scene->pos_extent[e[3]].pos;
             
-            auto& r0 = scene->bounding_volumes[e[0]].radius;
-            auto& r1 = scene->bounding_volumes[e[1]].radius;
-            auto& r2 = scene->bounding_volumes[e[2]].radius;
-            auto& r3 = scene->bounding_volumes[e[3]].radius;
+            auto& r0 = scene->pos_extent[e[0]].extent;
+            auto& r1 = scene->pos_extent[e[1]].extent;
+            auto& r2 = scene->pos_extent[e[2]].extent;
+            auto& r3 = scene->pos_extent[e[3]].extent;
             
-            minx = _mm_set_ps(bv_min_0.x, bv_min_1.x, bv_min_2.x, bv_min_3.x);
-            miny = _mm_set_ps(bv_min_0.y, bv_min_1.y, bv_min_2.y, bv_min_3.y);
-            minz = _mm_set_ps(bv_min_0.z, bv_min_1.z, bv_min_2.z, bv_min_3.z);
+            radius = _mm_set_ps(r0.w, r1.w, r2.w, r3.w);
             
-            maxx = _mm_set_ps(bv_max_0.x, bv_max_1.x, bv_max_2.x, bv_max_3.x);
-            maxy = _mm_set_ps(bv_max_0.y, bv_max_1.y, bv_max_2.y, bv_max_3.y);
-            maxz = _mm_set_ps(bv_max_0.z, bv_max_1.z, bv_max_2.z, bv_max_3.z);
-            
-            radius = _mm_set_ps(r0, r1, r2, r3);
-            
-            sizex = _mm_sub_ps(maxx, minx);
-            sizey = _mm_sub_ps(maxy, miny);
-            sizez = _mm_sub_ps(maxz, minz);
-            
-            posx = _mm_fmadd_ps(sizex, point_five, minx);
-            posy = _mm_fmadd_ps(sizex, point_five, miny);
-            posz = _mm_fmadd_ps(sizex, point_five, minz);
+            posx = _mm_set_ps(p0.x, p1.x, p2.x, p3.x);
+            posy = _mm_set_ps(p0.y, p1.y, p2.y, p3.y);
+            posz = _mm_set_ps(p0.z, p1.z, p2.z, p3.z);
             
             __m128 inside = _mm_set1_ps(0.0f);
             
@@ -375,17 +310,16 @@ struct live_lib : public live_context
         for(u32 i = 0; i < n; ++i)
         {
             u32 e = entities_in[i];
-            
-            const vec3f& min = scene->bounding_volumes[e].transformed_min_extents;
-            const vec3f& max = scene->bounding_volumes[e].transformed_max_extents;
-            vec3f pos = min + (max - min) * 0.5f;
-            vec3f extent = max - pos;
+                        
+            vec3f pos = scene->pos_extent[e].pos.xyz;
+            vec3f extent = scene->pos_extent[e].extent.xyz;
             
             bool inside = true;
             for (s32 p = 0; p < 6; ++p)
             {
+                vec3f sign_flip = sgn(frust.n[p]);
                 f32 pd = maths::plane_distance(frust.p[p], frust.n[p]);
-                f32 d = dot(pos + extent * -1.0f, frust.n[p]);
+                f32 d = dot(pos + extent * sign_flip, frust.n[p]);
                 if(d > -pd)
                 {
                     inside = false;
@@ -414,11 +348,8 @@ struct live_lib : public live_context
         {
             u32 e = entities_in[i];
             
-            const vec3f& min = scene->bounding_volumes[e].transformed_min_extents;
-            const vec3f& max = scene->bounding_volumes[e].transformed_max_extents;
-
-            vec3f pos = min + (max - min) * 0.5f;
-            f32   radius = scene->bounding_volumes[e].radius;
+            vec3f pos = scene->pos_extent[e].pos.xyz;
+            f32   radius = scene->pos_extent[e].extent.w;
                 
             bool inside = true;
             for (s32 p = 0; p < 6; ++p)
@@ -455,7 +386,7 @@ struct live_lib : public live_context
         u32* visible_entities = nullptr;
         //frustum_cull_sphere_scalar(scene, &cull_cam, filtered_entities, &visible_entities);
         //frustum_cull_sphere_simd128(scene, &cull_cam, filtered_entities, &visible_entities);
-        //frustum_cull_sphere_simd256(scene, &cull_cam, filtered_entities, &visible_entities);
+        frustum_cull_sphere_simd256(scene, &cull_cam, filtered_entities, &visible_entities);
         //frustum_cull_aabb_scalar(scene, &cull_cam, filtered_entities, &visible_entities);
         
         u32 n = sb_count(visible_entities);

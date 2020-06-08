@@ -249,6 +249,12 @@ namespace put
             vec3f transformed_max_extents;
             f32   radius;
         };
+        
+        struct cmp_pos_extent
+        {
+            vec4f pos;    // w is unused
+            vec4f extent; // w has the magnitude
+        };
 
         struct extents
         {
@@ -483,6 +489,7 @@ namespace put
             cmp_array<cmp_area_light>               area_light;
             cmp_array<area_light_resource>          area_light_resources;
             cmp_array<pmfx::scene_render_flags>     render_flags;
+            cmp_array<cmp_pos_extent>               pos_extent;
 
             // num base components calculates value based on its address - entities address.
             u32 num_base_components;
