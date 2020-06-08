@@ -213,9 +213,115 @@ struct live_lib : public live_context
 #endif
     }
          
+    void frustum_cull_aabb_simd128(const ecs_scene* scene, const camera* cam, const u32* entities_in, u32** visible_entities_out)
+    {
+#ifdef __SSE2__
+        static timer* ct = timer_create();
+        timer_start(ct);
+        
+        const frustum& frust = cam->camera_frustum;
+        
+        // sphere radius and position
+        __m128 posx;
+        __m128 posy;
+        __m128 posz;
+        __m128 extx;
+        __m128 exty;
+        __m128 extz;
+
+        // plane normal
+        __m128 pnx[6];
+        __m128 pny[6];
+        __m128 pnz[6];
+        
+        // plane distance
+        __m128 pd[6];
+        
+        // plane sign flip
+        __m128 sfx[6];
+        __m128 sfy[6];
+        __m128 sfz[6];
+        
+        f32 result[4];
+        u32 e[4];
+        
+        // load camera planes
+        for (s32 p = 0; p < 6; ++p)
+        {
+            f32 ppd = maths::plane_distance(frust.p[p], frust.n[p]);
+            pnx[p] = _mm_set1_ps(frust.n[p].x);
+            pny[p] = _mm_set1_ps(frust.n[p].y);
+            pnz[p] = _mm_set1_ps(frust.n[p].z);
+            pd[p] = _mm_set1_ps(-ppd);
+            
+            sfx[p] = _mm_set1_ps(sgn(frust.n[p].x));
+            sfy[p] = _mm_set1_ps(sgn(frust.n[p].y));
+            sfz[p] = _mm_set1_ps(sgn(frust.n[p].z));
+        }
+                
+        u32 n = sb_count(entities_in);
+        for(u32 i = 0; i < n; ++i)
+        {
+            // unpack entities
+            for(u32 j = 0; j < 4; ++j)
+                e[j] = entities_in[i+j];
+                        
+            auto& p0 = scene->pos_extent[e[0]].pos;
+            auto& p1 = scene->pos_extent[e[1]].pos;
+            auto& p2 = scene->pos_extent[e[2]].pos;
+            auto& p3 = scene->pos_extent[e[3]].pos;
+            auto& e0 = scene->pos_extent[e[0]].extent;
+            auto& e1 = scene->pos_extent[e[1]].extent;
+            auto& e2 = scene->pos_extent[e[2]].extent;
+            auto& e3 = scene->pos_extent[e[3]].extent;
+            
+            posx = _mm_set_ps(p0.x, p1.x, p2.x, p3.x);
+            posy = _mm_set_ps(p0.y, p1.y, p2.y, p3.y);
+            posz = _mm_set_ps(p0.z, p1.z, p2.z, p3.z);
+            
+            extx = _mm_set_ps(e0.x, e1.x, e2.x, e3.x);
+            exty = _mm_set_ps(e0.y, e1.y, e2.y, e3.y);
+            extz = _mm_set_ps(e0.z, e1.z, e2.z, e3.z);
+            
+            __m128 inside = _mm_set1_ps(0.0f);
+            
+            for (s32 p = 0; p < 6; ++p)
+            {
+                // get distance to plane
+                // dot product with plane normal and also add plane distance
+                __m128 dd = _mm_fmadd_ps(posx, pnx[p], pd[p]);
+                dd = _mm_fmadd_ps(posy, pny[p], dd);
+                dd = _mm_fmadd_ps(posz, pnz[p], dd);
+                
+                // pos + extent * sign_flip
+                __m128 dpx = _mm_fmadd_ps(extx, sfx[p], posx);
+                __m128 dpy = _mm_fmadd_ps(exty, sfy[p], posy);
+                __m128 dpz = _mm_fmadd_ps(extz, sfz[p], posz);
+                
+                // dot(pos + extent * sign_flip, frust.n[p]);
+                __m128 r = _mm_mul_ps(dpx, pnx[p]);
+                r = _mm_fmadd_ps(dpy, pny[p], r);
+                r = _mm_fmadd_ps(dpz, pnz[p], r);
+                
+                // if(r > pd) inside = false
+                __m128 ge = _mm_cmpge_ps(r, pd[p]);
+                inside = _mm_add_ps(ge, inside);
+            }
+            
+            _mm_store_ps(result, inside);
+            for(u32 j = 0; j < 4; ++j)
+                if(!inside[j])
+                    sb_push(*visible_entities_out, e[3-j]);
+        }
+        
+        f64 us = timer_elapsed_us(ct);
+        PEN_LOG("aabb simd 128 cull time %f (us)", us);
+#endif
+    }
+    
     void frustum_cull_sphere_simd128(const ecs_scene* scene, const camera* cam, const u32* entities_in, u32** visible_entities_out)
     {
-#ifdef __AVX__
+#ifdef __SSE2__
         static timer* ct = timer_create();
         timer_start(ct);
         
@@ -260,7 +366,6 @@ struct live_lib : public live_context
             auto& p1 = scene->pos_extent[e[1]].pos;
             auto& p2 = scene->pos_extent[e[2]].pos;
             auto& p3 = scene->pos_extent[e[3]].pos;
-            
             auto& r0 = scene->pos_extent[e[0]].extent;
             auto& r1 = scene->pos_extent[e[1]].extent;
             auto& r2 = scene->pos_extent[e[2]].extent;
@@ -288,7 +393,6 @@ struct live_lib : public live_context
             }
                  
             _mm_store_ps(result, inside);
-            
             for(u32 j = 0; j < 4; ++j)
                 if(!inside[j])
                     sb_push(*visible_entities_out, e[3-j]);
@@ -386,8 +490,9 @@ struct live_lib : public live_context
         u32* visible_entities = nullptr;
         //frustum_cull_sphere_scalar(scene, &cull_cam, filtered_entities, &visible_entities);
         //frustum_cull_sphere_simd128(scene, &cull_cam, filtered_entities, &visible_entities);
-        frustum_cull_sphere_simd256(scene, &cull_cam, filtered_entities, &visible_entities);
+        //frustum_cull_sphere_simd256(scene, &cull_cam, filtered_entities, &visible_entities);
         //frustum_cull_aabb_scalar(scene, &cull_cam, filtered_entities, &visible_entities);
+        frustum_cull_aabb_simd128(scene, &cull_cam, filtered_entities, &visible_entities);
         
         u32 n = sb_count(visible_entities);
         for(u32 i = 0; i < n; ++i)
