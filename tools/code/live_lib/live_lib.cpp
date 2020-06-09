@@ -39,7 +39,7 @@ struct live_lib : public live_context
         
         f32 space = 10.0f;
         f32 size = 1.0f;
-        f32 num = 16.0f;
+        f32 num = 32.0f;
         
         vec3f start = - (vec3f(space) * num) * 0.5f;
         vec3f pos = start;
@@ -135,7 +135,7 @@ struct live_lib : public live_context
         __m256 pnx[6];
         __m256 pny[6];
         __m256 pnz[6];
-        
+                
         // plane distance
         __m256 pd[6];
         
@@ -193,11 +193,127 @@ struct live_lib : public live_context
                 dd = _mm256_fmadd_ps(posy, pny[p], dd);
                 dd = _mm256_fmadd_ps(posz, pnz[p], dd);
                 
-                // compare if dd is greater than radius, if so we are outside
-                //__m256 ge = _mm256_cmpge_ps(dd, radius);
-                //inside = _mm256_add_ps(ge, inside);
-                
                 __m256 diff = _mm256_sub_ps(dd, radius);
+                diff = _mm256_max_ps(diff, zero);
+                inside = _mm256_add_ps(diff, inside);
+            }
+                 
+            _mm256_store_ps(result, inside);
+            for(u32 j = 0; j < 8; ++j)
+                if(!inside[j])
+                    sb_push(*visible_entities_out, e[7-j]);
+        }
+        
+        f64 us = timer_elapsed_us(ct);
+        PEN_LOG("sphere simd 256 cull time %f (us)", us);
+#endif
+    }
+    
+    void frustum_cull_aabb_simd256(const ecs_scene* scene, const camera* cam, const u32* entities_in, u32** visible_entities_out)
+    {
+#ifdef __AVX__
+        static timer* ct = timer_create();
+        timer_start(ct);
+        
+        const frustum& frust = cam->camera_frustum;
+        
+        // splat constants
+        __m256 zero = _mm256_set1_ps(0.0f);
+        
+        // sphere radius and position
+        __m256 posx;
+        __m256 posy;
+        __m256 posz;
+        __m256 extx;
+        __m256 exty;
+        __m256 extz;
+        
+        // plane normal
+        __m256 pnx[6];
+        __m256 pny[6];
+        __m256 pnz[6];
+        
+        // sign flip
+        __m256 sfx[6];
+        __m256 sfy[6];
+        __m256 sfz[6];
+        
+        // plane distance
+        __m256 pd[6];
+        __m256 pd_neg[6];
+        
+        f32 result[8];
+        u32 e[8];
+        
+        // load camera planes
+        for (s32 p = 0; p < 6; ++p)
+        {
+            f32 ppd = maths::plane_distance(frust.p[p], frust.n[p]);
+            pnx[p] = _mm256_set1_ps(frust.n[p].x);
+            pny[p] = _mm256_set1_ps(frust.n[p].y);
+            pnz[p] = _mm256_set1_ps(frust.n[p].z);
+            pd[p] = _mm256_set1_ps(ppd);
+            pd_neg[p] = _mm256_set1_ps(-ppd);
+            
+            sfx[p] = _mm256_set1_ps(sgn(frust.n[p].x));
+            sfy[p] = _mm256_set1_ps(sgn(frust.n[p].y));
+            sfz[p] = _mm256_set1_ps(sgn(frust.n[p].z));
+        }
+        
+        u32 n = sb_count(entities_in);
+        for(u32 i = 0; i < n; i+=8)
+        {
+            // unpack entities
+            for(u32 j = 0; j < 8; ++j)
+                e[j] = entities_in[i+j];
+
+            // load entities values
+            auto& p0 = scene->pos_extent[e[0]].pos;
+            auto& p1 = scene->pos_extent[e[1]].pos;
+            auto& p2 = scene->pos_extent[e[2]].pos;
+            auto& p3 = scene->pos_extent[e[3]].pos;
+            auto& p4 = scene->pos_extent[e[4]].pos;
+            auto& p5 = scene->pos_extent[e[5]].pos;
+            auto& p6 = scene->pos_extent[e[6]].pos;
+            auto& p7 = scene->pos_extent[e[7]].pos;
+            auto& e0 = scene->pos_extent[e[0]].extent;
+            auto& e1 = scene->pos_extent[e[1]].extent;
+            auto& e2 = scene->pos_extent[e[2]].extent;
+            auto& e3 = scene->pos_extent[e[3]].extent;
+            auto& e4 = scene->pos_extent[e[4]].extent;
+            auto& e5 = scene->pos_extent[e[5]].extent;
+            auto& e6 = scene->pos_extent[e[6]].extent;
+            auto& e7 = scene->pos_extent[e[7]].extent;
+                                    
+            posx = _mm256_set_ps(p0.x, p1.x, p2.x, p3.x, p4.x, p5.x, p6.x, p7.x);
+            posy = _mm256_set_ps(p0.y, p1.y, p2.y, p3.y, p4.y, p5.y, p6.y, p7.y);
+            posz = _mm256_set_ps(p0.z, p1.z, p2.z, p3.z, p4.z, p5.z, p6.z, p7.z);
+            extx = _mm256_set_ps(e0.x, e1.x, e2.x, e3.x, e4.x, e5.x, e6.x, e7.x);
+            exty = _mm256_set_ps(e0.y, e1.y, e2.y, e3.y, e4.y, e5.y, e6.y, e7.y);
+            extz = _mm256_set_ps(e0.z, e1.z, e2.z, e3.z, e4.z, e5.z, e6.z, e7.z);
+            
+            __m256 inside = _mm256_set1_ps(0.0f);
+            
+            for (s32 p = 0; p < 6; ++p)
+            {
+                // get distance to plane
+                // dot product with plane normal and also add plane distance
+                __m256 dd = _mm256_fmadd_ps(posx, pnx[p], pd[p]);
+                dd = _mm256_fmadd_ps(posy, pny[p], dd);
+                dd = _mm256_fmadd_ps(posz, pnz[p], dd);
+                
+                // pos + extent * sign_flip
+                __m256 dpx = _mm256_fmadd_ps(extx, sfx[p], posx);
+                __m256 dpy = _mm256_fmadd_ps(exty, sfy[p], posy);
+                __m256 dpz = _mm256_fmadd_ps(extz, sfz[p], posz);
+                
+                // dot(pos + extent * sign_flip, frust.n[p]);
+                __m256 r = _mm256_mul_ps(dpx, pnx[p]);
+                r = _mm256_fmadd_ps(dpy, pny[p], r);
+                r = _mm256_fmadd_ps(dpz, pnz[p], r);
+                
+                // if(r > -pd) inside = false
+                __m256 diff = _mm256_sub_ps(r, pd_neg[p]);
                 diff = _mm256_max_ps(diff, zero);
                 inside = _mm256_add_ps(diff, inside);
             }
@@ -236,6 +352,7 @@ struct live_lib : public live_context
         
         // plane distance
         __m128 pd[6];
+        __m128 pd_neg[6];
         
         // plane sign flip
         __m128 sfx[6];
@@ -252,7 +369,8 @@ struct live_lib : public live_context
             pnx[p] = _mm_set1_ps(frust.n[p].x);
             pny[p] = _mm_set1_ps(frust.n[p].y);
             pnz[p] = _mm_set1_ps(frust.n[p].z);
-            pd[p] = _mm_set1_ps(-ppd);
+            pd[p] = _mm_set1_ps(ppd);
+            pd_neg[p] = _mm_set1_ps(-ppd);
             
             sfx[p] = _mm_set1_ps(sgn(frust.n[p].x));
             sfy[p] = _mm_set1_ps(sgn(frust.n[p].y));
@@ -303,8 +421,8 @@ struct live_lib : public live_context
                 r = _mm_fmadd_ps(dpy, pny[p], r);
                 r = _mm_fmadd_ps(dpz, pnz[p], r);
                 
-                // if(r > pd) inside = false
-                __m128 ge = _mm_cmpge_ps(r, pd[p]);
+                // if(r > -pd) inside = false
+                __m128 ge = _mm_cmpge_ps(r, pd_neg[p]);
                 inside = _mm_add_ps(ge, inside);
             }
             
@@ -437,7 +555,7 @@ struct live_lib : public live_context
         }
         
         f64 us = timer_elapsed_us(ct);
-        PEN_LOG("spahere aabb cull time %f (us)", us);
+        PEN_LOG("aabb scalar cull time %f (us)", us);
     }
     
     void frustum_cull_sphere_scalar(const ecs_scene* scene, const camera* cam, const u32* entities_in, u32** visible_entities_out)
@@ -491,8 +609,9 @@ struct live_lib : public live_context
         //frustum_cull_sphere_scalar(scene, &cull_cam, filtered_entities, &visible_entities);
         //frustum_cull_sphere_simd128(scene, &cull_cam, filtered_entities, &visible_entities);
         //frustum_cull_sphere_simd256(scene, &cull_cam, filtered_entities, &visible_entities);
-        //frustum_cull_aabb_scalar(scene, &cull_cam, filtered_entities, &visible_entities);
-        frustum_cull_aabb_simd128(scene, &cull_cam, filtered_entities, &visible_entities);
+        frustum_cull_aabb_scalar(scene, &cull_cam, filtered_entities, &visible_entities);
+        //frustum_cull_aabb_simd128(scene, &cull_cam, filtered_entities, &visible_entities);
+        //frustum_cull_aabb_simd256(scene, &cull_cam, filtered_entities, &visible_entities);
         
         u32 n = sb_count(visible_entities);
         for(u32 i = 0; i < n; ++i)
