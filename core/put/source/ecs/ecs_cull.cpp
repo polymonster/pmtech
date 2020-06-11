@@ -3,8 +3,10 @@
 #include "timer.h"
 #include "ecs_scene.h"
 
+#ifdef __SSE2__
 #include <xmmintrin.h>
 #include <immintrin.h>
+#endif
 
 using namespace::pen;
 
@@ -119,7 +121,7 @@ namespace put
         //
         // sse2 128 implementation
         //
-#ifdef __SSE2__
+#if 0
         void frustum_cull_aabb_simd128(const ecs_scene* scene, const camera* cam, const u32* entities_in, u32** entities_out)
         {
             static timer* ct = timer_create();
@@ -312,7 +314,7 @@ namespace put
         //
         // avx 256 implementation
         //
-#ifdef __AVX__
+#if 0
         void frustum_cull_sphere_simd256(const ecs_scene* scene, const camera* cam, const u32* entities_in, u32** entities_out)
         {
 
