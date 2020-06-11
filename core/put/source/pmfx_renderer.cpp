@@ -2,19 +2,22 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#include "console.h"
-#include "data_struct.h"
-#include "debug_render.h"
-#include "dev_ui.h"
+#include "pmfx.h"
+
+#include "ecs/ecs_cull.h"
 #include "ecs/ecs_editor.h"
 #include "ecs/ecs_resources.h"
 #include "ecs/ecs_scene.h"
+#include "dev_ui.h"
+#include "debug_render.h"
+
+#include "console.h"
+#include "data_struct.h"
 #include "file_system.h"
 #include "hash.h"
 #include "os.h"
 #include "pen_json.h"
 #include "pen_string.h"
-#include "pmfx.h"
 #include "renderer_shared.h"
 #include "str_utilities.h"
 #include "timer.h"
@@ -2683,7 +2686,7 @@ namespace put
             if (!is_valid(sv.pmfx_shader))
                 return;
 
-            if (!pmfx::set_technique_perm(sv.pmfx_shader, sv.technique))
+            if (!pmfx::set_technique_perm(sv.pmfx_shader, sv.id_technique))
                 return;
 
             pen::renderer_set_constant_buffer(sv.cb_view, e_cbuffer_location::per_pass_view,
@@ -2850,7 +2853,7 @@ namespace put
                 scene_view sv;
                 sv.scene = v.scene;
                 sv.render_flags = v.render_flags;
-                sv.technique = v.id_technique;
+                sv.id_technique = v.id_technique;
                 sv.camera = v.camera;
                 sv.pmfx_shader = v.pmfx_shader;
                 sv.permutation = v.technique_permutation;
@@ -2928,7 +2931,7 @@ namespace put
             scene_view sv;
             sv.scene = v.scene;
             sv.render_flags = v.render_flags;
-            sv.technique = v.id_technique;
+            sv.id_technique = v.id_technique;
             sv.raster_state = v.raster_state;
             sv.depth_stencil_state = v.depth_stencil_state;
             sv.blend_state = v.blend_state;
@@ -3026,6 +3029,12 @@ namespace put
                     pen::renderer_set_constant_buffer(cb_pp_info, e_cbuffer_location::post_process_info,
                                                       pen::CBUFFER_BIND_PS);
                 }
+                
+                // filter entities
+                //u32* entities_out = nullptr;
+                //ecs::filter_entities_scalar(v.scene, &entities_out);
+                
+                // cull entities
 
                 // call render functions and make draw calls
                 for (s32 rf = 0; rf < v.render_functions.size(); ++rf)

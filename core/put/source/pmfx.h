@@ -71,10 +71,9 @@ namespace put
         put::camera*    camera = nullptr;
         pen::viewport*  viewport = nullptr;
         u32             pmfx_shader = PEN_INVALID_HANDLE;
-        hash_id         technique = 0; // todo rename to id_technique
+        hash_id         id_technique = 0;
         u32             permutation = 0;
         ecs::ecs_scene* scene = nullptr;
-        bool            viewport_correction = false;
     };
 
     struct scene_view_renderer

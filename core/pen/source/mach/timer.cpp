@@ -63,19 +63,19 @@ namespace pen
     f32 timer_elapsed_ms(timer* t)
     {
         uint64_t mt = mach_absolute_time() - t->last_start;
-        return mt * ticks_to_ms;
+        return (f32)mt * ticks_to_ms;
     }
 
     f32 timer_elapsed_us(timer* t)
     {
         uint64_t mt = mach_absolute_time() - t->last_start;
-        return mt * ticks_to_us;
+        return (f32)mt * ticks_to_us;
     }
 
     f32 timer_elapsed_ns(timer* t)
     {
         uint64_t mt = mach_absolute_time() - t->last_start;
-        return mt * ticks_to_ns;
+        return (f32)mt * ticks_to_ns;
     }
 
     f32 get_time_ms()

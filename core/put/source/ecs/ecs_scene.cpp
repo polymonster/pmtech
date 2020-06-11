@@ -449,7 +449,7 @@ namespace put
 
                 scene_view sub = view;
                 sub.pmfx_shader = al.shader;
-                sub.technique = al.technique;
+                sub.id_technique = al.technique;
 
                 pmfx::fullscreen_quad(sub);
             }
@@ -816,7 +816,7 @@ namespace put
                 info.inv_mat = mat::inverse4x4(vp);
                 info.shadow_map_size.z = i++;
                                 
-                pmfx::set_technique_perm(view.pmfx_shader, view.technique, 0);
+                pmfx::set_technique_perm(view.pmfx_shader, view.id_technique, 0);
                 pen::renderer_set_texture(volume_gi_tex, 0, 0, pen::TEXTURE_BIND_CS);
                 pen::renderer_set_texture(colour_shadow_map, 0, 1, pen::TEXTURE_BIND_CS);
                 pen::renderer_set_texture(colour_shadow_map_depth, 0, 2, pen::TEXTURE_BIND_CS);
@@ -916,7 +916,7 @@ namespace put
                 }
                 else
                 {
-                    bool set = pmfx::set_technique_perm(view.pmfx_shader, view.technique, permutation);
+                    bool set = pmfx::set_technique_perm(view.pmfx_shader, view.id_technique, permutation);
                     if (!set)
                     {
                         if (scene->entities[n] & e_cmp::master_instance)

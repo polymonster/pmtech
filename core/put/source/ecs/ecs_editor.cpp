@@ -3147,7 +3147,7 @@ namespace put
                     if (!gr)
                         continue;
 
-                    if (!pmfx::set_technique_perm(view.pmfx_shader, view.technique))
+                    if (!pmfx::set_technique_perm(view.pmfx_shader, view.id_technique))
                         continue;
 
                     if (is_invalid_or_null(scene->physics_debug_cbuffer[n]))
