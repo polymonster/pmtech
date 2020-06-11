@@ -38,7 +38,7 @@ void render_raster_states(const scene_view& view)
 
         cmp_geometry& geom = scene->geometries[ci];
 
-        pmfx::set_technique_perm(view.pmfx_shader, view.technique, 0);
+        pmfx::set_technique_perm(view.pmfx_shader, view.id_technique, 0);
         pen::renderer_set_constant_buffer(view.cb_view, 0, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
         pen::renderer_set_constant_buffer(scene->cbuffer[ci], 1, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
         pen::renderer_set_constant_buffer(scene->materials[ci].material_cbuffer, 7,

@@ -92,7 +92,7 @@ void blend_layers(const scene_view& scene_view)
     if (!is_valid(scene_view.pmfx_shader))
         return;
 
-    if (!pmfx::set_technique_perm(scene_view.pmfx_shader, scene_view.technique))
+    if (!pmfx::set_technique_perm(scene_view.pmfx_shader, scene_view.id_technique))
         PEN_ASSERT(0);
 
     pen::renderer_set_constant_buffer(scene_view.cb_view, 0, pen::CBUFFER_BIND_VS);

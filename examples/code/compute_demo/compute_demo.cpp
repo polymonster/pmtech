@@ -42,7 +42,7 @@ void render_boids(const scene_view& view)
     geometry_resource* gr = get_geometry_resource(PEN_HASH("cube"));
     pmm_renderable& r = gr->renderable[e_pmm_renderable::full_vertex_buffer];
 
-    pmfx::set_technique_perm(view.pmfx_shader, view.technique, 0);
+    pmfx::set_technique_perm(view.pmfx_shader, view.id_technique, 0);
 
     pen::renderer_set_structured_buffer(boids_buffer, 13, pen::SBUFFER_BIND_VS | pen::SBUFFER_BIND_READ);
 
@@ -76,7 +76,7 @@ void update_boids(const scene_view& view)
 
     ImGui::End();
 
-    pmfx::set_technique_perm(view.pmfx_shader, view.technique, 0);
+    pmfx::set_technique_perm(view.pmfx_shader, view.id_technique, 0);
 
     pen::renderer_set_constant_buffer(control_buffer, 0, pen::CBUFFER_BIND_CS);
 

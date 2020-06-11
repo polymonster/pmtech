@@ -63,7 +63,7 @@ void render_stencil_shadows(const scene_view& view)
 
     // bind cbuffer
     pen::renderer_set_constant_buffer(cb_single_light, 10, pen::CBUFFER_BIND_VS | pen::CBUFFER_BIND_PS);
-    pmfx::set_technique_perm(view.pmfx_shader, view.technique, 0);
+    pmfx::set_technique_perm(view.pmfx_shader, view.id_technique, 0);
     pen::renderer_set_constant_buffer(view.cb_view, 0, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
     pen::renderer_set_vertex_buffer(r.vertex_buffer, 0, r.vertex_size, 0);
     pen::renderer_set_index_buffer(r.index_buffer, r.index_type, 0);
