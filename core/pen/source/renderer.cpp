@@ -935,6 +935,11 @@ namespace pen
 
         _ctx->cmd_buffer.put(cmd);
 
+        if (resource_slot == 138)
+        {
+            u32 a = 0;
+        }
+
         return resource_slot;
     }
 

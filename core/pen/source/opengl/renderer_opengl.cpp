@@ -76,7 +76,7 @@ namespace
     GLint s_backbuffer_fbo = -1;
 
 #if _DEBUG
-#define GL_DEBUG_LEVEL 1
+#define GL_DEBUG_LEVEL 2
 #else
 #define GL_DEBUG_LEVEL 0
 #endif
@@ -1009,7 +1009,7 @@ namespace pen
         {
             char* info_log_buf = (char*)memory_alloc(info_log_length + 1);
 
-            CHECK_CALL(glGetShaderInfoLog(program_id, info_log_length, NULL, &info_log_buf[0]));
+            CHECK_CALL(glGetProgramInfoLog(program_id, info_log_length, NULL, &info_log_buf[0]));
             info_log_buf[info_log_length] = '\0';
 
             output_debug("%s", info_log_buf);
