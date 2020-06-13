@@ -595,11 +595,6 @@ namespace pen
         _ctx->wait--;
     }
 
-    bool renderer_dispatch()
-    {
-        return true;
-    }
-
     void renderer_wait_for_jobs()
     {
         // this is a dedicated thread which stays for the duration of the program
@@ -607,20 +602,22 @@ namespace pen
 
         for (;;)
         {
-            if (!pen::os_update())
+            renderer_dispatch();
+            if(!pen::os_update())
                 break;
-
-            renderer_cmd* cmd = _ctx->cmd_buffer.get();
-            while (cmd)
-            {
-                exec_cmd(*cmd);
-                cmd = _ctx->cmd_buffer.get();
-            }
-
-            pen::thread_sleep_ms(1);
-
-            //semaphore_wait(_ctx->consume_semaphore);
         }
+    }
+    
+    bool renderer_dispatch()
+    {
+        renderer_cmd* cmd = _ctx->cmd_buffer.get();
+        while (cmd)
+        {
+            exec_cmd(*cmd);
+            cmd = _ctx->cmd_buffer.get();
+        }
+        
+        return true;
     }
 
     void init_resolve_resources(fe_render_ctx* ctx)
