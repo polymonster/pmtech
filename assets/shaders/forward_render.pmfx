@@ -842,7 +842,8 @@ ps_output ps_forward_lit( vs_output input )
 		gi /= float(num_rays);
 		
 		// could multiply gi with albedo but additive gi gives a stronger effect
-		output.colour.rgb = gi.rgb + lit_colour.rgb;
+		output.colour.rgb = gi.rgb * albedo.rgb + lit_colour.rgb;
+		//output.colour.rgb = lit_colour.rgb;
 		
 		// debug to render the gi volume
 		//float3 uvw = saturate((input.world_pos.xyz / to_uvx) * 0.5 + 0.5);

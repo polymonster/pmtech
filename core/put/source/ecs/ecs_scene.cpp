@@ -846,7 +846,7 @@ namespace put
 
             s32 draw_count = 0;
             s32 cull_count = 0;
-
+            
             for (u32 n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & e_cmp::geometry && scene->entities[n] & e_cmp::material))

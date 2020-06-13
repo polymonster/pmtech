@@ -74,6 +74,8 @@ void* pen::user_entry(void* params)
         dt = pen::timer_elapsed_ms(frame_timer)/1000.0f;
         pen::timer_start(frame_timer);
 
+        pen::renderer_new_frame();
+        
         put::dev_ui::new_frame();
         
         example_update(main_scene, main_camera, dt);

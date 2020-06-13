@@ -376,6 +376,7 @@ namespace pen
     void        renderer_test_enable();
     
     // public-api will buffer all commands for dispatch on dedicated thread
+    void        renderer_new_frame();
     render_ctx  renderer_create_context();
     void        renderer_set_current_ctx(render_ctx ctx);
     render_ctx  renderer_get_main_context();

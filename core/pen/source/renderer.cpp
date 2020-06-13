@@ -21,7 +21,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb/stb_image_write.h"
 
-#define MAX_COMMANDS (1 << 16)
+#define MAX_COMMANDS (1 << 22)
 
 extern pen::window_creation_params pen_window;
 pen::resolve_resources             g_resolve_resources;
@@ -33,6 +33,7 @@ namespace
     enum commands : u32
     {
         CMD_NONE = 0,
+        CMD_NEW_FRAME,
         CMD_CLEAR,
         CMD_CLEAR_TEXTURE,
         CMD_PRESENT,
@@ -259,6 +260,9 @@ namespace
 
 namespace pen
 {
+    void end_frame_internal();
+    void new_frame_internal();
+    
     void renderer_get_present_time(f32& cpu_ms, f32& gpu_ms)
     {
         extern a_u64 g_gpu_total;
@@ -266,11 +270,14 @@ namespace pen
         cpu_ms = _ctx->present_time;
         gpu_ms = (f64)g_gpu_total / 1000.0 / 1000.0;
     }
-
+    
     void exec_cmd(const renderer_cmd& cmd)
     {
         switch (cmd.command_index)
         {
+            case CMD_NEW_FRAME:
+                new_frame_internal();
+                break;
             case CMD_CLEAR:
                 direct::renderer_clear(cmd.clear.clear_state, cmd.clear.array_index, cmd.clear.array_index);
                 break;
@@ -279,6 +286,7 @@ namespace pen
                 break;
             case CMD_PRESENT:
                 direct::renderer_present();
+                end_frame_internal();
                 _ctx->present_time = timer_elapsed_ms(_ctx->present_timer);
                 timer_start(_ctx->present_timer);
                 break;
@@ -538,60 +546,66 @@ namespace pen
         // sync on window surface
         direct::renderer_sync();
     }
+    
+    void new_frame_internal()
+    {
+        // free slots we have now deleted the resources for
+        u32 ns = sb_count(_ctx->free_slots);
+        for(u32 i = 0; i < ns; ++i)
+        {
+            slot_resources_free(&_ctx->renderer_slot_resources, _ctx->free_slots[i]);
+        }
+        sb_free(_ctx->free_slots);
+        _ctx->free_slots = nullptr;
+        
+        // some api's need to set the current context on the caller thread.
+        direct::renderer_new_frame();
+        
+        semaphore_post(_ctx->continue_semaphore, 1);
+    }
+    
+    void end_frame_internal()
+    {
+        // check the release cmd_buffer.. we need to wait a few frames before releasing resources
+        // so they arent in flight on the gpu
+        static const u32 k_waitFrames = 6;
+        for(;;)
+        {
+            renderer_cmd* cmd = _ctx->release_cmd_buffer.check();
+            u64 cf = pen::_renderer_frame_index();
+            if(!cmd || cf - cmd->frame_index < k_waitFrames)
+                break;
+                
+            cmd = _ctx->release_cmd_buffer.get();
+            if (cmd->resource_slot)
+            {
+                if (cmd)
+                    exec_cmd(*cmd);
+
+                sb_push(_ctx->free_slots, cmd->resource_slot);
+            }
+        }
+
+        direct::renderer_end_frame();
+    }
 
     bool renderer_dispatch()
     {
-        if (semaphore_try_wait(_ctx->consume_semaphore))
+        // consume and execute commands
+        bool present = false;
+        while(!present)
         {
-            // free slots we have now deleted the resources for
-            u32 ns = sb_count(_ctx->free_slots);
-            for(u32 i = 0; i < ns; ++i)
-            {
-                slot_resources_free(&_ctx->renderer_slot_resources, _ctx->free_slots[i]);
-            }
-            sb_free(_ctx->free_slots);
-            _ctx->free_slots = nullptr;
-            
-            // some api's need to set the current context on the caller thread.
-            direct::renderer_new_frame();
-
-            semaphore_post(_ctx->continue_semaphore, 1);
-
             renderer_cmd* cmd = _ctx->cmd_buffer.get();
-
-            // consume and execute commands
-            while (cmd)
-            {
+            if(!cmd)
+                pen::thread_sleep_ms(1);
+            while (cmd) {
+                if(cmd->command_index == CMD_PRESENT)
+                    present = true;
                 exec_cmd(*cmd);
                 cmd = _ctx->cmd_buffer.get();
             }
-            
-            // check the release cmd_buffer.. we need to wait a few frames before releasing resources
-            // so they arent in flight on the gpu
-            static const u32 k_waitFrames = 6;
-            for(;;)
-            {
-                renderer_cmd* cmd = _ctx->release_cmd_buffer.check();
-                u64 cf = pen::_renderer_frame_index();
-                if(!cmd || cf - cmd->frame_index < k_waitFrames)
-                    break;
-                    
-                cmd = _ctx->release_cmd_buffer.get();
-                if (cmd->resource_slot)
-                {
-                    if (cmd)
-                        exec_cmd(*cmd);
-
-                    sb_push(_ctx->free_slots, cmd->resource_slot);
-                }
-            }
-
-            direct::renderer_end_frame();
-
-            return true;
         }
-
-        return false;
+        return true;
     }
 
     void renderer_wait_for_jobs()
@@ -601,10 +615,8 @@ namespace pen
 
         for (;;)
         {
-            if (!renderer_dispatch())
-                pen::thread_sleep_ms(1);
-
-            if (!pen::os_update())
+            renderer_dispatch();
+            if(!pen::os_update())
                 break;
         }
     }
@@ -841,6 +853,13 @@ namespace pen
     //
     // command buffer api
     //
+
+    void renderer_new_frame()
+    {
+        renderer_cmd cmd;
+        cmd.command_index = CMD_NEW_FRAME;
+        _ctx->cmd_buffer.put(cmd);
+    }
 
     void renderer_update_queries()
     {
@@ -1332,7 +1351,7 @@ namespace pen
     void renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset)
     {
         renderer_cmd cmd;
-
+        
         if (buffer_index == 0)
             return;
 
