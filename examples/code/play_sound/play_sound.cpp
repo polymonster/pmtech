@@ -81,6 +81,8 @@ void* pen::user_entry(void* params)
 
     while (1)
     {
+        pen::renderer_new_frame();
+
         pen::viewport vp = {0.0f, 0.0f, 1280.0f, 720.0f, 0.0f, 1.0f};
 
         // create 2d view proj matrix

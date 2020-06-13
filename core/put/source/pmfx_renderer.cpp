@@ -2403,7 +2403,6 @@ namespace put
 
         void load_script_internal(const c8* filename)
         {
-            //pen::renderer_consume_cmd_buffer();
             create_geometry_utilities();
 
             void* config_data;
@@ -2432,8 +2431,6 @@ namespace put
             parse_depth_stencil_states(render_config);
             parse_partial_blend_states(render_config);
             parse_filters(render_config);
-
-            //pen::renderer_consume_cmd_buffer();
 
             pen::json j_views = render_config["views"];
             pen::json j_view_sets = render_config["view_sets"];
@@ -2510,8 +2507,6 @@ namespace put
                 dev_console_log_level(dev_ui::console_level::error, "[error] pmfx - no views in view set");
             }
 
-            //pen::renderer_consume_cmd_buffer();
-
             // parse post process info
             pen::json pp_config = render_config["post_processes"];
             for (u32 i = 0; i < pp_config.size(); ++i)
@@ -2526,8 +2521,6 @@ namespace put
                         load_post_process(render_config, pp_config, j_views, v);
                 }
             }
-
-            //pen::renderer_consume_cmd_buffer();
 
             // rebake material handles
             ecs::bake_material_handles();

@@ -72,6 +72,8 @@ void* pen::user_entry(void* params)
 
     while (1)
     {
+        pen::renderer_new_frame();
+
         pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
         pen::viewport vp = {0.0f, 0.0f, PEN_BACK_BUFFER_RATIO, 1.0f, 0.0f, 1.0f};
         pen::renderer_set_viewport(vp);

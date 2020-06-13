@@ -252,6 +252,7 @@ namespace
         ring_buffer<renderer_cmd> cmd_buffer;
         ring_buffer<renderer_cmd> release_cmd_buffer;
         u32*                      free_slots = nullptr;
+        std::atomic<s32>          wait;
     };
     static fe_render_ctx* _ctx;
     static render_ctx     _main_ctx;
@@ -537,6 +538,9 @@ namespace pen
 
     void renderer_consume_cmd_buffer()
     {
+        while (_ctx->wait > 0)
+            pen::thread_sleep_ms(1);
+
         if (_ctx->consume_semaphore)
         {
             semaphore_post(_ctx->consume_semaphore, 1);
@@ -545,6 +549,8 @@ namespace pen
 
         // sync on window surface
         direct::renderer_sync();
+
+        _ctx->wait++;
     }
     
     void new_frame_internal()
@@ -560,8 +566,6 @@ namespace pen
         
         // some api's need to set the current context on the caller thread.
         direct::renderer_new_frame();
-        
-        semaphore_post(_ctx->continue_semaphore, 1);
     }
     
     void end_frame_internal()
@@ -587,24 +591,12 @@ namespace pen
         }
 
         direct::renderer_end_frame();
+        semaphore_post(_ctx->continue_semaphore, 1);
+        _ctx->wait--;
     }
 
     bool renderer_dispatch()
     {
-        // consume and execute commands
-        bool present = false;
-        while(!present)
-        {
-            renderer_cmd* cmd = _ctx->cmd_buffer.get();
-            if(!cmd)
-                pen::thread_sleep_ms(1);
-            while (cmd) {
-                if(cmd->command_index == CMD_PRESENT)
-                    present = true;
-                exec_cmd(*cmd);
-                cmd = _ctx->cmd_buffer.get();
-            }
-        }
         return true;
     }
 
@@ -615,9 +607,19 @@ namespace pen
 
         for (;;)
         {
-            renderer_dispatch();
-            if(!pen::os_update())
+            if (!pen::os_update())
                 break;
+
+            renderer_cmd* cmd = _ctx->cmd_buffer.get();
+            while (cmd)
+            {
+                exec_cmd(*cmd);
+                cmd = _ctx->cmd_buffer.get();
+            }
+
+            pen::thread_sleep_ms(1);
+
+            //semaphore_wait(_ctx->consume_semaphore);
         }
     }
 

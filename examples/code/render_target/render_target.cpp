@@ -166,6 +166,8 @@ void* pen::user_entry(void* params)
 
     while (1)
     {
+        pen::renderer_new_frame();
+
         // bind render target and draw basic triangle
         pen::renderer_set_rasterizer_state(raster_state);
 

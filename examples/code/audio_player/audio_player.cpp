@@ -81,6 +81,8 @@ void* pen::user_entry(void* params)
 
     while (1)
     {
+        pen::renderer_new_frame();
+
         put::dev_ui::new_frame();
 
         pen::renderer_set_rasterizer_state(raster_state_cull_back);

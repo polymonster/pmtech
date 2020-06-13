@@ -461,5 +461,4 @@ namespace pen
     {
         return _data[_fb][slot];
     }
-
 } // namespace pen

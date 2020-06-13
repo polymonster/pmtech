@@ -138,6 +138,8 @@ void* pen::user_entry(void* params)
 
     while (1)
     {
+        pen::renderer_new_frame();
+
         // do a compute job to make the image greyscale
         pmfx::set_technique_perm(compute_shader, PEN_HASH("greyscale"), 0);
         pen::renderer_set_texture(test_texture, 0, 0, pen::TEXTURE_BIND_CS); // read

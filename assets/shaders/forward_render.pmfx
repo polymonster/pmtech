@@ -536,7 +536,7 @@ ps_output ps_forward_lit( vs_output input )
                 sp = mul( shrink_pos, shadow_matrix[i] );
                 sp.xyz /= sp.w;
                 sp.y *= -1.0;
-                sp.xyz = sp.xyz * 0.5 + 0.5;
+                sp.xy = sp.xy * 0.5 + 0.5;
                 
                 float4 sm = sample_texture_array_level( shadowmap_texture_sss, sp.xy, float(shadow_map_index), 0 );
                 d = sm.r;

@@ -147,7 +147,7 @@ void* pen::user_entry(void* params)
     scp.address_u = PEN_TEXTURE_ADDRESS_CLAMP;
     scp.address_v = PEN_TEXTURE_ADDRESS_CLAMP;
     scp.address_w = PEN_TEXTURE_ADDRESS_CLAMP;
-    scp.comparison_func = PEN_COMPARISON_ALWAYS;
+    scp.comparison_func = PEN_COMPARISON_DISABLED;
     scp.min_lod = 0.0f;
     scp.max_lod = 4.0f;
 
@@ -163,6 +163,8 @@ void* pen::user_entry(void* params)
 
     while (1)
     {
+        pen::renderer_new_frame();
+
         // bind render target and draw basic triangle
         pen::renderer_set_rasterizer_state(raster_state);
 

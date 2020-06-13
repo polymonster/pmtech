@@ -283,6 +283,8 @@ void* pen::user_entry(void* params)
 
     while (1)
     {
+        pen::renderer_new_frame();
+
         show_ui();
 
         pen::renderer_set_rasterizer_state(s_render_handles.raster_state);

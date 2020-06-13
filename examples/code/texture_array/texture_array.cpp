@@ -145,6 +145,8 @@ void* pen::user_entry(void* params)
 
     while (1)
     {
+        pen::renderer_new_frame();
+
         pen::renderer_set_rasterizer_state(raster_state);
 
         ft += pen::timer_elapsed_ms(t);
