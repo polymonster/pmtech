@@ -614,6 +614,11 @@ namespace pen
         while (cmd)
         {
             exec_cmd(*cmd);
+
+            // break at present to re-call os update
+            if (cmd->command_index == CMD_PRESENT)
+                break;
+
             cmd = _ctx->cmd_buffer.get();
         }
         
