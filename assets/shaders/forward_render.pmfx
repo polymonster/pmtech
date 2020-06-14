@@ -940,6 +940,20 @@ ps_output ps_per_pixel_velocity( vs_output input )
     return output;
 }
 
+ps_output ps_single_light_diffuse( vs_output input )
+{
+    ps_output output;
+    
+    float3 l = normalize(single_light.pos_radius.xyz - input.world_pos.xyz);
+    float3 lc = single_light.colour.rgb;
+    
+    output.colour.rgb = (m_albedo.rgb * dot(input.normal, l) * lc);
+    output.colour.rgb += m_albedo.rgb * 0.3;
+    output.colour.a = 1.0;
+    
+    return output;
+}
+
 pmfx:
 {    
     omni_shadow:
@@ -1055,6 +1069,19 @@ pmfx:
         {
             SKINNED: [31, [0,1]],
             INSTANCED: [30, [0,1]]
+        }
+    },
+    
+    single_light_directional:
+    {
+        vs: vs_main,
+        ps: ps_single_light,
+                
+        constants:
+        {
+            albedo       : { type: float4, widget: colour, default: [1.0, 1.0, 1.0, 1.0] },
+            roughness    : { type: float, widget: slider, min: 0, max: 1, default: 0.5 },
+            reflectivity : { type: float, widget: slider, min: 0, max: 1, default: 0.3 }
         }
     },
 	
