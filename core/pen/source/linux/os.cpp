@@ -64,15 +64,16 @@ void pen_gl_swap_buffers()
 
 namespace
 {
-    XIM          _xim;
-    XIC          _xic;
-    bool         _ctx_error_occured = false;
-    window_frame _window_frame;
-    bool         _invalidate_window_frame = false;
+    XIM                 _xim;
+    XIC                 _xic;
+    bool                _ctx_error_occured = false;
+    window_frame        _window_frame;
+    bool                _invalidate_window_frame = false;
 
-    u32          s_error_code = 0;
-    bool         s_pen_terminate_app = false;
-    bool         s_windowed = false;
+    u32                 s_error_code = 0;
+    bool                s_pen_terminate_app = false;
+    bool                s_windowed = false;
+    pen_creation_params s_creation_params;
 
     void users()
     {
@@ -219,7 +220,7 @@ namespace
         s_windowed = true;
 
         // inits renderer and loops in wait for jobs, calling os update
-        renderer_init(nullptr, true);
+        renderer_init(nullptr, true, s_creation_params.max_renderer_commands);
 
         // exit, kill other threads and wait
         pen::jobs_terminate_all();
@@ -514,6 +515,7 @@ int main(int argc, char* argv[])
     pen_window.height = pc.window_height;
     pen_window.window_title = pc.window_title;
     pen_window.sample_count = pc.window_sample_count;
+    s_creation_params = pc;
 
     if (pc.flags & e_pen_create_flags::renderer)
     {

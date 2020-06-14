@@ -129,6 +129,7 @@ namespace
     HINSTANCE                s_hinstance = nullptr;
     bool                     s_terminate_app = false;
     u32                      s_return_code = 0;
+    pen::pen_creation_params s_creation_params;
 
     void pen_window_resize(u32 w, u32 h)
     {
@@ -153,7 +154,7 @@ namespace
         // init renderer will enter a loop wait for rendering commands, and call os update
         HWND hwnd = (HWND)pen::window_get_primary_display_handle();
         create_ctx(hwnd);
-        pen::renderer_init((void*)&hwnd, true);
+        pen::renderer_init((void*)&hwnd, true, s_creation_params.max_renderer_commands);
 
         return s_return_code;
     }
@@ -504,6 +505,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     pen_window.height = pc.window_height;
     pen_window.window_title = pc.window_title;
     pen_window.sample_count = pc.window_sample_count;
+    s_creation_params = pc;
 
     if (pc.flags & pen::e_pen_create_flags::renderer)
     {

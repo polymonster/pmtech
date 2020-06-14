@@ -48,10 +48,11 @@ namespace
 {
     struct os_context
     {
-        CGRect            wframe;
-        CGSize            wsize;
-        f32               wscale;
-        pen_app_delegate* app_delegate;
+        CGRect                      wframe;
+        CGSize                      wsize;
+        f32                         wscale;
+        pen_app_delegate*           app_delegate;
+        pen::pen_creation_params    creation_params;
     };
     os_context s_context;
 
@@ -60,12 +61,6 @@ namespace
         // updates pen window size
         pen::_renderer_resize_backbuffer(s_context.wsize.width, s_context.wsize.height);
     }
-}
-
-namespace pen
-{
-    void renderer_init(void*, bool);
-    bool renderer_dispatch();
 }
 
 @implementation pen_app_delegate
@@ -120,7 +115,7 @@ namespace pen
 - (instancetype)initWithView:(nonnull MTKView*)view
 {
     [super init];
-    pen::renderer_init((void*)view, false);
+    pen::renderer_init((void*)view, false, s_context.creation_params.max_renderer_commands);
     return self;
 }
 - (void)mtkView:(nonnull MTKView*)view drawableSizeWillChange:(CGSize)size
@@ -226,6 +221,7 @@ int main(int argc, char* argv[])
     pen_window.height = pc.window_height;
     pen_window.window_title = pc.window_title;
     pen_window.sample_count = pc.window_sample_count;
+    s_context.creation_params = pc;
 
     @autoreleasepool
     {

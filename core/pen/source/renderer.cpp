@@ -21,8 +21,6 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb/stb_image_write.h"
 
-#define MAX_COMMANDS (1 << 22)
-
 extern pen::window_creation_params pen_window;
 pen::resolve_resources             g_resolve_resources;
 
@@ -602,7 +600,19 @@ namespace pen
 
         for (;;)
         {
-            renderer_dispatch();
+            renderer_cmd* cmd = _ctx->cmd_buffer.get();
+            
+            while(cmd)
+            {
+                exec_cmd(*cmd);
+
+                // break at present to re-call os update
+                if (cmd->command_index == CMD_PRESENT)
+                    break;
+
+                cmd = _ctx->cmd_buffer.get();
+            }
+            
             if(!pen::os_update())
                 break;
         }
@@ -611,7 +621,7 @@ namespace pen
     bool renderer_dispatch()
     {
         renderer_cmd* cmd = _ctx->cmd_buffer.get();
-        while (cmd)
+        while(cmd)
         {
             exec_cmd(*cmd);
 
@@ -621,6 +631,8 @@ namespace pen
 
             cmd = _ctx->cmd_buffer.get();
         }
+        
+        //semaphore_wait(_ctx->consume_semaphore);
         
         return true;
     }
@@ -685,11 +697,26 @@ namespace pen
         ctx->resolve_resources.constant_buffer = renderer_create_buffer(bcp);
         g_resolve_resources = ctx->resolve_resources;
     }
+    
+    render_ctx renderer_create_context(u32 max_commands)
+    {
+        fe_render_ctx* new_ctx = new fe_render_ctx();
+        new_ctx->cmd_buffer.create(max_commands);
+        new_ctx->release_cmd_buffer.create(1024);
+        new_ctx->present_timer = timer_create();
+        timer_start(new_ctx->present_timer);
+        new_ctx->present_time = 0.0f;
+        new_ctx->consume_semaphore = semaphore_create(0, 1);
+        new_ctx->continue_semaphore = semaphore_create(0, 1);
+        slot_resources_init(&new_ctx->renderer_slot_resources, 2048);
 
-    void renderer_init(void* user_data, bool wait_for_jobs)
+        return (render_ctx*)new_ctx;
+    }
+    
+    void renderer_init(void* user_data, bool wait_for_jobs, u32 max_commands)
     {
         // create main render context and bind it
-        _main_ctx = renderer_create_context();
+        _main_ctx = renderer_create_context(max_commands);
         _ctx = (fe_render_ctx*)_main_ctx;
         
         // bb is backbuffer depth and colour
@@ -706,22 +733,6 @@ namespace pen
 
         if (wait_for_jobs)
             renderer_wait_for_jobs();
-    }
-
-    void* renderer_thread_function(void* params)
-    {
-        static pen::job* p_job_thread_info;
-        
-        job_thread_params* job_params = (job_thread_params*)params;
-
-        p_job_thread_info = job_params->job_info;
-
-        _ctx->consume_semaphore = p_job_thread_info->p_sem_consume;
-        _ctx->continue_semaphore = p_job_thread_info->p_sem_continue;
-
-        renderer_init(job_params->user_data, true);
-
-        return PEN_THREAD_OK;
     }
     
     // graphics test
@@ -820,21 +831,6 @@ namespace pen
         pen::renderer_read_back_resource(rrbp);
 
         ran = true;
-    }
-    
-    render_ctx renderer_create_context()
-    {
-        fe_render_ctx* new_ctx = new fe_render_ctx();
-        new_ctx->cmd_buffer.create(MAX_COMMANDS);
-        new_ctx->release_cmd_buffer.create(1024);
-        new_ctx->present_timer = timer_create();
-        timer_start(new_ctx->present_timer);
-        new_ctx->present_time = 0.0f;
-        new_ctx->consume_semaphore = semaphore_create(0, 1);
-        new_ctx->continue_semaphore = semaphore_create(0, 1);
-        slot_resources_init(&new_ctx->renderer_slot_resources, 2048);
-
-        return (render_ctx*)new_ctx;
     }
 } // namespace pen
 

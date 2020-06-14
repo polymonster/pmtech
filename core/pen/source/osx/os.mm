@@ -25,18 +25,14 @@
 // 1 final global extern to remove :)
 pen::window_creation_params pen_window;
 
-namespace pen
-{
-    void renderer_init(void*, bool);
-}
-
 namespace
 {
     struct os_context
     {
-        pen::window_frame frame;
-        u32               return_code = 0;
-        pen::user_info    pen_user_info;
+        pen::window_frame           frame;
+        u32                         return_code = 0;
+        pen::user_info              pen_user_info;
+        pen::pen_creation_params    creation_params;
     };
     os_context s_ctx;
 
@@ -161,7 +157,7 @@ void pen_window_resize()
 
 void run()
 {
-    pen::renderer_init(_metal_view, false);
+    pen::renderer_init(_metal_view, false, s_ctx.creation_params.max_renderer_commands);
 
     for (;;)
     {
@@ -268,7 +264,7 @@ void pen_window_resize()
 void run()
 {
     // enters render loop and wait for jobs, will call os_update
-    pen::renderer_init(nullptr, true);
+    pen::renderer_init(nullptr, true, s_ctx.creation_params.max_renderer_commands);
 }
 #endif
 
@@ -952,6 +948,7 @@ int main(int argc, char** argv)
         pen_window.height = pc.window_height;
         pen_window.window_title = pc.window_title;
         pen_window.sample_count = pc.window_sample_count;
+        s_ctx.creation_params = pc;
 
         // window creation
         if (pc.flags & pen::e_pen_create_flags::renderer)

@@ -369,7 +369,7 @@ namespace pen
     const renderer_info& renderer_get_info();
 
     // setup / hook functions
-    void        renderer_init(void* user_data, bool wait_for_jobs);
+    void        renderer_init(void* user_data, bool wait_for_jobs, u32 max_commands);
     void*       renderer_thread_function(void* params);
     bool        renderer_dispatch();
     void        renderer_test_run();
@@ -377,7 +377,6 @@ namespace pen
     
     // public-api will buffer all commands for dispatch on dedicated thread
     void        renderer_new_frame();
-    render_ctx  renderer_create_context();
     void        renderer_set_current_ctx(render_ctx ctx);
     render_ctx  renderer_get_main_context();
     u32         renderer_create_clear_state(const clear_state& cs);

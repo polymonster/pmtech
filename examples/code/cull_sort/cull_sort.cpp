@@ -13,6 +13,7 @@ namespace pen
         p.window_title = "cull_sort";
         p.window_sample_count = 4;
         p.user_thread_function = user_entry;
+        p.max_renderer_commands = 1<<22;
         p.flags = pen::e_pen_create_flags::renderer;
         return p;
     }
@@ -44,7 +45,7 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     scene->entities[light] |= e_cmp::transform;
 
     // add some boxes
-    f32   num_pillar_rows = 32;
+    f32   num_pillar_rows = 24;
     f32   d = 50.0f * 0.5f;
     vec3f start_pos = vec3f(-d, -d, -d);
     vec3f pos = start_pos;
