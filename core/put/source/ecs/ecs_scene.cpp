@@ -841,7 +841,7 @@ namespace put
         
         void render_scene_view(const scene_view& view)
         {
-            PEN_PERF_SCOPE_PRINT(render_scene_view);
+            //PEN_PERF_SCOPE_PRINT(render_scene_view);
             
             ecs_scene* scene = view.scene;
             if (scene->view_flags & e_scene_view_flags::hide)
@@ -1299,7 +1299,7 @@ namespace put
 
         void update(f32 dt)
         {
-            PEN_PERF_SCOPE_PRINT(ecs_update);
+            //PEN_PERF_SCOPE_PRINT(ecs_update);Oe
             
             // allow run time switching between dynamic and fixed timestep
             static f32 fft = 1.0f / 60.0f;

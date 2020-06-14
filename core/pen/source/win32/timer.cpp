@@ -59,7 +59,7 @@ namespace pen
         return last_duration * ticks_to_ms;
     }
 
-    ff6432 timer_elapsed_us(timer* t)
+    f64 timer_elapsed_us(timer* t)
     {
         LARGE_INTEGER end_time;
         QueryPerformanceCounter(&end_time);

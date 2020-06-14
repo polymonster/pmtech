@@ -71,7 +71,7 @@ void* pen::user_entry(void* params)
 
     while (1)
     {
-        PEN_PERF_SCOPE_PRINT(main);
+        //PEN_PERF_SCOPE_PRINT(main);
         
         dt = pen::timer_elapsed_ms(frame_timer)/1000.0f;
         pen::timer_start(frame_timer);
