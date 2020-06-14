@@ -661,6 +661,13 @@ namespace forward_render
     };
     #define ZONLY_SKINNED 2147483648
     #define ZONLY_INSTANCED 1073741824
+    struct single_light_directional
+    {
+        float4 m_albedo;
+        float m_roughness;
+        float m_reflectivity;
+        float2 m_padding;
+    };
     #define GI_SKINNED 2147483648
     #define GI_INSTANCED 1073741824
     struct gi
