@@ -14,9 +14,9 @@
 
 namespace
 {
-    f32 ticks_to_ms;
-    f32 ticks_to_us;
-    f32 ticks_to_ns;
+    f64 ticks_to_ms;
+    f64 ticks_to_us;
+    f64 ticks_to_ns;
 } // namespace
 
 namespace pen
@@ -25,9 +25,9 @@ namespace pen
     {
         uint64_t last_start;
 
-        f32 accumulated;
-        f32 longest;
-        f32 shortest;
+        f64 accumulated;
+        f64 longest;
+        f64 shortest;
 
         u32 hit_count;
 
@@ -43,9 +43,9 @@ namespace pen
 
     void timer_system_intialise()
     {
-        ticks_to_ns = 1000.0f;
+        ticks_to_ns = 1000.0;
         ticks_to_us = 1;
-        ticks_to_ms = ticks_to_us / 1000.0f;
+        ticks_to_ms = ticks_to_us / 1000.0;
     }
 
     timer* timer_create()
@@ -63,42 +63,39 @@ namespace pen
         t->last_start = get_absolute_time();
     }
 
-    f32 timer_elapsed_ms(timer* t)
+    f64 timer_elapsed_ms(timer* t)
     {
         uint64_t mt = get_absolute_time() - t->last_start;
-        return (f32)mt * ticks_to_ms;
+        return (f64)mt * ticks_to_ms;
     }
 
-    f32 timer_elapsed_us(timer* t)
+    f64 timer_elapsed_us(timer* t)
     {
         uint64_t mt = get_absolute_time() - t->last_start;
-        return (f32)mt * ticks_to_us;
+        return (f64)mt * ticks_to_us;
     }
 
-    f32 timer_elapsed_ns(timer* t)
+    f64 timer_elapsed_ns(timer* t)
     {
         uint64_t mt = get_absolute_time() - t->last_start;
-        return (f32)mt * ticks_to_ns;
+        return (f64)mt * ticks_to_ns;
     }
 
-    f32 get_time_ms()
+    f64 get_time_ms()
     {
         uint64_t t = get_absolute_time();
-
-        return (f32)(t)*ticks_to_ms;
+        return (f64)(t)*ticks_to_ms;
     }
 
-    f32 get_time_us()
+    f64 get_time_us()
     {
         uint64_t t = get_absolute_time();
-
-        return (f32)(t)*ticks_to_us;
+        return (f64)(t)*ticks_to_us;
     }
 
-    f32 get_time_ns()
+    f64 get_time_ns()
     {
         uint64_t t = get_absolute_time();
-
-        return (f32)(t)*ticks_to_ns;
+        return (f64)(t)*ticks_to_ns;
     }
 } // namespace pen

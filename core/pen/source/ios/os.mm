@@ -127,8 +127,8 @@ namespace
 {
     @autoreleasepool
     {
-        pen::renderer_dispatch();
         pen::os_update();
+        pen::renderer_dispatch();
     }
 }
 @end

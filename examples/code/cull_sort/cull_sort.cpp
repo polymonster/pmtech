@@ -24,8 +24,6 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     scene->view_flags &= ~e_scene_view_flags::hide_debug;
     put::dev_ui::enable(true);
 
-    pmfx::init("data/configs/render_target_mip_maps.jsn");
-
     clear_scene(scene);
 
     material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
@@ -45,9 +43,9 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     scene->entities[light] |= e_cmp::transform;
 
     // add some boxes
-    f32   num_pillar_rows = 32;
-    f32   d = 50.0f * 0.5f;
-    vec3f start_pos = vec3f(-d, -d, -d);
+    f32   num_pillar_rows = 10;
+    f32   d = 10.0f;
+    vec3f start_pos = vec3f(-d);
     vec3f pos = start_pos;
     for (s32 i = 0; i < num_pillar_rows; ++i)
     {
@@ -70,13 +68,13 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
                 instantiate_material(default_material, scene, pillar);
                 instantiate_model_cbuffer(scene, pillar);
 
-                pos.z += d / 2;
+                pos.z += d;
             }
 
-            pos.x += d / 2;
+            pos.x += d;
         }
 
-        pos.y += d / 2;
+        pos.y += d;
     }
 }
 

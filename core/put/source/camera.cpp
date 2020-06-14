@@ -143,7 +143,7 @@ namespace put
 
         for (s32 i = 0; i < 4; ++i)
         {
-            p_camera->camera_frustum.corners[0][i] = maths::unproject_sc(vec3f(ndc_coords[i], -1.0f), view_proj, vpi);
+            p_camera->camera_frustum.corners[0][i] = maths::unproject_sc(vec3f(ndc_coords[i], 0.0f), view_proj, vpi);
             p_camera->camera_frustum.corners[1][i] = maths::unproject_sc(vec3f(ndc_coords[i], 1.0f), view_proj, vpi);
         }
 

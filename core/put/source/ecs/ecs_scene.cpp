@@ -16,10 +16,12 @@
 #include "str/Str.h"
 #include "str_utilities.h"
 #include "timer.h"
+#include "input.h"
 
 #include "ecs/ecs_resources.h"
 #include "ecs/ecs_scene.h"
 #include "ecs/ecs_utilities.h"
+#include "ecs/ecs_cull.h"
 
 using namespace put;
 
@@ -839,67 +841,91 @@ namespace put
         
         void render_scene_view(const scene_view& view)
         {
+            PEN_PERF_SCOPE_PRINT(render_scene_view);
+            
             ecs_scene* scene = view.scene;
-
             if (scene->view_flags & e_scene_view_flags::hide)
                 return;
-
-            s32 draw_count = 0;
-            s32 cull_count = 0;
             
+            // view
+            pen::renderer_set_constant_buffer(view.cb_view, 0, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
+
+            // fwd lights
+            if (view.render_flags & pmfx::e_scene_render_flags::forward_lit)
+            {
+                pen::renderer_set_constant_buffer(scene->forward_light_buffer, 3, pen::CBUFFER_BIND_PS);
+                pen::renderer_set_constant_buffer(scene->shadow_map_buffer, 4, pen::CBUFFER_BIND_PS);
+                pen::renderer_set_constant_buffer(scene->area_light_buffer, 6, pen::CBUFFER_BIND_PS);
+
+                // ltc lookups
+                static u32 ltc_mat = put::load_texture("data/textures/ltc/ltc_mat.dds");
+                static u32 ltc_mag = put::load_texture("data/textures/ltc/ltc_amp.dds");
+
+                static hash_id id_clamp_linear = PEN_HASH("clamp_linear");
+                u32            clamp_linear = pmfx::get_render_state(id_clamp_linear, pmfx::e_render_state::sampler);
+
+                pen::renderer_set_texture(ltc_mat, clamp_linear, 13, pen::TEXTURE_BIND_PS);
+                pen::renderer_set_texture(ltc_mag, clamp_linear, 12, pen::TEXTURE_BIND_PS);
+            }
+
+            // sdf shadows
+            pen::renderer_set_constant_buffer(scene->sdf_shadow_buffer, 5, pen::CBUFFER_BIND_PS);
             for (u32 n = 0; n < scene->num_entities; ++n)
             {
-                if (!(scene->entities[n] & e_cmp::geometry && scene->entities[n] & e_cmp::material))
+                if (!(scene->entities[n] & e_cmp::sdf_shadow))
                     continue;
 
-                if (scene->entities[n] & e_cmp::sub_instance)
-                    continue;
+                cmp_shadow& shadow = scene->shadows[n];
 
-                if (scene->state_flags[n] & e_state::hidden)
-                    continue;
+                if (is_valid(shadow.texture_handle))
+                    pen::renderer_set_texture(shadow.texture_handle, shadow.sampler_state, e_global_textures::sdf_shadow,
+                                              pen::TEXTURE_BIND_PS);
+
+                // info for sdf
+                pen::renderer_set_constant_buffer(scene->sdf_shadow_buffer, 5, pen::CBUFFER_BIND_PS);
+            }
+            
+            // gi volume
+            pen::renderer_set_constant_buffer(scene->gi_volume_buffer, 11, pen::CBUFFER_BIND_PS);
+            
+            // filter and cull
+            u32* filtered_entities = nullptr;
+            u32* culled_entities = nullptr;
+            filter_entities_scalar(scene, &filtered_entities);
+            frustum_cull_aabb_scalar(scene, view.camera, filtered_entities, &culled_entities);
+            
+            // debug culling
+            /*
+            static camera dc;
+            if(pen::input_key(PK_Q))
+            {
+                dc = *view.camera;
+            }
+            
+            {
+                u32* debug_entities = nullptr;
+                dbg::add_frustum(dc.camera_frustum.corners[0], dc.camera_frustum.corners[1]);
+                frustum_cull_aabb_scalar(scene, &dc, filtered_entities, &debug_entities);
                 
+                for(u32 i = 0; i < 6; ++i)
+                    dbg::add_line(dc.camera_frustum.p[i], dc.camera_frustum.p[i] + dc.camera_frustum.n[i], vec4f::magenta());
+                    
+                u32 vc = sb_count(debug_entities);
+                for(u32 i = 0; i < vc; ++i)
+                {
+                    u32 n = debug_entities[i];
+                    dbg::add_aabb(scene->pos_extent[n].pos.xyz - scene->pos_extent[n].extent.xyz,
+                        scene->pos_extent[n].pos.xyz + scene->pos_extent[n].extent.xyz, vec4f::white());
+                }
+            }
+            */
+
+            // render
+            u32 vc = sb_count(culled_entities);
+            for(u32 i = 0; i < vc; ++i)
+            {
+                u32 n = culled_entities[i];
                 
-                // alpha
-                if(view.render_flags & pmfx::e_scene_render_flags::alpha_blended)
-                {
-                    if(!(scene->state_flags[n] & e_state::alpha_blended))
-                        continue;
-                }
-                else
-                {
-                    if(scene->render_flags[n] & e_state::alpha_blended)
-                        continue;
-                }
-
-                // frustum cull
-                bool inside = true;
-                for (s32 i = 0; i < 6; ++i)
-                {
-                    frustum& camera_frustum = view.camera->camera_frustum;
-
-                    vec3f& min = scene->bounding_volumes[n].transformed_min_extents;
-                    vec3f& max = scene->bounding_volumes[n].transformed_max_extents;
-
-                    vec3f pos = min + (max - min) * 0.5f;
-                    f32   radius = scene->bounding_volumes[n].radius;
-
-                    f32 d = maths::point_plane_distance(pos, camera_frustum.p[i], camera_frustum.n[i]);
-
-                    if (d > radius)
-                    {
-                        inside = false;
-                        break;
-                    }
-                }
-
-                if (!inside)
-                {
-                    cull_count++;
-                    continue;
-                }
-
-                draw_count++;
-
                 cmp_geometry* p_geom = &scene->geometries[n];
                 if (!(scene->entities[n] & e_cmp::skinned))
                     if(view.render_flags & pmfx::e_scene_render_flags::shadow_map)
@@ -960,6 +986,7 @@ namespace put
                     pen::renderer_set_constant_buffer(mcb, 7, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
                 }
 
+                // draw call cb
                 pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
 
                 // set ib / vb
@@ -992,48 +1019,6 @@ namespace put
                     }
                 }
 
-                // view
-                pen::renderer_set_constant_buffer(view.cb_view, 0, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
-
-                // fwd lights
-                if (view.render_flags & pmfx::e_scene_render_flags::forward_lit)
-                {
-                    pen::renderer_set_constant_buffer(scene->forward_light_buffer, 3, pen::CBUFFER_BIND_PS);
-                    pen::renderer_set_constant_buffer(scene->shadow_map_buffer, 4, pen::CBUFFER_BIND_PS);
-                    pen::renderer_set_constant_buffer(scene->area_light_buffer, 6, pen::CBUFFER_BIND_PS);
-
-                    // ltc lookups
-                    static u32 ltc_mat = put::load_texture("data/textures/ltc/ltc_mat.dds");
-                    static u32 ltc_mag = put::load_texture("data/textures/ltc/ltc_amp.dds");
-
-                    static hash_id id_clamp_linear = PEN_HASH("clamp_linear");
-                    u32            clamp_linear = pmfx::get_render_state(id_clamp_linear, pmfx::e_render_state::sampler);
-
-                    pen::renderer_set_texture(ltc_mat, clamp_linear, 13, pen::TEXTURE_BIND_PS);
-                    pen::renderer_set_texture(ltc_mag, clamp_linear, 12, pen::TEXTURE_BIND_PS);
-                }
-
-                // sdf shadows
-                pen::renderer_set_constant_buffer(scene->sdf_shadow_buffer, 5, pen::CBUFFER_BIND_PS);
-                for (u32 n = 0; n < scene->num_entities; ++n)
-                {
-                    if (!(scene->entities[n] & e_cmp::sdf_shadow))
-                        continue;
-
-                    cmp_shadow& shadow = scene->shadows[n];
-
-                    if (is_valid(shadow.texture_handle))
-                        pen::renderer_set_texture(shadow.texture_handle, shadow.sampler_state, e_global_textures::sdf_shadow,
-                                                  pen::TEXTURE_BIND_PS);
-
-                    // info for sdf
-                    pen::renderer_set_constant_buffer(scene->sdf_shadow_buffer, 5, pen::CBUFFER_BIND_PS);
-                }
-                
-                // gi volume
-                pen::renderer_set_constant_buffer(scene->gi_volume_buffer, 11, pen::CBUFFER_BIND_PS);
-
-
                 // draw
 
                 // instances
@@ -1049,14 +1034,68 @@ namespace put
                 // single
                 pen::renderer_draw_indexed(p_geom->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
             }
+            
+            
+            
+            /*
+            for (u32 n = 0; n < scene->num_entities; ++n)
+            {
+                if (!(scene->entities[n] & e_cmp::geometry && scene->entities[n] & e_cmp::material))
+                    continue;
+
+                if (scene->entities[n] & e_cmp::sub_instance)
+                    continue;
+
+                if (scene->state_flags[n] & e_state::hidden)
+                    continue;
+                
+                
+                // alpha
+                if(view.render_flags & pmfx::e_scene_render_flags::alpha_blended)
+                {
+                    if(!(scene->state_flags[n] & e_state::alpha_blended))
+                        continue;
+                }
+                else
+                {
+                    if(scene->render_flags[n] & e_state::alpha_blended)
+                        continue;
+                }
+
+                // frustum cull
+                bool inside = true;
+                for (s32 i = 0; i < 6; ++i)
+                {
+                    frustum& camera_frustum = view.camera->camera_frustum;
+
+                    vec3f& min = scene->bounding_volumes[n].transformed_min_extents;
+                    vec3f& max = scene->bounding_volumes[n].transformed_max_extents;
+
+                    vec3f pos = min + (max - min) * 0.5f;
+                    f32   radius = scene->bounding_volumes[n].radius;
+
+                    f32 d = maths::point_plane_distance(pos, camera_frustum.p[i], camera_frustum.n[i]);
+
+                    if (d > radius)
+                    {
+                        inside = false;
+                        break;
+                    }
+                }
+
+                if (!inside)
+                {
+                    cull_count++;
+                    continue;
+                }
+
+                draw_count++;
+            }
+            */
         }
 
         void update_animations(ecs_scene* scene, f32 dt)
         {
-            //dt = 16.66;
-            //pen::timer* timer = pen::timer_create("anim_v2");
-            //pen::timer_start(timer);
-
             for (u32 n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & e_cmp::anim_controller))
@@ -1256,23 +1295,20 @@ namespace put
                     }
                 }
             }
-
-            //f32 ms = pen::timer_elapsed_ms(timer);
-            //PEN_LOG("anim_v2 : %f", ms);
         }
 
         void update(f32 dt)
         {
-            /*
+            PEN_PERF_SCOPE_PRINT(ecs_update);
+            
+            // allow run time switching between dynamic and fixed timestep
             static f32 fft = 1.0f / 60.0f;
             bool       bdt = dev_ui::get_program_preference("dynamic_timestep").as_bool(true);
             f32        ft = dev_ui::get_program_preference("fixed_timestep").as_f32(fft);
-
             if (!bdt)
             {
                 dt = ft;
             }
-            */
 
             for (auto& si : s_scenes)
             {
@@ -1853,7 +1889,7 @@ namespace put
                 if (scene->controllers[c].post_update_func)
                     scene->controllers[c].post_update_func(scene->controllers[c], scene, dt);
 
-            f32 elapsed = pen::timer_elapsed_ms(timer);
+            f64 elapsed = pen::timer_elapsed_ms(timer);
             PEN_UNUSED(elapsed);
             // PEN_LOG("scene update: %f(ms)", elapsed);
         }

@@ -18,11 +18,8 @@ namespace put
         // scalar float implementation
         //
         
-        void frustum_cull_aabb_scalar(const ecs_scene* scene, const camera* cam, const u32* entities_in, u32** entities_out)
+        void frustum_cull_aabb_scalar(const ecs_scene* scene, const camera* cam, u32* entities_in, u32** entities_out)
         {
-            static timer* ct = timer_create();
-            timer_start(ct);
-            
             const frustum& frust = cam->camera_frustum;
                     
             u32 n = sb_count(entities_in);
@@ -36,10 +33,11 @@ namespace put
                 bool inside = true;
                 for (s32 p = 0; p < 6; ++p)
                 {
-                    vec3f sign_flip = sgn(frust.n[p]);
+                    vec3f sign_flip = sgn(frust.n[p]) * -1.0f;
                     f32 pd = maths::plane_distance(frust.p[p], frust.n[p]);
-                    f32 d = dot(pos + extent * sign_flip, frust.n[p]);
-                    if(d > -pd)
+                    f32 d2 = dot(pos + extent * sign_flip, frust.n[p]);
+                    
+                    if(d2 > -pd)
                     {
                         inside = false;
                     }
@@ -50,16 +48,10 @@ namespace put
                     sb_push(*entities_out, e);
                 }
             }
-            
-            f64 us = timer_elapsed_us(ct);
-            PEN_LOG("aabb scalar cull time %f (us)", us);
         }
         
-        void frustum_cull_sphere_scalar(const ecs_scene* scene, const camera* cam, const u32* entities_in, u32** entities_out)
+        void frustum_cull_sphere_scalar(const ecs_scene* scene, const camera* cam, u32* entities_in, u32** entities_out)
         {
-            static timer* ct = timer_create();
-            timer_start(ct);
-            
             const frustum& camera_frustum = cam->camera_frustum;
             
             u32 n = sb_count(entities_in);
@@ -87,18 +79,12 @@ namespace put
                     sb_push(*entities_out, e);
                 }
             }
-            
-            f64 us = timer_elapsed_us(ct);
-            PEN_LOG("spahere scalar cull time %f (us)", us);
         }
         
         void filter_entities_scalar(const ecs_scene* scene, u32** entities_out)
         {
-            static timer* ct = timer_create();
-            timer_start(ct);
-            
-            u32 accept_entities = e_cmp::constraint | e_cmp::volume;
-            u32 reject_entities = e_cmp::physics_multi;
+            u32 accept_entities = e_cmp::geometry | e_cmp::material;
+            u32 reject_entities = e_cmp::sub_instance;
             
             for(u32 i = 0; i < scene->num_entities; ++i)
             {
@@ -113,22 +99,22 @@ namespace put
                             
                 sb_push(*entities_out, i);
             }
-
-            f64 us = timer_elapsed_us(ct);
-            PEN_LOG("filter time %f (us)", us);
         }
         
         //
         // sse2 128 implementation
         //
 #if 0
-        void frustum_cull_aabb_simd128(const ecs_scene* scene, const camera* cam, const u32* entities_in, u32** entities_out)
+        void frustum_cull_aabb_simd128(const ecs_scene* scene, const camera* cam, u32* entities_in, u32** entities_out)
         {
-            static timer* ct = timer_create();
-            timer_start(ct);
-            
             const frustum& frust = cam->camera_frustum;
             
+            // pad to 4
+            u32 xn = sb_count(entities_in);
+            u32 yn = PEN_ALIGN(xn, 4);
+            for(u32 i = 0; i < yn-xn; ++i)
+                sb_push(entities_in, entities_in[0]);
+                
             // sphere radius and position
             __m128 posx;
             __m128 posy;
@@ -164,13 +150,13 @@ namespace put
                 pd[p] = _mm_set1_ps(ppd);
                 pd_neg[p] = _mm_set1_ps(-ppd);
                 
-                sfx[p] = _mm_set1_ps(sgn(frust.n[p].x));
-                sfy[p] = _mm_set1_ps(sgn(frust.n[p].y));
-                sfz[p] = _mm_set1_ps(sgn(frust.n[p].z));
+                sfx[p] = _mm_set1_ps(sgn(frust.n[p].x)*-1.0f);
+                sfy[p] = _mm_set1_ps(sgn(frust.n[p].y)*-1.0f);
+                sfz[p] = _mm_set1_ps(sgn(frust.n[p].z)*-1.0f);
             }
                     
             u32 n = sb_count(entities_in);
-            for(u32 i = 0; i < n; ++i)
+            for(u32 i = 0; i < n; i+=4)
             {
                 // unpack entities
                 for(u32 j = 0; j < 4; ++j)
@@ -223,17 +209,17 @@ namespace put
                     if(!inside[j])
                         sb_push(*entities_out, e[3-j]);
             }
-            
-            f64 us = timer_elapsed_us(ct);
-            PEN_LOG("aabb simd 128 cull time %f (us)", us);
         }
         
-        void frustum_cull_sphere_simd128(const ecs_scene* scene, const camera* cam, const u32* entities_in, u32** entities_out)
+        void frustum_cull_sphere_simd128(const ecs_scene* scene, const camera* cam, u32* entities_in, u32** entities_out)
         {
-            static timer* ct = timer_create();
-            timer_start(ct);
-            
             const frustum& frust = cam->camera_frustum;
+            
+            // pad to 4
+            u32 xn = sb_count(entities_in);
+            u32 yn = PEN_ALIGN(xn, 4);
+            for(u32 i = 0; i < yn-xn; ++i)
+                sb_push(entities_in, entities_in[0]);
                     
             // sphere radius and position
             __m128 radius;
@@ -305,9 +291,6 @@ namespace put
                     if(!inside[j])
                         sb_push(*entities_out, e[3-j]);
             }
-            
-            f32 us = timer_elapsed_us(ct);
-            PEN_LOG("sphere simd 128 cull time %f (us)", us);
         }
 #endif
         
@@ -315,13 +298,15 @@ namespace put
         // avx 256 implementation
         //
 #if 0
-        void frustum_cull_sphere_simd256(const ecs_scene* scene, const camera* cam, const u32* entities_in, u32** entities_out)
+        void frustum_cull_sphere_simd256(const ecs_scene* scene, const camera* cam, u32* entities_in, u32** entities_out)
         {
-
-            static timer* ct = timer_create();
-            timer_start(ct);
-            
             const frustum& frust = cam->camera_frustum;
+            
+            // pad to 8
+            u32 xn = sb_count(entities_in);
+            u32 yn = PEN_ALIGN(xn, 8);
+            for(u32 i = 0; i < yn-xn; ++i)
+                sb_push(entities_in, entities_in[0]);
             
             // splat constants
             __m256 zero = _mm256_set1_ps(0.0f);
@@ -404,17 +389,17 @@ namespace put
                     if(!inside[j])
                         sb_push(*entities_out, e[7-j]);
             }
-            
-            f64 us = timer_elapsed_us(ct);
-            PEN_LOG("sphere simd 256 cull time %f (us)", us);
         }
         
-        void frustum_cull_aabb_simd256(const ecs_scene* scene, const camera* cam, const u32* entities_in, u32** entities_out)
+        void frustum_cull_aabb_simd256(const ecs_scene* scene, const camera* cam, u32* entities_in, u32** entities_out)
         {
-            static timer* ct = timer_create();
-            timer_start(ct);
-            
             const frustum& frust = cam->camera_frustum;
+            
+            // pad to 8
+            u32 xn = sb_count(entities_in);
+            u32 yn = PEN_ALIGN(xn, 8);
+            for(u32 i = 0; i < yn-xn; ++i)
+                sb_push(entities_in, entities_in[0]);
             
             // splat constants
             __m256 zero = _mm256_set1_ps(0.0f);
@@ -454,11 +439,12 @@ namespace put
                 pd[p] = _mm256_set1_ps(ppd);
                 pd_neg[p] = _mm256_set1_ps(-ppd);
                 
-                sfx[p] = _mm256_set1_ps(sgn(frust.n[p].x));
-                sfy[p] = _mm256_set1_ps(sgn(frust.n[p].y));
-                sfz[p] = _mm256_set1_ps(sgn(frust.n[p].z));
+                sfx[p] = _mm256_set1_ps(sgn(frust.n[p].x)*-1.0f);
+                sfy[p] = _mm256_set1_ps(sgn(frust.n[p].y)*-1.0f);
+                sfz[p] = _mm256_set1_ps(sgn(frust.n[p].z)*-1.0f);
             }
             
+            // n is number of entities + padding for alignment
             u32 n = sb_count(entities_in);
             for(u32 i = 0; i < n; i+=8)
             {
@@ -522,29 +508,26 @@ namespace put
                     if(!inside[j])
                         sb_push(*entities_out, e[7-j]);
             }
-            
-            f64 us = timer_elapsed_us(ct);
-            PEN_LOG("sphere simd 256 cull time %f (us)", us);
         }
 #endif
 
 #ifdef __ARM_NEON__
-    void frustum_cull_aabb_simd128(const ecs_scene* scene, const camera* cam, const u32* entities_in, u32** entities_out)
+    void frustum_cull_aabb_simd128(const ecs_scene* scene, const camera* cam, u32* entities_in, u32** entities_out)
     {
     
     }
     
-    void frustum_cull_aabb_simd256(const ecs_scene* scene, const camera* cam, const u32* entities_in, u32** entities_out)
+    void frustum_cull_aabb_simd256(const ecs_scene* scene, const camera* cam, u32* entities_in, u32** entities_out)
     {
     
     }
     
-    void frustum_cull_sphere_simd128(const ecs_scene* scene, const camera* cam, const u32* entities_in, u32** entities_out)
+    void frustum_cull_sphere_simd128(const ecs_scene* scene, const camera* cam, u32* entities_in, u32** entities_out)
     {
     
     }
     
-    void frustum_cull_sphere_simd256(const ecs_scene* scene, const camera* cam, const u32* entities_in, u32** entities_out)
+    void frustum_cull_sphere_simd256(const ecs_scene* scene, const camera* cam, u32* entities_in, u32** entities_out)
     {
     
     }

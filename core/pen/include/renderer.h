@@ -370,7 +370,6 @@ namespace pen
 
     // setup / hook functions
     void        renderer_init(void* user_data, bool wait_for_jobs, u32 max_commands);
-    void*       renderer_thread_function(void* params);
     bool        renderer_dispatch();
     void        renderer_test_run();
     void        renderer_test_enable();

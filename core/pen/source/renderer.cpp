@@ -242,7 +242,7 @@ namespace
     struct fe_render_ctx
     {
         pen::timer*               present_timer = nullptr;
-        f32                       present_time = 0.0f;
+        f64                       present_time = 0.0f;
         pen::resolve_resources    resolve_resources;
         pen::semaphore*           consume_semaphore = nullptr;
         pen::semaphore*           continue_semaphore = nullptr;
@@ -620,21 +620,26 @@ namespace pen
     
     bool renderer_dispatch()
     {
-        renderer_cmd* cmd = _ctx->cmd_buffer.get();
-        while(cmd)
-        {
-            exec_cmd(*cmd);
+        // this function is invoked from mtk draw in view
+        //if we start renderin  we need to wait for present to prevent command buffer being released before ending encoding
 
-            // break at present to re-call os update
-            if (cmd->command_index == CMD_PRESENT)
-                break;
+        renderer_cmd* cmd = _ctx->cmd_buffer.get();
+        bool started = cmd;
+        while(cmd || started)
+        {
+            if(cmd)
+            {
+                exec_cmd(*cmd);
+
+                // break at present to re-call os update
+                if (cmd->command_index == CMD_PRESENT)
+                    break;
+            }
 
             cmd = _ctx->cmd_buffer.get();
         }
         
-        //semaphore_wait(_ctx->consume_semaphore);
-        
-        return true;
+        return started;
     }
 
     void init_resolve_resources(fe_render_ctx* ctx)

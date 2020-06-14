@@ -508,7 +508,7 @@ namespace put
 
     void trigger_hot_loader(const Str& cmdline)
     {
-        static f32         s_timeout = 0.0f;
+        static f64         s_timeout = 0.0f;
         static pen::timer* t = pen::timer_create();
         s_timeout -= pen::timer_elapsed_ms(t);
 

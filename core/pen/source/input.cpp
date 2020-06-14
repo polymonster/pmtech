@@ -632,8 +632,8 @@ namespace pen
 
         // detect devices
         static pen::timer* htimer = timer_create();
-        static const f32   detect_time = 10000.0f;
-        static f32         detect_timer = detect_time;
+        static const f64   detect_time = 10000.0f;
+        static f64         detect_timer = detect_time;
         if (detect_timer <= 0)
         {
             pen::jobs_create_job(detect_devices_async, 1024 * 1024, nullptr, pen::e_thread_start_flags::detached);
