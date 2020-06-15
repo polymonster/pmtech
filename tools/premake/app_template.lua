@@ -167,72 +167,72 @@ end
 
 function create_binary(project_name, source_directory, root_directory, binary_type)
 	project ( project_name )
-			setup_product( project_name )
-			kind ( binary_type )
-			language "C++"
-			
-			if binary_type ~= "SharedLib" then
-				dependson { "pen", "put" }
-			end
+		setup_product( project_name )
+		kind ( binary_type )
+		language "C++"
 		
-			includedirs
-			{
-				-- platform
-				pmtech_dir .. "core/pen/include",
-				pmtech_dir .. "core/pen/include/common", 
-				pmtech_dir .. "core/pen/include/" .. platform_dir,
-			
-				--utility			
-				pmtech_dir .. "core/put/source/",
-			
-				-- third party			
-				pmtech_dir .. "third_party/",
-		
-				-- local
-				"include/",
-			}
-		
-			files 
-			{ 
-				(root_directory .. "code/" .. source_directory .. "/**.cpp"),
-				(root_directory .. "code/" .. source_directory .. "/**.c"),
-				(root_directory .. "code/" .. source_directory .. "/**.h"),
-				(root_directory .. "code/" .. source_directory .. "/**.m"),
-				(root_directory .. "code/" .. source_directory .. "/**.mm")
-			}
-		
-			setup_env()
-			setup_platform()
-			setup_platform_defines()
-			setup_modules()
+		if binary_type ~= "SharedLib" then
+			dependson { "pen", "put" }
+		end
 	
-			location (root_directory .. "/build/" .. platform_dir)
-			targetdir (root_directory .. "/bin/" .. platform_dir)
-			debugdir (root_directory .. "/bin/" .. platform_dir)
-						
-			configuration "Release"
-				defines { "NDEBUG" }
-				entrypoint "WinMainCRTStartup"
-				optimize "Speed"
-				targetname (project_name)
-				architecture "x64"
-				libdirs
-				{ 
-					pmtech_dir .. "core/pen/lib/" .. platform_dir .. "/release", 
-					pmtech_dir .. "core/put/lib/" .. platform_dir .. "/release",
-				}
+		includedirs
+		{
+			-- platform
+			pmtech_dir .. "core/pen/include",
+			pmtech_dir .. "core/pen/include/common", 
+			pmtech_dir .. "core/pen/include/" .. platform_dir,
 		
-			configuration "Debug"
-				defines { "DEBUG" }
-				entrypoint "WinMainCRTStartup"
-				symbols "On"
-				targetname (project_name .. "_d")
-				architecture "x64"
-				libdirs
-				{ 
-					pmtech_dir .. "core/pen/lib/" .. platform_dir .. "/debug", 
-					pmtech_dir .. "core/put/lib/" .. platform_dir .. "/debug",
-				}
+			--utility			
+			pmtech_dir .. "core/put/source/",
+		
+			-- third party			
+			pmtech_dir .. "third_party/",
+	
+			-- local
+			"include/",
+		}
+	
+		files 
+		{ 
+			(root_directory .. "code/" .. source_directory .. "/**.cpp"),
+			(root_directory .. "code/" .. source_directory .. "/**.c"),
+			(root_directory .. "code/" .. source_directory .. "/**.h"),
+			(root_directory .. "code/" .. source_directory .. "/**.m"),
+			(root_directory .. "code/" .. source_directory .. "/**.mm")
+		}
+	
+		setup_env()
+		setup_platform()
+		setup_platform_defines()
+		setup_modules()
+
+		location (root_directory .. "/build/" .. platform_dir)
+		targetdir (root_directory .. "/bin/" .. platform_dir)
+		debugdir (root_directory .. "/bin/" .. platform_dir)
+					
+		configuration "Release"
+			defines { "NDEBUG" }
+			entrypoint "WinMainCRTStartup"
+			optimize "Speed"
+			targetname (project_name)
+			architecture "x64"
+			libdirs
+			{ 
+				pmtech_dir .. "core/pen/lib/" .. platform_dir .. "/release", 
+				pmtech_dir .. "core/put/lib/" .. platform_dir .. "/release",
+			}
+	
+		configuration "Debug"
+			defines { "DEBUG" }
+			entrypoint "WinMainCRTStartup"
+			symbols "On"
+			targetname (project_name .. "_d")
+			architecture "x64"
+			libdirs
+			{ 
+				pmtech_dir .. "core/pen/lib/" .. platform_dir .. "/debug", 
+				pmtech_dir .. "core/put/lib/" .. platform_dir .. "/debug",
+			}
 end
 
 function create_app(project_name, source_directory, root_directory)

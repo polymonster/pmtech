@@ -43,9 +43,9 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     scene->entities[light] |= e_cmp::transform;
 
     // add some boxes
-    f32   num_pillar_rows = 10;
+    f32   num_pillar_rows = 32;
     f32   d = 10.0f;
-    vec3f start_pos = vec3f(-d);
+    vec3f start_pos = vec3f(-d * 23);
     vec3f pos = start_pos;
     for (s32 i = 0; i < num_pillar_rows; ++i)
     {

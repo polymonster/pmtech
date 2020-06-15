@@ -46,9 +46,9 @@ end
 function setup_from_action()
     if _ACTION == "gmake" then
         if platform_dir == "linux" then
-            build_cmd = "-std=c++11"
+            build_cmd = "-std=c++11 -mfma -mavx -mavx2 -msse2"
         else
-            build_cmd = "-std=c++11 -stdlib=libc++"
+            build_cmd = "-std=c++11 -stdlib=libc++ -mfma -mavx -mavx2 -msse2"
             link_cmd = "-stdlib=libc++"
         end
     elseif _ACTION == "xcode4" then 
@@ -63,14 +63,14 @@ function setup_from_action()
             build_cmd = "-std=c++11 -stdlib=libc++"
             link_cmd = "-stdlib=libc++"
         else
-            build_cmd = "-std=c++11 -stdlib=libc++ -mfma"
+            build_cmd = "-std=c++11 -stdlib=libc++ -mfma -mavx -mavx2 -msse2"
             link_cmd = "-stdlib=libc++ -mmacosx-version-min=10.8"
         end
     elseif _ACTION == "android-studio" then 
         build_cmd = { "-std=c++11" }
-    elseif _ACTION == "vs2017" then
+    elseif _ACTION == "vs2017" or _ACTION == "vs2019" then
         platform_dir = "win32" 
-        build_cmd = "/Ob1" -- use force inline
+        build_cmd = "/Ob1 /arch:AVX2 /arch:AVX " -- use force inline and avx
     end
     
     platform = platform_dir

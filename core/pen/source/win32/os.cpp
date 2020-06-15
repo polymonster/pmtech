@@ -184,13 +184,24 @@ namespace pen
             init_jobs = false;
         }
 
-        MSG msg = {0};
 
-        if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+        for (;;)
         {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
+            MSG msg = { 0 };
+            if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+            {
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+
+                if (WM_QUIT == msg.message)
+                    s_terminate_app = true;
+            }
+            else
+            {
+                break;
+            }
         }
+
 
         os_cmd* cmd = s_cmd_buffer.get();
         while (cmd)
@@ -215,9 +226,6 @@ namespace pen
         }
 
         pen::input_gamepad_update();
-
-        if (WM_QUIT == msg.message)
-            s_terminate_app = true;
 
         if (s_terminate_app)
         {

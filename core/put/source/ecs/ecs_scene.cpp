@@ -841,7 +841,7 @@ namespace put
         
         void render_scene_view(const scene_view& view)
         {
-            //PEN_PERF_SCOPE_PRINT(render_scene_view);
+            PEN_PERF_SCOPE_PRINT(render_scene_view);
             
             ecs_scene* scene = view.scene;
             if (scene->view_flags & e_scene_view_flags::hide)

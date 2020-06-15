@@ -12,7 +12,7 @@ project "put"
     location ("build/" .. platform_dir)
     kind "StaticLib"
     language "C++"
-    
+
     libdirs
     { 
         "../pen/lib/" .. platform_dir,
@@ -66,7 +66,7 @@ project "put"
         "../../third_party/maths/*.h"
     }
     includedirs { "include" }
-    
+	    
     configuration "Debug"
         defines { "DEBUG" }
         entrypoint "WinMainCRTStartup"
