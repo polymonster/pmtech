@@ -625,20 +625,18 @@ namespace pen
 
         renderer_cmd* cmd = _ctx->cmd_buffer.get();
         bool started = cmd;
-        while(cmd || started)
+        while(cmd)
         {
-            if(cmd)
-            {
-                exec_cmd(*cmd);
+            exec_cmd(*cmd);
 
-                // break at present to re-call os update
-                if (cmd->command_index == CMD_PRESENT)
-                    break;
-            }
-
+            // break at present to re-call os update
+            if (cmd->command_index == CMD_PRESENT)
+                break;
+                    
             cmd = _ctx->cmd_buffer.get();
         }
         
+        direct::renderer_retain();
         return started;
     }
 
@@ -935,12 +933,7 @@ namespace pen
         cmd.resource_slot = resource_slot;
 
         _ctx->cmd_buffer.put(cmd);
-
-        if (resource_slot == 138)
-        {
-            u32 a = 0;
-        }
-
+        
         return resource_slot;
     }
 

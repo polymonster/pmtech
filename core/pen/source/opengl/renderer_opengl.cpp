@@ -1039,6 +1039,11 @@ namespace pen
     {
         // unused for opengl, required to sync for metal
     }
+    
+    void direct::renderer_retain()
+    {
+        // unused for opengl, required to retain auto release ojects for metal
+    }
 
     void direct::renderer_new_frame()
     {

@@ -1950,6 +1950,11 @@ namespace pen
         {
             // unused on this platform
         }
+        
+        void renderer_retain()
+        {
+            // unused on this platform
+        }
 
         void renderer_create_clear_state(const clear_state& cs, u32 resource_slot)
         {

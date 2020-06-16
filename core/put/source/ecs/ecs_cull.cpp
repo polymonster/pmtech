@@ -533,11 +533,42 @@ namespace put
         void frustum_cull_aabb(const ecs_scene* scene, const camera* cam, u32* entities_in, u32** entities_out)
         {
             frustum_cull_aabb_scalar(scene, cam, entities_in, entities_out);
+            //frustum_cull_aabb_simd256(scene, cam, entities_in, entities_out);
         }
 
         void frustum_cull_sphere(const ecs_scene* scene, const camera* cam, u32* entities_in, u32** entities_out)
         {
             frustum_cull_sphere_scalar(scene, cam, entities_in, entities_out);
+            //frustum_cull_sphere_simd256(scene, cam, entities_in, entities_out);
+        }
+        
+        void debug_culling()
+        {
+            // debug culling
+            /*
+            static camera dc;
+            if(pen::input_key(PK_Q))
+            {
+                dc = *view.camera;
+            }
+            
+            {
+                u32* debug_entities = nullptr;
+                dbg::add_frustum(dc.camera_frustum.corners[0], dc.camera_frustum.corners[1]);
+                frustum_cull_aabb_scalar(scene, &dc, filtered_entities, &debug_entities);
+                
+                for(u32 i = 0; i < 6; ++i)
+                    dbg::add_line(dc.camera_frustum.p[i], dc.camera_frustum.p[i] + dc.camera_frustum.n[i], vec4f::magenta());
+                    
+                u32 vc = sb_count(debug_entities);
+                for(u32 i = 0; i < vc; ++i)
+                {
+                    u32 n = debug_entities[i];
+                    dbg::add_aabb(scene->pos_extent[n].pos.xyz - scene->pos_extent[n].extent.xyz,
+                        scene->pos_extent[n].pos.xyz + scene->pos_extent[n].extent.xyz, vec4f::white());
+                }
+            }
+            */
         }
     }
 }

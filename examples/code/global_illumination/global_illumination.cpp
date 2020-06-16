@@ -65,7 +65,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->lights[light].colour = vec3f(0.8f, 0.8f, 0.8f) * 0.5f;
     scene->lights[light].direction = normalised(vec3f(0.7f, 0.8f, 0.3f));
     scene->lights[light].type = e_light_type::dir;
-    scene->lights[light].flags |= e_light_flags::shadow_map | e_light_flags::global_illumination;
+    scene->lights[light].flags |= e_light_flags::shadow_map;
     scene->transforms[light].translation = vec3f::zero();
     scene->transforms[light].rotation = quat();
     scene->transforms[light].scale = vec3f::one();

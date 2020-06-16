@@ -3022,12 +3022,6 @@ namespace put
                     pen::renderer_set_constant_buffer(cb_pp_info, e_cbuffer_location::post_process_info,
                                                       pen::CBUFFER_BIND_PS);
                 }
-                
-                // filter entities
-                //u32* entities_out = nullptr;
-                //ecs::filter_entities_scalar(v.scene, &entities_out);
-                
-                // cull entities
 
                 // call render functions and make draw calls
                 for (s32 rf = 0; rf < v.render_functions.size(); ++rf)

@@ -439,7 +439,7 @@ ps_output ps_forward_lit( vs_output input )
     float roughness = saturate(user_data.y); 
 
     reflectivity = m_reflectivity;
-    roughness = 0.3;
+    roughness = ro_sample.r;
     
     if:(INSTANCED)
     {
@@ -1110,12 +1110,6 @@ pmfx:
         vs: vs_main_extrude,
         ps: ps_dbg
     },
-    
-    per_pixel_velocity:
-    {	
-    	vs: vs_main,
-    	ps: ps_per_pixel_velocity
-    }
 }
 
 

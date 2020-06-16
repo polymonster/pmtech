@@ -1159,6 +1159,22 @@ namespace pen
         {
             _renderer_end_frame();
         }
+        
+        void renderer_retain()
+        {
+            if(_state.render_encoder)
+                [_state.render_encoder retain];
+                
+            if(_state.blit_encoder)
+                [_state.blit_encoder retain];
+                
+            if(_state.compute_encoder)
+                [_state.compute_encoder retain];
+                
+            if(_state.cmd_buffer)
+                [_state.cmd_buffer retain];
+            
+        }
 
         void renderer_sync()
         {

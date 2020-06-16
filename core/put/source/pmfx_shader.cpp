@@ -442,6 +442,7 @@ namespace put
 
             // traditional vs / ps combo
             program.vertex_shader = pen::renderer_load_shader(vs_slp);
+            
             pen::memory_free(vs_slp.so_decl_entries);
 
             // pixel shader

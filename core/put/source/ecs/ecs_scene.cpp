@@ -841,7 +841,7 @@ namespace put
         
         void render_scene_view(const scene_view& view)
         {
-            PEN_PERF_SCOPE_PRINT(render_scene_view);
+            // PEN_PERF_SCOPE_PRINT(render_scene_view);
             
             ecs_scene* scene = view.scene;
             if (scene->view_flags & e_scene_view_flags::hide)
@@ -893,34 +893,9 @@ namespace put
             u32* culled_entities = nullptr;
             filter_entities_scalar(scene, &filtered_entities);
             frustum_cull_aabb_scalar(scene, view.camera, filtered_entities, &culled_entities);
-            
-            // debug culling
-            /*
-            static camera dc;
-            if(pen::input_key(PK_Q))
-            {
-                dc = *view.camera;
-            }
-            
-            {
-                u32* debug_entities = nullptr;
-                dbg::add_frustum(dc.camera_frustum.corners[0], dc.camera_frustum.corners[1]);
-                frustum_cull_aabb_scalar(scene, &dc, filtered_entities, &debug_entities);
-                
-                for(u32 i = 0; i < 6; ++i)
-                    dbg::add_line(dc.camera_frustum.p[i], dc.camera_frustum.p[i] + dc.camera_frustum.n[i], vec4f::magenta());
-                    
-                u32 vc = sb_count(debug_entities);
-                for(u32 i = 0; i < vc; ++i)
-                {
-                    u32 n = debug_entities[i];
-                    dbg::add_aabb(scene->pos_extent[n].pos.xyz - scene->pos_extent[n].extent.xyz,
-                        scene->pos_extent[n].pos.xyz + scene->pos_extent[n].extent.xyz, vec4f::white());
-                }
-            }
-            */
 
             // render
+            u32 cur_shader, cur_technique, cur_permutation, cur_vb, cur_ib = -1;
             u32 vc = sb_count(culled_entities);
             for(u32 i = 0; i < vc; ++i)
             {
@@ -934,24 +909,24 @@ namespace put
                 cmp_material* p_mat = &scene->materials[n];
                 u32           permutation = scene->material_permutation[n];
 
-                // set shader / technique
-                if (!is_valid(view.pmfx_shader))
+                // set shader / technique only if we need to change
+                if(p_mat->shader != cur_shader || p_mat->technique_index != cur_technique || permutation != cur_permutation)
                 {
-                    // material shader / technique
-                    pmfx::set_technique(p_mat->shader, p_mat->technique_index);
-                }
-                else
-                {
-                    bool set = pmfx::set_technique_perm(view.pmfx_shader, view.id_technique, permutation);
-                    if (!set)
+                    if (!is_valid(view.pmfx_shader))
                     {
-                        if (scene->entities[n] & e_cmp::master_instance)
-                        {
-                            u32 num_instances = scene->master_instances[n].num_instances;
-                            n += num_instances;
-                        }
-                        PEN_ASSERT(0);
-                        continue;
+                        // per entity material
+                        pmfx::set_technique(p_mat->shader, p_mat->technique_index);
+                        cur_shader = p_mat->shader;
+                        cur_technique = p_mat->technique_index;
+                        cur_permutation = permutation;
+                    }
+                    else
+                    {
+                        // per pass material but with permutation specialisation (instanced, skinned etc)
+                        pmfx::set_technique_perm(view.pmfx_shader, view.id_technique, permutation);
+                        cur_shader = view.pmfx_shader;
+                        cur_technique = view.id_technique;
+                        cur_permutation = permutation;
                     }
                 }
 
@@ -989,22 +964,6 @@ namespace put
                 // draw call cb
                 pen::renderer_set_constant_buffer(scene->cbuffer[n], 1, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
 
-                // set ib / vb
-                if (scene->entities[n] & e_cmp::master_instance)
-                {
-                    u32 vbs[2] = {p_geom->vertex_buffer, scene->master_instances[n].instance_buffer};
-                    u32 strides[2] = {p_geom->vertex_size, scene->master_instances[n].instance_stride};
-                    u32 offsets[2] = {0};
-
-                    pen::renderer_set_vertex_buffers(vbs, 2, 0, strides, offsets);
-                }
-                else
-                {
-                    pen::renderer_set_vertex_buffer(p_geom->vertex_buffer, 0, p_geom->vertex_size, 0);
-                }
-
-                pen::renderer_set_index_buffer(p_geom->index_buffer, p_geom->index_type, 0);
-
                 // set textures
                 if (p_mat)
                 {
@@ -1019,6 +978,31 @@ namespace put
                     }
                 }
 
+                // set vertex buffer
+                if (scene->entities[n] & e_cmp::master_instance)
+                {
+                    u32 vbs[2] = {p_geom->vertex_buffer, scene->master_instances[n].instance_buffer};
+                    u32 strides[2] = {p_geom->vertex_size, scene->master_instances[n].instance_stride};
+                    u32 offsets[2] = {0};
+
+                    pen::renderer_set_vertex_buffers(vbs, 2, 0, strides, offsets);
+                }
+                else
+                {
+                    if(cur_vb != p_geom->vertex_buffer)
+                    {
+                        pen::renderer_set_vertex_buffer(p_geom->vertex_buffer, 0, p_geom->vertex_size, 0);
+                        cur_vb = p_geom->vertex_buffer;
+                    }
+                }
+
+                // set index buffer
+                if(cur_ib != p_geom->index_buffer)
+                {
+                    pen::renderer_set_index_buffer(p_geom->index_buffer, p_geom->index_type, 0);
+                    cur_ib = p_geom->index_buffer;
+                }
+                
                 // draw
 
                 // instances
@@ -1034,64 +1018,6 @@ namespace put
                 // single
                 pen::renderer_draw_indexed(p_geom->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
             }
-            
-            
-            
-            /*
-            for (u32 n = 0; n < scene->num_entities; ++n)
-            {
-                if (!(scene->entities[n] & e_cmp::geometry && scene->entities[n] & e_cmp::material))
-                    continue;
-
-                if (scene->entities[n] & e_cmp::sub_instance)
-                    continue;
-
-                if (scene->state_flags[n] & e_state::hidden)
-                    continue;
-                
-                
-                // alpha
-                if(view.render_flags & pmfx::e_scene_render_flags::alpha_blended)
-                {
-                    if(!(scene->state_flags[n] & e_state::alpha_blended))
-                        continue;
-                }
-                else
-                {
-                    if(scene->render_flags[n] & e_state::alpha_blended)
-                        continue;
-                }
-
-                // frustum cull
-                bool inside = true;
-                for (s32 i = 0; i < 6; ++i)
-                {
-                    frustum& camera_frustum = view.camera->camera_frustum;
-
-                    vec3f& min = scene->bounding_volumes[n].transformed_min_extents;
-                    vec3f& max = scene->bounding_volumes[n].transformed_max_extents;
-
-                    vec3f pos = min + (max - min) * 0.5f;
-                    f32   radius = scene->bounding_volumes[n].radius;
-
-                    f32 d = maths::point_plane_distance(pos, camera_frustum.p[i], camera_frustum.n[i]);
-
-                    if (d > radius)
-                    {
-                        inside = false;
-                        break;
-                    }
-                }
-
-                if (!inside)
-                {
-                    cull_count++;
-                    continue;
-                }
-
-                draw_count++;
-            }
-            */
         }
 
         void update_animations(ecs_scene* scene, f32 dt)

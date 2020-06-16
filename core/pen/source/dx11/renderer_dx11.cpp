@@ -852,6 +852,11 @@ namespace pen
     {
         // unused on this platform
     }
+    
+    void direct::renderer_retain()
+    {
+        // unused on this platform
+    }
 
     void direct::renderer_new_frame()
     {

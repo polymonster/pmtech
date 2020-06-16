@@ -154,7 +154,6 @@ import post_process.jsn
             volume_gi_compute,
 			picking_view,
 			editor_main_gi,
-			velocity_buffer,
             editor_view
         ],
         

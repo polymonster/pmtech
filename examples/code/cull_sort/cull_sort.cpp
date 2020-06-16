@@ -42,31 +42,31 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     scene->entities[light] |= e_cmp::light;
     scene->entities[light] |= e_cmp::transform;
 
-    // add some boxes
-    f32   num_pillar_rows = 32;
+    // add some spheres
+    f32   num_spheres = 32.0f;
     f32   d = 10.0f;
-    vec3f start_pos = vec3f(-d * 23);
+    vec3f start_pos = vec3f(-d * (num_spheres+1.0f)/2.0f);
     vec3f pos = start_pos;
-    for (s32 i = 0; i < num_pillar_rows; ++i)
+    for (s32 i = 0; i < num_spheres; ++i)
     {
         pos.x = start_pos.x;
         
-        for (s32 i = 0; i < num_pillar_rows; ++i)
+        for (s32 i = 0; i < num_spheres; ++i)
         {
             pos.z = start_pos.z;
 
-            for (s32 j = 0; j < num_pillar_rows; ++j)
+            for (s32 j = 0; j < num_spheres; ++j)
             {
-                u32 pillar = get_new_entity(scene);
-                scene->transforms[pillar].rotation = quat();
-                scene->transforms[pillar].scale = vec3f(2.0f, 2.0f, 2.0f);
-                scene->transforms[pillar].translation = pos;
-                scene->parents[pillar] = pillar;
-                scene->entities[pillar] |= e_cmp::transform;
+                u32 s = get_new_entity(scene);
+                scene->transforms[s].rotation = quat();
+                scene->transforms[s].scale = vec3f(2.0f, 2.0f, 2.0f);
+                scene->transforms[s].translation = pos;
+                scene->parents[s] = s;
+                scene->entities[s] |= e_cmp::transform;
 
-                instantiate_geometry(box_resource, scene, pillar);
-                instantiate_material(default_material, scene, pillar);
-                instantiate_model_cbuffer(scene, pillar);
+                instantiate_geometry(box_resource, scene, s);
+                instantiate_material(default_material, scene, s);
+                instantiate_model_cbuffer(scene, s);
 
                 pos.z += d;
             }

@@ -448,6 +448,7 @@ namespace pen
         void renderer_sync();
         void renderer_new_frame();
         void renderer_end_frame();
+        void renderer_retain();
 
         // clears
         void renderer_create_clear_state(const clear_state& cs, u32 resource_slot);
