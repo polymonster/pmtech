@@ -90,7 +90,10 @@ local function setup_ios()
 		"UIKit.framework",
 		"QuartzCore.framework",
 		"MetalKit.framework",
-		"Metal.framework"
+		"Metal.framework",
+		"AVFoundation.framework",
+		"AudioToolbox.framework",
+		"fmod_iphoneos"
 	}
 		
 	files 

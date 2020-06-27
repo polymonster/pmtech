@@ -4,6 +4,7 @@
 
 #include "audio.h"
 
+#include "os.h"
 #include "console.h"
 #include "data_struct.h"
 #include "memory.h"
@@ -258,8 +259,8 @@ namespace put
 
         _audio_resources[resource_slot].assigned_flag |= 0xff;
         _audio_resources[resource_slot].type = AUDIO_RESOURCE_SOUND;
-
-        FMOD_RESULT result = _sound_system->createSound(filename, FMOD_DEFAULT, NULL,
+        
+        FMOD_RESULT result = _sound_system->createSound(pen::os_path_for_resource(filename), FMOD_DEFAULT, NULL,
                                                         (FMOD::Sound**)&_audio_resources[resource_slot].resource);
 
         PEN_ASSERT(result == FMOD_OK);

@@ -182,7 +182,6 @@
         
         copy: [
             ["assets/audio", "bin/ios/data/audio"],
-            ["../assets/audio", "bin/ios/data/audio"],
             ["../assets/fonts", "bin/ios/data/fonts"],
             ["assets/scene", "bin/ios/data/scene"]
         ],
