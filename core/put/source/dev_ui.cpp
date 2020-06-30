@@ -21,6 +21,12 @@
 #include "str_utilities.h"
 #include "timer.h"
 
+#if PEN_PLATFORM_IOS
+#define DEV_UI_SCALE 3
+#else
+#define DEV_UI_SCALE 1
+#endif
+
 using namespace pen;
 using namespace put;
 
@@ -60,13 +66,13 @@ namespace
     {
         ImGuiIO&  io = ImGui::GetIO();
         const c8* cousine_reg = pen::os_path_for_resource("data/fonts/cousine-regular.ttf");
-        io.Fonts->AddFontFromFileTTF(cousine_reg, 14);
+        io.Fonts->AddFontFromFileTTF(cousine_reg, 14 * DEV_UI_SCALE);
 
         ImFontConfig config;
         config.MergeMode = true;
         static const ImWchar icon_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
         const c8*            font_awesome = pen::os_path_for_resource("data/fonts/fontawesome-webfont.ttf");
-        io.Fonts->AddFontFromFileTTF(font_awesome, 13.0f, &config, icon_ranges);
+        io.Fonts->AddFontFromFileTTF(font_awesome, 14 * DEV_UI_SCALE, &config, icon_ranges);
 
         // Build texture atlas
         unsigned char* pixels;
@@ -417,6 +423,8 @@ namespace put
             style.Colors[ImGuiCol_PlotHistogram] = accent;
             style.Colors[ImGuiCol_PlotHistogramHovered] = accent_light;
             style.Colors[ImGuiCol_ModalWindowDarkening] = ImVec4(0.04f, 0.10f, 0.09f, 0.51f);
+            
+            style.ScaleAllSizes(DEV_UI_SCALE);
 
             dev_ui::util_init();
             s_initialised = true;
@@ -545,7 +553,7 @@ namespace put
             // Hide OS mouse cursor if ImGui is drawing it
             if (io.MouseDrawCursor)
                 pen::input_show_cursor(false);
-
+                
             ImGui::NewFrame();
 
             put::dev_ui::update();
