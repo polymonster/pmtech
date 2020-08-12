@@ -73,4 +73,5 @@ create_app_example( "msaa_resolve", script_path() )
 create_app_example( "compute_demo", script_path() )
 create_app_example( "global_illumination", script_path() )
 create_app_example( "cull_sort", script_path() )
+create_app_example( "game", script_path() )
 

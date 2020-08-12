@@ -6,6 +6,7 @@
 #define _audio_h
 
 #include "pen.h"
+#include "os.h"
 
 namespace put
 {
@@ -79,6 +80,7 @@ namespace put
     // Creation
     u32  audio_create_stream(const c8* filename);
     u32  audio_create_sound(const c8* filename);
+    u32  audio_create_sound(const pen::music_file& music);
     u32  audio_create_channel_for_sound(const u32 sound_index);
     u32  audio_create_channel_group();
     void audio_release_resource(u32 index);
@@ -120,6 +122,7 @@ namespace put
         // Creation
         u32 audio_create_stream(const c8* filename, u32 resource_slot);
         u32 audio_create_sound(const c8* filename, u32 resource_slot);
+        u32 audio_create_sound(const pen::music_file& music, u32 resource_slot);
         u32 audio_create_channel_for_sound(u32 sound_index, u32 resource_slot);
         u32 audio_create_channel_group(u32 resource_slot);
         u32 audio_release_resource(u32 index);

@@ -25,6 +25,7 @@ namespace
         {
             create_stream,
             create_sound,
+            create_sound_music,
             create_group,
             create_channel_for_sound,
             release_resource,
@@ -71,6 +72,7 @@ namespace
             ::set_valuei  set_valuei;
             ::set_valuef  set_valuef;
             ::set_value3f set_value3f;
+            music_file    music;
         };
     };
 
@@ -92,6 +94,9 @@ namespace put
             case e_cmd::create_sound:
                 direct::audio_create_sound(cmd.filename, cmd.resource_slot);
                 pen::memory_free(cmd.filename);
+                break;
+            case e_cmd::create_sound_music:
+                direct::audio_create_sound(cmd.music, cmd.resource_slot);
                 break;
             case e_cmd::create_group:
                 direct::audio_create_channel_group(cmd.resource_slot);
@@ -225,6 +230,21 @@ namespace put
 
         create_file_command(filename, e_cmd::create_sound, res);
 
+        return res;
+    }
+    
+    u32  audio_create_sound(const pen::music_file& music)
+    {
+        audio_cmd ac;
+        
+        u32 res = pen::slot_resources_get_next(&_audio_slot_resources);
+        
+        ac.command_index = e_cmd::create_sound_music;
+        ac.music = music;
+        ac.resource_slot = res;
+        
+        _cmd_buffer.put(ac);
+        
         return res;
     }
 

@@ -160,7 +160,7 @@
         
         libs: [
             "cd ../third_party && ./build_libs.sh ios",
-            "cd ../pmtech/tools && pmbuild mac"
+            "cd ../tools && pmbuild mac"
         ],
         
         premake: [

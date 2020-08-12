@@ -242,12 +242,21 @@ namespace put
         mat4 t2 = mat::create_translation(p_camera->focus);
 
         p_camera->view = t2 * (ry * rx) * t;
-
         p_camera->pos = p_camera->view.get_translation();
-
         p_camera->view = mat::inverse3x4(p_camera->view);
 
         p_camera->flags |= e_camera_flags::invalidated;
+    }
+    
+    void camera_update_look_at(camera* p_camera, vec3f pos, vec3f look_at)
+    {
+        vec3f at = look_at - pos;
+        vec3f up = cross(at, vec3f(0.0f, 1.0f, 0.0f));
+        vec3f right = cross(up, at);
+        up = cross(at, right);
+        
+        
+        
     }
 
     void camera_update_projection_matrix(camera* p_camera)

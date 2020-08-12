@@ -274,6 +274,35 @@ namespace put
 
         return resource_slot;
     }
+    
+    u32 direct::audio_create_sound(const pen::music_file& music, u32 resource_slot)
+    {
+        _audio_resources.grow(resource_slot);
+        _sound_file_info.grow(resource_slot);
+        _sound_file_info_ready.grow(resource_slot);
+
+        _audio_resources[resource_slot].assigned_flag |= 0xff;
+        _audio_resources[resource_slot].type = AUDIO_RESOURCE_SOUND;
+                                                                
+        FMOD_CREATESOUNDEXINFO exinfo = {};
+        memset(&exinfo, 0, sizeof(FMOD_CREATESOUNDEXINFO));
+        exinfo.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
+        exinfo.length = (u32)music.len;
+        exinfo.numchannels = music.num_channels;
+        exinfo.format = FMOD_SOUND_FORMAT_PCMFLOAT;
+        exinfo.defaultfrequency = music.sample_frequency;
+       
+        FMOD_RESULT result = _sound_system->createSound((const char *)music.pcm_data, FMOD_OPENRAW | FMOD_OPENMEMORY_POINT,
+            &exinfo, (FMOD::Sound**)&_audio_resources[resource_slot].resource);
+        PEN_ASSERT(result == FMOD_OK);
+
+        // populate sound info
+        FMOD::Sound* new_sound = (FMOD::Sound*)_audio_resources[resource_slot].resource;
+        new_sound->getLength(&_sound_file_info[resource_slot].length_ms, FMOD_TIMEUNIT_MS);
+        _sound_file_info_ready[resource_slot] = true;
+
+        return resource_slot;
+    }
 
     u32 direct::audio_create_stream(const c8* filename, u32 resource_slot)
     {

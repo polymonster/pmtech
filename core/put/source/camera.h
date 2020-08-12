@@ -77,6 +77,7 @@ namespace put
     void camera_create_cubemap(camera* p_camera, f32 near_plane, f32 far_plane);
     void camera_set_cubemap_face(camera* p_camera, u32 face);
     void camera_update_look_at(camera* p_camera);
+    void camera_update_look_at(camera* p_camera, vec3f pos, vec3f look_at);
     void camera_update_projection_matrix(camera* p_camera);
     void camera_update_frustum(camera* p_camera);
     void camera_update_modelling(camera* p_camera, bool has_focus = true, camera_settings settings = {});

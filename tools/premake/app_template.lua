@@ -93,6 +93,7 @@ local function setup_ios()
 		"Metal.framework",
 		"AVFoundation.framework",
 		"AudioToolbox.framework",
+		"MediaPlayer.framework",
 		"fmod_iphoneos"
 	}
 		
