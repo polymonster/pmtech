@@ -370,5 +370,15 @@
             "-t temp/shaders",
             "-source"
         ]
+    },
+    
+    web(base): {
+		jsn_vars: {
+            data_dir: "bin/web/data"
+        },
+        
+		premake: [
+            "gmake --platform_dir=web --renderer=opengl"
+        ],
     }
 }
