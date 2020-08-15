@@ -830,6 +830,99 @@ void test_aabb_vs_aabb(ecs_scene* scene, bool initialise)
     scene->draw_call_data[aabb1.node].v2 = vec4f(col);
 }
 
+void test_sphere_vs_frustum(ecs_scene* scene, bool initialise)
+{
+    static debug_sphere sphere;
+
+    static debug_extents e = {vec3f(-10.0, -10.0, -10.0), vec3f(10.0, 10.0, 10.0)};
+
+    bool randomise = ImGui::Button("Randomise");
+
+    if (initialise || randomise)
+    {
+        ecs::clear_scene(scene);
+
+        add_debug_sphere(e, scene, sphere);
+
+        ecs::update_scene(scene, 1.0f / 60.0f);
+    }
+
+    static camera dc;
+    camera_create_perspective(&dc, 60.0f, 16.0f/9.0f, 0.01f, 50.0f);
+    camera_update_look_at(&dc);
+    camera_update_frustum(&dc);
+    
+    dbg::add_frustum(dc.camera_frustum.corners[0], dc.camera_frustum.corners[1]);
+    
+    vec4f planes[6];
+    mat4 view_proj = dc.proj * dc.view;
+    maths::get_frustum_planes_from_matrix(view_proj, &planes[0]);
+    
+    bool i = maths::sphere_vs_frustum(sphere.pos, sphere.radius, &planes[0]);
+    
+    if(ImGui::Button("Gen Test"))
+    {
+        std::cout << "vec3f pos = {" << sphere.pos << "};\n";
+        std::cout << "f32 radius = {" << sphere.radius << "};\n";
+    }
+
+    // debug output
+    vec4f col = vec4f::green();
+    if (!i)
+        col = vec4f::red();
+
+    scene->draw_call_data[sphere.node].v2 = vec4f(col);
+}
+
+void test_aabb_vs_frustum(ecs_scene* scene, bool initialise)
+{
+    static debug_aabb aabb0;
+    static debug_aabb aabb1;
+
+    static debug_extents e = {vec3f(-10.0, -10.0, -10.0), vec3f(10.0, 10.0, 10.0)};
+
+    bool randomise = ImGui::Button("Randomise");
+
+    if (initialise || randomise)
+    {
+        ecs::clear_scene(scene);
+
+        add_debug_solid_aabb(e, scene, aabb0);
+        ecs::update_scene(scene, 1.0f / 60.0f);
+    }
+    
+    static camera dc;
+    camera_create_perspective(&dc, 60.0f, 16.0f/9.0f, 0.01f, 50.0f);
+    camera_update_look_at(&dc);
+    camera_update_frustum(&dc);
+    
+    dbg::add_frustum(dc.camera_frustum.corners[0], dc.camera_frustum.corners[1]);
+    
+    vec4f planes[6];
+    mat4 view_proj = dc.proj * dc.view;
+    maths::get_frustum_planes_from_matrix(view_proj, &planes[0]);
+    
+    vec3f epos = aabb0.min + (aabb0.max - aabb0.min) * 0.5f;
+    bool i = maths::aabb_vs_frustum(epos, aabb0.max - epos, &planes[0]);
+        
+    if(ImGui::Button("Gen Test"))
+    {
+        std::cout << "mat4 view_proj = {\n";
+        std::cout << view_proj;
+        std::cout << "}\n";
+        
+        std::cout << "vec3f epos = {" << epos << "};\n";
+        std::cout << "vec3f eext = {" << (aabb0.max - epos) << "};\n";
+    }
+
+    // debug output
+    vec4f col = vec4f::green();
+    if (!i)
+        col = vec4f::red();
+
+    scene->draw_call_data[aabb0.node].v2 = vec4f(col);
+}
+
 void test_point_sphere(ecs_scene* scene, bool initialise)
 {
     static debug_point  point;
@@ -955,7 +1048,9 @@ const c8* test_names[]{
     "Ray vs OBB",
     "Line vs Line",
     "Point Inside OBB / Closest Point on OBB",
-    "Point Inside Cone"
+    "Point Inside Cone",
+    "AABB vs Frustum",
+    "Sphere vs Frustum"
 };
 
 maths_test_function test_functions[] = {
@@ -976,7 +1071,9 @@ maths_test_function test_functions[] = {
     test_ray_vs_obb,
     test_line_vs_line,
     test_point_obb,
-    test_point_cone
+    test_point_cone,
+    test_aabb_vs_frustum,
+    test_sphere_vs_frustum
 };
 // clang-format on
 
