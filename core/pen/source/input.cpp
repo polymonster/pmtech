@@ -239,7 +239,7 @@ namespace pen
 // Gamepad
 //
 
-#if !PEN_PLATFORM_IOS
+#if !PEN_PLATFORM_IOS && !PEN_PLATFORM_WEB
 
 #define API_RAW_INPUT 0
 #define API_XINPUT 1

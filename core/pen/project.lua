@@ -74,27 +74,35 @@ project "pen"
         "source/*.cpp",
      
         "include/" .. platform_dir .. "/**.h", 
-        "include/" .. renderer_dir .. "/**.h",
-    
-        "source/" .. renderer_dir .. "/**.cpp",
-        "source/" .. renderer_dir .. "/**.mm",
-    
+
         "source/" .. platform_dir .. "/**.cpp",
         "source/" .. platform_dir .. "/**.mm",
     
         "../../third_party/str/*.cpp", 
     }
-
+    
     includedirs 
     {
         "include",
-
         "include/" .. platform_dir, 
-        "include/" .. renderer_dir,
-        
+    
         "../../third_party", 
         "../../third_party/libstem_gamepad/source"
     }
+    
+    -- rendere selection, and allow for no renderer
+    if string.len(renderer_dir) > 0 then
+		files
+		{   
+			"include/" .. renderer_dir .. "/**.h",
+			"source/" .. renderer_dir .. "/**.cpp",
+			"source/" .. renderer_dir .. "/**.mm",
+		}
+		includedirs 
+		{
+			"include/" .. renderer_dir,
+		}
+    end
             
     configuration "Release"
         defines { "NDEBUG" }

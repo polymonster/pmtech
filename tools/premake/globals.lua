@@ -45,9 +45,11 @@ end
 
 function setup_from_action()
     if _ACTION == "gmake" then
-        if platform_dir == "linux" then
+    	if platform_dir == "web" then
+    		build_cmd = "-std=c++11"
+        elseif platform_dir == "linux" then
             build_cmd = "-std=c++11 -mfma -mavx -mavx2 -msse2"
-        else
+        else -- macos
             build_cmd = "-std=c++11 -stdlib=libc++ -mfma -mavx -mavx2 -msse2"
             link_cmd = "-stdlib=libc++"
         end
