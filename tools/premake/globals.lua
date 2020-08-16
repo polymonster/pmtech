@@ -46,7 +46,8 @@ end
 function setup_from_action()
     if _ACTION == "gmake" then
     	if platform_dir == "web" then
-    		build_cmd = "-std=c++11"
+    		build_cmd = "-std=c++11 -s USE_PTHREADS=1"
+    		link_cmd = "-s USE_PTHREADS=1"
         elseif platform_dir == "linux" then
             build_cmd = "-std=c++11 -mfma -mavx -mavx2 -msse2"
         else -- macos

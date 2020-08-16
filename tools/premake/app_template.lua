@@ -143,7 +143,7 @@ local function setup_platform()
 		setup_linux()
 	elseif platform_dir == "android" then 
 		setup_android()
-	else if platform_dir == "web" then
+	elseif platform_dir == "web" then
 		setup_web()
 	end
 end
