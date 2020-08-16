@@ -1,3 +1,20 @@
+local function setup_win32()
+    if renderer_dir == "vulkan" then
+        includedirs
+        {
+            "$(VK_SDK_PATH)/Include"
+        }
+    elseif renderer_dir == "opengl" then         
+        includedirs
+        {
+            "../../third_party/glew/include",
+            "../../third_party/glew/src"
+        }
+    end
+    systemversion(windows_sdk_version())
+    disablewarnings { "4800", "4305", "4018", "4244", "4267", "4996" }
+end
+
 local function setup_ios()
     files 
     {  
@@ -21,21 +38,11 @@ local function setup_linux()
     }
 end
 
-local function setup_win32()
-    if renderer_dir == "vulkan" then
-        includedirs
-        {
-            "$(VK_SDK_PATH)/Include"
-        }
-    elseif renderer_dir == "opengl" then         
-        includedirs
-        {
-            "../../third_party/glew/include",
-            "../../third_party/glew/src"
-        }
-    end
-    systemversion(windows_sdk_version())
-    disablewarnings { "4800", "4305", "4018", "4244", "4267", "4996" }
+local function setup_web()
+    files 
+    {  
+        "source/posix/**.cpp"
+    }
 end
 
 local function setup_android()
@@ -56,6 +63,8 @@ local function setup_platform()
         setup_android()
     elseif platform_dir == "ios" then
         setup_ios()
+    elseif platform_dir == "web" then
+        setup_web()
     end
 end
 
@@ -68,6 +77,7 @@ project "pen"
     kind "StaticLib"
     language "C++"
     
+    print(platform_dir)
     files 
     {
         "include/*.h",

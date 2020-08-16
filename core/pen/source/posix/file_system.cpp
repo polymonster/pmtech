@@ -16,8 +16,13 @@
 #include "pen.h"
 #include "pen_string.h"
 
-#ifdef __linux__
+#if PEN_PLATFORM_LINUX
+#define NO_MOUNT_POINTS
 #define get_mtime(s) s.st_mtime
+#define HOME_DIR "home"
+#elif PEN_PLATFORM_WEB
+#define NO_MOUNT_POINTS
+#define get_mtime(s) 0
 #define HOME_DIR "home"
 #else
 #define HOME_DIR "Users"
@@ -66,7 +71,7 @@ namespace pen
         memcpy(results.name, volumes_name, len);
         results.name[len] = '\0';
 
-#ifndef __linux__
+#ifndef NO_MOUNT_POINTS
         struct statfs* mounts;
         int            num_mounts = getmntinfo(&mounts, MNT_WAIT);
 
