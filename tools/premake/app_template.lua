@@ -164,10 +164,14 @@ local function setup_fmod()
 end
 
 function setup_modules()
+
+	if platform == "web" then
+		return
+	end
+
 	setup_bullet()
 	setup_fmod()
 end
-
 
 function create_binary(project_name, source_directory, root_directory, binary_type)
 	project ( project_name )

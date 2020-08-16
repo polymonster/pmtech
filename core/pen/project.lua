@@ -77,7 +77,6 @@ project "pen"
     kind "StaticLib"
     language "C++"
     
-    print(platform_dir)
     files 
     {
         "include/*.h",
