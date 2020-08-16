@@ -219,7 +219,6 @@ function create_binary(project_name, source_directory, root_directory, binary_ty
 			entrypoint "WinMainCRTStartup"
 			optimize "Speed"
 			targetname (project_name)
-			architecture "x64"
 			libdirs
 			{ 
 				pmtech_dir .. "core/pen/lib/" .. platform_dir .. "/release", 
@@ -231,7 +230,6 @@ function create_binary(project_name, source_directory, root_directory, binary_ty
 			entrypoint "WinMainCRTStartup"
 			symbols "On"
 			targetname (project_name .. "_d")
-			architecture "x64"
 			libdirs
 			{ 
 				pmtech_dir .. "core/pen/lib/" .. platform_dir .. "/debug", 

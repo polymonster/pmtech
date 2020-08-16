@@ -5,6 +5,7 @@ end
 if _ACTION == "vs2017" or _ACTION == "vs2015" then
     bullet_lib_dir = _ACTION
 end
+
 -- Project    
 project "put"
     setup_env()
@@ -66,6 +67,13 @@ project "put"
         "../../third_party/maths/*.h"
     }
     includedirs { "include" }
+    
+    if platform_dir == "web" then
+    	excludes
+    	{
+    		"source/audio/**.*"
+    	}
+    end
 	    
     configuration "Debug"
         defines { "DEBUG" }
@@ -73,7 +81,6 @@ project "put"
         symbols "On"
         targetdir ("lib/" .. platform_dir .. "/debug")
         targetname "put"
-        architecture "x64"
  
     configuration "Release"
         defines { "NDEBUG" }
@@ -81,4 +88,3 @@ project "put"
         optimize "Speed"
         targetdir ("lib/" .. platform_dir .. "/release")
         targetname "put"
-        architecture "x64"

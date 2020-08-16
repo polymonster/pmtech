@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 namespace pen
 {
 	extern void* user_entry(void* params);
