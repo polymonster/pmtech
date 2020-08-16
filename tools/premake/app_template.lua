@@ -127,6 +127,11 @@ local function setup_android()
 	}
 end
 
+local function setup_web()
+	targetextension (".html")
+	links { "pen", "put" }
+end
+
 local function setup_platform()
 	if platform_dir == "win32" then
 		setup_win32()
@@ -138,6 +143,8 @@ local function setup_platform()
 		setup_linux()
 	elseif platform_dir == "android" then 
 		setup_android()
+	else if platform_dir == "web" then
+		setup_web()
 	end
 end
 
