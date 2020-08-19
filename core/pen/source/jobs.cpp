@@ -4,11 +4,12 @@
 
 #include "renderer.h"
 #include "threads.h"
+#include "console.h"
+
+#define MAX_THREADS 32
 
 namespace pen
 {
-#define MAX_THREADS 8
-
     static job s_jt[MAX_THREADS];
     static u32 s_num_active_threads = 0;
 

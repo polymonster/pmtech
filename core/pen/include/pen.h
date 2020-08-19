@@ -6,12 +6,16 @@
 
 #include "types.h"
 
+#ifdef PEN_PLATFORM_WEB
+#include <emscripten.h>
+#define pen_main_loop(function) emscripten_set_main_loop(&function, 60, 1)
+#else
+#define pen_main_loop(function) for(;;) { function(); }
+#endif
+
 namespace pen
 {
-    // Structs for user to setup, make sure to define:
-    // window_creation_params pen_window
-    // and user_entry function somwhere and then you are good to go
-
+    // window_creation_params is now being deprecated
     struct window_creation_params
     {
         volatile u32 width;

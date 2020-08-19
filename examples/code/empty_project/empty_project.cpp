@@ -4,6 +4,8 @@
 #include "threads.h"
 
 void* pen::user_entry(void* params);
+
+// entry function, where we can configure low level details, like window or renderer
 namespace pen
 {
     pen_creation_params pen_entry(int argc, char** argv)
@@ -19,16 +21,13 @@ namespace pen
     }
 } // namespace pen
 
-void* pen::user_entry(void* params)
+// emscripten friendly main loop
+namespace
 {
-    PEN_LOG("User Thread Entry");
+    pen::job_thread_params* job_params;
+    pen::job*               p_thread_info;
 
-    // unpack the params passed to the thread and signal to the engine it ok to proceed
-    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
-    pen::job*               p_thread_info = job_params->job_info;
-    pen::semaphore_post(p_thread_info->p_sem_continue, 1);
-
-    for (;;)
+    void user_update()
     {
         PEN_LOG("User Thread Update");
 
@@ -37,12 +36,22 @@ void* pen::user_entry(void* params)
         // msg from the engine we want to terminate
         if (pen::semaphore_try_wait(p_thread_info->p_sem_exit))
         {
-            break;
+            pen::semaphore_post(p_thread_info->p_sem_terminated, 1);
         }
     }
+}
 
-    // signal to the engine the thread has finished
-    pen::semaphore_post(p_thread_info->p_sem_terminated, 1);
+// user thread entry.. with web friendly main loop
+void* pen::user_entry(void* params)
+{
+    PEN_LOG("User Thread Entry");
 
+    // unpack the params passed to the thread and signal to the engine it ok to proceed
+    job_params = (pen::job_thread_params*)params;
+    p_thread_info = job_params->job_info;
+    pen::semaphore_post(p_thread_info->p_sem_continue, 1);
+
+    // we call user_update once per frame
+    pen_main_loop(user_update);    
     return PEN_THREAD_OK;
 }

@@ -26,12 +26,7 @@ namespace pen
         pthread_mutex_t handle;
     };
 
-    struct semaphore
-    {
-        sem_t* handle;
-    };
-
-    u32 semaphone_index = 0;
+    a_u32 semaphone_index = {0};
 
     pen::thread* thread_create(dispatch_thread thread_func, u32 stack_size, void* thread_params, thread_start_flags flags)
     {
@@ -97,18 +92,32 @@ namespace pen
         pthread_mutex_unlock(&p_mutex->handle);
     }
 
+    void thread_sleep_ms(u32 milliseconds)
+    {
+        usleep(milliseconds * 1000);
+    }
+
+    void thread_sleep_us(u32 microseconds)
+    {
+        usleep(microseconds);
+    }
+
+#ifndef PEN_PLATFORM_WEB // posix semaphore implementation proper
+    struct semaphore
+    {
+        sem_t* handle;
+    };
     pen::semaphore* semaphore_create(u32 initial_count, u32 max_count)
     {
         pen::semaphore* new_semaphore = (pen::semaphore*)pen::memory_alloc(sizeof(pen::semaphore));
 
-        static c8 name_buf[32];
+        c8 name_buf[32];
         pen::string_format(&name_buf[0], 32, "sem%i%i", semaphone_index++, window_get_id());
-
+        
         sem_unlink(name_buf);
         new_semaphore->handle = sem_open(name_buf, O_CREAT, 0, 0);
 
         assert(!(new_semaphore->handle == (void*)-1));
-
         return new_semaphore;
     }
 
@@ -121,7 +130,6 @@ namespace pen
     bool semaphore_wait(semaphore* p_semaphore)
     {
         sem_wait(p_semaphore->handle);
-
         return true;
     }
 
@@ -137,14 +145,48 @@ namespace pen
     {
         sem_post(p_semaphore->handle);
     }
-
-    void thread_sleep_ms(u32 milliseconds)
+#else // emscripten posix sem api emulation
+    // emscripten posix sem api returns null when calling sem_open.
+    // this implementation uses atomics and a spin lock to emulate posix semaphore
+    struct semaphore
     {
-        usleep(milliseconds * 1000);
+        a_u32 handle;
+    };
+    pen::semaphore* semaphore_create(u32 initial_count, u32 max_count)
+    {
+        pen::semaphore* new_semaphore = (pen::semaphore*)pen::memory_alloc(sizeof(pen::semaphore));
+
+        return new_semaphore;
     }
 
-    void thread_sleep_us(u32 microseconds)
+    void semaphore_destroy(semaphore* p_semaphore)
     {
-        usleep(microseconds);
+        pen::memory_free(p_semaphore);
     }
+
+    bool semaphore_wait(semaphore* p_semaphore)
+    {
+        while(p_semaphore->handle == 0)
+            usleep(10);
+
+        p_semaphore->handle = 0;
+        return true;
+    }
+
+    bool semaphore_try_wait(pen::semaphore* p_semaphore)
+    {
+        if (p_semaphore->handle > 0)
+        {
+            p_semaphore->handle = 0;
+            return true;
+        }
+
+        return false;
+    }
+
+    void semaphore_post(semaphore* p_semaphore, u32 count)
+    {
+        p_semaphore->handle++;
+    }
+#endif
 } // namespace pen
