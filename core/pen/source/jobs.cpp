@@ -50,7 +50,7 @@ namespace pen
     bool jobs_terminate_all()
     {
         // remove threads in reverse order
-        for (s32 i = s_num_active_threads - 1; i > 0; --i)
+        for (s32 i = s_num_active_threads - 1; i >= 0; --i)
         {
             pen::semaphore_post(s_jt[i].p_sem_exit, 1);
             if (pen::semaphore_try_wait(s_jt[i].p_sem_terminated))

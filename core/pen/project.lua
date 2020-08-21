@@ -41,7 +41,8 @@ end
 local function setup_web()
     files 
     {  
-        "source/posix/**.cpp"
+        "source/posix/**.cpp",
+        "source/linux/timer.cpp"
     }
 end
 

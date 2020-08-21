@@ -380,5 +380,15 @@
 		premake: [
             "gmake --platform_dir=web --renderer=opengl"
         ],
+        
+		pmfx: [
+            "-shader_platform gles",
+            "-i assets/shaders ../assets/shaders",
+            "-o build/web/data/pmfx/glsl",
+            "-h shader_structs",
+            "-t temp/shaders",
+            "-v_flip",
+            "-source"
+        ],
     }
 }

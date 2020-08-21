@@ -2,6 +2,7 @@
 #include "data_struct.h"
 #include "pen.h"
 #include "types.h"
+#include "os.h"
 
 extern pen::window_creation_params pen_window;
 
@@ -95,10 +96,13 @@ namespace pen
     {
         texture_creation_params _tcp = tcp;
 
+        s32 w, h;
+        pen::window_get_size(w, h);
+
         if (_tcp.width == -1)
         {
-            _tcp.width = pen_window.width / _tcp.height;
-            _tcp.height = pen_window.height / _tcp.height;
+            _tcp.width = w / _tcp.height;
+            _tcp.height = h / _tcp.height;
         }
 
         return _tcp;
@@ -106,11 +110,13 @@ namespace pen
 
     void _renderer_resize_backbuffer(u32 width, u32 height)
     {
+        s32 w, h;
+        pen::window_get_size(w, h);
+
         // no need to do anything if the size is the same
-        if (pen_window.width == width && pen_window.height == height)
+        if (w == width && h == height)
             return;
 
-        // want to remove this global extern in favour of function calls.
         pen_window.width = width;
         pen_window.height = height;
 
@@ -241,13 +247,16 @@ namespace pen
         if (v.width != PEN_BACK_BUFFER_RATIO)
             return v;
 
+        s32 w, h;
+        pen::window_get_size(w, h);
+
         // ratio (0-1 float) is packed into v.height
         f32      ratio = v.height;
         viewport _v = v;
-        _v.x = v.x * pen_window.width;
-        _v.y = v.y * pen_window.height;
-        _v.width = pen_window.width * ratio;
-        _v.height = pen_window.height * ratio;
+        _v.x = v.x * w;
+        _v.y = v.y * h;
+        _v.width = w * ratio;
+        _v.height = h * ratio;
         return _v;
     }
 
@@ -257,35 +266,44 @@ namespace pen
         if (r.right != PEN_BACK_BUFFER_RATIO)
             return r;
 
+        s32 w, h;
+        pen::window_get_size(w, h);
+
         // ratio is packed into r.bottom
         f32  ratio = r.bottom;
         rect _r = r;
-        _r.left = r.left * pen_window.width;
-        _r.top = r.top * pen_window.height;
-        _r.right = pen_window.width * ratio;
-        _r.bottom = pen_window.height * ratio;
+        _r.left = r.left * w;
+        _r.top = r.top * h;
+        _r.right = w * ratio;
+        _r.bottom = h * ratio;
         return _r;
     }
 
     void _renderer_set_viewport_ratio(const viewport& v)
     {
+        s32 w, h;
+        pen::window_get_size(w, h);
+
         // all values in v are 0-1 ratio of backbuffer
         viewport _v = v;
-        _v.x = pen_window.width * v.x;
-        _v.y = pen_window.height * v.y;
-        _v.width = pen_window.width * v.width;
-        _v.height = pen_window.height * v.height;
+        _v.x = w * v.x;
+        _v.y = h * v.y;
+        _v.width = w * v.width;
+        _v.height = h * v.height;
         direct::renderer_set_viewport(_v);
     }
 
     void _renderer_set_scissor_ratio(const rect& r)
     {
+        s32 w, h;
+        pen::window_get_size(w, h);
+
         // all values in r are 0-1 ratio of backbuffer
         rect _r = r;
-        _r.left = pen_window.width * r.left;
-        _r.top = pen_window.height * r.top;
-        _r.right = pen_window.width * r.right;
-        _r.bottom = pen_window.height * r.bottom;
+        _r.left = w * r.left;
+        _r.top = h * r.top;
+        _r.right = w * r.right;
+        _r.bottom = h * r.bottom;
         direct::renderer_set_scissor_rect(_r);
     }
 } // namespace pen

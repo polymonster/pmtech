@@ -146,8 +146,6 @@ namespace pen
         sem_post(p_semaphore->handle);
     }
 #else // emscripten posix sem api emulation
-    // emscripten posix sem api returns null when calling sem_open.
-    // this implementation uses atomics and a spin lock to emulate posix semaphore
     struct semaphore
     {
         a_u32 handle;

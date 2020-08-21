@@ -2,6 +2,8 @@
 #include "pen.h"
 #include "threads.h"
 #include "console.h"
+#include "hash.h"
+#include "renderer.h"
 
 #include <emscripten.h>
 #include <GLES3/gl32.h>
@@ -18,11 +20,15 @@ using namespace pen;
 namespace pen
 {
 	extern void* user_entry(void* params);
- 
-    hash_id window_get_id()
-    {
-        return 0;
-    }
+}
+
+void pen_make_gl_context_current()
+{
+}
+
+void pen_gl_swap_buffers()
+{
+    SDL_GL_SwapBuffers();
 }
 
 namespace
@@ -43,20 +49,55 @@ namespace
     void init()
     {
         create_sdl_surface();
+        pen::renderer_init(nullptr, false, 1024);
 
         // user thread
-        PEN_LOG("Start User Thread");
         pen::default_thread_info thread_info;
         pen::jobs_create_default(thread_info);
-        PEN_LOG("Finished User Thread");
     }
     
     void run()
     {        
-        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        pen::renderer_dispatch();
+    }
+}
+
+//
+// os public api
+//
+
+namespace pen
+{
+    bool os_update()
+    {
+        return true;
+    }
+
+    void os_terminate(u32 return_code)
+    {
         
-        SDL_GL_SwapBuffers();
+    }
+
+    const c8* os_path_for_resource(const c8* filename)
+    {
+        return filename;
+    }
+
+    const c8* window_get_title()
+    {
+        return s_ctx.pcp.window_title;
+    }
+
+    void window_get_size(s32& width, s32& height)
+    {
+        width = s_ctx.pcp.window_width;
+        height = s_ctx.pcp.window_height;
+    }
+
+    hash_id window_get_id()
+    {
+        static hash_id window_id = PEN_HASH(s_ctx.pcp.window_title);
+        return window_id;
     }
 }
 

@@ -5,7 +5,7 @@
 
 void* pen::user_entry(void* params);
 
-// entry function, where we can configure low level details, like window or renderer
+// entry function, where we can configure low level details, like window or renderer in pen_creation_params
 namespace pen
 {
     pen_creation_params pen_entry(int argc, char** argv)
@@ -21,13 +21,25 @@ namespace pen
     }
 } // namespace pen
 
-// emscripten friendly main loop
+// web friendly main loop
 namespace
 {
     pen::job_thread_params* job_params;
     pen::job*               p_thread_info;
 
-    void user_update()
+    void user_setup()
+    {
+        PEN_LOG("User Setup");
+    }
+
+    void user_shutdown()
+    {
+        PEN_LOG("User Shutdown");
+
+        pen::semaphore_post(p_thread_info->p_sem_terminated, 1);
+    }
+
+    loop_t user_update()
     {
         PEN_LOG("User Thread Update");
 
@@ -36,8 +48,11 @@ namespace
         // msg from the engine we want to terminate
         if (pen::semaphore_try_wait(p_thread_info->p_sem_exit))
         {
-            pen::semaphore_post(p_thread_info->p_sem_terminated, 1);
+            user_shutdown();
+            pen_main_loop_exit();
         }
+        
+        pen_main_loop_continue();
     }
 }
 
@@ -50,6 +65,9 @@ void* pen::user_entry(void* params)
     job_params = (pen::job_thread_params*)params;
     p_thread_info = job_params->job_info;
     pen::semaphore_post(p_thread_info->p_sem_continue, 1);
+    
+    // called once per program to create objects etc.
+    user_setup();
 
     // we call user_update once per frame
     pen_main_loop(user_update);    

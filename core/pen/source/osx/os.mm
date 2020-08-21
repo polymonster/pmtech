@@ -640,8 +640,6 @@ namespace pen
         {
             if (pen::jobs_terminate_all())
                 return false;
-            
-            return true;
         }
         
         @autoreleasepool {
@@ -690,7 +688,7 @@ namespace pen
                         NSRect frame = [_window frame];
                         frame.size.width = cmd->frame.width;
                         frame.size.height = cmd->frame.height;
-
+                        
                         [_window setFrame:frame display:YES animate:NO];
                     }
                     break;

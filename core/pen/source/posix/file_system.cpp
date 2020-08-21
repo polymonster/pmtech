@@ -39,6 +39,8 @@ namespace pen
 
         FILE* p_file = fopen(resource_name, "rb");
 
+        PEN_LOG("%s", resource_name);
+
         if (p_file)
         {
             fseek(p_file, 0L, SEEK_END);
