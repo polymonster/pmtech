@@ -290,7 +290,7 @@ namespace put
         exinfo.length = (u32)music.len;
         exinfo.numchannels = music.num_channels;
         exinfo.format = FMOD_SOUND_FORMAT_PCMFLOAT;
-        exinfo.defaultfrequency = music.sample_frequency;
+        exinfo.defaultfrequency = (s32)music.sample_frequency;
        
         FMOD_RESULT result = _sound_system->createSound((const char *)music.pcm_data, FMOD_OPENRAW | FMOD_OPENMEMORY_POINT,
             &exinfo, (FMOD::Sound**)&_audio_resources[resource_slot].resource);

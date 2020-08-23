@@ -41,8 +41,8 @@ namespace pen
     // Implementation
     inline void slot_resources_grow(slot_resources* resources)
     {
-        u32 cur_cap = resources->_capacity;
-        u32 new_cap = resources->_capacity * 2;
+        s32 cur_cap = resources->_capacity;
+        s32 new_cap = resources->_capacity * 2;
 
         resources->slots = (free_slot_list*)pen::memory_realloc(resources->slots, sizeof(free_slot_list) * new_cap);
 
@@ -75,7 +75,7 @@ namespace pen
         {
             resources->slots[i].index = i;
 
-            if (i >= num - 1)
+            if (i >= ((s32)num) - 1)
                 resources->slots[i].next = nullptr;
             else
                 resources->slots[i].next = resources->head;

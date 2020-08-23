@@ -541,9 +541,9 @@ namespace put
             ImGuiIO& io = ImGui::GetIO();
 
             // set delta time
-            f32        cur_time = pen::get_time_ms();
-            static f32 prev_time = cur_time;
-            io.DeltaTime = max((cur_time - prev_time) / 1000.0f, 0.0f);
+            f64 cur_time = pen::get_time_ms();
+            static f64 prev_time = cur_time;
+            io.DeltaTime = (f32)max((cur_time - prev_time) / 1000.0, 0.0);
             prev_time = cur_time;
 
             s32 w, h;
@@ -628,7 +628,7 @@ namespace put
             if (last_dir < ext)
             {
                 // strip file
-                for (u32 i = 0; i < last_dir + 1; ++i)
+                for (s32 i = 0; i < last_dir + 1; ++i)
                     final.append(formatted.c_str()[i]);
             }
             else
@@ -1250,7 +1250,7 @@ namespace put
                     *input_end = 0;
                     if (InputBuf[0])
                         ExecCommand(InputBuf);
-                    strcpy(InputBuf, "");
+                    strcpy_s(InputBuf, 256, "");
                 }
 
                 // Demonstrate keeping auto focus on the input box
@@ -1263,41 +1263,7 @@ namespace put
 
             void ExecCommand(const char* command_line)
             {
-                /*
-                AddLog("# %s\n", command_line);
 
-                // Insert into history. First find match and delete it so it can be pushed to the back. This isn't trying to
-                be smart or optimal. HistoryPos = -1; for (int i = History.Size-1; i >= 0; i--) if (Stricmp(History[i],
-                command_line) == 0)
-                    {
-                        free(History[i]);
-                        History.erase(History.begin() + i);
-                        break;
-                    }
-                History.push_back(Strdup(command_line));
-
-                // Process command
-                if (Stricmp(command_line, "CLEAR") == 0)
-                {
-                    ClearLog();
-                }
-                else if (Stricmp(command_line, "HELP") == 0)
-                {
-                    AddLog("Commands:");
-                    for (int i = 0; i < Commands.Size; i++)
-                        AddLog("- %s", Commands[i]);
-                }
-                else if (Stricmp(command_line, "HISTORY") == 0)
-                {
-                    int first = History.Size - 10;
-                    for (int i = first > 0 ? first : 0; i < History.Size; i++)
-                        AddLog("%3d: %s\n", i, History[i]);
-                }
-                else
-                {
-                    AddLog("Unknown command: '%s'\n", command_line);
-                }
-                 */
             }
 
             static int TextEditCallbackStub(ImGuiTextEditCallbackData* data) // In C++11 you are better off using lambdas for

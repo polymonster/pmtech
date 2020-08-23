@@ -2065,7 +2065,7 @@ namespace put
                 aux_rt.name = rt->name;
                 aux_rt.name.append("_aux");
                 s_render_targets.push_back(aux_rt);
-                return s_render_targets.size() - 1;
+                return (u32)(s_render_targets.size() - 1);
             }
 
             u32 get_virtual_target(hash_id id, vrt_mode mode, bool non_aux)
@@ -2991,7 +2991,7 @@ namespace put
                 }
 
                 // bind any per view cbuffers
-                u32 num_samplers = v.sampler_bindings.size();
+                u32 num_samplers = (u32)v.sampler_bindings.size();
                 if (num_samplers > 0)
                 {
                     pen::renderer_update_buffer(cb_sampler_info, v.sampler_info, num_samplers * sizeof(vec4f));

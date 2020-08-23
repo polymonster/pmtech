@@ -252,7 +252,7 @@ namespace put
 
         void add_circle(const vec3f& axis, const vec3f& centre, f32 radius, const vec4f& col)
         {
-            add_circle_segment(axis, centre, radius, 0.0f, M_TWO_PI, col);
+            add_circle_segment(axis, centre, radius, 0.0f, (f32)M_TWO_PI, col);
         }
 
         void add_circle_segment(const vec3f& axis, const vec3f& centre, f32 radius, f32 min, f32 max, const vec4f& col)
@@ -270,7 +270,7 @@ namespace put
 
             static const s32 segments = 16;
             f32              angle = 0.0;
-            f32              angle_step = M_TWO_PI / segments;
+            f32              angle_step = (f32)M_TWO_PI / segments;
             for (s32 i = 0; i < segments; ++i)
             {
                 f32 clamped_angle = std::max<f32>(angle, min);
@@ -437,7 +437,7 @@ namespace put
 
             // fill in defaults
             u32 num_verts = cur_offset - line_vert_3d_count;
-            for (s32 i = 0; i < num_verts; ++i)
+            for (u32 i = 0; i < num_verts; ++i)
             {
                 debug_3d_verts[line_vert_3d_count + i].pos.w = 1.0;
                 debug_3d_verts[line_vert_3d_count + i].col = col;
@@ -570,7 +570,7 @@ namespace put
 
         void add_grid(const vec3f& centre, const vec3f& size, const vec3f& divisions)
         {
-            alloc_3d_buffer(line_vert_3d_count + divisions.x * 2 + divisions.z * 2, VB_LINES);
+            alloc_3d_buffer(line_vert_3d_count + (u32)divisions.x * 2 + (u32)divisions.z * 2, VB_LINES);
 
             vec3f start = centre - size * 0.5f;
             vec3f division_size = size / divisions;

@@ -37,7 +37,7 @@
 #endif
 
 #pragma warning(disable:4838)
-
+#pragma warning(disable:4644)
   
 #include "gamepad/Gamepad.h"
 #include "gamepad/Gamepad_private.h"

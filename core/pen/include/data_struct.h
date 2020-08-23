@@ -94,7 +94,7 @@ namespace pen
 
         a_u32 get_pos;
         a_u32 put_pos;
-        a_u32 _capacity;
+        std::atomic<size_t> _capacity;
 
         ring_buffer();
         ~ring_buffer();
@@ -110,7 +110,7 @@ namespace pen
     struct res_pool
     {
         T*    _resources = nullptr;
-        a_u32 _capacity;
+        std::atomic<size_t> _capacity;
 
         res_pool();
         ~res_pool();

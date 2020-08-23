@@ -894,9 +894,15 @@ namespace put
             filter_entities_scalar(scene, &filtered_entities);
             frustum_cull_aabb_scalar(scene, view.camera, filtered_entities, &culled_entities);
 
-            // render
-            u32 cur_shader, cur_technique, cur_permutation, cur_vb, cur_ib = -1;
+            // track to prevent redundant state changes.
+            u32 cur_shader = -1;
+            u32 cur_technique = -1;
+            u32 cur_permutation = -1;
+            u32 cur_vb = -1;
+            u32 cur_ib = -1;
             u32 vc = sb_count(culled_entities);
+
+            // render
             for(u32 i = 0; i < vc; ++i)
             {
                 u32 n = culled_entities[i];
@@ -2074,7 +2080,7 @@ namespace put
 
             // get size of file
             infile.seekg(0, infile.end);
-            u32 scene_data_size = infile.tellg();
+            u32 scene_data_size = (u32)infile.tellg();
             infile.seekg(0);
 
             // allocate memory for file content

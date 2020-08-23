@@ -123,7 +123,7 @@ namespace pen
     {
         s32 w, h;
         window_get_size(w, h);
-        return x < w && y < h;
+        return x < (u32)w && y < (u32)h;
     }
 
     inline bool input_key(u32 key_index)
