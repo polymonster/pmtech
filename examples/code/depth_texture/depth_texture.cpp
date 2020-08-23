@@ -169,7 +169,7 @@ namespace
         // create a sampler object so we can sample a texture
         pen::sampler_creation_params scp;
         pen::memory_zero(&scp, sizeof(pen::sampler_creation_params));
-        scp.filter = PEN_FILTER_MIN_MAG_MIP_LINEAR;
+        scp.filter = PEN_FILTER_LINEAR;
         scp.address_u = PEN_TEXTURE_ADDRESS_CLAMP;
         scp.address_v = PEN_TEXTURE_ADDRESS_CLAMP;
         scp.address_w = PEN_TEXTURE_ADDRESS_CLAMP;
@@ -193,15 +193,21 @@ namespace
     
     void user_shutdown()
     {
-        // clean up mem here
+        // clean up mem
+        pen::renderer_new_frame();
+        pen::renderer_release_clear_state(s_clear_state);
+        pen::renderer_release_clear_state(s_clear_state_rt);
         pen::renderer_release_depth_stencil_state(s_depth_stencil_state);
         pen::renderer_release_raster_state(s_raster_state);
         pen::renderer_release_buffer(s_triangle_vertex_buffer);
         pen::renderer_release_buffer(s_quad_vertex_buffer);
         pen::renderer_release_buffer(s_quad_index_buffer);
         pen::renderer_release_render_target(s_depth_target);
+        pen::renderer_release_depth_stencil_state(s_depth_stencil_state);
         pmfx::release_shader(s_depth_only_shader);
         pmfx::release_shader(s_textured_shader);
+        pen::renderer_present();
+        pen::renderer_consume_cmd_buffer();
 
         // signal to the engine the thread has finished
         pen::semaphore_post(p_thread_info->p_sem_terminated, 1);
@@ -252,7 +258,6 @@ namespace
 
             // set vertex buffer
             pen::renderer_set_vertex_buffer(s_quad_vertex_buffer, 0, sizeof(textured_vertex), 0);
-
             pen::renderer_set_index_buffer(s_quad_index_buffer, PEN_FORMAT_R16_UINT, 0);
 
             // bind render target as texture on sampler 0

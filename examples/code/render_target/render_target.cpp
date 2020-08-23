@@ -193,15 +193,21 @@ namespace
     
     void user_shutdown()
     {
-        // clean up mem here
+        // clean up mem
+        pen::renderer_new_frame();
+        pen::renderer_release_clear_state(s_clear_state);
+        pen::renderer_release_clear_state(s_clear_state_rt);
         pen::renderer_release_depth_stencil_state(s_depth_stencil_state);
         pen::renderer_release_raster_state(s_raster_state);
         pen::renderer_release_buffer(s_triangle_vertex_buffer);
         pen::renderer_release_buffer(s_quad_vertex_buffer);
         pen::renderer_release_buffer(s_quad_index_buffer);
         pen::renderer_release_render_target(s_colour_render_target);
-        pmfx::release_shader(s_basic_tri_shader);
+        pen::renderer_release_depth_stencil_state(s_depth_stencil_state);
         pmfx::release_shader(s_textured_shader);
+        pmfx::release_shader(s_basic_tri_shader);
+        pen::renderer_present();
+        pen::renderer_consume_cmd_buffer();
 
         // signal to the engine the thread has finished
         pen::semaphore_post(p_thread_info->p_sem_terminated, 1);

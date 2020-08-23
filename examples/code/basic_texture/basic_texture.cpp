@@ -147,13 +147,16 @@ namespace
     
     void user_shutdown()
     {
-        // clean up mem here
-        pmfx::release_shader(s_textured_shader);
-
+        // clean up mem
+        pen::renderer_new_frame();
+        pen::renderer_release_clear_state(s_clear_state);
+        pen::renderer_release_raster_state(s_raster_state);
         pen::renderer_release_buffer(s_quad_vertex_buffer);
         pen::renderer_release_buffer(s_quad_index_buffer);
         pen::renderer_release_sampler(s_linear_sampler);
         pen::renderer_release_texture(s_test_texture);
+        pmfx::release_shader(s_textured_shader);
+        pen::renderer_present();
         pen::renderer_consume_cmd_buffer();
 
         // signal to the engine the thread has finished

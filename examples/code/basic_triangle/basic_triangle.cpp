@@ -140,9 +140,12 @@ namespace
         PEN_LOG("User Shutdown");
         
         pen::renderer_new_frame();
+        pen::renderer_release_clear_state(s_clear_state);
+        pen::renderer_release_raster_state(s_raster_state);
         pen::renderer_release_buffer(s_vertex_buffer);
         pen::renderer_release_shader(s_vertex_shader, PEN_SHADER_TYPE_VS);
         pen::renderer_release_shader(s_pixel_shader, PEN_SHADER_TYPE_PS);
+        pen::renderer_release_input_layout(s_input_layout);
         pen::renderer_present();
         pen::renderer_consume_cmd_buffer();
 

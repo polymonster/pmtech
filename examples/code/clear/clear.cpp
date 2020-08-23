@@ -60,6 +60,11 @@ namespace
     void user_shutdown()
     {
         PEN_LOG("User Shutdown");
+        
+        pen::renderer_new_frame();
+        pen::renderer_release_clear_state(s_clear_state);
+        pen::renderer_present();
+        pen::renderer_consume_cmd_buffer();
 
         pen::semaphore_post(p_thread_info->p_sem_terminated, 1);
     }
