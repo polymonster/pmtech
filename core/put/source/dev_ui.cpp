@@ -2,8 +2,6 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#include <fstream>
-
 #include "camera.h"
 #include "console.h"
 #include "data_struct.h"
@@ -20,6 +18,8 @@
 #include "renderer.h"
 #include "str_utilities.h"
 #include "timer.h"
+
+#include <fstream>
 
 #if PEN_PLATFORM_IOS
 #define DEV_UI_SCALE 3
@@ -1250,7 +1250,7 @@ namespace put
                     *input_end = 0;
                     if (InputBuf[0])
                         ExecCommand(InputBuf);
-                    strcpy_s(InputBuf, 256, "");
+                    strcpy(InputBuf, "");
                 }
 
                 // Demonstrate keeping auto focus on the input box
