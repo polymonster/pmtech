@@ -1090,6 +1090,8 @@ void maths_test_ui(ecs_scene* scene)
     static bool initialise = true;
     static bool gen_tests = false;
 
+    ImGui::Begin("Maths Functions");
+
     if (ImGui::Combo("Test", &test_index, test_names, PEN_ARRAY_SIZE(test_names)))
         initialise = true;
 
@@ -1138,6 +1140,14 @@ void maths_test_ui(ecs_scene* scene)
         _test_stack_depth = -1;
 
     initialise = false;
+
+    if(ImGui::CollapsingHeader("Controls"))
+    {
+        ImGui::Text("Alt / Option + Left Mouse Drag To Rotate");
+        ImGui::Text("Cmd / Ctrl + Left Mouse Drag To Pan");
+        ImGui::Text("Mouse Wheel / Scroll To Zoom");
+    }
+    ImGui::End();
 }
 
 void example_setup(ecs::ecs_scene* scene, camera& cam)

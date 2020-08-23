@@ -110,7 +110,7 @@ namespace
                                             {SDLK_RSHIFT, PK_SHIFT},
                                             {SDLK_LCTRL, PK_CONTROL},
                                             {SDLK_RCTRL, PK_CONTROL},
-                                            {SDLK_MENU, PK_MENU},
+                                            {SDLK_LALT, PK_MENU},
                                             {SDLK_CAPSLOCK, PK_CAPITAL},
                                             {SDLK_ESCAPE, PK_ESCAPE},
                                             {SDLK_SPACE, PK_SPACE},
@@ -214,13 +214,13 @@ namespace
             switch( event.type ){
             case SDL_KEYDOWN:
                 handle_key_event(true, (u32)event.key.keysym.sym);
-                //input_add_unicode_input((c8*)event.key.keysym.unicode);
-                //printf( ", Name: %s", SDL_GetKeyName( event.key.keysym.sym ) );
                 break;
             case SDL_KEYUP:
                 handle_key_event(false, (u32)event.key.keysym.sym);
                 break;
-
+            case SDL_MOUSEWHEEL:
+                input_set_mouse_wheel(event.wheel.y);
+            break;
             default:
                 break;
             }

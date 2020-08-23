@@ -22,7 +22,7 @@ elif [ "$1" = "web" ]; then
     emmake make config=debug
     emmake make config=release
 cd ../../..
-elif [ "$1" = "mac" ]; then
+elif [ "$1" = "osx" ]; then
     ../../tools/premake/premake5 gmake --platform_dir=$1
     cd build/$1
 	make config=debug
