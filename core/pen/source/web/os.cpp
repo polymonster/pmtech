@@ -17,11 +17,6 @@
 
 using namespace pen;
 
-namespace pen
-{
-	extern void* user_entry(void* params);
-}
-
 void pen_make_gl_context_current()
 {
 }
@@ -51,9 +46,8 @@ namespace
         create_sdl_surface();
         pen::renderer_init(nullptr, false, 1024);
 
-        // user thread
-        pen::default_thread_info thread_info;
-        pen::jobs_create_default(thread_info);
+        // creates user thread
+        jobs_create_job(s_ctx.pcp.user_thread_function, 1024 * 1024, s_ctx.pcp.user_data, pen::e_thread_start_flags::detached);
     }
     
     void run()
@@ -92,6 +86,11 @@ namespace pen
     {
         width = s_ctx.pcp.window_width;
         height = s_ctx.pcp.window_height;
+    }
+
+    f32 window_get_aspect()
+    {
+        return (f32)s_ctx.pcp.window_width / (f32)s_ctx.pcp.window_height;
     }
 
     hash_id window_get_id()

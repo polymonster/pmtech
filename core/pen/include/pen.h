@@ -48,10 +48,10 @@ namespace pen
         const c8*        window_title = "pen_app";
         pen_create_flags flags = e_pen_create_flags::renderer;
         u32              max_renderer_commands = 1<<16;             // space for max commands in cmd buffer
-        void*           (*user_thread_function)(void*) = nullptr;
+        void*            (*user_thread_function)(void*) = nullptr;
+        void*            user_data = nullptr;
     };
 
     extern pen_creation_params pen_entry(int argc, char** argv);
-    extern void*               user_entry(void* params);
-
+    extern void* user_entry(void* params);
 } // namespace pen

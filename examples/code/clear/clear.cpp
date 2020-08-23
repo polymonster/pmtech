@@ -8,7 +8,13 @@
 #include "threads.h"
 #include "timer.h"
 
-void* pen::user_entry(void* params);
+namespace
+{
+    void*   user_setup(void* params);
+    loop_t  user_update();
+    void    user_shutdown();
+}
+
 namespace pen
 {
     pen_creation_params pen_entry(int argc, char** argv)
@@ -18,7 +24,7 @@ namespace pen
         p.window_height = 720;
         p.window_title = "clear";
         p.window_sample_count = 4;
-        p.user_thread_function = user_entry;
+        p.user_thread_function = user_setup;
         p.flags = pen::e_pen_create_flags::renderer;
         return p;
     }
@@ -31,16 +37,24 @@ namespace
 
     u32 s_clear_state;
 
-    void user_setup()
+    void* user_setup(void* params)
     {
         PEN_LOG("User Setup");
+        
+        // unpack the params passed to the thread and signal to the engine it ok to proceed
+        job_params = (pen::job_thread_params*)params;
+        p_thread_info = job_params->job_info;
+        pen::semaphore_post(p_thread_info->p_sem_continue, 1);
 
         // create clear state
         static pen::clear_state cs = {
             0.0f, 0.3f, 0.2f, 1.0f, 1.0f, 0x00, PEN_CLEAR_COLOUR_BUFFER,
         };
-
+        
         s_clear_state = pen::renderer_create_clear_state(cs);
+        
+        pen_main_loop(user_update);
+        return PEN_THREAD_OK;
     }
 
     void user_shutdown()
@@ -79,20 +93,4 @@ namespace
         
         pen_main_loop_continue();
     }
-}
-
-// user thread entry.. with web friendly main loop
-void* pen::user_entry(void* params)
-{
-    // unpack the params passed to the thread and signal to the engine it ok to proceed
-    job_params = (pen::job_thread_params*)params;
-    p_thread_info = job_params->job_info;
-    pen::semaphore_post(p_thread_info->p_sem_continue, 1);
-
-    // called once per program to setup objects etc
-    user_setup();
-    
-    // we call user_update once per frame
-    pen_main_loop(user_update);    
-    return PEN_THREAD_OK;
 }

@@ -630,9 +630,9 @@ namespace pen
         static bool thread_started = false;
         if (!thread_started)
         {
-            // audio, user thread etc
-            pen::default_thread_info thread_info;
-            pen::jobs_create_default(thread_info);
+            // creates user thread
+            auto& pcp = s_ctx.creation_params;
+            jobs_create_job(pcp.user_thread_function, 1024 * 1024, pcp.user_data, pen::e_thread_start_flags::detached);
             thread_started = true;
         }
         

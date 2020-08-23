@@ -64,10 +64,9 @@ namespace pen
     void    thread_sleep_us(u32 microseconds);
 
     // Jobs
-    void jobs_create_default(const default_thread_info& info);
-    bool jobs_terminate_all();
-    job* jobs_create_job(dispatch_thread thread_func, u32 stack_size, void* user_data, thread_start_flags flags,
-                         completion_callback cb = nullptr);
+    bool    jobs_terminate_all();
+    job*    jobs_create_job(dispatch_thread thread_func, u32 stack_size, void* user_data, thread_start_flags flags,
+                            completion_callback cb = nullptr);
 
     // Mutex
     mutex* mutex_create();

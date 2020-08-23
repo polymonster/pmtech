@@ -539,9 +539,8 @@ namespace pen
         static bool init_jobs = false;
         if (!init_jobs)
         {
-            // audio, user thread etc
-            pen::default_thread_info thread_info;
-            pen::jobs_create_default(thread_info);
+            auto& pcp = s_creation_params;
+            jobs_create_job(pcp.user_thread_function, 1024 * 1024, pcp.user_data, pen::e_thread_start_flags::detached);
             init_jobs = true;
         }
 

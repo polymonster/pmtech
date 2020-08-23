@@ -390,5 +390,15 @@
             "-v_flip",
             "-source"
         ],
+        
+		textures: [
+            ["assets/textures", "build/web/data/textures"],
+            ["../assets/textures", "build/web/data/textures"]
+        ],
+        
+        make: {
+			dir: "build/web",
+			cmd: "emmake make"
+        }
     }
 }

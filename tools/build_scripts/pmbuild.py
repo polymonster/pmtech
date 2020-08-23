@@ -564,6 +564,25 @@ def run_build(config):
             exit(0)
 
 
+# runs make, and compiles from makefiles, vs solution or xcode project.
+def run_make(config, target):
+    print("--------------------------------------------------------------------------------")
+    print("make ---------------------------------------------------------------------------")
+    print("--------------------------------------------------------------------------------")
+    cwd = os.getcwd()
+    if "make" not in config.keys():
+        print("[error] make config missing from config.jsn ")
+        return
+    make_config = config["make"]
+    os.chdir(make_config["dir"])
+    if len(target) == 0:
+        subprocess.call(make_config["cmd"], shell=True)
+    else:
+        subprocess.call(make_config["cmd"] + " " + target, shell=True)
+    os.chdir(cwd)
+
+
+# generates function pointer bindings to call pmtech from a live reloaded dll.
 def run_cr(config):
         print("--------------------------------------------------------------------------------")
         print("cr -----------------------------------------------------------------------------")
@@ -928,6 +947,17 @@ def main():
 
     # finally metadata for rebuilding and hot reloading
     generate_pmbuild_config(config, sys.argv[1])
+
+    # make
+    if "-make" in sys.argv:
+        i = sys.argv.index("-make") + 1
+        target = ""
+        if i < len(sys.argv):
+            target = sys.argv[i]
+        if call == "help":
+            pass
+        else:
+            run_make(config, target)
 
     print("--------------------------------------------------------------------------------")
     print("all jobs complete --------------------------------------------------------------")
