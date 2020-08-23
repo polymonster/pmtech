@@ -5,12 +5,8 @@
 #include "threads.h"
 #include <jni.h>
 
-// extern pen::window_creation_params pen_window;
-// extern PEN_TRV pen::user_entry( void* params );
-
 int main()
 {
-    // pen::user_entry(nullptr);
 }
 
 namespace pen

@@ -391,6 +391,11 @@
             "-source"
         ],
         
+        copy: [
+            ["../assets/fonts", "build/web/data/fonts"],
+            ["assets/scene", "build/web/data/scene"],
+        ],
+        
 		textures: [
             ["assets/textures", "build/web/data/textures"],
             ["../assets/textures", "build/web/data/textures"]
