@@ -271,7 +271,7 @@ ps_output ps_depth_of_field( vs_output input )
     float n = camera_view_pos.w;
     float f = camera_view_dir.w;
 
-    float ez  = (2 * n * f) / (f + n - z * (f - n));
+    float ez  = (2.0 * n * f) / (f + n - z * (f - n));
     float lz  = (ez - n) / (f - n);
     
     float centre_scale = m_centre_range / (f-n);
@@ -469,7 +469,7 @@ ps_output ps_crt( vs_output input )
     
     output.colour.rgb *= abs(sin(tc.y / inv_texel.y));
     
-    if(tc.x < 0 || tc.x > 1.0 || tc.y < 0.0 || tc.y > 1.0)
+    if(tc.x < 0.0 || tc.x > 1.0 || tc.y < 0.0 || tc.y > 1.0)
         output.colour *= 0.0;
     
     return output;
@@ -512,7 +512,7 @@ ps_output ps_sss_reflectance( vs_output input )
     float n = camera_view_pos.w;
     float f = camera_view_dir.w;
 
-    float ez  = (2 * n * f) / (f + n - z * (f - n));
+    float ez  = (2.0 * n * f) / (f + n - z * (f - n));
     float lz  = (ez - n) / (f - n);
 
     float dist = 1.0 / tan(0.5 * 60.0 * 3.14 / 180.0 );
@@ -626,7 +626,9 @@ ps_output ps_taa_resolve( vs_output input )
 		break;
 	}
 	
-	float vv = saturate(length(vel)*100);
+	poop
+	
+	float vv = saturate(length(vel)*100.0);
 	
 	// resets the taa history
 	if(jitter.z == 1.0)

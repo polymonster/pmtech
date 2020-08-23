@@ -164,6 +164,10 @@ local function setup_bullet()
 end
 
 local function setup_fmod()
+	if platform == "web" then
+		return
+	end
+
 	libdirs
 	{
 		(pmtech_dir .. "third_party/fmod/lib/" .. platform_dir)
@@ -171,11 +175,6 @@ local function setup_fmod()
 end
 
 function setup_modules()
-
-	if platform == "web" then
-		return
-	end
-
 	setup_bullet()
 	setup_fmod()
 end

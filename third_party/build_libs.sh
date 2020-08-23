@@ -16,10 +16,18 @@ elif [ "$1" = "ios" ]; then
     xcodebuild -scheme bullet_monolithic -destination generic/platform=iOS -project bullet_monolithic.xcodeproj -configuration Debug -quiet
     xcodebuild -scheme bullet_monolithic -destination generic/platform=iOS -project bullet_monolithic.xcodeproj -configuration Release -quiet
 cd ../../..
-else
+elif [ "$1" = "web" ]; then
+    ../../tools/premake/premake5 gmake --platform_dir=$1
+    cd build/$1
+    emmake make config=debug
+    emmake make config=release
+cd ../../..
+elif [ "$1" = "mac" ]; then
     ../../tools/premake/premake5 gmake --platform_dir=$1
     cd build/$1
 	make config=debug
 	make config=release
 cd ../../..
+else
+echo error unsupported target $1
 fi

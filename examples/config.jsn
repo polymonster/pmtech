@@ -374,15 +374,20 @@
     
     web(base): {
 		jsn_vars: {
-            data_dir: "bin/web/data"
+            data_dir: "build/web/data"
         },
         
 		premake: [
             "gmake --platform_dir=web --renderer=opengl"
         ],
         
+        libs: [
+            "cd ../third_party && ./build_libs.sh web"
+        ],
+        
 		pmfx: [
             "-shader_platform gles",
+            "-shader_version 300",
             "-i assets/shaders ../assets/shaders",
             "-o build/web/data/pmfx/glsl",
             "-h shader_structs",

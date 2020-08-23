@@ -187,11 +187,11 @@ namespace
 
         if(b & SDL_BUTTON_RIGHT)
         {
-            input_set_mouse_down(PEN_MOUSE_R);
+            //input_set_mouse_down(PEN_MOUSE_R);
         }
         else
         {
-            input_set_mouse_up(PEN_MOUSE_R);
+            //input_set_mouse_up(PEN_MOUSE_R);
         }
 
         if(b & SDL_BUTTON_MIDDLE)
@@ -289,6 +289,22 @@ namespace pen
     void* window_get_primary_display_handle()
     {
         return (void*)s_ctx.surface;
+    }
+
+    bool input_undo_pressed()
+    {
+        return false;
+    }
+
+    bool input_redo_pressed()
+    {
+        return false;
+    }
+
+    const user_info& os_get_user_info()
+    {
+        static user_info u;
+        return u;
     }
 }
 

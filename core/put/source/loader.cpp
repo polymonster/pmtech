@@ -498,6 +498,8 @@ namespace put
 {
     void init_hot_loader()
     {
+        PEN_HOTLOADING_ENABLED;
+
         pen::jobs_create_job(hot_loader_thread, 1024 * 1024, nullptr, pen::e_thread_start_flags::detached);
 
         pen::json pmbuild_config = pen::json::load_from_file("data/pmbuild_config.json");
@@ -508,6 +510,8 @@ namespace put
 
     void trigger_hot_loader(const Str& cmdline)
     {
+        PEN_HOTLOADING_ENABLED;
+
         static f64         s_timeout = 0.0f;
         static pen::timer* t = pen::timer_create();
         s_timeout -= pen::timer_elapsed_ms(t);

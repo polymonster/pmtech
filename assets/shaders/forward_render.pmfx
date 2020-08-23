@@ -539,7 +539,7 @@ ps_output ps_forward_lit( vs_output input )
                 sp.xy = sp.xy * 0.5 + 0.5;
 				sp.z = remap_depth(sp.z);
                 
-                float4 sm = sample_texture_array_level( shadowmap_texture_sss, sp.xy, float(shadow_map_index), 0 );
+                float4 sm = sample_texture_array_level( shadowmap_texture_sss, sp.xy, float(shadow_map_index), 0.0 );
                 d = sm.r;
                 
                 float fp = 1.0;
@@ -807,7 +807,7 @@ ps_output ps_forward_lit( vs_output input )
 			float3 sp = input.world_pos.xyz + (cn * step);
 			
 			// ensure ray is pointing in normals hemisphere
-			ray *= dot(ray, gn) < 0 ? -1 : 1;
+			ray *= dot(ray, gn) < 0.0 ? -1.0 : 1.0;
 			
 			// gather gi
 			float4 ray_gi = float4(0.0, 0.0, 0.0, 0.0);
@@ -822,7 +822,7 @@ ps_output ps_forward_lit( vs_output input )
 					step = (dim*2.0) / tex_size;
 				
 					float3 uvw = saturate((sp / to_uvx) * 0.5 + 0.5);					
-					float4 g = sample_texture_level( volume_gi, uvw, j);
+					float4 g = sample_texture_level( volume_gi, uvw, float(j));
 										
 					float d = length(input.world_pos.xyz - sp);
 					d = smoothstep(0.0, 8.0, d);
@@ -832,7 +832,7 @@ ps_output ps_forward_lit( vs_output input )
 							
 					sp += ray * step.x;							
 				}
-				tex_size /= 2;
+				tex_size /= 2.0;
 				
 				// break if we reach 1 alpha but accumulate mip 0 for better coverage at contact points
 				if(ray_gi.a >= 1.0 && j > 1)

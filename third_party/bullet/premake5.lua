@@ -2,8 +2,12 @@ dofile("../../tools/premake/options.lua")
 dofile("../../tools/premake/globals.lua")
 
 link_cmd = ""
+build_cmd = ""
 if platform_dir == "osx" then
 	link_cmd = "-mmacosx-version-min=10.8"
+elseif platform == "web" then
+	build_cmd = "-std=c++11 -s USE_PTHREADS=1"
+	link_cmd = "-s USE_PTHREADS=1 -s FULL_ES3=1 -s MIN_WEBGL_VERSION=2 -s MAX_WEBGL_VERSION=2 -s PTHREAD_POOL_SIZE=8"
 end
 
 solution "bullet_build"
@@ -47,6 +51,7 @@ project "bullet_monolithic"
 		defines { "DEBUG" }
 		entrypoint "WinMainCRTStartup"
 		linkoptions { link_cmd }
+		buildoptions { build_cmd }
 		symbols "On"
 		targetdir ("lib/" .. platform_dir)
 		targetname "bullet_monolithic_d"
@@ -56,5 +61,6 @@ project "bullet_monolithic"
 		entrypoint "WinMainCRTStartup"
 		optimize "Speed"
 		linkoptions { link_cmd }
+		buildoptions { build_cmd }
 		targetdir ("lib/" .. platform_dir)
 		targetname "bullet_monolithic"

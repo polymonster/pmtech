@@ -146,6 +146,11 @@ import post_process.jsn
             editor_view
         ],
         
+        editor_basic: [
+			editor_main,
+            editor_view
+        ],
+        
         editor_gi: [
         	multiple_shadow_views,
 			multiple_colour_shadow_views,

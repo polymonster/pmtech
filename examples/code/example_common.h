@@ -50,7 +50,7 @@ void* pen::user_entry(void* params)
     put::dev_ui::init();
     put::init_hot_loader();
     put::dbg::init();
-    
+
     put::ecs::init();
     put::ecs::editor_init(main_scene, &main_camera);
 

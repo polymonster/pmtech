@@ -139,7 +139,7 @@ inline f16 float_to_half(f32 f)
 #define pen_deprecated __attribute__((deprecated))
 #define pen_debug_break __builtin_trap()
 #endif
-#ifdef PEN_PLATFORM_IOS
+#if PEN_PLATFORM_IOS || PEN_PLATFORM_WEB
 #define PEN_HOTLOADING_ENABLED return
 #else
 #define PEN_HOTLOADING_ENABLED
