@@ -626,8 +626,6 @@ ps_output ps_taa_resolve( vs_output input )
 		break;
 	}
 	
-	poop
-	
 	float vv = saturate(length(vel)*100.0);
 	
 	// resets the taa history

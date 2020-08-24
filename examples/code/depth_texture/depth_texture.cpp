@@ -169,7 +169,7 @@ namespace
         // create a sampler object so we can sample a texture
         pen::sampler_creation_params scp;
         pen::memory_zero(&scp, sizeof(pen::sampler_creation_params));
-        scp.filter = PEN_FILTER_LINEAR;
+        scp.filter = PEN_FILTER_POINT;
         scp.address_u = PEN_TEXTURE_ADDRESS_CLAMP;
         scp.address_v = PEN_TEXTURE_ADDRESS_CLAMP;
         scp.address_w = PEN_TEXTURE_ADDRESS_CLAMP;

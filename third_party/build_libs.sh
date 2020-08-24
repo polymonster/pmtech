@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# third party build for osx, ios, linux
+# third party build for osx, ios, linux, emscripten (web)
 
 # bullet
 cd bullet

@@ -1094,12 +1094,17 @@ namespace pen
             CHECK_CALL(
                 glClearColor(rc.clear_state.rgba[0], rc.clear_state.rgba[1], rc.clear_state.rgba[2], rc.clear_state.rgba[3]));
 
+            if(!rc.clear_state.flags)
+                return;
+
             CHECK_CALL(glClear(rc.clear_state.flags));
 
             return;
         }
 
         u32 masked = rc.clear_state.flags &= ~GL_COLOR_BUFFER_BIT;
+        if(!masked)
+            return;
 
         CHECK_CALL(glClear(masked));
 
@@ -2114,9 +2119,14 @@ namespace pen
         u32 sampler_object;
         glGenSamplers(1, &sampler_object);
 
-        // handle unmipped textures or textures with missing mips
+#ifndef PEN_GLES3
         CHECK_CALL(glSamplerParameteri(sampler_object, GL_TEXTURE_MIN_FILTER, sampler.min_filter));
         CHECK_CALL(glSamplerParameteri(sampler_object, GL_TEXTURE_MAG_FILTER, sampler.mag_filter));
+#else
+        // GLES3 has issues with bilinear on depth textures, this is temporary to fix the
+        CHECK_CALL(glSamplerParameteri(sampler_object, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+        CHECK_CALL(glSamplerParameteri(sampler_object, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+#endif
 
         CHECK_CALL(glSamplerParameteri(sampler_object, GL_TEXTURE_WRAP_S, sampler.address_u));
         CHECK_CALL(glSamplerParameteri(sampler_object, GL_TEXTURE_WRAP_T, sampler.address_v));
@@ -2127,10 +2137,10 @@ namespace pen
         CHECK_CALL(glSamplerParameterf(sampler_object, GL_TEXTURE_LOD_BIAS, sampler.mip_lod_bias));
 #endif
         if (sampler.max_lod > -1.0f)
-            CHECK_CALL(glSamplerParameterf(sampler_object, GL_TEXTURE_MAX_LOD, 0));
+            CHECK_CALL(glSamplerParameterf(sampler_object, GL_TEXTURE_MAX_LOD, sampler.max_lod));
 
         if (sampler.min_lod > -1.0f)
-            CHECK_CALL(glSamplerParameterf(sampler_object, GL_TEXTURE_MIN_LOD, 0));
+            CHECK_CALL(glSamplerParameterf(sampler_object, GL_TEXTURE_MIN_LOD, sampler.min_lod));
 
         if (sampler.comparison_func != PEN_COMPARISON_DISABLED)
         {
@@ -2143,8 +2153,10 @@ namespace pen
             CHECK_CALL(glSamplerParameteri(sampler_object, GL_TEXTURE_COMPARE_FUNC, GL_ALWAYS));
         }
 
+#ifndef PEN_GLES3
         CHECK_CALL(glSamplerParameteri(sampler_object, GL_TEXTURE_CUBE_MAP_SEAMLESS, 1));
-
+#endif
+        
         _res_pool[resource_slot].sampler_object = sampler_object;
     }
 
@@ -2159,7 +2171,6 @@ namespace pen
 
         u32 max_mip = 0;
         u32 target = _res_pool[texture_index].texture.target;
-
 
 #if GL_ARB_compute_shader
 		// bind image textures for cs rw
@@ -2224,10 +2235,10 @@ namespace pen
         u32 sampler_object = _res_pool[sampler_index].sampler_object;
         glBindSampler(resource_slot, sampler_object);
 
-        // handling textures with no mips
         if (target == GL_TEXTURE_2D_ARRAY)
             CHECK_CALL(glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, 0));
 
+        // handling textures with no mips
         CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, max_mip));
     }
 
