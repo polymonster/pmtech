@@ -629,6 +629,11 @@ ps_output ps_forward_lit( vs_output input )
 
                 ++omni_shadow_index;
             }
+            else:
+            {
+            	lit_colour += light_col;
+            	continue;
+            }
         }   
     }
     
@@ -844,12 +849,6 @@ ps_output ps_forward_lit( vs_output input )
 		
 		// could multiply gi with albedo but additive gi gives a stronger effect
 		output.colour.rgb = gi.rgb * albedo.rgb + lit_colour.rgb;
-		//output.colour.rgb = lit_colour.rgb;
-		
-		// debug to render the gi volume
-		//float3 uvw = saturate((input.world_pos.xyz / to_uvx) * 0.5 + 0.5);
-		//float4 raw = sample_texture_level( volume_gi, uvw, 0);
-		//output.colour.rgb = raw.rgb;
 	}
 	    
     if(albedo.a <= 0.0)
