@@ -141,6 +141,13 @@ namespace
     void create_sdl_surface()
     {
         SDL_Init(SDL_INIT_VIDEO);
+
+        if(s_ctx.pcp.window_sample_count > 1)
+        {
+            SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+            SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, s_ctx.pcp.window_sample_count);
+        }
+
         s_ctx.surface = SDL_SetVideoMode(s_ctx.pcp.window_width, s_ctx.pcp.window_height, 32, SDL_OPENGL);
     }
 

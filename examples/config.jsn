@@ -406,6 +406,10 @@
             ["../assets/textures", "build/web/data/textures"]
         ],
         
+        models: [
+            ["assets/mesh", "build/web/data/models"]
+        ],
+        
         make: {
 			dir: "build/web",
 			cmd: "emmake make"
