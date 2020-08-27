@@ -135,7 +135,6 @@ namespace pen
         if (s_unicode_ring.data == nullptr)
             s_unicode_ring.create(128);
 
-        PEN_LOG("%s", utf8);
         s_unicode_ring.put(Str(utf8));
     }
 
