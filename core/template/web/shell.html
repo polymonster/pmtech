@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no"/>
-    <title>Emscripten-Generated Code</title>
+    <title>powered by pmtech</title>
     <style>
         body { margin: 0; background-color: black }
-        .game {
+        .backbuffer {
             position: absolute;
             top: 0px;
             left: 0px;
@@ -28,7 +28,7 @@
     </style>
   </head>
   <body>
-    <canvas class="game" id="canvas" oncontextmenu="event.preventDefault()"></canvas>
+    <canvas class="backbuffer" id="canvas" oncontextmenu="event.preventDefault()"></canvas>
     <script type='text/javascript'>
       var Module = {
         preRun: [],
@@ -45,7 +45,6 @@
         },
         canvas: (function() {
             var canvas = document.getElementById('canvas');
-            //canvas.addEventListener("webglcontextlost", function(e) { alert('FIXME: WebGL context lost, please reload the page'); e.preventDefault(); }, false);
             return canvas;
         })(),
         setStatus: function(text) {

@@ -18,6 +18,15 @@
 #include <stdio.h>
 #include <map>
 
+#include <emscripten.h>
+EM_JS(int, get_canvas_width, (), {
+  return canvas.clientWidth;
+});
+
+EM_JS(int, get_canvas_height, (), {
+  return canvas.clientHeight;
+});
+
 using namespace pen;
 
 void pen_make_gl_context_current()
@@ -138,30 +147,6 @@ namespace
                                             {0x00, PK_TILDE},
                                             {SDLK_BACKQUOTE, PK_GRAVE}};
     
-    void create_sdl_surface()
-    {
-        SDL_Init(SDL_INIT_VIDEO);
-
-        if(s_ctx.pcp.window_sample_count > 1)
-        {
-            SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-            SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, s_ctx.pcp.window_sample_count);
-        }
-
-        s_ctx.surface = SDL_SetVideoMode(s_ctx.pcp.window_width, s_ctx.pcp.window_height, 32, SDL_OPENGL);
-    }
-
-    void init()
-    {
-        create_sdl_surface();
-        SDL_EnableUNICODE(1);
-        timer_system_intialise();
-        pen::renderer_init(nullptr, false, 1024);
-
-        // creates user thread
-        jobs_create_job(s_ctx.pcp.user_thread_function, 1024 * 1024, s_ctx.pcp.user_data, pen::e_thread_start_flags::detached);
-    }
-
     void handle_key_event(bool down, u32 key)
     {
         if (k_key_map.find(key) != k_key_map.end())
@@ -183,7 +168,7 @@ namespace
         s32 x, y;
         u32 b = SDL_GetMouseState(&x, &y);
         input_set_mouse_pos((f32)x, (f32)y);
-        if(b & SDL_BUTTON_LEFT)
+        if(b == SDL_BUTTON_LEFT)
         {
             input_set_mouse_down(PEN_MOUSE_L);
         }
@@ -192,22 +177,36 @@ namespace
             input_set_mouse_up(PEN_MOUSE_L);
         }
 
-        if(b & SDL_BUTTON_RIGHT)
+        if(b == SDL_BUTTON_RIGHT)
         {
-            //input_set_mouse_down(PEN_MOUSE_R);
+            input_set_mouse_down(PEN_MOUSE_R);
         }
         else
         {
-            //input_set_mouse_up(PEN_MOUSE_R);
+            input_set_mouse_up(PEN_MOUSE_R);
         }
 
-        if(b & SDL_BUTTON_MIDDLE)
+        if(b == SDL_BUTTON_MIDDLE)
         {
             input_set_mouse_down(PEN_MOUSE_M);
         }
         else
         {
             input_set_mouse_up(PEN_MOUSE_M);
+        }
+    }
+
+    void handle_window_resize()
+    {
+        if(s_ctx.pcp.window_width != get_canvas_width() || s_ctx.pcp.window_height != get_canvas_height())
+        {
+            s_ctx.pcp.window_width = get_canvas_width();
+            s_ctx.pcp.window_height = get_canvas_height();
+
+            if(s_ctx.surface)
+                SDL_FreeSurface(s_ctx.surface);
+
+            s_ctx.surface = SDL_SetVideoMode(s_ctx.pcp.window_width, s_ctx.pcp.window_height, 32, SDL_OPENGL | SDL_RESIZABLE);
         }
     }
     
@@ -227,15 +226,40 @@ namespace
                 break;
             case SDL_MOUSEWHEEL:
                 input_set_mouse_wheel(event.wheel.y);
-            break;
+                break;
             default:
                 break;
             }
         }
 
         handle_mouse();
+        handle_window_resize();
 
         pen::renderer_dispatch();
+    }
+
+    void create_sdl_surface()
+    {
+        SDL_Init(SDL_INIT_VIDEO);
+
+        if(s_ctx.pcp.window_sample_count > 1)
+        {
+            SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+            SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, s_ctx.pcp.window_sample_count);
+        }
+
+        handle_window_resize();
+    }
+
+    void init()
+    {
+        create_sdl_surface();
+        SDL_EnableUNICODE(1);
+        timer_system_intialise();
+        pen::renderer_init(nullptr, false, 1024);
+
+        // creates user thread
+        jobs_create_job(s_ctx.pcp.user_thread_function, 1024 * 1024, s_ctx.pcp.user_data, pen::e_thread_start_flags::detached);
     }
 }
 
