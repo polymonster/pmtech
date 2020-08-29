@@ -379,6 +379,9 @@ namespace // pen consts -> metal consts
             case PEN_TEX_FORMAT_D32_FLOAT:
                 return MTLPixelFormatDepth32Float;
                 break;
+            case PEN_TEX_FORMAT_D32_FLOAT_S8_UINT:
+                return MTLPixelFormatDepth32Float_Stencil8;
+                break;
 #ifndef PEN_PLATFORM_IOS
             case PEN_TEX_FORMAT_BC1_UNORM:
                 return MTLPixelFormatBC1_RGBA;
