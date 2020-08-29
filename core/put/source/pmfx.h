@@ -274,6 +274,7 @@ namespace put
             u32 pp = e_vrt_mode::read;
             u32 pp_read = PEN_INVALID_HANDLE;
             u32 collection = pen::TEXTURE_COLLECTION_NONE;
+            u32 bind_flags = 0;
         };
 
         struct rt_resize_params
