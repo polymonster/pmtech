@@ -202,6 +202,10 @@ namespace
             return DXGI_FORMAT_R8G8B8A8_UNORM;
         case PEN_TEX_FORMAT_D24_UNORM_S8_UINT:
             return DXGI_FORMAT_R24G8_TYPELESS;
+        case PEN_TEX_FORMAT_D32_FLOAT:
+            return DXGI_FORMAT_R32_TYPELESS;
+        case PEN_TEX_FORMAT_D32_FLOAT_S8_UINT:
+            return DXGI_FORMAT_R32G8X24_TYPELESS;
         case PEN_TEX_FORMAT_R32G32B32A32_FLOAT:
             return DXGI_FORMAT_R32G32B32A32_FLOAT;
         case PEN_TEX_FORMAT_R32_FLOAT:

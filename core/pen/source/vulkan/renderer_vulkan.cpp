@@ -196,6 +196,7 @@ namespace
         switch (pen_format)
         {
             case PEN_TEX_FORMAT_D24_UNORM_S8_UINT:
+            case PEN_TEX_FORMAT_D32_FLOAT:
                 return true;
         }
         return false;
@@ -364,7 +365,10 @@ namespace
                 return VK_FORMAT_BC5_UNORM_BLOCK;
             case PEN_TEX_FORMAT_D24_UNORM_S8_UINT:
                 return VK_FORMAT_D24_UNORM_S8_UINT;
-                break;
+            case PEN_TEX_FORMAT_D32_FLOAT:
+                return VK_FORMAT_D32_SFLOAT;
+            case PEN_TEX_FORMAT_D32_FLOAT_S8_UINT:
+                return VK_FORMAT_D32_SFLOAT_S8_UINT;
         }
         // unhandled
         PEN_ASSERT(0);

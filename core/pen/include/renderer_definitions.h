@@ -44,7 +44,11 @@ enum texture_format
     // integer
     PEN_TEX_FORMAT_BGRA8_UNORM,
     PEN_TEX_FORMAT_RGBA8_UNORM,
+
+    // depth formats
     PEN_TEX_FORMAT_D24_UNORM_S8_UINT,
+    PEN_TEX_FORMAT_D32_FLOAT,
+    PEN_TEX_FORMAT_D32_FLOAT_S8_UINT,
 
     // floating point
     PEN_TEX_FORMAT_R32G32B32A32_FLOAT,
@@ -54,7 +58,6 @@ enum texture_format
     PEN_TEX_FORMAT_R32_UINT,
     PEN_TEX_FORMAT_R8_UNORM,
     PEN_TEX_FORMAT_R32G32_FLOAT,
-    PEN_TEX_FORMAT_D32_FLOAT,
 
     // bc compressed
     PEN_TEX_FORMAT_BC1_UNORM,

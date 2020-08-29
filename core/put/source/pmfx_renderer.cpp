@@ -173,7 +173,8 @@ namespace
         {"r16f",    PEN_HASH("r16f"),       PEN_TEX_FORMAT_R16_FLOAT,           16,     PEN_BIND_RENDER_TARGET},
         {"r32u",    PEN_HASH("r32u"),       PEN_TEX_FORMAT_R32_UINT,            32,     PEN_BIND_RENDER_TARGET},
         {"d24s8",   PEN_HASH("d24s8"),      PEN_TEX_FORMAT_D24_UNORM_S8_UINT,   32,     PEN_BIND_DEPTH_STENCIL},
-        {"d32f",    PEN_HASH("d32f"),       PEN_TEX_FORMAT_D32_FLOAT,           32,     PEN_BIND_DEPTH_STENCIL}
+        {"d32f",    PEN_HASH("d32f"),       PEN_TEX_FORMAT_D32_FLOAT,           32,     PEN_BIND_DEPTH_STENCIL},
+        {"d32fs8",  PEN_HASH("d32fs8"),     PEN_TEX_FORMAT_D32_FLOAT_S8_UINT,   40,     PEN_BIND_DEPTH_STENCIL}
     };
 
     const Str rt_ratio[] = {
@@ -1054,6 +1055,7 @@ namespace put
             main_colour.num_arrays = 1;
             main_colour.pp = e_vrt_mode::write;
             main_colour.flags = e_rt_flags::write_only;
+            main_colour.bind_flags |= PEN_BIND_RENDER_TARGET;
 
             s_render_targets.push_back(main_colour);
             s_render_target_tcp.push_back(texture_creation_params());
@@ -1065,9 +1067,10 @@ namespace put
             main_depth.format = PEN_TEX_FORMAT_D24_UNORM_S8_UINT;
             main_depth.handle = PEN_BACK_BUFFER_DEPTH;
             main_depth.num_mips = 1;
-            main_colour.num_arrays = 1;
+            main_depth.num_arrays = 1;
             main_depth.pp = e_vrt_mode::write;
             main_depth.flags = e_rt_flags::write_only;
+            main_depth.bind_flags |= PEN_BIND_DEPTH_STENCIL;
 
             s_render_targets.push_back(main_depth);
             s_render_target_tcp.push_back(texture_creation_params());
@@ -1659,7 +1662,7 @@ namespace put
                                 }
                             }
                             
-                            if (r.bind_flags & PEN_BIND_DEPTH_STENCIL)
+                            if (r.format == PEN_TEX_FORMAT_D24_UNORM_S8_UINT || r.format == PEN_TEX_FORMAT_D32_FLOAT)
                             {
                                 depth_target_index = t;
                                 new_view.depth_target = r.handle;

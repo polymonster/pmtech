@@ -161,7 +161,7 @@
         shadow_map:
         {
             size: [2048, 2048],
-            format: d24s8,
+            format: d32f,
             type: array
         },
                 
