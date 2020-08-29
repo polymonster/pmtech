@@ -27,7 +27,7 @@ import editor_renderer.jsn
         view_stencil_clear:
         {
             target : [main_colour, main_depth],
-            clear_colour : [0.0, 0.0, 0.0, 1.0],
+            clear_colour : [0.9, 0.6, 0.0, 1.0],
             clear_depth : 1.0,
             clear_stencil : 0x22,
             colour_write_mask : 0xff,

@@ -27,7 +27,7 @@ struct forward_lit_material
 
 namespace
 {
-    u32 pillar_start;
+    u32 pillar_start = 0;
 }
 
 void example_setup(ecs_scene* scene, camera& cam)
@@ -138,7 +138,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     // add some pillars for shadow casters
     
     // deterministic results
-    srand(10);
+    // srand(10);
 
     // the old classic
     f32   num_pillar_rows = 5;
