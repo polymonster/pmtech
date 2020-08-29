@@ -54,6 +54,7 @@ enum texture_format
     PEN_TEX_FORMAT_R32_UINT,
     PEN_TEX_FORMAT_R8_UNORM,
     PEN_TEX_FORMAT_R32G32_FLOAT,
+    PEN_TEX_FORMAT_D32_FLOAT,
 
     // bc compressed
     PEN_TEX_FORMAT_BC1_UNORM,

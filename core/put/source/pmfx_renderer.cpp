@@ -172,7 +172,8 @@ namespace
         {"r32f",    PEN_HASH("r32f"),       PEN_TEX_FORMAT_R32_FLOAT,           32,     PEN_BIND_RENDER_TARGET},
         {"r16f",    PEN_HASH("r16f"),       PEN_TEX_FORMAT_R16_FLOAT,           16,     PEN_BIND_RENDER_TARGET},
         {"r32u",    PEN_HASH("r32u"),       PEN_TEX_FORMAT_R32_UINT,            32,     PEN_BIND_RENDER_TARGET},
-        {"d24s8",   PEN_HASH("d24s8"),      PEN_TEX_FORMAT_D24_UNORM_S8_UINT,   32,     PEN_BIND_DEPTH_STENCIL}
+        {"d24s8",   PEN_HASH("d24s8"),      PEN_TEX_FORMAT_D24_UNORM_S8_UINT,   32,     PEN_BIND_DEPTH_STENCIL},
+        {"d32f",    PEN_HASH("d32f"),       PEN_TEX_FORMAT_D32_FLOAT,           32,     PEN_BIND_DEPTH_STENCIL}
     };
 
     const Str rt_ratio[] = {
@@ -1175,7 +1176,7 @@ namespace put
                         tcp.num_mips = 1;
                         tcp.num_arrays = 1;
                         tcp.collection_type = pen::TEXTURE_COLLECTION_NONE;
-
+                        
                         // mips
                         if (r["mips"].as_bool(false))
                         {
@@ -1263,8 +1264,8 @@ namespace put
                         tcp.sample_quality = 0;
 
                         new_info.samples = tcp.sample_count;
-
                         new_info.handle = pen::renderer_create_render_target(tcp);
+                        new_info.bind_flags = tcp.bind_flags;
                     }
                 }
             }
@@ -1657,8 +1658,8 @@ namespace put
                                     valid = false;
                                 }
                             }
-
-                            if (r.format == PEN_TEX_FORMAT_D24_UNORM_S8_UINT)
+                            
+                            if (r.bind_flags & PEN_BIND_DEPTH_STENCIL)
                             {
                                 depth_target_index = t;
                                 new_view.depth_target = r.handle;
