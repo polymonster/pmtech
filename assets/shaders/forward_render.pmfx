@@ -624,7 +624,7 @@ ps_output ps_forward_lit( vs_output input )
                 float d = length(to_light) / 2.0; // omni shadow space far plane is radius * 2.0
                 float3 cv = normalize(to_light) * float3(1.0, 1.0, -1.0);
                 
-                float cube_d = sample_texture_cube_array_level(omni_shadow_texture, cv, float(omni_shadow_index), 0).r;
+                float cube_d = sample_texture_cube_array_level(omni_shadow_texture, cv, float(omni_shadow_index), 0.0).r;
                 lit_colour += d < cube_d * lights[i].pos_radius.w ? light_col : float3(0.0, 0.0, 0.0);
 
                 ++omni_shadow_index;
@@ -704,34 +704,34 @@ ps_output ps_forward_lit( vs_output input )
             ++shadow_map_index;
         }
     }
-    
-    // area lights constant colour
-    float pi = 3.14159265359;
-    int num_area_lights = int(area_light_info.x);
-    for(int i = 0; i < num_area_lights; ++i)
-    {
-        float3 v = -normalize(input.world_pos.xyz - camera_view_pos.xyz);
-        float3 pos = input.world_pos.xyz;
         
-        float3 points[4];
-        for(int j = 0; j < 4; ++j)
-            points[j] = area_lights[i].corners[j].xyz;
-        
-        // diffuse
-        float diff_sum = area_light_diffuse(points, pos, n, v);
-        float3 diff = area_lights[i].colour.rgb * diff_sum;
-        
-        // specular 
-        float spec_sum = area_light_specular(points, pos, ro_sample.x, n, v);
-        float3 spec = area_lights[i].colour.rgb * spec_sum;
-        
-        float3 light_col = (spec.rgb + diff.rgb) / (2.0 * pi);        
-        lit_colour += light_col;
-    }
-    
-    // area lights textured
     if:(!SSS)
     {
+    	// area lights constant colour
+		float pi = 3.14159265359;
+		int num_area_lights = int(area_light_info.x);
+		for(int i = 0; i < num_area_lights; ++i)
+		{
+			float3 v = -normalize(input.world_pos.xyz - camera_view_pos.xyz);
+			float3 pos = input.world_pos.xyz;
+		
+			float3 points[4];
+			for(int j = 0; j < 4; ++j)
+				points[j] = area_lights[i].corners[j].xyz;
+		
+			// diffuse
+			float diff_sum = area_light_diffuse(points, pos, n, v);
+			float3 diff = area_lights[i].colour.rgb * diff_sum;
+		
+			// specular 
+			float spec_sum = area_light_specular(points, pos, ro_sample.x, n, v);
+			float3 spec = area_lights[i].colour.rgb * spec_sum;
+		
+			float3 light_col = (spec.rgb + diff.rgb) / (2.0 * pi);        
+			lit_colour += light_col;
+		}
+    
+    	// area lights textured
         int ts = num_area_lights;
         int num_area_lights_textured = int(area_light_info.y);
         for(int i = ts; i < ts + num_area_lights_textured; ++i)
