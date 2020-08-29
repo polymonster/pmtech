@@ -463,26 +463,28 @@ namespace
         u32 sized_format;
         u32 format;
         u32 type;
+        u32 attachment;
     };
 
     const tex_format_map k_tex_format_map[] = {
-        {PEN_TEX_FORMAT_BGRA8_UNORM, GL_RGBA8, GL_BGRA, GL_UNSIGNED_BYTE},
-        {PEN_TEX_FORMAT_RGBA8_UNORM, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE},
-        {PEN_TEX_FORMAT_D24_UNORM_S8_UINT, GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8},
-        {PEN_TEX_FORMAT_R32G32B32A32_FLOAT, GL_RGBA32F, GL_RGBA, GL_FLOAT},
-        {PEN_TEX_FORMAT_R16G16B16A16_FLOAT, GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT},
-        {PEN_TEX_FORMAT_R32G32_FLOAT, GL_RG32F, GL_RG, GL_FLOAT},
-        {PEN_TEX_FORMAT_R32_FLOAT, GL_R32F, GL_RED, GL_FLOAT},
-        {PEN_TEX_FORMAT_R16_FLOAT, GL_R16F, GL_RED, GL_HALF_FLOAT},
-        {PEN_TEX_FORMAT_R32_UINT, GL_R32UI, GL_RED_INTEGER, GL_UNSIGNED_INT},
-        {PEN_TEX_FORMAT_R8_UNORM, GL_R8, GL_RED, GL_UNSIGNED_BYTE},
-        {PEN_TEX_FORMAT_BC1_UNORM, 0, GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, GL_TEXTURE_COMPRESSED},
-        {PEN_TEX_FORMAT_BC2_UNORM, 0, GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, GL_TEXTURE_COMPRESSED},
-        {PEN_TEX_FORMAT_BC3_UNORM, 0, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_TEXTURE_COMPRESSED}
+        {PEN_TEX_FORMAT_BGRA8_UNORM, GL_RGBA8, GL_BGRA, GL_UNSIGNED_BYTE, GL_COLOR_ATTACHMENT0},
+        {PEN_TEX_FORMAT_RGBA8_UNORM, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, GL_COLOR_ATTACHMENT0},
+        {PEN_TEX_FORMAT_D24_UNORM_S8_UINT, GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, GL_DEPTH_STENCIL_ATTACHMENT},
+        {PEN_TEX_FORMAT_D32_FLOAT, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT, GL_DEPTH_ATTACHMENT},
+        {PEN_TEX_FORMAT_R32G32B32A32_FLOAT, GL_RGBA32F, GL_RGBA, GL_FLOAT, GL_COLOR_ATTACHMENT0},
+        {PEN_TEX_FORMAT_R16G16B16A16_FLOAT, GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT, GL_COLOR_ATTACHMENT0},
+        {PEN_TEX_FORMAT_R32G32_FLOAT, GL_RG32F, GL_RG, GL_FLOAT, GL_COLOR_ATTACHMENT0},
+        {PEN_TEX_FORMAT_R32_FLOAT, GL_R32F, GL_RED, GL_FLOAT, GL_COLOR_ATTACHMENT0},
+        {PEN_TEX_FORMAT_R16_FLOAT, GL_R16F, GL_RED, GL_HALF_FLOAT, GL_COLOR_ATTACHMENT0},
+        {PEN_TEX_FORMAT_R32_UINT, GL_R32UI, GL_RED_INTEGER, GL_UNSIGNED_INT, GL_COLOR_ATTACHMENT0},
+        {PEN_TEX_FORMAT_R8_UNORM, GL_R8, GL_RED, GL_UNSIGNED_BYTE, GL_COLOR_ATTACHMENT0},
+        {PEN_TEX_FORMAT_BC1_UNORM, 0, GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, GL_TEXTURE_COMPRESSED, GL_NONE},
+        {PEN_TEX_FORMAT_BC2_UNORM, 0, GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, GL_TEXTURE_COMPRESSED, GL_NONE},
+        {PEN_TEX_FORMAT_BC3_UNORM, 0, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_TEXTURE_COMPRESSED, GL_NONE}
     };
     const u32 k_num_tex_maps = sizeof(k_tex_format_map) / sizeof(k_tex_format_map[0]);
 
-    void to_gl_texture_format(u32 pen_format, u32& sized_format, u32& format, u32& type)
+    void to_gl_texture_format(u32 pen_format, u32& sized_format, u32& format, u32& type, u32& attachment)
     {
         for (s32 i = 0; i < k_num_tex_maps; ++i)
         {
@@ -491,6 +493,7 @@ namespace
                 sized_format = k_tex_format_map[i].sized_format;
                 format = k_tex_format_map[i].format;
                 type = k_tex_format_map[i].type;
+                attachment = k_tex_format_map[i].attachment;
                 return;
             }
         }
@@ -786,6 +789,7 @@ namespace pen
         GLuint handle;
         u32    max_mip_level;
         u32    target;
+        u32    attachment;
     };
 
     struct render_target
@@ -1186,13 +1190,15 @@ namespace pen
                     break;
 
                 ++lc;
+                
+                if(lc >= ((char*)params.byte_code + params.byte_code_size))
+                    break;
             }
 
             char* info_log_buf = (char*)memory_alloc(info_log_length + 1);
 
             CHECK_CALL(glGetShaderInfoLog(res.handle, info_log_length, NULL, &info_log_buf[0]));
             PEN_LOG(info_log_buf);
-            PEN_ASSERT(0);
         }
     }
 
@@ -1405,7 +1411,7 @@ namespace pen
                     break;
                 }
             }
-
+            
             if (linked_program == nullptr)
             {
                 // we need to link ahead of time to setup the transform feedback varying
@@ -1642,8 +1648,8 @@ namespace pen
 
     texture_info create_texture_internal(const texture_creation_params& tcp)
     {
-        u32 sized_format, format, type;
-        to_gl_texture_format(tcp.format, sized_format, format, type);
+        u32 sized_format, format, type, attachment;
+        to_gl_texture_format(tcp.format, sized_format, format, type, attachment);
 
         u32 mip_w = tcp.width;
         u32 mip_h = tcp.height;
@@ -1685,7 +1691,7 @@ namespace pen
             case TEXTURE_COLLECTION_ARRAY:
                 is_msaa = false;
                 num_slices = tcp.num_arrays;
-                num_faces = tcp.num_arrays;
+                num_faces = 1;
                 texture_target = is_msaa ? GL_TEXTURE_2D_MULTISAMPLE_ARRAY : GL_TEXTURE_2D_ARRAY;
                 base_texture_target = texture_target;
                 break;
@@ -1772,6 +1778,7 @@ namespace pen
         ti.handle = handle;
         ti.max_mip_level = tcp.num_mips - 1;
         ti.target = texture_target;
+        ti.attachment = attachment;
 
         if (tcp.width != tcp.height && ti.max_mip_level > 0)
         {
@@ -1846,11 +1853,6 @@ namespace pen
 
         if (use_back_buffer)
         {
-            if(depth_target == 116)
-            {
-                PEN_LOG("User BB", depth_face);
-            }
-
             g_current_state.backbuffer_bound = true;
             g_current_state.v_flip = false;
 
@@ -1921,7 +1923,8 @@ namespace pen
             if (depth_res.render_target.collection_type == pen::TEXTURE_COLLECTION_ARRAY ||
                 depth_res.render_target.collection_type == pen::TEXTURE_COLLECTION_CUBE_ARRAY)
             {
-                glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, depth_res.render_target.texture.handle,
+                u32 attachment = depth_res.render_target.texture.attachment;
+                glFramebufferTextureLayer(GL_FRAMEBUFFER, attachment, depth_res.render_target.texture.handle,
                                           0, depth_face);
             }
             else
@@ -1932,12 +1935,14 @@ namespace pen
 
                 if (msaa)
                 {
-                    CHECK_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE,
+                    u32 attachment = depth_res.render_target.texture_msaa.attachment;
+                    CHECK_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D_MULTISAMPLE,
                                                       depth_res.render_target.texture_msaa.handle, 0));
                 }
                 else
                 {
-                    CHECK_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, target,
+                    u32 attachment = depth_res.render_target.texture.attachment;
+                    CHECK_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, target,
                                                       depth_res.render_target.texture.handle, 0));
                 }
             }
@@ -2419,8 +2424,8 @@ namespace pen
         }
         else if (t == RES_TEXTURE || t == RES_RENDER_TARGET || t == RES_RENDER_TARGET_MSAA)
         {
-            u32 sized_format, format, type;
-            to_gl_texture_format(rrbp.format, sized_format, format, type);
+            u32 sized_format, format, type, attachment;
+            to_gl_texture_format(rrbp.format, sized_format, format, type, attachment);
 
             s32 target_handle = res.texture.handle;
             if (t == RES_RENDER_TARGET || t == RES_RENDER_TARGET_MSAA)

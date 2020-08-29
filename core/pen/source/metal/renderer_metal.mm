@@ -376,6 +376,9 @@ namespace // pen consts -> metal consts
                 return MTLPixelFormatR32Uint;
             case PEN_TEX_FORMAT_R8_UNORM:
                 return MTLPixelFormatR8Unorm;
+            case PEN_TEX_FORMAT_D32_FLOAT:
+                return MTLPixelFormatDepth32Float;
+                break;
 #ifndef PEN_PLATFORM_IOS
             case PEN_TEX_FORMAT_BC1_UNORM:
                 return MTLPixelFormatBC1_RGBA;
@@ -422,8 +425,16 @@ namespace // pen consts -> metal consts
 
     MTLStorageMode to_metal_storage_mode(const texture_creation_params& tcp)
     {
-        if (tcp.format == PEN_TEX_FORMAT_D24_UNORM_S8_UINT || tcp.sample_count > 1)
+        switch(tcp.format)
+        {
+            case PEN_TEX_FORMAT_D32_FLOAT:
+            case PEN_TEX_FORMAT_D24_UNORM_S8_UINT:
+                return MTLStorageModePrivate;
+        }
+        
+        if (tcp.sample_count > 1 )
             return MTLStorageModePrivate;
+            
 #ifndef PEN_PLATFORM_IOS
         return MTLStorageModeManaged;
 #else
@@ -677,6 +688,18 @@ namespace // pen consts -> metal consts
         PEN_ASSERT(0);
         return MTLStencilOperationKeep;
     }
+    
+    bool is_stencil_format(MTLPixelFormat format)
+    {
+        switch(format)
+        {
+            case MTLPixelFormatDepth24Unorm_Stencil8:
+            case MTLPixelFormatDepth32Float_Stencil8:
+                return true;
+            default:
+                return false;
+        }
+    }
 
     void bind_render_pass()
     {
@@ -757,7 +780,6 @@ namespace // pen consts -> metal consts
                 _state.pass.depthAttachment.texture = _metal_view.depthStencilTexture;
                 _state.pass.depthAttachment.loadAction = MTLLoadActionLoad;
                 _state.pass.depthAttachment.storeAction = MTLStoreActionStore;
-
                 _state.pass.stencilAttachment.texture = _metal_view.depthStencilTexture;
                 _state.pass.stencilAttachment.loadAction = MTLLoadActionLoad;
                 _state.pass.stencilAttachment.storeAction = MTLStoreActionStore;
@@ -803,13 +825,15 @@ namespace // pen consts -> metal consts
                 _state.pass.depthAttachment.texture = texture;
                 _state.pass.depthAttachment.loadAction = MTLLoadActionLoad;
                 _state.pass.depthAttachment.storeAction = MTLStoreActionStore;
-
-                _state.pass.stencilAttachment.slice = depth_slice;
-                _state.pass.stencilAttachment.texture = texture;
-                _state.pass.stencilAttachment.loadAction = MTLLoadActionLoad;
-                _state.pass.stencilAttachment.storeAction = MTLStoreActionStore;
-
                 _state.formats.depth_attachment = r.texture.fmt;
+                
+                if(is_stencil_format(r.texture.fmt))
+                {
+                    _state.pass.stencilAttachment.slice = depth_slice;
+                    _state.pass.stencilAttachment.texture = texture;
+                    _state.pass.stencilAttachment.loadAction = MTLLoadActionLoad;
+                    _state.pass.stencilAttachment.storeAction = MTLStoreActionStore;
+                }
             }
         }
 
@@ -940,7 +964,9 @@ namespace // pen consts -> metal consts
             pipeline_desc.colorAttachments[i].pixelFormat = _state.formats.colour_attachments[i];
 
         pipeline_desc.depthAttachmentPixelFormat = _state.formats.depth_attachment;
-        pipeline_desc.stencilAttachmentPixelFormat = _state.formats.depth_attachment;
+        
+        if(is_stencil_format(_state.formats.depth_attachment))
+            pipeline_desc.stencilAttachmentPixelFormat = _state.formats.depth_attachment;
 
         // apply blend state
         metal_blend_state& blend = _res_pool.get(_state.blend_state).blend;
