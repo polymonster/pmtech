@@ -6,6 +6,7 @@
 #define GLES_SILENCE_DEPRECATION
 
 #include "console.h"
+#include "os.h"
 #include "data_struct.h"
 #include "hash.h"
 #include "memory.h"
@@ -36,7 +37,7 @@
 #include <OpenGL/gl3ext.h>
 #endif
 
-#ifdef PEN_GLES3 // for portability with regular gl
+#ifdef PEN_GLES3
 // mark unsupported features null
 #define GL_FILL 0x00 // gl fill is the only polygon mode on gles3
 #define GL_LINE 0x00 // gl line (wireframe) usupported
@@ -53,17 +54,17 @@
 #define glDrawElementsBaseVertex(p, i, f, o, b) glDrawElements(p, i, f, o)
 #define glDrawElementsInstancedBaseVertex(p, i, f, o, c, b) glDrawElementsInstanced(p, i, f, o, c)
 #define glDrawBuffer
+#define PEN_GL_MSAA_SUPPORT false
 #define glTexImage2DMultisample(a1, a2, a3, a4, a5, a6) PEN_ASSERT(0)
 #define GL_BGRA GL_RGBA
 // remap unsupported stuff for rough equivalent were required for gles on ios, but not needed on web
-// #define GL_TEXTURE_2D_MULTISAMPLE GL_TEXTURE_2D
+//#define GL_TEXTURE_2D_MULTISAMPLE GL_TEXTURE_2D
 // #define GL_GEOMETRY_SHADER 0x00
 // #define GL_TEXTURE_COMPRESSED 0x00
 // #define GL_CLAMP_TO_BORDER GL_CLAMP_TO_EDGE
+#else
+#define PEN_GL_MSAA_SUPPORT true
 #endif
-
-
-extern pen::window_creation_params pen_window;
 
 // these are required for platform specific gl implementation calls.
 extern void pen_make_gl_context_current();
@@ -91,28 +92,30 @@ namespace
         switch (err)
         {
             case GL_INVALID_ENUM:
-                printf("invalid enum\n");
+                PEN_LOG("invalid enum");
                 GL_ASSERT(0);
                 break;
             case GL_INVALID_VALUE:
-                printf("gl invalid value\n");
+                PEN_LOG("gl invalid value");
                 GL_ASSERT(0);
                 break;
             case GL_INVALID_OPERATION:
-                printf("gl invalid operation\n");
+                PEN_LOG("gl invalid operation");
                 GL_ASSERT(0);
                 break;
             case GL_INVALID_FRAMEBUFFER_OPERATION:
-                printf("gl invalid frame buffer operation\n");
+                PEN_LOG("gl invalid frame buffer operation");
                 GL_ASSERT(0);
                 break;
             case GL_OUT_OF_MEMORY:
-                printf("gl out of memory\n");
+                PEN_LOG("gl out of memory");
                 GL_ASSERT(0);
                 break;
             default:
                 break;
         }
+
+        PEN_LOG("gl error");
     }
 
 #if GL_DEBUG_LEVEL > 2
@@ -809,7 +812,7 @@ namespace pen
         hash_id hash;
         GLuint  _framebuffer;
     };
-    static framebuffer* s_framebuffers;
+    static framebuffer* s_framebuffers = nullptr;
 
     enum resource_type : s32
     {
@@ -832,7 +835,7 @@ namespace pen
         u8     uniform_block_location[MAX_UNIFORM_BUFFERS];
         u8     texture_location[MAX_SHADER_TEXTURES];
     };
-    static shader_program* s_shader_programs;
+    static shader_program* s_shader_programs = nullptr;
 
     struct gl_sampler : public sampler_creation_params
     {
@@ -1020,6 +1023,11 @@ namespace pen
             memory_free(info_log_buf);
         }
 
+        if(result == GL_FALSE)
+        {
+            vs = 0; cs = 0; ps = 0;
+        }
+
         shader_program program;
         program.vs = vs;
         program.ps = ps;
@@ -1035,7 +1043,6 @@ namespace pen
         }
 
         sb_push(s_shader_programs, program);
-
         return sb_count(s_shader_programs) - 1;
     }
 
@@ -1254,6 +1261,9 @@ namespace pen
         u32                program_index = link_program_internal(0, 0, 0, &slp);
 
         shader_program* linked_program = &s_shader_programs[program_index];
+
+        if(linked_program->ps == 0 && linked_program->vs == 0)
+            return;
 
         GLuint prog = linked_program->program;
         glUseProgram(linked_program->program);
@@ -1495,6 +1505,7 @@ namespace pen
             CHECK_CALL(glBindBuffer(GL_ARRAY_BUFFER, res));
 
             u32 num_attribs = sb_count(input_res->attributes);
+
             for (u32 a = 0; a < num_attribs; ++a)
             {
                 auto& attribute = input_res->attributes[a];
@@ -1656,7 +1667,7 @@ namespace pen
         u32 mip_h = tcp.height;
         c8* mip_data = (c8*)tcp.data;
 
-        bool is_msaa = tcp.sample_count > 1;
+        bool is_msaa = PEN_GL_MSAA_SUPPORT && tcp.sample_count > 1;
 
         u32 texture_target = is_msaa ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
         u32 base_texture_target = texture_target;
@@ -1817,7 +1828,7 @@ namespace pen
         res.render_target.texture.handle = 0;
         res.render_target.collection_type = tcp.collection_type;
 
-        if (tcp.sample_count > 1)
+        if(tcp.sample_count > 1 && PEN_GL_MSAA_SUPPORT)
         {
             res.type = RES_RENDER_TARGET_MSAA;
 
@@ -2000,10 +2011,12 @@ namespace pen
         f32 w = colour_res.render_target.tcp->width;
         f32 h = colour_res.render_target.tcp->height;
 
+        s32 ww, wh;
+        pen::window_get_size(ww, wh);
         if (colour_res.render_target.tcp->width == -1)
         {
-            w = pen_window.width / h;
-            h = pen_window.height / h;
+            w = ww/ h;
+            h = wh / h;
         }
 
         if (colour_res.render_target.texture.handle == 0)
@@ -2195,7 +2208,7 @@ namespace pen
             return;
         }
 #endif
-        
+
         if (res.type == RES_TEXTURE || res.type == RES_TEXTURE_3D)
         {
             CHECK_CALL(glBindTexture(target, res.texture.handle));
@@ -2226,7 +2239,9 @@ namespace pen
                 if (max_mip > 1 && res.render_target.invalidate)
                 {
                     res.render_target.invalidate = 0;
+#ifndef PEN_GLES3
                     CHECK_CALL(glGenerateMipmap(target));
+#endif
                 }
             }
         }
@@ -2361,6 +2376,9 @@ namespace pen
     void direct::renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset)
     {
         resource_allocation& res = _res_pool[buffer_index];
+        if(res.type == 0 || data_size == 0)
+            return;
+
         CHECK_CALL(glBindBuffer(res.type, res.handle));
 
 #ifndef PEN_GLES3
