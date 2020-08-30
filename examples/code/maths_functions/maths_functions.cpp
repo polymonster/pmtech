@@ -1089,8 +1089,9 @@ void maths_test_ui(ecs_scene* scene)
     static bool animate = false;
     static bool initialise = true;
     static bool gen_tests = false;
+    bool opened = true;
 
-    ImGui::Begin("Maths Functions");
+    ImGui::Begin("Maths Functions", &opened, ImGuiWindowFlags_AlwaysAutoResize);
 
     if (ImGui::Combo("Test", &test_index, test_names, PEN_ARRAY_SIZE(test_names)))
         initialise = true;
