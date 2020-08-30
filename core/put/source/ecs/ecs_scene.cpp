@@ -934,6 +934,10 @@ namespace put
                         cur_technique = view.id_technique;
                         cur_permutation = permutation;
                     }
+                    
+                    // if we change pipeline, we need to rebind buffers
+                    cur_vb = -1;
+                    cur_ib = -1;
                 }
 
                 // update skin
