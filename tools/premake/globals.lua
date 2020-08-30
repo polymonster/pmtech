@@ -46,8 +46,8 @@ end
 function setup_from_action()
     if _ACTION == "gmake" then
     	if platform_dir == "web" then
-    		build_cmd = "-std=c++11 -s WASM=1 -s USE_PTHREADS=1 -s INITIAL_MEMORY=805306368 -s ALLOW_MEMORY_GROWTH=1"
-    		link_cmd = "-s WASM=1 -s USE_PTHREADS=1 -s FULL_ES3=1 -s MIN_WEBGL_VERSION=2 -s MAX_WEBGL_VERSION=2 -s PTHREAD_POOL_SIZE=8 -s INITIAL_MEMORY=805306368 -s ALLOW_MEMORY_GROWTH=1 --preload-file data/ --shell-file ../../../core/template/web/shell.html"
+    		build_cmd = "-g4 -std=c++11 -s WASM=1 -s USE_PTHREADS=1 -s INITIAL_MEMORY=1610612736 -s ALLOW_MEMORY_GROWTH=1 -s DEFAULT_PTHREAD_STACK_SIZE=10485760 -s STACK_OVERFLOW_CHECK=1"
+    		link_cmd = "-g4 -s WASM=1 -s USE_PTHREADS=1 -s FULL_ES3=1 -s MIN_WEBGL_VERSION=2 -s MAX_WEBGL_VERSION=2 -s PTHREAD_POOL_SIZE=8 -s INITIAL_MEMORY=1610612736 -s ALLOW_MEMORY_GROWTH=1 -s DEFAULT_PTHREAD_STACK_SIZE=10485760 -s STACK_OVERFLOW_CHECK=1 --preload-file data/ --shell-file ../../../core/template/web/shell.html --source-map-base http://localhost:8000/web/"
         elseif platform_dir == "linux" then
             build_cmd = "-std=c++11 -mfma -mavx -mavx2 -msse2"
         else -- macos
