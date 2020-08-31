@@ -526,13 +526,9 @@ def run_clean(config):
 
 # generates metadata json to put in data root dir, for doing hot loading and other re-build tasks
 def generate_pmbuild_config(config, profile):
-    print("--------------------------------------------------------------------------------")
-    print("pmbuild live reload config -----------------------------------------------------")
-    print("--------------------------------------------------------------------------------")
     if "data_dir" not in config:
         print("[error]: did not generate pmbuild_config.json for live reloading")
         return
-    print("writing " + config["data_dir"] + "/" + "pmbuild_config.json")
     wd = os.getcwd()
     pmd = util.sanitize_file_path(config["env"]["pmtech_dir"])
     md = {
