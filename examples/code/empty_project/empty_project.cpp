@@ -66,6 +66,7 @@ namespace
             pen_main_loop_exit();
         }
         
+        exit(0);
         pen_main_loop_continue();
     }
 }

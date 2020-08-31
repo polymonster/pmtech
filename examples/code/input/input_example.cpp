@@ -247,6 +247,8 @@ void* pen::user_entry(void* params)
         pen::renderer_present();
         pen::renderer_consume_cmd_buffer();
 
+        pen::renderer_test_run();
+
         // msg from the engine we want to terminate
         if (pen::semaphore_try_wait(p_thread_info->p_sem_exit))
         {

@@ -841,8 +841,8 @@ namespace pen
             return;
 
         // wait for the first swap.
-        static u32 count = 0;
-        if (count++ < 2)
+        static u32 count = _renderer_frame_index();
+        if (count++ < 3)
             return;
 
         // run once, wait for result
