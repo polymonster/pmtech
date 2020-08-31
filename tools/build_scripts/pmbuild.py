@@ -541,7 +541,9 @@ def generate_pmbuild_config(config, profile):
         "pmbuild": "cd " + wd + " && " + pmd + "pmbuild " + profile + " "
     }
     util.create_dir(config["data_dir"])
-    f = open(os.path.join(config["data_dir"], "pmbuild_config.json"), "w+")
+    np = os.path.join(config["data_dir"], "pmbuild_config.json")
+    np = os.path.normpath(np)
+    f = open(np, "w+")
     f.write(json.dumps(md, indent=4))
 
 
@@ -783,6 +785,7 @@ def pmbuild_help(config):
     print("    -pmfx (shader compilation, code-gen, meta-data gen).")
     print("    -textures (convert, compress, generate mip-maps, arrays, cubemaps).")
     print("    -copy (copy files, folders or wildcards) [src, dst].")
+    print("    -make <target> <config> <flags> (must specify this flag explictly)")
     print("\n")
 
 
@@ -931,6 +934,22 @@ def build_help(config):
     print("\n")
 
 
+def make_help(config):
+    print("make help ----------------------------------------------------------------------")
+    print("---------------------------------------------------------------------------------")
+    print("\njsn syntax: array of commands.")
+    print("make: {")
+    print(" toolchain: <make, emmake, xcodebuild, msbuild>")
+    print(" dir: <path to makefiles, xcodeproj, etc>")
+    print("]")
+    print("\ncommandline options.")
+    print("-make <target> <config> <flags>")
+    print("    target can be all, or basic_texture etc.")
+    print("config=<debug, release, etc>")
+    print("any additional flags after these will be forwarded to the build toolchain")
+    print("\n")
+
+
 def cr_help(config):
     print("cr help -------------------------------------------------------------------------")
     print("---------------------------------------------------------------------------------")
@@ -947,6 +966,11 @@ def print_duration(ts):
     millis = int((time.time() - ts) * 1000)
     print("--------------------------------------------------------------------------------")
     print("Took (" + str(millis) + "ms)")
+
+
+# stub for jobs to do nothing
+def stub(config):
+    pass
 
 
 # main function
@@ -973,6 +997,9 @@ def main():
 
     # first arg is build profile
     if call == "run":
+        if sys.argv[1] not in config_all:
+            print("[error] " + sys.argv[1] + " is not a valid pmbuild profile")
+            exit(0)
         config = config_all[sys.argv[1]]
         # load config user for user specific values (sdk version, vcvarsall.bat etc.)
         configure_user(config, sys.argv)
@@ -993,6 +1020,7 @@ def main():
     tasks["copy"] = {"run": run_copy, "help": copy_help}
     tasks["build"] = {"run": run_build, "help": build_help}
     tasks["cr"] = {"run": run_cr, "help": cr_help}
+    tasks["make"] = {"run": stub, "help": make_help}
 
     # clean is a special task, you must specify separately
     if "-clean" in sys.argv:
@@ -1027,8 +1055,9 @@ def main():
     if "-make" in sys.argv:
         i = sys.argv.index("-make") + 1
         options = []
-        if i < len(sys.argv):
+        while i < len(sys.argv):
             options.append(sys.argv[i])
+            i += 1
         if call == "help":
             pass
         else:

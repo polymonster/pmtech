@@ -1,3 +1,5 @@
+local s_project_name
+
 local function add_pmtech_links()
 	configuration "Debug"
 		links { "put", "pen" }
@@ -21,6 +23,17 @@ local function setup_osx()
 		"OpenGL.framework"
 	}
 	add_pmtech_links()
+	
+	install_name_tool = "cd ../../bin/osx && install_name_tool -add_rpath @executable_path/../../.. "
+	configuration "Debug"
+		postbuildcommands {
+			install_name_tool .. s_project_name .. "_d.app/Contents/MacOS/" .. s_project_name .. "_d"
+		}
+	configuration "Release"
+		postbuildcommands {
+			install_name_tool .. s_project_name .. ".app/Contents/MacOS/" .. s_project_name
+		}
+	configuration {}
 end
 
 local function setup_linux()
@@ -180,6 +193,7 @@ function setup_modules()
 end
 
 function create_binary(project_name, source_directory, root_directory, binary_type)
+	s_project_name = project_name
 	project ( project_name )
 		setup_product( project_name )
 		kind ( binary_type )
