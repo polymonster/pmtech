@@ -58,6 +58,7 @@
         jsn_vars: {
             data_dir: "bin/osx/data"
         },
+        data_dir: "bin/osx/data/",
 
         clean: [
             "build/osx",
@@ -108,7 +109,11 @@
 			dir: "build/osx"
         },
         
-        data_dir: "bin/osx/data/"
+		run: {
+        	cmd: "%target%.app/Contents/MacOS/%target%",
+			dir: "bin/osx",
+			ext: ".app"
+        }
     },
     
     mac-gl(mac): {
