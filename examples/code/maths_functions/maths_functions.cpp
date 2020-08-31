@@ -4,8 +4,6 @@
 using namespace put;
 using namespace ecs;
 
-put::camera main_camera;
-
 namespace pen
 {
     pen_creation_params pen_entry(int argc, char** argv)
