@@ -109,6 +109,7 @@ void blend_layers(const scene_view& scene_view)
     pen::renderer_draw_indexed(r.num_indices, 0, 0, PEN_PT_TRIANGLELIST);
 }
 
+// todo_main_loop
 void* pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
@@ -149,10 +150,6 @@ void* pen::user_entry(void* params)
         put::dev_ui::render();
 
         pen::renderer_present();
-
-        // for unit test
-        pen::renderer_test_run();
-
         pen::renderer_consume_cmd_buffer();
 
         pmfx::poll_for_changes();

@@ -841,8 +841,8 @@ namespace pen
             return;
 
         // wait for the first swap.
-        static u32 count = _renderer_frame_index();
-        if (count++ < 3)
+        u32 count = _renderer_frame_index();
+        if (count < 3)
             return;
 
         // run once, wait for result
@@ -853,7 +853,7 @@ namespace pen
         PEN_LOG("running test %s.\n", pen_window.window_title);
 
         pen::resource_read_back_params rrbp;
-        rrbp.block_size = 4; // RGBA8
+        rrbp.block_size = 4;
         rrbp.format = PEN_TEX_FORMAT_RGBA8_UNORM;
         rrbp.resource_index = PEN_BACK_BUFFER_COLOUR;
         rrbp.row_pitch = pen_window.width * rrbp.block_size;
@@ -926,10 +926,10 @@ namespace pen
 
     void renderer_present()
     {
+        pen::renderer_test_run();
+                
         renderer_cmd cmd;
-
         cmd.command_index = CMD_PRESENT;
-
         _ctx->cmd_buffer.put(cmd);
     }
 

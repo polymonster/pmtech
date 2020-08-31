@@ -1276,6 +1276,9 @@ namespace pen
             // to emulate d3d's clear uav
             if(!clear_state_index)
                 return;
+                
+            if(!is_valid(texture))
+                return;
             
             const resource& cr = _res_pool.get(clear_state_index);
             //
@@ -2168,6 +2171,12 @@ namespace pen
             if(_renderer_resized())
                 return;
                 
+            if (_state.render_encoder)
+            {
+                [_state.render_encoder endEncoding];
+                _state.render_encoder = nil;
+            }
+                
             if (_state.cmd_buffer == nil)
                 _state.cmd_buffer = [_state.command_queue commandBuffer];
 
@@ -2181,7 +2190,7 @@ namespace pen
                 u32 w = _metal_view.currentDrawable.texture.width;
                 u32 h = _metal_view.currentDrawable.texture.height;
 
-                [bce         copyFromTexture:_metal_view.currentDrawable.texture
+                        [bce copyFromTexture:_metal_view.currentDrawable.texture
                                  sourceSlice:0
                                  sourceLevel:0
                                 sourceOrigin:MTLOriginMake(0, 0, 0)
@@ -2254,6 +2263,7 @@ namespace pen
             }
 
             _renderer_commit_stretchy_dynamic_buffers();
+            
 
             // flush cmd buf and present
             [_state.cmd_buffer presentDrawable:_metal_view.currentDrawable];

@@ -270,10 +270,6 @@ namespace
 
         // present
         pen::renderer_present();
-
-        // for unit test
-        pen::renderer_test_run();
-
         pen::renderer_consume_cmd_buffer();
             
         if (pen::semaphore_try_wait(p_thread_info->p_sem_exit))

@@ -121,15 +121,13 @@ namespace
 
         pmfx::show_dev_ui();
         put::dev_ui::render();
-
+        
+        pen::renderer_test_run();
         pen::renderer_present();
         pen::renderer_consume_cmd_buffer();
 
         pmfx::poll_for_changes();
         put::poll_hot_loader();
-
-        // for unit test
-        pen::renderer_test_run();
 
         if (pen::semaphore_try_wait(p_thread_info->p_sem_exit))
         {

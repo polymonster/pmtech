@@ -27,6 +27,7 @@ namespace pen
 u32 clear_state_grey;
 u32 raster_state_cull_back;
 
+// todo_main_loop
 void renderer_state_init()
 {
     // initialise the debug render system
@@ -104,12 +105,9 @@ void* pen::user_entry(void* params)
 
         // present
         pen::renderer_present();
-
         pen::renderer_consume_cmd_buffer();
 
         put::audio_consume_command_buffer();
-
-        pen::renderer_test_run();
 
         // msg from the engine we want to terminate
         if (pen::semaphore_try_wait(p_thread_info->p_sem_exit))

@@ -134,10 +134,6 @@ namespace
 
         // present
         pen::renderer_present();
-
-        // for unit test
-        pen::renderer_test_run();
-
         pen::renderer_consume_cmd_buffer();
 
         f32 time_ms = pen::timer_elapsed_ms(frame_timer);

@@ -264,6 +264,7 @@ void show_ui()
     ImGui::End();
 }
 
+// todo_main_loop
 void* pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
@@ -355,10 +356,6 @@ void* pen::user_entry(void* params)
         put::dev_ui::render();
 
         pen::renderer_present();
-
-        // for unit test
-        pen::renderer_test_run();
-
         pen::renderer_consume_cmd_buffer();
 
         pmfx::poll_for_changes();

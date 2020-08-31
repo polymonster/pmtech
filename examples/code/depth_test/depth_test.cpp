@@ -205,11 +205,7 @@ namespace
 
         // present
         pen::renderer_present();
-
         pen::renderer_consume_cmd_buffer();
-
-        // for unit test
-        pen::renderer_test_run();
 
         if (pen::semaphore_try_wait(p_thread_info->p_sem_exit))
         {

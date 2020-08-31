@@ -65,6 +65,7 @@ void renderer_state_init()
 
 void audio_player_update();
 
+// todo main loop
 void* pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
@@ -101,12 +102,10 @@ void* pen::user_entry(void* params)
         put::dev_ui::render();
 
         pen::renderer_present();
-
         pen::renderer_consume_cmd_buffer();
 
         put::audio_consume_command_buffer();
 
-        pen::renderer_test_run();
 
         // msg from the engine we want to terminate
         if (pen::semaphore_try_wait(p_thread_info->p_sem_exit))

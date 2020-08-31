@@ -314,7 +314,6 @@ namespace pen
     void window_set_frame(const window_frame& f)
     {
 
-
     }
 
     void* window_get_primary_display_handle()

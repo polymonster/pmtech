@@ -37,6 +37,7 @@ struct draw_call
     float r, g, b, a;
 };
 
+// todo_main_loop
 void* pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
@@ -152,10 +153,6 @@ void* pen::user_entry(void* params)
 
         // present
         pen::renderer_present();
-
-        // for unit test
-        pen::renderer_test_run();
-
         pen::renderer_consume_cmd_buffer();
 
         // msg from the engine we want to terminate

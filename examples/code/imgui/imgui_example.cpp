@@ -59,6 +59,7 @@ void renderer_state_init()
     default_depth_stencil_state = pen::renderer_create_depth_stencil_state(depth_stencil_params);
 }
 
+// todo main loop
 void* pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
@@ -138,10 +139,6 @@ void* pen::user_entry(void* params)
 
         // present
         pen::renderer_present();
-
-        // for unit test
-        pen::renderer_test_run();
-
         pen::renderer_consume_cmd_buffer();
 
         // msg from the engine we want to terminate

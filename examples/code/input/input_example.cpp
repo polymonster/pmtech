@@ -36,6 +36,7 @@ struct textured_vertex
     float u, v;
 };
 
+// todo_main_loop
 void* pen::user_entry(void* params)
 {
     // unpack the params passed to the thread and signal to the engine it ok to proceed
@@ -246,8 +247,6 @@ void* pen::user_entry(void* params)
         // present
         pen::renderer_present();
         pen::renderer_consume_cmd_buffer();
-
-        pen::renderer_test_run();
 
         // msg from the engine we want to terminate
         if (pen::semaphore_try_wait(p_thread_info->p_sem_exit))

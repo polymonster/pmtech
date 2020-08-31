@@ -26,7 +26,7 @@ namespace pen
         pen::pen_creation_params p;
         p.window_width = 1280;
         p.window_height = 720;
-        p.window_title = "depth_texture";
+        p.window_title = "render_target";
         p.window_sample_count = 4;
         p.user_thread_function = user_setup;
         p.flags = pen::e_pen_create_flags::renderer;
@@ -272,10 +272,6 @@ namespace
 
         // present
         pen::renderer_present();
-
-        // for unit test
-        pen::renderer_test_run();
-
         pen::renderer_consume_cmd_buffer();
             
         if (pen::semaphore_try_wait(p_thread_info->p_sem_exit))
