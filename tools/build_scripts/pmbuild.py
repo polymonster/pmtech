@@ -564,8 +564,78 @@ def run_build(config):
             exit(0)
 
 
+# generate a cli command for building with different toolchains (make, gcc/clang, xcodebuild, msbuild)
+def make_for_toolchain(config, options):
+    toolchain = config["toolchain"]
+    exts = {
+        "make": ".make",
+        "emmake": ".make",
+        "xcodebuild": ".xcodeproj",
+        "msbuild": ".vsproj"
+    }
+    ext = exts[toolchain]
+    strip_ext = ["make", "emmake"]
+
+    # first option is always target, it can be 'all' or a single build
+    targets = []
+    if options[0] == "all":
+        for file in os.listdir(config["dir"]):
+            if file.endswith(ext):
+                targets.append(file)
+    else:
+        print(options[0])
+        if toolchain not in strip_ext:
+            targets.append(options[0] + ext)
+        else:
+            targets.append(options[0])
+
+    cmds = {
+        "make": "make",
+        "emmake": "emmake make",
+        "xcodebuild": "xcodebuild",
+        "msbuild": "msbuild"
+    }
+    cmd = cmds[toolchain]
+
+    target_options = {
+        "make": "",
+        "emmake": "",
+        "xcodebuild": "-project ",
+        "msbuild": ""
+    }
+    target_option = target_options[toolchain]
+
+    configs = {
+        "make": "config=",
+        "emmake": "config=",
+        "xcodebuild": "-configuration ",
+        "msbuild": "/p:Configuration="
+    }
+    config = ""
+
+    # parse other options
+    extra_args = ""
+    for option in options[1:]:
+        # config
+        if option.find("config=") != -1:
+            config = configs[toolchain]
+            config += option.replace("config=", "")
+        else:
+            # pass through any additional platform specific args
+            print(extra_args)
+            extra_args += option
+
+    # build final cli command
+    make_commands = []
+    for target in targets:
+        cmdline = cmd + " " + target_option + " " + target + " " + config + " " + extra_args
+        make_commands.append(cmdline)
+
+    return make_commands
+
+
 # runs make, and compiles from makefiles, vs solution or xcode project.
-def run_make(config, target):
+def run_make(config, options):
     print("--------------------------------------------------------------------------------")
     print("make ---------------------------------------------------------------------------")
     print("--------------------------------------------------------------------------------")
@@ -574,11 +644,15 @@ def run_make(config, target):
         print("[error] make config missing from config.jsn ")
         return
     make_config = config["make"]
+    make_commands = make_for_toolchain(make_config, options)
+    # cd to the build dir
     os.chdir(make_config["dir"])
-    if len(target) == 0:
-        subprocess.call(make_config["cmd"], shell=True)
+    if len(options) == 0:
+        print("[error] no make target specified")
     else:
-        subprocess.call(make_config["cmd"] + " " + target, shell=True)
+        for mc in make_commands:
+            subprocess.call("ls", shell=True)
+            subprocess.call(mc, shell=True)
     os.chdir(cwd)
 
 
@@ -588,7 +662,6 @@ def run_cr(config):
         print("cr -----------------------------------------------------------------------------")
         print("--------------------------------------------------------------------------------")
         print(config["cr"]["output"])
-
         files = config["cr"]["files"]
         free_funcs = []
         added = []
@@ -951,13 +1024,13 @@ def main():
     # make
     if "-make" in sys.argv:
         i = sys.argv.index("-make") + 1
-        target = ""
+        options = []
         if i < len(sys.argv):
-            target = sys.argv[i]
+            options.append(sys.argv[i])
         if call == "help":
             pass
         else:
-            run_make(config, target)
+            run_make(config, options)
 
     print("--------------------------------------------------------------------------------")
     print("all jobs complete --------------------------------------------------------------")

@@ -103,6 +103,11 @@
             ["../third_party/shared_libs/osx", "bin/osx"]
         ],
         
+        make: {
+        	toolchain: "xcodebuild",
+			dir: "build/osx"
+        },
+        
         data_dir: "bin/osx/data/"
     },
     
@@ -411,8 +416,8 @@
         ],
         
         make: {
-			dir: "build/web",
-			cmd: "emmake make"
+        	toolchain: "emmake",
+			dir: "build/web"
         }
     }
 }
