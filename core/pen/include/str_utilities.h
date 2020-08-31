@@ -24,6 +24,8 @@ namespace pen
     Str  str_replace_string(const Str& string, const c8* search, const c8* replace);
     Str  str_normalise_filepath(const Str& filepath);
     Str  str_basename(const Str& filepath);
+    Str  str_to_lower(const Str& string);
+    Str  str_to_upper(const Str& string);
 
     // Implementation
 
@@ -203,5 +205,33 @@ namespace pen
             return str_substr(f, last+1, f.length());
         }
         return filepath;
+    }
+    
+    inline Str str_to_lower(const Str& string)
+    {
+        Str result = "";
+        s32 len = string.length();
+        for(s32 i = 0; i < len; ++i)
+        {
+            if((string[i] >= 'a' && string[i] <= 'z') || (string[i] >= 'A' && string[i] <= 'Z'))
+                result.append(string[i] | (1<<5));
+            else
+                result.append(string[i]);
+        }
+        return result;
+    }
+    
+    inline Str str_to_upper(const Str& string)
+    {
+        Str result = "";
+        s32 len = string.length();
+        for(s32 i = 0; i < len; ++i)
+        {
+           if((string[i] >= 'a' && string[i] <= 'z') || (string[i] >= 'A' && string[i] <= 'Z'))
+                result.append(string[i] & ~(1<<5));
+            else
+                result.append(string[i]);
+        }
+        return result;
     }
 } // namespace pen
