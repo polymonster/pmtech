@@ -510,7 +510,7 @@ def run_textures(config):
                     dependencies.write_to_file_single(dep, util.change_ext(dst, ".dep"))
 
 
-# clean
+# cleans directories specified in config["clean"]
 def run_clean(config):
     print("--------------------------------------------------------------------------------")
     print("clean --------------------------------------------------------------------------")
@@ -654,6 +654,39 @@ def run_make(config, options):
         for mc in make_commands:
             subprocess.call(mc, shell=True)
     os.chdir(cwd)
+
+
+# launches and exectuable program from the commandline
+def run_exe(config, options):
+    print("--------------------------------------------------------------------------------")
+    print("run ----------------------------------------------------------------------------")
+    print("--------------------------------------------------------------------------------")
+    cwd = os.getcwd()
+    if "run" not in config.keys():
+        print("[error] run config missing from config.jsn ")
+        return
+    run_config = config["run"]
+    if len(options) == 0:
+        print("[error] no run target specified")
+        return
+    targets = []
+    if options[0] == "all":
+        for file in os.listdir(run_config["dir"]):
+            if file.endswith(run_config["ext"]):
+                targets.append(os.path.splitext(file)[0])
+    else:
+        targets.append(options[0])
+    # switch to bin dir
+    os.chdir(run_config["dir"])
+    for t in targets:
+        cmd = run_config["cmd"]
+        cmd = cmd.replace("%target%", t)
+        for o in options:
+            cmd += " " + o
+        subprocess.call(cmd, shell=True)
+    os.chdir(cwd)
+
+
 
 
 # generates function pointer bindings to call pmtech from a live reloaded dll.
@@ -1061,6 +1094,18 @@ def main():
             pass
         else:
             run_make(config, options)
+
+    if "-run" in sys.argv:
+        i = sys.argv.index("-run") + 1
+        options = []
+        while i < len(sys.argv):
+            options.append(sys.argv[i])
+            i += 1
+        if call == "help":
+            pass
+        else:
+            run_exe(config, options)
+
 
     print("--------------------------------------------------------------------------------")
     print("all jobs complete --------------------------------------------------------------")
