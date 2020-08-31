@@ -279,8 +279,6 @@ void* pen::user_entry(void* params)
     // load shaders now requiring dependency on put to make loading simpler.
     u32 shader_toy_pmfx = pmfx::load_shader("shader_toy");
 
-    u32 test_texture = put::load_texture("data/textures/test_normal.dds");
-
     while (1)
     {
         pen::renderer_new_frame();
@@ -375,7 +373,6 @@ void* pen::user_entry(void* params)
 
     // clean up mem here
     pmfx::release_shader(shader_toy_pmfx);
-    pen::renderer_release_texture(test_texture);
 
     s_render_handles.release();
 

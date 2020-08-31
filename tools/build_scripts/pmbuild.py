@@ -526,13 +526,9 @@ def run_clean(config):
 
 # generates metadata json to put in data root dir, for doing hot loading and other re-build tasks
 def generate_pmbuild_config(config, profile):
-    print("--------------------------------------------------------------------------------")
-    print("pmbuild live reload config -----------------------------------------------------")
-    print("--------------------------------------------------------------------------------")
     if "data_dir" not in config:
         print("[error]: did not generate pmbuild_config.json for live reloading")
         return
-    print("writing " + config["data_dir"] + "/" + "pmbuild_config.json")
     wd = os.getcwd()
     pmd = util.sanitize_file_path(config["env"]["pmtech_dir"])
     md = {
@@ -785,7 +781,10 @@ def pmbuild_help(config):
     print("    -pmfx (shader compilation, code-gen, meta-data gen).")
     print("    -textures (convert, compress, generate mip-maps, arrays, cubemaps).")
     print("    -copy (copy files, folders or wildcards) [src, dst].")
-    print("    -make <target> <config> <flags> (must specify this flag explictly)")
+    print("    -build (build code) [src, dst]. deprecated use make instead.")
+    print("\nexplicit tasks (must specify flag, not included in -all):")
+    print("    -make (runs make, xcodebuild, msbuild) <target> <config> <flags>")
+    print("    -run (runs exe) <target> <options>")
     print("\n")
 
 
