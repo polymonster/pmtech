@@ -24,6 +24,7 @@ local function setup_osx()
 	}
 	add_pmtech_links()
 	
+	if _ACTION == "xcode4" then
 	install_name_tool = "cd ../../bin/osx && install_name_tool -add_rpath @executable_path/../../.. "
 	configuration "Debug"
 		postbuildcommands {
@@ -34,6 +35,7 @@ local function setup_osx()
 			install_name_tool .. s_project_name .. ".app/Contents/MacOS/" .. s_project_name
 		}
 	configuration {}
+	end
 end
 
 local function setup_linux()
