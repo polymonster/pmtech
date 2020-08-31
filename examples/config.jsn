@@ -263,6 +263,11 @@
             ["../third_party/shared_libs/win32", "bin/win32"],
             ["../assets/fonts", "bin/win32/data/fonts"]
         ],
+		
+		make: {
+        	toolchain: "msbuild",
+			dir: "build/win32"
+        },
         
         data_dir: "bin/win32/data/"
     },

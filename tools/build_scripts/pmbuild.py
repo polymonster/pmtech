@@ -545,12 +545,12 @@ def generate_pmbuild_config(config, profile):
     f.write(json.dumps(md, indent=4))
 
 
-# gets a commandline to setup vcvars for msbuil from command line
+# gets a commandline to setup vcvars for msbuild from command line
 def setup_vcvars(config):
     return "pushd \ && cd \"" + config["vcvarsall_dir"] + "\" && vcvarsall.bat x86_amd64 && popd"
 
 
-# run build commands
+# run build commands.. build is now deprecated in favour of 'make'
 def run_build(config):
     print("--------------------------------------------------------------------------------")
     print("build --------------------------------------------------------------------------")
@@ -565,13 +565,14 @@ def run_build(config):
 
 
 # generate a cli command for building with different toolchains (make, gcc/clang, xcodebuild, msbuild)
-def make_for_toolchain(config, options):
-    toolchain = config["toolchain"]
+def make_for_toolchain(jsn_config, options):
+    make_config = jsn_config["make"]
+    toolchain = make_config["toolchain"]
     exts = {
         "make": ".make",
         "emmake": ".make",
         "xcodebuild": ".xcodeproj",
-        "msbuild": ".vsproj"
+        "msbuild": ".vcxproj"
     }
     ext = exts[toolchain]
     strip_ext = ["make", "emmake"]
@@ -579,15 +580,19 @@ def make_for_toolchain(config, options):
     # first option is always target, it can be 'all' or a single build
     targets = []
     if options[0] == "all":
-        for file in os.listdir(config["dir"]):
+        for file in os.listdir(make_config["dir"]):
             if file.endswith(ext):
                 targets.append(file)
     else:
-        print(options[0])
         if toolchain not in strip_ext:
             targets.append(options[0] + ext)
         else:
             targets.append(options[0])
+
+    # msbuild needs vcvars all
+    setup_env = ""
+    if toolchain == "msbuild":
+        setup_env = setup_vcvars(jsn_config) + " &&"
 
     cmds = {
         "make": "make",
@@ -622,13 +627,12 @@ def make_for_toolchain(config, options):
             config += option.replace("config=", "")
         else:
             # pass through any additional platform specific args
-            print(extra_args)
             extra_args += option
 
     # build final cli command
     make_commands = []
     for target in targets:
-        cmdline = cmd + " " + target_option + " " + target + " " + config + " " + extra_args
+        cmdline = setup_env + " " + cmd + " " + target_option + " " + target + " " + config + " " + extra_args
         make_commands.append(cmdline)
 
     return make_commands
@@ -643,15 +647,13 @@ def run_make(config, options):
     if "make" not in config.keys():
         print("[error] make config missing from config.jsn ")
         return
-    make_config = config["make"]
-    make_commands = make_for_toolchain(make_config, options)
+    make_commands = make_for_toolchain(config, options)
     # cd to the build dir
-    os.chdir(make_config["dir"])
+    os.chdir(config["make"]["dir"])
     if len(options) == 0:
         print("[error] no make target specified")
     else:
         for mc in make_commands:
-            subprocess.call("ls", shell=True)
             subprocess.call(mc, shell=True)
     os.chdir(cwd)
 

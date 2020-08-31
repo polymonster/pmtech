@@ -11,6 +11,14 @@
 
 #include "str/Str.h"
 
+#if PEN_PLATFORM_WIN32
+#define PEN_OS_SEP '\\'
+#define PEN_OS_RSEP '/'
+#else
+#define PEN_OS_SEP '/'
+#define PEN_OS_RSEP '\\'
+#endif
+
 namespace pen
 {
     // Function decl
@@ -23,6 +31,7 @@ namespace pen
     Str  str_replace_chars(const Str& string, const c8 search, const c8 replace);
     Str  str_replace_string(const Str& string, const c8* search, const c8* replace);
     Str  str_normalise_filepath(const Str& filepath);
+    Str  str_sanitize_filepath(const Str& filepath);
     Str  str_basename(const Str& filepath);
     Str  str_to_lower(const Str& string);
     Str  str_to_upper(const Str& string);
@@ -171,6 +180,11 @@ namespace pen
         delete[] end_buf;
 
         return result;
+    }
+
+    inline Str str_sanitize_filepath(const Str& filepath)
+    {
+        return str_replace_chars(filepath, PEN_OS_RSEP, PEN_OS_SEP);
     }
 
     inline Str str_normalise_filepath(const Str& filepath)

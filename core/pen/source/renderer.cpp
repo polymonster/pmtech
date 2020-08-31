@@ -754,20 +754,30 @@ namespace pen
         Str renderer_name = renderer_get_info().api_version;
         renderer_name.append("_");
         renderer_name.append(renderer_get_info().renderer);
+        renderer_name = str_replace_chars(renderer_name, '.', '_');
         renderer_name = str_replace_chars(renderer_name, ' ', '_');
+        renderer_name = str_replace_chars(renderer_name, '/', '_');
+        renderer_name = str_replace_chars(renderer_name, '\\', '_');
         renderer_name = str_to_lower(renderer_name);
         
+        Str root_dir = "../../test_results";
+        root_dir = str_sanitize_filepath(root_dir);
+
         Str output_dir = "";
         output_dir.appendf("../../test_results/%s/", renderer_name.c_str());
-        
+        output_dir = str_sanitize_filepath(output_dir);
+
         Str mk_output_dir = "mkdir ";
         mk_output_dir.append(output_dir.c_str());
 
-        PEN_SYSTEM("mkdir ../../test_results");
+        Str mk_root_dir = "mkdir ";
+        mk_root_dir.append(root_dir.c_str());
+
+        PEN_SYSTEM(mk_root_dir.c_str());
         PEN_SYSTEM(mk_output_dir.c_str());
         
         // make test results
-        u32   diffs = 0;
+        u32 diffs = 0;
         if (pen_err == PEN_ERR_OK)
         {
             // file exists do image compare
@@ -806,6 +816,7 @@ namespace pen
         ofs.close();
 
         // cya!
+        exit(0);
         pen::os_terminate(0);
     }
 
