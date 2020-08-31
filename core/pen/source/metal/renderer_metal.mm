@@ -1095,8 +1095,8 @@ namespace pen
         static renderer_info info;
         
         @autoreleasepool {
-            const Str device_name = (const char*)[_metal_device.name UTF8String];
-            const Str version_name = get_metal_version_string();
+            static const Str device_name = (const char*)[_metal_device.name UTF8String];
+            static const Str version_name = get_metal_version_string();
 
             info.api_version = version_name.c_str();
             info.shader_version = "metal";
@@ -2167,9 +2167,35 @@ namespace pen
             if (_state.cmd_buffer == nil)
                 _state.cmd_buffer = [_state.command_queue commandBuffer];
 
-            if (rrbp.resource_index == 0)
+            if (rrbp.resource_index == PEN_BACK_BUFFER_COLOUR)
             {
-                // todo backbuffer
+                id<MTLBuffer> stage =
+                [_metal_device newBufferWithLength:(rrbp.data_size) options:MTLResourceOptionCPUCacheModeDefault];
+
+                id<MTLBlitCommandEncoder> bce = [_state.cmd_buffer blitCommandEncoder];
+
+                u32 w = _metal_view.currentDrawable.texture.width;
+                u32 h = _metal_view.currentDrawable.texture.height;
+
+                [bce         copyFromTexture:_metal_view.currentDrawable.texture
+                                 sourceSlice:0
+                                 sourceLevel:0
+                                sourceOrigin:MTLOriginMake(0, 0, 0)
+                                  sourceSize:MTLSizeMake(w, h, 1)
+                                    toBuffer:stage
+                           destinationOffset:0
+                      destinationBytesPerRow:rrbp.row_pitch
+                    destinationBytesPerImage:rrbp.depth_pitch];
+
+                [bce endEncoding];
+
+                [_state.cmd_buffer commit];
+                [_state.cmd_buffer waitUntilCompleted];
+                _state.cmd_buffer = nil;
+
+                rrbp.call_back_function([stage contents], rrbp.row_pitch, rrbp.depth_pitch, rrbp.block_size);
+                
+                [stage release];
             }
             else
             {

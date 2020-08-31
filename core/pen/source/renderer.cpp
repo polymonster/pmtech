@@ -742,18 +742,32 @@ namespace pen
     static bool s_run_test = false;
     static void renderer_test_read_complete(void* data, u32 row_pitch, u32 depth_pitch, u32 block_size)
     {
+        // get reference image
         Str reference_filename = "data/textures/";
         reference_filename.appendf("%s%s", pen::window_get_title(), ".dds");
 
         void* file_data = nullptr;
         u32   file_data_size = 0;
         u32   pen_err = pen::filesystem_read_file_to_buffer(reference_filename.c_str(), &file_data, file_data_size);
+        
+        // platform specific output dir
+        Str renderer_name = renderer_get_info().api_version;
+        renderer_name.append("_");
+        renderer_name.append(renderer_get_info().renderer);
+        renderer_name = str_replace_chars(renderer_name, ' ', '_');
+        renderer_name = str_to_lower(renderer_name);
+        
+        Str output_dir = "";
+        output_dir.appendf("../../test_results/%s/", renderer_name.c_str());
+        
+        Str mk_output_dir = "mkdir ";
+        mk_output_dir.append(output_dir.c_str());
 
-        u32 diffs = 0;
-
-        // make test results
         PEN_SYSTEM("mkdir ../../test_results");
-
+        PEN_SYSTEM(mk_output_dir.c_str());
+        
+        // make test results
+        u32   diffs = 0;
         if (pen_err == PEN_ERR_OK)
         {
             // file exists do image compare
@@ -772,30 +786,26 @@ namespace pen
                     ++diffs;
             }
 
-            Str output_file = "";
-            output_file.appendf("../../test_results/%s.png", pen_window.window_title);
-            stbi_write_png(output_file.c_str(), pen_window.width, pen_window.height, 4, ref_image, row_pitch);
-
             free(file_data);
         }
-        else
-        {
-            // save reference image
-            Str output_file = "";
-            output_file.appendf("../../test_reference/%s.png", pen_window.window_title);
-            stbi_write_png(output_file.c_str(), pen_window.width, pen_window.height, 4, data, row_pitch);
-        }
+        
+        // write result image
+        Str output_file = "";
+        output_file.appendf("%s/%s.jpg", output_dir.c_str(), pen_window.window_title);
+        stbi_write_jpg(output_file.c_str(), pen_window.width, pen_window.height, 4, data, 50);
 
+        // write result stats
         f32 percentage = 100.0f / ((f32)depth_pitch / (f32)diffs);
         PEN_LOG("test complete %i diffs: out of %i (%2.3f%%)\n", diffs, depth_pitch, percentage);
 
         Str output_results_file = "";
-        output_results_file.appendf("../../test_results/%s.txt", pen_window.window_title);
+        output_results_file.appendf("%s/%s.txt", output_dir.c_str(), pen_window.window_title);
 
         std::ofstream ofs(output_results_file.c_str());
         ofs << diffs << "/" << depth_pitch << ", " << percentage;
         ofs.close();
 
+        // cya!
         pen::os_terminate(0);
     }
 

@@ -53,5 +53,5 @@ namespace pen
     };
 
     extern pen_creation_params pen_entry(int argc, char** argv);
-    extern void* user_entry(void* params);
+    void*                      user_entry(void* params);
 } // namespace pen
