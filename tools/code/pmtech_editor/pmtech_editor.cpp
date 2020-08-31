@@ -35,8 +35,6 @@
 using namespace put;
 using namespace put::ecs;
 
-void* pen::user_entry(void* params);
-
 namespace pen
 {
     pen_creation_params pen_entry(int argc, char** argv)

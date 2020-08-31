@@ -12,7 +12,7 @@ namespace pen
         p.window_height = 720;
         p.window_title = "cull_sort";
         p.window_sample_count = 4;
-        p.user_thread_function = user_entry;
+        p.user_thread_function = user_setup;
         p.max_renderer_commands = 1<<22;
         p.flags = pen::e_pen_create_flags::renderer;
         return p;

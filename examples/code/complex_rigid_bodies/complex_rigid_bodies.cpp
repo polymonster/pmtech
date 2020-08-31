@@ -3,7 +3,6 @@
 using namespace put;
 using namespace ecs;
 
-void* pen::user_entry(void* params);
 namespace pen
 {
     pen_creation_params pen_entry(int argc, char** argv)
@@ -13,7 +12,7 @@ namespace pen
         p.window_height = 720;
         p.window_title = "complex_rigid_bodies";
         p.window_sample_count = 4;
-        p.user_thread_function = user_entry;
+        p.user_thread_function = user_setup;
         p.flags = pen::e_pen_create_flags::renderer;
         return p;
     }

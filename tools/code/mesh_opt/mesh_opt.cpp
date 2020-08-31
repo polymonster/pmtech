@@ -10,8 +10,6 @@ using namespace pen;
 using namespace put;
 using namespace ecs;
 
-void* pen::user_entry(void* params);
-
 static Str* s_args = nullptr;
 
 namespace pen
