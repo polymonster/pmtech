@@ -681,12 +681,11 @@ def run_exe(config, options):
     for t in targets:
         cmd = run_config["cmd"]
         cmd = cmd.replace("%target%", t)
-        for o in options:
+        for o in options[1:]:
             cmd += " " + o
+        print(cmd)
         subprocess.call(cmd, shell=True)
     os.chdir(cwd)
-
-
 
 
 # generates function pointer bindings to call pmtech from a live reloaded dll.

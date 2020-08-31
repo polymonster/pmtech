@@ -1094,24 +1094,28 @@ namespace pen
     {
         static renderer_info info;
         
-        @autoreleasepool {
-            static const Str device_name = (const char*)[_metal_device.name UTF8String];
-            static const Str version_name = get_metal_version_string();
+        static bool init = true;
+        if(init) {
+            @autoreleasepool {
+                static const Str device_name = (const char*)[_metal_device.name UTF8String];
+                static const Str version_name = get_metal_version_string();
 
-            info.api_version = version_name.c_str();
-            info.shader_version = "metal";
-            info.renderer_cmd = "-renderer metal";
-            info.renderer = device_name.c_str();
-            info.vendor = device_name.c_str();
+                info.api_version = version_name.c_str();
+                info.shader_version = "metal";
+                info.renderer_cmd = "-renderer metal";
+                info.renderer = device_name.c_str();
+                info.vendor = device_name.c_str();
 
-            // macos caps.. todo ios
-            info.caps |= PEN_CAPS_TEX_FORMAT_BC1;
-            info.caps |= PEN_CAPS_TEX_FORMAT_BC2;
-            info.caps |= PEN_CAPS_TEX_FORMAT_BC3;
-            info.caps |= PEN_CAPS_TEX_FORMAT_BC4;
-            info.caps |= PEN_CAPS_TEX_FORMAT_BC5;
-            info.caps |= PEN_CAPS_COMPUTE;
-            info.caps |= PEN_CAPS_TEXTURE_CUBE_ARRAY;
+                // macos caps.. todo ios
+                info.caps |= PEN_CAPS_TEX_FORMAT_BC1;
+                info.caps |= PEN_CAPS_TEX_FORMAT_BC2;
+                info.caps |= PEN_CAPS_TEX_FORMAT_BC3;
+                info.caps |= PEN_CAPS_TEX_FORMAT_BC4;
+                info.caps |= PEN_CAPS_TEX_FORMAT_BC5;
+                info.caps |= PEN_CAPS_COMPUTE;
+                info.caps |= PEN_CAPS_TEXTURE_CUBE_ARRAY;
+                info.caps |= PEN_CAPS_BACKBUFFER_BGRA;
+            }
         }
 
         return info;
@@ -2170,7 +2174,7 @@ namespace pen
             if (rrbp.resource_index == PEN_BACK_BUFFER_COLOUR)
             {
                 id<MTLBuffer> stage =
-                [_metal_device newBufferWithLength:(rrbp.data_size) options:MTLResourceOptionCPUCacheModeDefault];
+                    [_metal_device newBufferWithLength:(rrbp.data_size) options:MTLResourceOptionCPUCacheModeDefault];
 
                 id<MTLBlitCommandEncoder> bce = [_state.cmd_buffer blitCommandEncoder];
 

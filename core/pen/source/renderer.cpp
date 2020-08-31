@@ -751,7 +751,8 @@ namespace pen
         u32   pen_err = pen::filesystem_read_file_to_buffer(reference_filename.c_str(), &file_data, file_data_size);
         
         // platform specific output dir
-        Str renderer_name = renderer_get_info().api_version;
+        auto& ri = renderer_get_info();
+        Str renderer_name = ri.api_version;
         renderer_name.append("_");
         renderer_name.append(renderer_get_info().renderer);
         renderer_name = str_replace_chars(renderer_name, '.', '_');
@@ -775,6 +776,14 @@ namespace pen
 
         PEN_SYSTEM(mk_root_dir.c_str());
         PEN_SYSTEM(mk_output_dir.c_str());
+
+        // swizzle bgra to rgba
+        if(ri.caps & PEN_CAPS_BACKBUFFER_BGRA)
+        {
+            u8* swizz = (u8*)data;
+            for (u32 i = 0; i < depth_pitch; i += 4)
+                swap(swizz[i], swizz[i+2]);
+        }
         
         // make test results
         u32 diffs = 0;
@@ -833,7 +842,7 @@ namespace pen
 
         // wait for the first swap.
         static u32 count = 0;
-        if (count++ < 1)
+        if (count++ < 2)
             return;
 
         // run once, wait for result

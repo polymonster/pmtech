@@ -128,6 +128,9 @@ namespace
         pmfx::poll_for_changes();
         put::poll_hot_loader();
 
+        // for unit test
+        pen::renderer_test_run();
+
         if (pen::semaphore_try_wait(p_thread_info->p_sem_exit))
         {
             user_shutdown();

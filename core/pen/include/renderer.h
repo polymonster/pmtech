@@ -25,6 +25,7 @@
 #define PEN_CAPS_GPU_TIMER (1 << 2)
 #define PEN_CAPS_COMPUTE (1 << 3)
 #define PEN_CAPS_TEXTURE_CUBE_ARRAY (1 << 4)
+#define PEN_CAPS_BACKBUFFER_BGRA (1 << 5)
 
 // Texture format caps
 #define PEN_CAPS_TEX_FORMAT_BC1 (1 << 31)
@@ -48,8 +49,7 @@ namespace pen
         const c8* renderer;
         const c8* vendor;
         const c8* renderer_cmd;
-
-        u64 caps;
+        u64       caps;
     };
 
     enum special_values
