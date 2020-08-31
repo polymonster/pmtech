@@ -781,7 +781,10 @@ def pmbuild_help(config):
     print("    -pmfx (shader compilation, code-gen, meta-data gen).")
     print("    -textures (convert, compress, generate mip-maps, arrays, cubemaps).")
     print("    -copy (copy files, folders or wildcards) [src, dst].")
-    print("    -make <target> <config> <flags> (must specify this flag explictly)")
+    print("    -build (build code) [src, dst]. deprecated use make instead.")
+    print("\nexplicit tasks (must specify flag, not included in -all):")
+    print("    -make (runs make, xcodebuild, msbuild) <target> <config> <flags>")
+    print("    -run (runs exe) <target> <options>")
     print("\n")
 
 
