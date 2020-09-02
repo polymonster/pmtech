@@ -26,6 +26,7 @@
 #define PEN_CAPS_COMPUTE (1 << 3)
 #define PEN_CAPS_TEXTURE_CUBE_ARRAY (1 << 4)
 #define PEN_CAPS_BACKBUFFER_BGRA (1 << 5)
+#define PEN_CAPS_VUP (1 << 6) // opengl viewport y-up
 
 // Texture format caps
 #define PEN_CAPS_TEX_FORMAT_BC1 (1 << 31)

@@ -1139,6 +1139,7 @@ namespace pen
     void direct::renderer_present()
     {
         pen_gl_swap_buffers();
+        _renderer_end_frame();
         
         g_bound_state = { };
 
@@ -2407,14 +2408,14 @@ namespace pen
         resource_allocation& res = _res_pool[rrbp.resource_index];
 
         GLuint t = res.type;
-        if (rrbp.resource_index == 0)
+        if (rrbp.resource_index == PEN_BACK_BUFFER_COLOUR)
         {
+            // special case reading the backbuffer
             u32 w = rrbp.row_pitch / rrbp.block_size;
             u32 h = rrbp.depth_pitch / rrbp.row_pitch;
-
-            // special case reading the backbuffer
-            CHECK_CALL(glBindFramebuffer(GL_READ_FRAMEBUFFER, 0));
-
+            
+#if 0
+            // this path is old, i cant remember if it even worked.
             static u32 resolve_buffer = -1;
             if (resolve_buffer == -1)
             {
@@ -2428,6 +2429,7 @@ namespace pen
             }
 
             CHECK_CALL(glBindFramebuffer(GL_DRAW_FRAMEBUFFER, resolve_buffer));
+            CHECK_CALL(glBindFramebuffer(GL_READ_FRAMEBUFFER, 0));
             CHECK_CALL(glBlitFramebuffer(0, 0, w, h, 0, 0, w, h, GL_COLOR_BUFFER_BIT, GL_LINEAR));
 
             CHECK_CALL(glBindFramebuffer(GL_FRAMEBUFFER, resolve_buffer));
@@ -2440,6 +2442,28 @@ namespace pen
             memory_free(data);
 
             CHECK_CALL(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+#else
+            // this path is test working on macos
+            u8* data = (u8*)memory_alloc(rrbp.data_size);
+            
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            CHECK_CALL(glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, data));
+            
+            // flip y coords
+            u8* flipped = (u8*)memory_alloc(rrbp.data_size);
+            u8* flip_pos = flipped + rrbp.depth_pitch - rrbp.row_pitch;
+            u8* data_pos = data;
+            for(u32 i = 0; i < rrbp.depth_pitch; i += rrbp.row_pitch)
+            {
+                memcpy(flip_pos, data_pos, rrbp.row_pitch);
+                flip_pos -= rrbp.row_pitch;
+                data_pos += rrbp.row_pitch;
+            }
+
+            rrbp.call_back_function(flipped, rrbp.row_pitch, rrbp.depth_pitch, rrbp.block_size);
+
+            memory_free(data);
+#endif
         }
         else if (t == RES_TEXTURE || t == RES_RENDER_TARGET || t == RES_RENDER_TARGET_MSAA)
         {
@@ -2657,14 +2681,11 @@ namespace pen
 
         s_renderer_info.renderer_cmd = "-renderer opengl";
 
-#ifdef PEN_GLES3
         // gles base fbo is not 0
         glGetIntegerv(GL_FRAMEBUFFER_BINDING, &s_backbuffer_fbo);
-        // gles doesnt have caps yet, anything in caps is unsupported
-#else
-        // opengl binds 0 as default
-        s_backbuffer_fbo = 0;
-
+        s_renderer_info.caps |= PEN_CAPS_VUP;
+        
+#ifndef PEN_GLES3
         // opengl caps
         s_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC1;
         s_renderer_info.caps |= PEN_CAPS_TEX_FORMAT_BC2;

@@ -784,7 +784,7 @@ namespace pen
             for (u32 i = 0; i < depth_pitch; i += 4)
                 swap(swizz[i], swizz[i+2]);
         }
-        
+                
         // make test results
         u32 diffs = 0;
         if (pen_err == PEN_ERR_OK)
