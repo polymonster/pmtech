@@ -223,7 +223,7 @@ if "-i" in sys.argv and "-o" in sys.argv:
             helpers.build_dir = sys.argv[a+1]
             # create models dir
             if not os.path.exists(helpers.build_dir):
-                os.makedirs(helpers.build_dir)
+                os.makedirs(helpers.build_dir, exist_ok=True)
 
 
 mesh_opt = ""

@@ -645,6 +645,9 @@ def run_make(config, options):
     if "make" not in config.keys():
         print("[error] make config missing from config.jsn ")
         return
+    if len(options) == 0:
+        print("[error] no make target specified")
+        return
     make_commands = make_for_toolchain(config, options)
     # cd to the build dir
     os.chdir(config["make"]["dir"])
