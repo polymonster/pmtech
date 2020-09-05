@@ -573,16 +573,19 @@ def make_for_toolchain(jsn_config, options):
         "msbuild": ".vcxproj"
     }
     ext = exts[toolchain]
-    strip_ext = ["make", "emmake"]
+    strip_ext_toolchain = ["make", "emmake"]
+    strip_exts = [".make"]
 
     # first option is always target, it can be 'all' or a single build
     targets = []
     if options[0] == "all":
         for file in os.listdir(make_config["dir"]):
             if file.endswith(ext):
+                if ext in strip_exts:
+                    file = os.path.splitext(file)[0]
                 targets.append(file)
     else:
-        if toolchain not in strip_ext:
+        if toolchain not in strip_ext_toolchain:
             targets.append(options[0] + ext)
         else:
             targets.append(options[0])

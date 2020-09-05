@@ -143,6 +143,19 @@ local function setup_android()
 end
 
 local function setup_web()
+	file = io.open(("assets/file_lists/" .. s_project_name .. "_data.txt"), "r")
+	if file then
+		io.input(file)
+		file_list = io.read()
+		linkoptions { file_list }
+		io.close(file)
+	end
+	
+	configuration "Debug"
+		buildoptions { "-g4" }
+		linkoptions { "-g4", "--source-map-base http://localhost:8000/web/"}
+	
+	configuration {}
 	targetextension (".html")
 	links { "pen", "put" }
 end

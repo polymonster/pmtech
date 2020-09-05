@@ -1,0 +1,1 @@
+-s --preload-file data/configs/ -s --preload-file data/fonts/ -s --preload-file data/pmfx/ -s --preload-file data/scene/ -s --preload-file data/textures/zombie.dds 
