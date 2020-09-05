@@ -2545,8 +2545,8 @@ namespace put
 
             for (auto& s : s_script_files)
                 load_script_internal(s.c_str());
-        }
 
+        }
         void pmfx_config_hotload(std::vector<hash_id>& dirty)
         {
             pmfx_config_hotload();
