@@ -26,6 +26,11 @@ namespace pen
     {
         return (u32)(ticks / WINDOWS_TICK - SEC_TO_UNIX_EPOCH);
     }
+    
+    bool filesystem_file_exists(const c8* filename)
+    {
+        return PathFileExistsA(filename);
+    }
 
     pen_error filesystem_getmtime(const c8* filename, u32& mtime_out)
     {

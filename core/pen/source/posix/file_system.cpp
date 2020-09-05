@@ -9,6 +9,7 @@
 #include <sys/mount.h>
 #include <sys/param.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include "file_system.h"
 #include "memory.h"
@@ -29,11 +30,48 @@
 #define get_mtime(s) s.st_mtimespec.tv_sec
 #endif
 
+#define ENABLE_WRITE_FILE_DEPENDENCIES 0
+#if ENABLE_WRITE_FILE_DEPENDENCIES
+#define WRITE_FILE_DEPENDENCIES(fn) write_file_dependency(fn)
+#else
+#define WRITE_FILE_DEPENDENCIES(fn)
+#endif
+
+namespace
+{
+    // utility function to output file dependencies use by a pmtech app to trim data sizes in wasm .data bundles
+    void write_file_dependency(const c8* filename)
+    {
+        Str fn = "";
+        fn.append(pen::window_get_title());
+        fn.append("_data.txt");
+        static bool s_first = true;
+        if(s_first)
+        {
+            if(pen::filesystem_file_exists(fn.c_str()))
+                remove(fn.c_str());
+                        
+            s_first = false;
+        }
+        FILE* p_file = fopen(fn.c_str(), "a");
+        fwrite(filename, strlen(filename), 1, p_file);
+        fwrite("\n", 1, 1, p_file);
+        fclose(p_file);
+    }
+}
+
 namespace pen
 {
-    pen_error filesystem_read_file_to_buffer(const char* filename, void** p_buffer, u32& buffer_size)
+    bool filesystem_file_exists(const c8* filename)
     {
-        const char* resource_name = os_path_for_resource(filename);
+        return access(filename, F_OK );
+    }
+    
+    pen_error filesystem_read_file_to_buffer(const c8* filename, void** p_buffer, u32& buffer_size)
+    {
+        WRITE_FILE_DEPENDENCIES(filename);
+        
+        const c8* resource_name = os_path_for_resource(filename);
 
         *p_buffer = NULL;
 
@@ -71,14 +109,24 @@ namespace pen
         memcpy(results.name, volumes_name, len);
         results.name[len] = '\0';
 
-#ifndef NO_MOUNT_POINTS
+#ifdef NO_MOUNT_POINTS
+        // Stick them at "/" instead
+        results.children = (fs_tree_node*)pen::memory_alloc(sizeof(fs_tree_node));
+        results.num_children = 1;
+
+        results.children[0].name = (c8*)pen::memory_alloc(2);
+        results.children[0].name[0] = '/';
+        results.children[0].name[1] = '\0';
+        results.children[0].children = nullptr;
+        results.children[0].num_children = 0;
+#else
         struct statfs* mounts;
-        int            num_mounts = getmntinfo(&mounts, MNT_WAIT);
+        s32            num_mounts = getmntinfo(&mounts, MNT_WAIT);
 
         results.children = (fs_tree_node*)pen::memory_alloc(sizeof(fs_tree_node) * num_mounts);
         results.num_children = num_mounts;
 
-        for (int i = 0; i < num_mounts; ++i)
+        for (s32 i = 0; i < num_mounts; ++i)
         {
             len = pen::string_length(mounts[i].f_mntonname);
             results.children[i].name = (c8*)pen::memory_alloc(len + 1);
@@ -89,16 +137,6 @@ namespace pen
             results.children[i].children = nullptr;
             results.children[i].num_children = 0;
         }
-#else
-        // Stick them at "/" instead
-        results.children = (fs_tree_node*)pen::memory_alloc(sizeof(fs_tree_node));
-        results.num_children = 1;
-
-        results.children[0].name = (c8*)pen::memory_alloc(2);
-        results.children[0].name[0] = '/';
-        results.children[0].name[1] = '\0';
-        results.children[0].children = nullptr;
-        results.children[0].num_children = 0;
 #endif
         return PEN_ERR_OK;
     }
@@ -131,7 +169,7 @@ namespace pen
         {
             for (s32 i = 0; i < num_wildcards; ++i)
             {
-                const char* ft = va_arg(wildcards_consume, const char*);
+                const c8* ft = va_arg(wildcards_consume, const c8*);
 
                 if (fnmatch(ft, ent->d_name, 0) == 0)
                 {
@@ -165,9 +203,9 @@ namespace pen
         struct dirent* ent;
 
         u32 num_items = 0;
-        if ((dir = opendir(directory)) != NULL)
+        if ((dir = opendir(directory)) != nullptr)
         {
-            while ((ent = readdir(dir)) != NULL)
+            while ((ent = readdir(dir)) != nullptr)
             {
                 if (match_file(ent, num_wildcards, wildcards))
                 {
@@ -202,9 +240,9 @@ namespace pen
         results.num_children = num_items;
 
         u32 i = 0;
-        if ((dir = opendir(directory)) != NULL)
+        if ((dir = opendir(directory)) != nullptr)
         {
-            while ((ent = readdir(dir)) != NULL)
+            while ((ent = readdir(dir)) != nullptr)
             {
                 if (match_file(ent, num_wildcards, wildcards))
                 {
@@ -293,3 +331,5 @@ namespace pen
         return 0;
     }
 } // namespace pen
+
+
