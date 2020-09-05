@@ -774,8 +774,11 @@ namespace pen
         Str mk_root_dir = "mkdir ";
         mk_root_dir.append(root_dir.c_str());
 
-        PEN_SYSTEM(mk_root_dir.c_str());
-        PEN_SYSTEM(mk_output_dir.c_str());
+        if(!pen::filesystem_file_exists(mk_root_dir.c_str()))
+            PEN_SYSTEM(mk_root_dir.c_str());
+
+        if (!pen::filesystem_file_exists(mk_output_dir.c_str()))
+            PEN_SYSTEM(mk_output_dir.c_str());
 
         // swizzle bgra to rgba
         if(ri.caps & PEN_CAPS_BACKBUFFER_BGRA)
@@ -825,7 +828,6 @@ namespace pen
         ofs.close();
 
         // cya!
-        exit(0);
         pen::os_terminate(0);
     }
 
