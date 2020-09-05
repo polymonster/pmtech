@@ -127,6 +127,7 @@ namespace physics
 
     void physics_update(f32 dt);
     void physics_initialise();
+    void physics_shutdown();
 
     btRigidBody* create_rb_internal(physics_entity& entity, const rigid_body_params& params, u32 ghost,
                                     btCollisionShape* p_existing_shape = NULL);

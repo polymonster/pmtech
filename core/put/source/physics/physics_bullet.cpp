@@ -42,7 +42,7 @@ namespace physics
 
     readable_data                        g_readable_data;
     static bullet_systems                s_bullet_systems;
-    static pen::res_pool<physics_entity> s_entities;
+    pen::res_pool<physics_entity>        s_entities;
 
     btTransform get_bttransform(const vec3f& p, const quat& q)
     {
@@ -257,6 +257,24 @@ namespace physics
                                         s_bullet_systems.collision_config);
 
         s_bullet_systems.dynamics_world->setGravity(btVector3(0, -10, 0));
+    }
+    
+    void physics_shutdown()
+    {
+        // disconnect constraints from rbs because bullet asserts in rb destructor
+        size_t count = s_entities._capacity;
+        for(u32 i = 0; i < count; ++i)
+        {
+            if(s_entities.get(i).type == e_entity_type::ENTITY_CONSTRAINT)
+                release_entity_internal(i);
+        }
+        
+        // release everything else
+        for(u32 i = 0; i < count; ++i)
+        {
+            if(s_entities.get(i).type != 0)
+                release_entity_internal(i);
+        }
     }
 
     void update_output_matrices()
@@ -840,8 +858,6 @@ namespace physics
 
     void attach_rb_to_compound_internal(const attach_to_compound_params& params)
     {
-        // todo test this function still works after refactor
-
         physics_entity& compound = s_entities.get(params.compound);
         physics_entity& pe = s_entities.get(params.rb);
 
@@ -906,8 +922,6 @@ namespace physics
                 }
 
                 pe.type = ENTITY_COMPOUND_RIGID_BODY_CHILD;
-
-                //s_bullet_systems.dynamics_world->removeRigidBody(compound.rb.rigid_body);
                 s_bullet_systems.dynamics_world->removeRigidBody(rb.rigid_body);
             }
         }

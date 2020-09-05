@@ -31,6 +31,7 @@
 #endif
 
 #define ENABLE_WRITE_FILE_DEPENDENCIES 0
+
 #if ENABLE_WRITE_FILE_DEPENDENCIES
 #define WRITE_FILE_DEPENDENCIES(fn) write_file_dependency(fn)
 #else
@@ -64,7 +65,10 @@ namespace pen
 {
     bool filesystem_file_exists(const c8* filename)
     {
-        return access(filename, F_OK );
+        const c8* resource_name = os_path_for_resource(filename);
+        FILE* p_file = fopen(resource_name, "r");
+        fclose(p_file);
+        return p_file != nullptr;
     }
     
     pen_error filesystem_read_file_to_buffer(const c8* filename, void** p_buffer, u32& buffer_size)

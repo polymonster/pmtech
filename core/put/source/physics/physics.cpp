@@ -194,7 +194,6 @@ namespace physics
 
         physics_initialise();
 
-        // space for 8192 commands
         s_cmd_buffer.create(8192);
 
         for (;;)
@@ -212,12 +211,14 @@ namespace physics
             }
 
             if (pen::semaphore_try_wait(p_physics_job_thread_info->p_sem_exit))
+            {
+                physics_shutdown();
                 break;
+            }
         }
 
         pen::semaphore_post(p_physics_job_thread_info->p_sem_continue, 1);
         pen::semaphore_post(p_physics_job_thread_info->p_sem_terminated, 1);
-
         return PEN_THREAD_OK;
     }
 
