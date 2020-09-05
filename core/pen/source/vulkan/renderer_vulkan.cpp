@@ -468,36 +468,46 @@ namespace
     };
     static_assert(e_shd::compute == PEN_SHADER_TYPE_CS, "mismatched shader types");
 
+    struct read_back_request
+    {
+        VkBuffer                    buf;
+        VkDeviceMemory              mem;
+        resource_read_back_params   params;
+        u32                         frame;
+    };
+
     struct pen_state
     {
         // hashes
-        hash_id hpass = 0;
-        hash_id hpipeline = 0;
-        hash_id hdescriptors = 0;
+        hash_id                          hpass = 0;
+        hash_id                          hpipeline = 0;
+        hash_id                          hdescriptors = 0;
         // hash for pass
-        u32* colour_attachments = nullptr;
-        u32  depth_attachment = 0;
-        u32  colour_slice;
-        u32  depth_slice;
-        u32  clear_state;
-        u32  depth_stencil_state;
+        u32*                             colour_attachments = nullptr;
+        u32                              depth_attachment = 0;
+        u32                              colour_slice;
+        u32                              depth_slice;
+        u32                              clear_state;
+        u32                              depth_stencil_state;
         // hash for pipeline
-        u32          shader[e_shd::count]; // vs, fs, gs, so, cs
-        viewport     vp;
-        rect         sr;
-        u32          vertex_buffer;
-        u32          index_buffer;
-        u32          input_layout;
-        u32          raster;
-        u32          blend = -1;
-        VkRenderPass pass;
-        pen_binding* bindings = nullptr;
+        u32                              shader[e_shd::count]; // vs, fs, gs, so, cs
+        viewport                         vp;
+        rect                             sr;
+        u32                              vertex_buffer;
+        u32                              index_buffer;
+        u32                              input_layout;
+        u32                              raster;
+        u32                              blend = -1;
+        VkRenderPass                     pass;
+        pen_binding*                     bindings = nullptr;
         // vulkan cached state
         VkPipelineLayout                 pipeline_layout;
         VkVertexInputBindingDescription* vertex_input_bindings = nullptr;
         VkDescriptorSetLayout            descriptor_set_layout;
         u32                              descriptor_set_index;
         u32                              pipeline_index = -1;
+        // resource readbacks must wait until cmd buf completion
+        read_back_request*               read_back_requests = nullptr;
     };
     pen_state _state;
 
@@ -991,6 +1001,14 @@ namespace
             src_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
             dst_stage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
         }
+        else if (old_layout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR && new_layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+        {
+            barrier.srcAccessMask = 0;
+            barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+            src_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            dst_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        }
         else
         {
             // unsupported transition
@@ -1045,6 +1063,7 @@ namespace
         swap_chain_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
         swap_chain_info.clipped = VK_TRUE;
         swap_chain_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        swap_chain_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
         CHECK_CALL(vkCreateSwapchainKHR(_ctx.device, &swap_chain_info, nullptr, &_ctx.swap_chain));
 
@@ -1200,6 +1219,9 @@ namespace
 
     void end_render_pass()
     {
+        if (!_state.pass)
+            return;
+
         // end current pass
         vkCmdEndRenderPass(_ctx.cmd_bufs[_ctx.ii]);
         _state.pass = nullptr;
@@ -1827,10 +1849,19 @@ namespace pen
     static renderer_info s_renderer_info;
     const renderer_info& renderer_get_info()
     {
-        s_renderer_info.caps = PEN_CAPS_TEXTURE_MULTISAMPLE | PEN_CAPS_DEPTH_CLAMP | PEN_CAPS_GPU_TIMER | PEN_CAPS_COMPUTE |
-                               PEN_CAPS_TEX_FORMAT_BC1 | PEN_CAPS_TEX_FORMAT_BC2 | PEN_CAPS_TEX_FORMAT_BC3 |
-                               PEN_CAPS_TEX_FORMAT_BC4 | PEN_CAPS_TEX_FORMAT_BC5;
+        s_renderer_info.caps = PEN_CAPS_TEXTURE_MULTISAMPLE | 
+            PEN_CAPS_DEPTH_CLAMP | 
+            PEN_CAPS_GPU_TIMER | 
+            PEN_CAPS_COMPUTE |
+            PEN_CAPS_TEX_FORMAT_BC1 | 
+            PEN_CAPS_TEX_FORMAT_BC2 | 
+            PEN_CAPS_TEX_FORMAT_BC3 |
+            PEN_CAPS_TEX_FORMAT_BC4 | 
+            PEN_CAPS_TEX_FORMAT_BC5 |
+            PEN_CAPS_BACKBUFFER_BGRA 
+            ;
 
+        s_renderer_info.renderer = "Vulkan";
         return s_renderer_info;
     }
 
@@ -2543,6 +2574,81 @@ namespace pen
 
         void renderer_read_back_resource(const resource_read_back_params& rrbp)
         {
+            end_render_pass();
+
+            if (rrbp.resource_index == PEN_BACK_BUFFER_COLOUR)
+            {
+                u32 w = rrbp.row_pitch / rrbp.block_size;
+                u32 h = rrbp.depth_pitch / rrbp.row_pitch;
+
+                VkBufferImageCopy region = {};
+                region.bufferOffset = 0;
+                region.bufferRowLength = w;
+                region.bufferImageHeight = h;
+                region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                region.imageSubresource.mipLevel = 0;
+                region.imageSubresource.baseArrayLayer = 0;
+                region.imageSubresource.layerCount = 1;
+                region.imageOffset = { 0, 0, 0 };
+                region.imageExtent = {
+                    w,
+                    h,
+                    1
+                };
+
+                read_back_request rr;
+                rr.frame = _renderer_frame_index();
+                rr.params = rrbp;
+                u32 next = (_ctx.ii + 1) % NBB;
+
+                _create_buffer_internal(VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                    nullptr, rrbp.depth_pitch, rr.buf, rr.mem);
+
+                _transition_image(_ctx.swap_chain_images[next], VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+
+                vkCmdCopyImageToBuffer(_ctx.cmd_bufs[_ctx.ii], _ctx.swap_chain_images[next],
+                    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, rr.buf, 1, &region);
+
+                sb_push(_state.read_back_requests, rr);
+            }
+        }
+
+        void _process_readback_requests()
+        {
+            read_back_request* incomplete_requests = nullptr;
+
+            u32 num_rr = sb_count(_state.read_back_requests);
+            for (u32 i = 0; i < num_rr; ++i)
+            {
+                auto& rr = _state.read_back_requests[i];
+                if (_renderer_frame_index() - rr.frame < NBB)
+                {
+                    sb_push(incomplete_requests, rr);
+                    continue;
+                }
+
+                u32 data_size = rr.params.depth_pitch;
+
+                void* map_data;
+                void* out_data = pen::memory_alloc(data_size);
+                vkMapMemory(_ctx.device, rr.mem, 0, data_size, 0, &map_data);
+                memcpy(out_data, map_data, (size_t)data_size);
+                vkUnmapMemory(_ctx.device, rr.mem);
+
+                //clean up vk mem
+                vkDestroyBuffer(_ctx.device, rr.buf, nullptr);
+                vkFreeMemory(_ctx.device, rr.mem, nullptr);
+
+                rr.params.call_back_function(out_data, rr.params.row_pitch, rr.params.depth_pitch, rr.params.block_size);
+
+                pen::memory_free(out_data);
+            }
+
+            // any incomplete requests we keep in the queue for the next frame
+            sb_free(_state.read_back_requests);
+            _state.read_back_requests = incomplete_requests;
         }
 
         void renderer_present()
@@ -2604,7 +2710,10 @@ namespace pen
                 next_frame = 0;
             }
 
+            _renderer_end_frame();
             new_frame(next_frame);
+
+            _process_readback_requests();
         }
 
         void renderer_push_perf_marker(const c8* name)
