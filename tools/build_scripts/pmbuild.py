@@ -971,7 +971,7 @@ def build_help(config):
 def make_help(config):
     print("make help ----------------------------------------------------------------------")
     print("---------------------------------------------------------------------------------")
-    print("\njsn syntax: array of commands.")
+    print("\njsn syntax:")
     print("make: {")
     print(" toolchain: <make, emmake, xcodebuild, msbuild>")
     print(" dir: <path to makefiles, xcodeproj, etc>")
@@ -981,6 +981,25 @@ def make_help(config):
     print("    target can be all, or basic_texture etc.")
     print("config=<debug, release, etc>")
     print("any additional flags after these will be forwarded to the build toolchain")
+    print("\n")
+
+
+def run_help(config):
+    print("run help ------------------------------------------------------------------------")
+    print("---------------------------------------------------------------------------------")
+    print("\njsn syntax:")
+    print("run: {")
+    print(" cmd: <template of command to run>")
+    print("     use %target% as a var to replace target names in bin dir, ie %target%.exe ")
+    print(" dir: <path to bin directory>")
+    print(" ext: <.exe, .app, ''>")
+    print("]")
+    print("\ncommandline options.")
+    print("-run <target> <flags>")
+    print("    target can be all or basic_texture etc, name is passed as %target% in run:{ cmd: }")
+    print("    debug binaries with have _d suffix so use basic_texture_d to run the debug exe")
+    print("any additional flags after these will be forwarded to the executable")
+    print("    use -test to run the example tests")
     print("\n")
 
 
@@ -1045,7 +1064,7 @@ def main():
     # tasks are executed in order they are declared here
     tasks = collections.OrderedDict()
     tasks["vs_version"] = {"run": run_vs_version, "help": vs_version_help}
-    tasks["libs"] = {"run": run_libs, "help": libs_help}
+    tasks["libs"] = {"run": run_libs, "help": libs_help, "exclusive": True}
     tasks["premake"] = {"run": run_premake, "help": premake_help}
     tasks["pmfx"] = {"run": run_pmfx, "help": pmfx_help}
     tasks["models"] = {"run": run_models, "help": models_help}
@@ -1054,7 +1073,8 @@ def main():
     tasks["copy"] = {"run": run_copy, "help": copy_help}
     tasks["build"] = {"run": run_build, "help": build_help}
     tasks["cr"] = {"run": run_cr, "help": cr_help}
-    tasks["make"] = {"run": stub, "help": make_help}
+    tasks["make"] = {"run": stub, "help": make_help, "exclusive": True}
+    tasks["run"] = {"run": stub, "help": run_help, "exclusive": True}
 
     # clean is a special task, you must specify separately
     if "-clean" in sys.argv:
@@ -1070,22 +1090,23 @@ def main():
                 continue
         ts = time.time()
         run = False
-        # check flags to include or exclude jobs
-        if "-all" in sys.argv and "-n" + key not in sys.argv:
+        # check flags to include or exclude jobs, pmbuild <profile> with no args is equivalent to passing -all
+        if ("-all" in sys.argv or len(sys.argv) == 2) and "-n" + key not in sys.argv:
+            if "exclusive" in tasks[key].keys():
+                if tasks[key]["exclusive"]:
+                    continue
             run = True
         elif len(sys.argv) != 2 and "-" + key in sys.argv:
-            run = True
-        elif len(sys.argv) == 2:
             run = True
         # run job
         if run:
             tasks.get(key, lambda config: '')[call](config)
             print_duration(ts)
 
-    # finally metadata for rebuilding and hot reloading
+    # metadata for rebuilding and hot reloading
     generate_pmbuild_config(config, sys.argv[1])
 
-    # make
+    # make and run need to forward args
     if "-make" in sys.argv:
         i = sys.argv.index("-make") + 1
         options = []
@@ -1107,7 +1128,6 @@ def main():
             pass
         else:
             run_exe(config, options)
-
 
     print("--------------------------------------------------------------------------------")
     print("all jobs complete --------------------------------------------------------------")
