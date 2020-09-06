@@ -544,7 +544,7 @@ namespace pen
 
     void renderer_consume_cmd_buffer()
     {
-#if PEN_SINGLE_THREADED
+#if !PEN_SINGLE_THREADED
         while (_ctx->wait > 0)
             pen::thread_sleep_ms(1);
 
