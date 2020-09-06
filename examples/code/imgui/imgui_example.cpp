@@ -1,13 +1,23 @@
 #include "debug_render.h"
 #include "dev_ui.h"
-#include "file_system.h"
 #include "loader.h"
-#include "memory.h"
+
 #include "pen.h"
+#include "memory.h"
+#include "file_system.h"
 #include "pen_string.h"
 #include "renderer.h"
 #include "threads.h"
 #include "timer.h"
+
+using namespace pen;
+
+namespace
+{
+    void*   user_setup(void* params);
+    loop_t  user_update();
+    void    user_shutdown();
+}
 
 namespace pen
 {
@@ -16,62 +26,71 @@ namespace pen
         pen::pen_creation_params p;
         p.window_width = 1280;
         p.window_height = 720;
-        p.window_title = "imgui_example";
+        p.window_title = "imgui";
         p.window_sample_count = 4;
-        p.user_thread_function = user_entry;
+        p.user_thread_function = user_setup;
         p.flags = pen::e_pen_create_flags::renderer;
         return p;
     }
 } // namespace pen
 
-u32 clear_state_grey;
-u32 raster_state_cull_back;
-
-u32 default_depth_stencil_state;
-
-void renderer_state_init()
+namespace
 {
-    static pen::clear_state cs = {
-        0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 0x00, PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
-    };
+    pen::job_thread_params* job_params;
+    pen::job*               p_thread_info;
 
-    clear_state_grey = pen::renderer_create_clear_state(cs);
+    u32 clear_state_grey;
+    u32 raster_state_cull_back;
+    u32 default_depth_stencil_state;
 
-    // raster state
-    pen::rasteriser_state_creation_params rcp;
-    pen::memory_zero(&rcp, sizeof(pen::rasteriser_state_creation_params));
-    rcp.fill_mode = PEN_FILL_SOLID;
-    rcp.cull_mode = PEN_CULL_BACK;
-    rcp.depth_bias_clamp = 0.0f;
-    rcp.sloped_scale_depth_bias = 0.0f;
-    rcp.depth_clip_enable = true;
+    void* user_setup(void* params)
+    {
+        // unpack the params passed to the thread and signal to the engine it ok to proceed
+        job_params = (pen::job_thread_params*)params;
+        p_thread_info = job_params->job_info;
+        pen::semaphore_post(p_thread_info->p_sem_continue, 1);
 
-    raster_state_cull_back = pen::renderer_create_rasterizer_state(rcp);
+        static pen::clear_state cs = {
+            0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 0x00, PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
+        };
 
-    // depth stencil state
-    pen::depth_stencil_creation_params depth_stencil_params = {0};
+        clear_state_grey = pen::renderer_create_clear_state(cs);
 
-    // Depth test parameters
-    depth_stencil_params.depth_enable = true;
-    depth_stencil_params.depth_write_mask = 1;
-    depth_stencil_params.depth_func = PEN_COMPARISON_ALWAYS;
+        // raster state
+        pen::rasteriser_state_creation_params rcp;
+        pen::memory_zero(&rcp, sizeof(pen::rasteriser_state_creation_params));
+        rcp.fill_mode = PEN_FILL_SOLID;
+        rcp.cull_mode = PEN_CULL_BACK;
+        rcp.depth_bias_clamp = 0.0f;
+        rcp.sloped_scale_depth_bias = 0.0f;
+        rcp.depth_clip_enable = true;
 
-    default_depth_stencil_state = pen::renderer_create_depth_stencil_state(depth_stencil_params);
-}
+        raster_state_cull_back = pen::renderer_create_rasterizer_state(rcp);
 
-// todo main loop
-void* pen::user_entry(void* params)
-{
-    // unpack the params passed to the thread and signal to the engine it ok to proceed
-    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
-    pen::job*               p_thread_info = job_params->job_info;
-    pen::semaphore_post(p_thread_info->p_sem_continue, 1);
+        // depth stencil state
+        pen::depth_stencil_creation_params depth_stencil_params = {0};
 
-    // init systems
-    renderer_state_init();
-    put::dev_ui::init();
+        // Depth test parameters
+        depth_stencil_params.depth_enable = true;
+        depth_stencil_params.depth_write_mask = 1;
+        depth_stencil_params.depth_func = PEN_COMPARISON_ALWAYS;
 
-    while (1)
+        default_depth_stencil_state = pen::renderer_create_depth_stencil_state(depth_stencil_params);
+
+        // init systems
+        put::dev_ui::init();
+
+        // we call user_update once per frame
+        pen_main_loop(user_update);    
+        return PEN_THREAD_OK;
+    }
+
+    void user_shutdown()
+    {
+        pen::semaphore_post(p_thread_info->p_sem_terminated, 1);
+    }
+
+    loop_t user_update()
     {
         pen::renderer_new_frame();
 
@@ -123,10 +142,10 @@ void* pen::user_entry(void* params)
         if (show_test_window)
         {
             ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiSetCond_FirstUseEver); // Normally user code doesn't need/want to
-                                                                                 // call it because positions are saved in
-                                                                                 // .ini file anyway. Here we just want to
-                                                                                 // make the demo initial state a bit more
-                                                                                 // friendly!
+                                                                                // call it because positions are saved in
+                                                                                // .ini file anyway. Here we just want to
+                                                                                // make the demo initial state a bit more
+                                                                                // friendly!
             ImGui::ShowTestWindow(&show_test_window);
         }
 
@@ -144,14 +163,11 @@ void* pen::user_entry(void* params)
         // msg from the engine we want to terminate
         if (pen::semaphore_try_wait(p_thread_info->p_sem_exit))
         {
-            break;
+            user_shutdown();
+            pen_main_loop_exit();
         }
+
+        pen_main_loop_continue();
+        
     }
-
-    // clean up mem here
-
-    // signal to the engine the thread has finished
-    pen::semaphore_post(p_thread_info->p_sem_terminated, 1);
-
-    return PEN_THREAD_OK;
 }
