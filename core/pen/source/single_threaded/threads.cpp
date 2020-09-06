@@ -91,8 +91,6 @@ namespace pen
 
     bool semaphore_try_wait(pen::semaphore* p_semaphore)
     {
-        PEN_LOG("%p : %i", p_semaphore, p_semaphore->count);
-
         if(p_semaphore->count != 0)
             return true;
         return false;

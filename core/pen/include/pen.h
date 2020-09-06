@@ -6,12 +6,11 @@
 
 #include "types.h"
 
-#ifdef PEN_PLATFORM_WEB
-#include <emscripten.h>
-#define pen_main_loop(function) emscripten_set_main_loop(&function, 60, 1)
-#define pen_main_loop_exit() emscripten_cancel_main_loop();
-#define pen_main_loop_continue()
-typedef void loop_t;
+#if PEN_SINGLE_THREADED
+#define pen_main_loop(function) pen::jobs_create_single_thread_update(function);
+#define pen_main_loop_exit()
+#define pen_main_loop_continue() return true
+typedef bool loop_t;
 #else
 #define pen_main_loop(function) for(;;) { if(!function()) break; }
 #define pen_main_loop_exit() return false;

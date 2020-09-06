@@ -17,6 +17,7 @@ namespace pen
 
     typedef void (*completion_callback)(void*);
     typedef void* (*dispatch_thread)(void*);
+    typedef loop_t (*single_thread_update_func)();
 
     // A Job is just a thread with some user data, a callback
     // and some syncronisation semaphores
@@ -67,6 +68,8 @@ namespace pen
     bool    jobs_terminate_all();
     job*    jobs_create_job(dispatch_thread thread_func, u32 stack_size, void* user_data, thread_start_flags flags,
                             completion_callback cb = nullptr);
+    void    jobs_create_single_thread_update(single_thread_update_func func);
+    void    jobs_run_single_threaded();
 
     // Mutex
     mutex* mutex_create();
