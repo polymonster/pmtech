@@ -62,7 +62,6 @@ namespace pen
         pthread_mutexattr_t mta;
 
         err = pthread_mutexattr_init(&mta);
-
         err = pthread_mutex_init(&new_mutex->handle, &mta);
 
         return new_mutex;
@@ -71,7 +70,6 @@ namespace pen
     void mutex_destroy(mutex* p_mutex)
     {
         pthread_mutex_destroy(&p_mutex->handle);
-
         pen::memory_free(p_mutex);
     }
 
@@ -83,7 +81,6 @@ namespace pen
     u32 mutex_try_lock(mutex* p_mutex)
     {
         int err = pthread_mutex_trylock(&p_mutex->handle);
-
         return err == 0;
     }
 
