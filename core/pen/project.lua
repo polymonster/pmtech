@@ -42,7 +42,12 @@ local function setup_web()
     files 
     {  
         "source/posix/**.cpp",
-        "source/linux/timer.cpp"
+        "source/linux/timer.cpp",
+        "source/single_threaded/**.cpp"
+    }
+    excludes
+    {
+    	"source/posix/threads.cpp"
     }
 end
 
