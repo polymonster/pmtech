@@ -26,6 +26,12 @@ pen::resolve_resources             g_resolve_resources;
 
 using namespace pen;
 
+#if PEN_SINGLE_THREADED
+#define add_cmd(cmd) exec_cmd(cmd)
+#else
+#define add_cmd(cmd) _ctx->cmd_buffer.put(cmd)
+#endif
+
 namespace
 {
     enum commands : u32
@@ -250,7 +256,7 @@ namespace
         ring_buffer<renderer_cmd> cmd_buffer;
         ring_buffer<renderer_cmd> release_cmd_buffer;
         u32*                      free_slots = nullptr;
-        std::atomic<s32>          wait;
+        a_s32                     wait;
     };
     static fe_render_ctx* _ctx;
     static render_ctx     _main_ctx;
@@ -272,6 +278,8 @@ namespace pen
     
     void exec_cmd(const renderer_cmd& cmd)
     {
+        //PEN_LOG("CMD %i", cmd.command_index);
+        
         switch (cmd.command_index)
         {
             case CMD_NEW_FRAME:
@@ -536,6 +544,7 @@ namespace pen
 
     void renderer_consume_cmd_buffer()
     {
+#if PEN_SINGLE_THREADED
         while (_ctx->wait > 0)
             pen::thread_sleep_ms(1);
 
@@ -547,8 +556,8 @@ namespace pen
 
         // sync on window surface
         direct::renderer_sync();
-
         _ctx->wait++;
+#endif
     }
     
     void new_frame_internal()
@@ -893,37 +902,32 @@ namespace pen
     {
         renderer_cmd cmd;
         cmd.command_index = CMD_NEW_FRAME;
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
 
     void renderer_update_queries()
     {
         renderer_cmd cmd;
-
         cmd.command_index = CMD_UPDATE_QUERIES;
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
 
     void renderer_clear(u32 clear_state_index, u32 array_index)
     {
         renderer_cmd cmd;
-
         cmd.command_index = CMD_CLEAR;
         cmd.clear.clear_state = clear_state_index;
         cmd.clear.array_index = array_index;
-
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
 
     void renderer_clear_texture(u32 clear_state_index, u32 texture)
     {
         renderer_cmd cmd;
-
         cmd.command_index = CMD_CLEAR_TEXTURE;
         cmd.clear.clear_state = clear_state_index;
         cmd.clear.texture_index = texture;
-
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
 
     void renderer_present()
@@ -932,7 +936,7 @@ namespace pen
                 
         renderer_cmd cmd;
         cmd.command_index = CMD_PRESENT;
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
 
     u32 renderer_load_shader(const shader_load_params& params)
@@ -964,7 +968,7 @@ namespace pen
         u32 resource_slot = slot_resources_get_next(&_ctx->renderer_slot_resources);
         cmd.resource_slot = resource_slot;
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
         
         return resource_slot;
     }
@@ -1014,7 +1018,7 @@ namespace pen
         u32 resource_slot = slot_resources_get_next(&_ctx->renderer_slot_resources);
         cmd.resource_slot = resource_slot;
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
 
         return resource_slot;
     }
@@ -1028,7 +1032,7 @@ namespace pen
         cmd.set_shader.shader_index = shader_index;
         cmd.set_shader.shader_type = shader_type;
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
 
     u32 renderer_create_input_layout(const input_layout_creation_params& params)
@@ -1054,7 +1058,7 @@ namespace pen
         u32 resource_slot = slot_resources_get_next(&_ctx->renderer_slot_resources);
         cmd.resource_slot = resource_slot;
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
 
         return resource_slot;
     }
@@ -1065,7 +1069,7 @@ namespace pen
         cmd.command_index = CMD_SET_INPUT_LAYOUT;
         cmd.command_data_index = layout_index;
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
 
     u32 renderer_create_buffer(const buffer_creation_params& params)
@@ -1086,7 +1090,7 @@ namespace pen
         u32 resource_slot = slot_resources_get_next(&_ctx->renderer_slot_resources);
         cmd.resource_slot = resource_slot;
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
 
         return resource_slot;
     }
@@ -1117,7 +1121,7 @@ namespace pen
             cmd.set_vertex_buffer.offsets[i] = offsets[i];
         }
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
 
     void renderer_set_index_buffer(u32 buffer_index, u32 format, u32 offset)
@@ -1129,7 +1133,7 @@ namespace pen
         cmd.set_index_buffer.format = format;
         cmd.set_index_buffer.offset = offset;
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
 
     void renderer_draw(u32 vertex_count, u32 start_vertex, u32 primitive_topology)
@@ -1141,7 +1145,7 @@ namespace pen
         cmd.draw.start_vertex = start_vertex;
         cmd.draw.primitive_topology = primitive_topology;
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
 
     void renderer_draw_indexed(u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology)
@@ -1154,7 +1158,7 @@ namespace pen
         cmd.draw_indexed.base_vertex = base_vertex;
         cmd.draw_indexed.primitive_topology = primitive_topology;
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
 
     void renderer_draw_indexed_instanced(u32 instance_count, u32 start_instance, u32 index_count, u32 start_index,
@@ -1170,7 +1174,7 @@ namespace pen
         cmd.draw_indexed_instanced.base_vertex = base_vertex;
         cmd.draw_indexed_instanced.primitive_topology = primitive_topology;
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
 
     u32 renderer_create_render_target(const texture_creation_params& tcp)
@@ -1190,7 +1194,7 @@ namespace pen
         u32 resource_slot = slot_resources_get_next(&_ctx->renderer_slot_resources);
         cmd.resource_slot = resource_slot;
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
 
         return resource_slot;
     }
@@ -1229,7 +1233,7 @@ namespace pen
         u32 resource_slot = slot_resources_get_next(&_ctx->renderer_slot_resources);
         cmd.resource_slot = resource_slot;
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
 
         return resource_slot;
     }
@@ -1245,7 +1249,7 @@ namespace pen
         u32 resource_slot = slot_resources_get_next(&_ctx->renderer_slot_resources);
         cmd.resource_slot = resource_slot;
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
 
         return resource_slot;
     }
@@ -1261,7 +1265,7 @@ namespace pen
         cmd.set_texture.resource_slot = resource_slot;
         cmd.set_texture.bind_flags = bind_flags;
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
 
     u32 renderer_create_rasterizer_state(const rasteriser_state_creation_params& rscp)
@@ -1275,7 +1279,7 @@ namespace pen
         u32 resource_slot = slot_resources_get_next(&_ctx->renderer_slot_resources);
         cmd.resource_slot = resource_slot;
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
 
         return resource_slot;
     }
@@ -1288,7 +1292,7 @@ namespace pen
 
         cmd.command_data_index = rasterizer_state_index;
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
 
     void renderer_set_viewport(const viewport& vp)
@@ -1296,7 +1300,7 @@ namespace pen
         renderer_cmd cmd;
         cmd.command_index = CMD_SET_VIEWPORT;
         memcpy(&cmd.set_viewport, (void*)&vp, sizeof(viewport));
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
 
     void renderer_set_scissor_rect(const rect& r)
@@ -1304,7 +1308,7 @@ namespace pen
         renderer_cmd cmd;
         cmd.command_index = CMD_SET_SCISSOR_RECT;
         memcpy(&cmd.set_rect, (void*)&r, sizeof(rect));
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
 
     void renderer_set_viewport_ratio(const viewport& vp)
@@ -1312,7 +1316,7 @@ namespace pen
         renderer_cmd cmd;
         cmd.command_index = CMD_SET_VIEWPORT_RATIO;
         memcpy(&cmd.set_viewport, (void*)&vp, sizeof(viewport));
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
 
     void renderer_set_scissor_rect_ratio(const rect& r)
@@ -1320,7 +1324,7 @@ namespace pen
         renderer_cmd cmd;
         cmd.command_index = CMD_SET_SCISSOR_RECT_RATIO;
         memcpy(&cmd.set_rect, (void*)&r, sizeof(rect));
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
 
     u32 renderer_create_blend_state(const blend_creation_params& bcp)
@@ -1341,7 +1345,7 @@ namespace pen
         u32 resource_slot = slot_resources_get_next(&_ctx->renderer_slot_resources);
         cmd.resource_slot = resource_slot;
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
 
         return resource_slot;
     }
@@ -1354,7 +1358,7 @@ namespace pen
 
         cmd.command_data_index = blend_state_index;
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
 
     void renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
@@ -1367,7 +1371,7 @@ namespace pen
         cmd.set_buffer.resource_slot = resource_slot;
         cmd.set_buffer.flags = flags;
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
 
     void renderer_set_structured_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
@@ -1380,7 +1384,7 @@ namespace pen
         cmd.set_buffer.resource_slot = resource_slot;
         cmd.set_buffer.flags = flags;
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
 
     void renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset)
@@ -1398,7 +1402,7 @@ namespace pen
         cmd.update_buffer.data = memory_alloc(data_size);
         memcpy(cmd.update_buffer.data, data, data_size);
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
 
     u32 renderer_create_depth_stencil_state(const depth_stencil_creation_params& dscp)
@@ -1415,7 +1419,7 @@ namespace pen
         u32 resource_slot = slot_resources_get_next(&_ctx->renderer_slot_resources);
         cmd.resource_slot = resource_slot;
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
 
         return resource_slot;
     }
@@ -1428,7 +1432,7 @@ namespace pen
 
         cmd.command_data_index = depth_stencil_state;
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
 
     void renderer_set_targets(u32* colour_targets, u32 num_colour_targets, u32 depth_target, u32 array_index)
@@ -1441,7 +1445,7 @@ namespace pen
         cmd.set_targets.depth = depth_target;
         cmd.set_targets.array_index = array_index;
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
 
     void renderer_set_targets(u32 colour_target, u32 depth_target)
@@ -1454,7 +1458,7 @@ namespace pen
         cmd.set_targets.depth = depth_target;
         cmd.set_targets.array_index = 0;
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
     
     void renderer_release_shader(u32 shader_index, u32 shader_type)
@@ -1584,7 +1588,7 @@ namespace pen
         cmd.command_index = CMD_SET_SO_TARGET;
         cmd.command_data_index = buffer_index;
         
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
 
     void renderer_resolve_target(u32 target, e_msaa_resolve_type type)
@@ -1596,7 +1600,7 @@ namespace pen
         cmd.resolve_params.render_target = target;
         cmd.resolve_params.resolve_type = type;
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
 
     void renderer_draw_auto()
@@ -1605,7 +1609,7 @@ namespace pen
 
         cmd.command_index = CMD_DRAW_AUTO;
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
 
     void renderer_dispatch_compute(uint3 grid, uint3 num_threads)
@@ -1616,7 +1620,7 @@ namespace pen
         cmd.cs_dispatch.grid = grid;
         cmd.cs_dispatch.num_threads = num_threads;
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
 
     void renderer_read_back_resource(const resource_read_back_params& rrbp)
@@ -1627,7 +1631,7 @@ namespace pen
 
         cmd.rrb_params = rrbp;
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
 
     void renderer_replace_resource(u32 dest, u32 src, e_renderer_resource type)
@@ -1638,7 +1642,7 @@ namespace pen
 
         cmd.replace_resource_params = {dest, src, type};
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
 
     u32 renderer_create_clear_state(const clear_state& cs)
@@ -1651,7 +1655,7 @@ namespace pen
         cmd.clear_state_params = cs;
         cmd.resource_slot = resource_slot;
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
 
         return resource_slot;
     }
@@ -1663,7 +1667,7 @@ namespace pen
         cmd.command_index = CMD_SET_STENCIL_REF;
         cmd.stencil_ref = ref;
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
 
     void renderer_push_perf_marker(const c8* name)
@@ -1678,7 +1682,7 @@ namespace pen
         memcpy(cmd.name, name, len);
         cmd.name[len] = '\0';
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
 
     void renderer_pop_perf_marker()
@@ -1687,6 +1691,6 @@ namespace pen
 
         cmd.command_index = CMD_POP_PERF_MARKER;
 
-        _ctx->cmd_buffer.put(cmd);
+        add_cmd(cmd);
     }
 }
