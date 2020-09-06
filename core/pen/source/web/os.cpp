@@ -8,6 +8,7 @@
 #include "input.h"
 
 #include <emscripten.h>
+#include <emscripten/html5.h>
 #include <GLES3/gl32.h>
 #include <SDL/SDL.h>
 
@@ -18,7 +19,6 @@
 #include <stdio.h>
 #include <map>
 
-#include <emscripten.h>
 EM_JS(int, get_canvas_width, (), {
   return canvas.clientWidth;
 });
@@ -210,7 +210,7 @@ namespace
         }
     }
     
-    void run()
+    EM_BOOL run(double time, void* user_data)
     {     
         SDL_PumpEvents();
 
@@ -235,7 +235,10 @@ namespace
         handle_mouse();
         handle_window_resize();
 
+        pen::jobs_run_single_threaded();
         pen::renderer_dispatch();
+
+        return EM_TRUE;
     }
 
     void create_sdl_surface()
@@ -346,6 +349,6 @@ int main()
 {
   	s_ctx.pcp = pen_entry(0, nullptr);
     init();
-    emscripten_set_main_loop(run, 0, 1);
+    emscripten_request_animation_frame_loop(run, 0);
     return 0;
 }
