@@ -178,17 +178,17 @@ namespace pen
 
     u64 _renderer_frame_index()
     {
-        return s_shared_ctx.frame_index.load();
+        return pen_atomic_load(s_shared_ctx.frame_index);
     }
 
     u64 _renderer_resize_index()
     {
-        return s_shared_ctx.resize_index.load();
+        return pen_atomic_load(s_shared_ctx.resize_index);
     }
     
     bool _renderer_resized()
     {
-        return s_shared_ctx.resized.load();
+        return pen_atomic_load(s_shared_ctx.resized);
     }
 
     shared_flags _renderer_flags()
