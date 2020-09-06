@@ -900,6 +900,8 @@ namespace pen
     void _set_depth_stencil_state(u32 dss, u8 ref)
     {
         resource_allocation& res = _res_pool[dss];
+        if(!res.depth_stencil)
+            return;
 
         // depth
         if (res.depth_stencil->depth_enable)
@@ -1488,42 +1490,44 @@ namespace pen
         }
 
         g_bound_state.input_layout = g_current_state.input_layout;
-
-        auto* input_res = _res_pool[g_current_state.input_layout].input_layout;
-        if (input_res->vertex_array_handle == 0)
+        if(g_current_state.input_layout)
         {
-            CHECK_CALL(glGenVertexArrays(1, &input_res->vertex_array_handle));
-        }
-
-        CHECK_CALL(glBindVertexArray(input_res->vertex_array_handle));
-
-        for (s32 v = 0; v < g_current_state.num_bound_vertex_buffers; ++v)
-        {
-            g_bound_state.vertex_buffer[v] = g_current_state.vertex_buffer[v];
-            g_bound_state.vertex_buffer_stride[v] = g_current_state.vertex_buffer_stride[v];
-
-            auto& res = _res_pool[g_bound_state.vertex_buffer[v]].handle;
-            CHECK_CALL(glBindBuffer(GL_ARRAY_BUFFER, res));
-
-            u32 num_attribs = sb_count(input_res->attributes);
-
-            for (u32 a = 0; a < num_attribs; ++a)
+            auto* input_res = _res_pool[g_current_state.input_layout].input_layout;
+            if (input_res->vertex_array_handle == 0)
             {
-                auto& attribute = input_res->attributes[a];
+                CHECK_CALL(glGenVertexArrays(1, &input_res->vertex_array_handle));
+            }
 
-                if (attribute.input_slot != v)
-                    continue;
+            CHECK_CALL(glBindVertexArray(input_res->vertex_array_handle));
 
-                CHECK_CALL(glEnableVertexAttribArray(attribute.location));
+            for (s32 v = 0; v < g_current_state.num_bound_vertex_buffers; ++v)
+            {
+                g_bound_state.vertex_buffer[v] = g_current_state.vertex_buffer[v];
+                g_bound_state.vertex_buffer_stride[v] = g_current_state.vertex_buffer_stride[v];
 
-                u32 base_vertex_offset = g_bound_state.vertex_buffer_stride[v] * g_bound_state.base_vertex;
+                auto& res = _res_pool[g_bound_state.vertex_buffer[v]].handle;
+                CHECK_CALL(glBindBuffer(GL_ARRAY_BUFFER, res));
 
-                CHECK_CALL(glVertexAttribPointer(attribute.location, attribute.num_elements, attribute.type,
-                                                 attribute.type == GL_UNSIGNED_BYTE ? true : false,
-                                                 g_bound_state.vertex_buffer_stride[v],
-                                                 (void*)(attribute.offset + base_vertex_offset)));
+                u32 num_attribs = sb_count(input_res->attributes);
 
-                CHECK_CALL(glVertexAttribDivisor(attribute.location, attribute.step_rate));
+                for (u32 a = 0; a < num_attribs; ++a)
+                {
+                    auto& attribute = input_res->attributes[a];
+
+                    if (attribute.input_slot != v)
+                        continue;
+
+                    CHECK_CALL(glEnableVertexAttribArray(attribute.location));
+
+                    u32 base_vertex_offset = g_bound_state.vertex_buffer_stride[v] * g_bound_state.base_vertex;
+
+                    CHECK_CALL(glVertexAttribPointer(attribute.location, attribute.num_elements, attribute.type,
+                                                    attribute.type == GL_UNSIGNED_BYTE ? true : false,
+                                                    g_bound_state.vertex_buffer_stride[v],
+                                                    (void*)(attribute.offset + base_vertex_offset)));
+
+                    CHECK_CALL(glVertexAttribDivisor(attribute.location, attribute.step_rate));
+                }
             }
         }
 
@@ -2336,6 +2340,8 @@ namespace pen
     void direct::renderer_set_blend_state(u32 blend_state_index)
     {
         auto* blend_state = _res_pool[blend_state_index].blend_state;
+        if(!blend_state)
+            return;
 
         for (s32 i = 0; i < blend_state->num_render_targets; ++i)
         {
