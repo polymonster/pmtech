@@ -33,6 +33,12 @@ typedef unsigned long ulong;
 typedef unsigned long dword; // for win32
 
 // allow singlethreaded platforms to avoid use of atomic
+#if PEN_PLATFORM_WEB
+#define PEN_SINGLE_THREADED 1
+#else
+#define PEN_SINGLE_THREADED 0
+#endif
+
 #if PEN_SINGLE_THREADED
 typedef u8  a_u8;
 typedef u32 a_u32;
@@ -49,7 +55,7 @@ typedef std::atomic<uint64_t> a_u64;
 typedef std::atomic<size_t>   a_size_t;
 typedef std::atomic<bool>     a_bool;
 typedef std::atomic<s32>      a_s32;
-#define pen_atomic_load(a) a.load()
+#define pen_atomic_load(a)    a.load()
 #endif
 
 // Thread return value just for win32 portability
