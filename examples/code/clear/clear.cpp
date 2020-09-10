@@ -1,12 +1,7 @@
-#include "console.h"
-#include "file_system.h"
-#include "memory.h"
-#include "os.h"
 #include "pen.h"
-#include "pen_string.h"
-#include "renderer.h"
+#include "console.h"
 #include "threads.h"
-#include "timer.h"
+#include "renderer.h"
 
 namespace
 {
@@ -83,9 +78,6 @@ namespace
         // present
         pen::renderer_present();
         pen::renderer_consume_cmd_buffer();
-
-        // for unit test
-        
 
         // msg from the engine we want to terminate
         if (pen::semaphore_try_wait(p_thread_info->p_sem_exit))

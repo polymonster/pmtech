@@ -1,10 +1,11 @@
-#include "file_system.h"
 #include "loader.h"
-#include "memory.h"
-#include "os.h"
-#include "pen.h"
-#include "pen_string.h"
 #include "pmfx.h"
+
+#include "pen.h"
+#include "os.h"
+#include "memory.h"
+#include "file_system.h"
+#include "pen_string.h"
 #include "renderer.h"
 #include "threads.h"
 #include "timer.h"
@@ -38,37 +39,36 @@ namespace
 {
     struct vertex
     {
-        float x, y, z, w;
+        f32 x, y, z, w;
     };
 
     struct textured_vertex
     {
-        float x, y, z, w;
-        float u, v;
+        f32 x, y, z, w;
+        f32 u, v;
     };
 
-    pen::job_thread_params* job_params = nullptr;
-    pen::job*               p_thread_info = nullptr;
-    
-    u32 s_clear_state;
-    u32 s_clear_state_rt;
-    u32 s_raster_state;
-    u32 s_textured_shader;
-    u32 s_quad_vertex_buffer;
-    u32 s_quad_index_buffer;
-    u32 s_depth_target;
-    u32 s_depth_only_shader;
-    u32 s_depth_stencil_state;
-    u32 s_triangle_vertex_buffer;
-    u32 s_depth_texture_sampler;
-    pen::viewport s_vp_rt;
+    job_thread_params*  s_job_params = nullptr;
+    job*                s_thread_info = nullptr;
+    u32                 s_clear_state = 0;
+    u32                 s_clear_state_rt = 0;
+    u32                 s_raster_state = 0;
+    u32                 s_textured_shader = 0;
+    u32                 s_quad_vertex_buffer = 0;
+    u32                 s_quad_index_buffer = 0;
+    u32                 s_depth_target = 0;
+    u32                 s_depth_only_shader = 0;
+    u32                 s_depth_stencil_state = 0;
+    u32                 s_triangle_vertex_buffer = 0;
+    u32                 s_depth_texture_sampler = 0;
+    pen::viewport       s_vp_rt = {};
 
     void* user_setup(void* params)
     {
         // unpack the params passed to the thread and signal to the engine it ok to proceed
-        job_params = (pen::job_thread_params*)params;
-        p_thread_info = job_params->job_info;
-        pen::semaphore_post(p_thread_info->p_sem_continue, 1);
+        s_job_params = (pen::job_thread_params*)params;
+        s_thread_info = s_job_params->job_info;
+        pen::semaphore_post(s_thread_info->p_sem_continue, 1);
 
         // create 2 clear states one for the depth target and one for the main screen, so we can see the difference
         static pen::clear_state cs = {
@@ -208,7 +208,7 @@ namespace
         pen::renderer_consume_cmd_buffer();
 
         // signal to the engine the thread has finished
-        pen::semaphore_post(p_thread_info->p_sem_terminated, 1);
+        pen::semaphore_post(s_thread_info->p_sem_terminated, 1);
     }
 
     loop_t user_update()
@@ -241,12 +241,13 @@ namespace
         }
 
         // bind back buffer and clear
+        pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
+        
         // viewport
         pen::viewport vp = {0.0f, 0.0f, PEN_BACK_BUFFER_RATIO, 1.0f, 0.0f, 1.0f};
-
-        pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
         pen::renderer_set_viewport(vp);
         pen::renderer_set_scissor_rect(rect{vp.x, vp.y, vp.width, vp.height});
+        
         pen::renderer_clear(s_clear_state);
 
         // draw quad
@@ -272,7 +273,7 @@ namespace
         pen::renderer_present();
         pen::renderer_consume_cmd_buffer();
             
-        if (pen::semaphore_try_wait(p_thread_info->p_sem_exit))
+        if (pen::semaphore_try_wait(s_thread_info->p_sem_exit))
         {
             user_shutdown();
             pen_main_loop_exit();

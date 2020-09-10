@@ -1,8 +1,8 @@
-#include "console.h"
-#include "file_system.h"
+#include "pen.h"
 #include "memory.h"
 #include "os.h"
-#include "pen.h"
+#include "console.h"
+#include "file_system.h"
 #include "pen_string.h"
 #include "renderer.h"
 #include "threads.h"
@@ -34,24 +34,23 @@ namespace
 {
     struct vertex
     {
-        float x, y, z, w;
+        f32 x, y, z, w;
     };
 
-    pen::job* p_thread_info;
-
-    u32 s_clear_state;
-    u32 s_raster_state;
-    u32 s_vertex_shader;
-    u32 s_pixel_shader;
-    u32 s_input_layout;
-    u32 s_vertex_buffer;
+    pen::job*   s_thread_info = nullptr;
+    u32         s_clear_state = 0;
+    u32         s_raster_state = 0;
+    u32         s_vertex_shader = 0;
+    u32         s_pixel_shader = 0;
+    u32         s_input_layout = 0;
+    u32         s_vertex_buffer = 0;
 
     void* user_setup(void* params)
     {
         // unpack the params passed to the thread and signal to the engine it ok to proceed
         pen::job_thread_params* job_params = (pen::job_thread_params*)params;
-        p_thread_info = job_params->job_info;
-        pen::semaphore_post(p_thread_info->p_sem_continue, 1);
+        s_thread_info = job_params->job_info;
+        pen::semaphore_post(s_thread_info->p_sem_continue, 1);
     
         // create clear state
         static pen::clear_state cs = {
@@ -150,7 +149,7 @@ namespace
         pen::renderer_consume_cmd_buffer();
 
         // signal to the engine the thread has finished
-        pen::semaphore_post(p_thread_info->p_sem_terminated, 1);
+        pen::semaphore_post(s_thread_info->p_sem_terminated, 1);
     }
 
     loop_t user_update()
@@ -186,8 +185,7 @@ namespace
         pen::renderer_present();
         pen::renderer_consume_cmd_buffer();
 
-
-        if (pen::semaphore_try_wait(p_thread_info->p_sem_exit))
+        if (pen::semaphore_try_wait(s_thread_info->p_sem_exit))
         {
             user_shutdown();
             pen_main_loop_exit();

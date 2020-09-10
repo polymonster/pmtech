@@ -4,12 +4,12 @@
 
 #include <fstream>
 
+#include "pen.h"
 #include "console.h"
 #include "data_struct.h"
 #include "file_system.h"
 #include "memory.h"
 #include "os.h"
-#include "pen.h"
 #include "pen_string.h"
 #include "renderer.h"
 #include "renderer_shared.h"

@@ -1,15 +1,29 @@
 #include "audio/audio.h"
 #include "debug_render.h"
 #include "dev_ui.h"
-#include "file_system.h"
 #include "loader.h"
+
+#include "file_system.h"
 #include "memory.h"
 #include "pen.h"
 #include "pen_string.h"
 #include "renderer.h"
 #include "threads.h"
 #include "timer.h"
+
 #include <vector>
+
+using namespace pen;
+using namespace put;
+
+void audio_player_update();
+
+namespace
+{
+    void*   user_setup(void* params);
+    loop_t  user_update();
+    void    user_shutdown();
+}
 
 namespace pen
 {
@@ -20,66 +34,83 @@ namespace pen
         p.window_height = 720;
         p.window_title = "audio_player";
         p.window_sample_count = 4;
-        p.user_thread_function = user_entry;
+        p.user_thread_function = user_setup;
         p.flags = pen::e_pen_create_flags::renderer;
         return p;
     }
 } // namespace pen
 
-u32 clear_state_grey;
-u32 raster_state_cull_back;
-u32 default_depth_stencil_state;
-
-using namespace put;
-
-void renderer_state_init()
+namespace
 {
-    // create 2 clear states one for the render target and one for the main screen, so we can see the difference
-    static pen::clear_state cs = {
-        0.5f, 0.5f, 0.5f, 0.5f, 1.0f, 0x00, PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
-    };
+    job_thread_params*  job_params;
+    job*                p_thread_info;
+    u32                 clear_state_grey;
+    u32                 raster_state_cull_back;
+    u32                 default_depth_stencil_state;
 
-    clear_state_grey = pen::renderer_create_clear_state(cs);
+    void renderer_state_init()
+    {
+        // create 2 clear states one for the render target and one for the main screen, so we can see the difference
+        static pen::clear_state cs = {
+            0.5f, 0.5f, 0.5f, 0.5f, 1.0f, 0x00, PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
+        };
 
-    // raster state
-    pen::rasteriser_state_creation_params rcp;
-    pen::memory_zero(&rcp, sizeof(pen::rasteriser_state_creation_params));
-    rcp.fill_mode = PEN_FILL_SOLID;
-    rcp.cull_mode = PEN_CULL_BACK;
-    rcp.depth_bias_clamp = 0.0f;
-    rcp.sloped_scale_depth_bias = 0.0f;
-    rcp.depth_clip_enable = true;
+        clear_state_grey = pen::renderer_create_clear_state(cs);
 
-    raster_state_cull_back = pen::renderer_create_rasterizer_state(rcp);
+        // raster state
+        pen::rasteriser_state_creation_params rcp;
+        pen::memory_zero(&rcp, sizeof(pen::rasteriser_state_creation_params));
+        rcp.fill_mode = PEN_FILL_SOLID;
+        rcp.cull_mode = PEN_CULL_BACK;
+        rcp.depth_bias_clamp = 0.0f;
+        rcp.sloped_scale_depth_bias = 0.0f;
+        rcp.depth_clip_enable = true;
 
-    // depth stencil state
-    pen::depth_stencil_creation_params depth_stencil_params = {0};
+        raster_state_cull_back = pen::renderer_create_rasterizer_state(rcp);
 
-    // Depth test parameters
-    depth_stencil_params.depth_enable = true;
-    depth_stencil_params.depth_write_mask = 1;
-    depth_stencil_params.depth_func = PEN_COMPARISON_ALWAYS;
+        // depth stencil state
+        pen::depth_stencil_creation_params depth_stencil_params = {0};
 
-    default_depth_stencil_state = pen::renderer_create_depth_stencil_state(depth_stencil_params);
-}
+        // Depth test parameters
+        depth_stencil_params.depth_enable = true;
+        depth_stencil_params.depth_write_mask = 1;
+        depth_stencil_params.depth_func = PEN_COMPARISON_ALWAYS;
 
-void audio_player_update();
+        default_depth_stencil_state = pen::renderer_create_depth_stencil_state(depth_stencil_params);
+    }
 
-// todo main loop
-void* pen::user_entry(void* params)
-{
-    // unpack the params passed to the thread and signal to the engine it ok to proceed
-    pen::job_thread_params* job_params = (pen::job_thread_params*)params;
-    pen::job*               p_thread_info = job_params->job_info;
-    pen::semaphore_post(p_thread_info->p_sem_continue, 1);
+    void* user_setup(void* params)
+    {
+        // unpack the params passed to the thread and signal to the engine it ok to proceed
+        job_params = (pen::job_thread_params*)params;
+        p_thread_info = job_params->job_info;
+        pen::semaphore_post(p_thread_info->p_sem_continue, 1);
+        
+        pen::jobs_create_job(put::audio_thread_function, 1024 * 10, nullptr, pen::e_thread_start_flags::detached);
+        renderer_state_init();
+        put::dev_ui::init();
+		
+        pen_main_loop(user_update);
+        return PEN_THREAD_OK;
+    }
 
-    pen::jobs_create_job(put::audio_thread_function, 1024 * 10, nullptr, pen::e_thread_start_flags::detached);
+    void user_shutdown()
+    {
+    	pen::renderer_new_frame();
+     
+        dev_ui::shutdown();
+        
+        pen::renderer_release_clear_state(clear_state_grey);
+        pen::renderer_release_raster_state(raster_state_cull_back);
+        pen::renderer_release_depth_stencil_state(default_depth_stencil_state);
+    	
+        pen::renderer_present();
+        pen::renderer_consume_cmd_buffer();
+        
+        pen::semaphore_post(p_thread_info->p_sem_terminated, 1);
+    }
 
-    renderer_state_init();
-
-    put::dev_ui::init();
-
-    while (1)
+    loop_t user_update()
     {
         pen::renderer_new_frame();
 
@@ -98,28 +129,20 @@ void* pen::user_entry(void* params)
 
         audio_player_update();
 
-        // present
         put::dev_ui::render();
-
+        
         pen::renderer_present();
         pen::renderer_consume_cmd_buffer();
-
-        put::audio_consume_command_buffer();
-
-
+        
         // msg from the engine we want to terminate
         if (pen::semaphore_try_wait(p_thread_info->p_sem_exit))
         {
-            break;
+            user_shutdown();
+            pen_main_loop_exit();
         }
+        
+        pen_main_loop_continue();
     }
-
-    // clean up mem here
-
-    // signal to the engine the thread has finished
-    pen::semaphore_post(p_thread_info->p_sem_terminated, 1);
-
-    return PEN_THREAD_OK;
 }
 
 enum playback_deck_flags : s32

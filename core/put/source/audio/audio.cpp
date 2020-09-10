@@ -79,6 +79,7 @@ namespace
     pen::job*                   _audio_job_thread_info;
     pen::slot_resources         _audio_slot_resources;
     pen::ring_buffer<audio_cmd> _cmd_buffer;
+    a_u8                        _shutdown = {0};
 } // namespace
 
 namespace put
@@ -144,11 +145,14 @@ namespace put
                 break;
         }
     }
-
+    
     void audio_consume_command_buffer()
     {
-        pen::semaphore_post(_audio_job_thread_info->p_sem_consume, 1);
-        pen::semaphore_wait(_audio_job_thread_info->p_sem_continue);
+        if(!_shutdown.load())
+        {
+            pen::semaphore_post(_audio_job_thread_info->p_sem_consume, 1);
+            pen::semaphore_wait(_audio_job_thread_info->p_sem_continue);
+        }
     }
 
     void* audio_thread_function(void* params)
@@ -186,14 +190,17 @@ namespace put
             }
 
             if (pen::semaphore_try_wait(_audio_job_thread_info->p_sem_exit))
+            {
+                _shutdown = 1;
                 break;
+            }
         }
 
         direct::audio_system_shutdown();
 
         pen::semaphore_post(_audio_job_thread_info->p_sem_continue, 1);
         pen::semaphore_post(_audio_job_thread_info->p_sem_terminated, 1);
-
+        
         return PEN_THREAD_OK;
     }
 

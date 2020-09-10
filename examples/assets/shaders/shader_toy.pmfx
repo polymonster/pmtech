@@ -51,7 +51,7 @@ ps_output ps_main( vs_output input )
 {
     ps_output output;
     
-    output.colour = sample_texture( tex0, input.tex_coord.xy ) * float4( sin( input.time * 0.01 ), 1.0, 1.0, 1.0 );
+    output.colour = sample_texture( tex0, input.tex_coord.xy ) * float4( sin( input.time * 0.01 ), 1.0, 0.0, 1.0 );
     
     output.colour.a = 1.0;
     

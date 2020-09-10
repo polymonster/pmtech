@@ -36,25 +36,24 @@ namespace pen
 
 namespace
 {
-    pen::job_thread_params* job_params;
-    pen::job*               p_thread_info;
-
-    u32 clear_state_grey;
-    u32 raster_state_cull_back;
-    u32 default_depth_stencil_state;
+    job_thread_params*      s_job_params = nullptr;
+    job*                    s_thread_info = nullptr;
+    u32                     s_clear_state_grey = 0;
+    u32                     s_raster_state_cull_back = 0;
+    u32                     s_default_depth_stencil_state = 0;
 
     void* user_setup(void* params)
     {
         // unpack the params passed to the thread and signal to the engine it ok to proceed
-        job_params = (pen::job_thread_params*)params;
-        p_thread_info = job_params->job_info;
-        pen::semaphore_post(p_thread_info->p_sem_continue, 1);
+        s_job_params = (pen::job_thread_params*)params;
+        s_thread_info = s_job_params->job_info;
+        pen::semaphore_post(s_thread_info->p_sem_continue, 1);
 
         static pen::clear_state cs = {
             0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 0x00, PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
         };
 
-        clear_state_grey = pen::renderer_create_clear_state(cs);
+        s_clear_state_grey = pen::renderer_create_clear_state(cs);
 
         // raster state
         pen::rasteriser_state_creation_params rcp;
@@ -65,7 +64,7 @@ namespace
         rcp.sloped_scale_depth_bias = 0.0f;
         rcp.depth_clip_enable = true;
 
-        raster_state_cull_back = pen::renderer_create_rasterizer_state(rcp);
+        s_raster_state_cull_back = pen::renderer_create_rasterizer_state(rcp);
 
         // depth stencil state
         pen::depth_stencil_creation_params depth_stencil_params = {0};
@@ -75,7 +74,7 @@ namespace
         depth_stencil_params.depth_write_mask = 1;
         depth_stencil_params.depth_func = PEN_COMPARISON_ALWAYS;
 
-        default_depth_stencil_state = pen::renderer_create_depth_stencil_state(depth_stencil_params);
+        s_default_depth_stencil_state = pen::renderer_create_depth_stencil_state(depth_stencil_params);
 
         // init systems
         put::dev_ui::init();
@@ -87,7 +86,11 @@ namespace
 
     void user_shutdown()
     {
-        pen::semaphore_post(p_thread_info->p_sem_terminated, 1);
+        pen::renderer_release_clear_state(s_clear_state_grey);
+        pen::renderer_release_depth_stencil_state(s_default_depth_stencil_state);
+        pen::renderer_release_raster_state(s_raster_state_cull_back);
+        
+        pen::semaphore_post(s_thread_info->p_sem_terminated, 1);
     }
 
     loop_t user_update()
@@ -98,9 +101,9 @@ namespace
         pen::viewport vp = {0.0f, 0.0f, PEN_BACK_BUFFER_RATIO, 1.0f, 0.0f, 1.0f};
         pen::renderer_set_viewport(vp);
         pen::renderer_set_scissor_rect(rect{vp.x, vp.y, vp.width, vp.height});
-        pen::renderer_clear(clear_state_grey);
-        pen::renderer_set_rasterizer_state(raster_state_cull_back);
-        pen::renderer_set_depth_stencil_state(default_depth_stencil_state);
+        pen::renderer_clear(s_clear_state_grey);
+        pen::renderer_set_rasterizer_state(s_raster_state_cull_back);
+        pen::renderer_set_depth_stencil_state(s_default_depth_stencil_state);
 
         put::dev_ui::new_frame();
 
@@ -161,7 +164,7 @@ namespace
         pen::renderer_consume_cmd_buffer();
 
         // msg from the engine we want to terminate
-        if (pen::semaphore_try_wait(p_thread_info->p_sem_exit))
+        if (pen::semaphore_try_wait(s_thread_info->p_sem_exit))
         {
             user_shutdown();
             pen_main_loop_exit();

@@ -57,8 +57,6 @@ typedef std::atomic<bool>     a_bool;
 typedef std::atomic<s32>      a_s32;
 #define pen_atomic_load(a)    a.load()
 #endif
-
-// Thread return value just for win32 portability
 #define PEN_THREAD_OK 0
 
 // Use min max and swap everywhere and undef windows
