@@ -434,6 +434,12 @@
         make: {
         	toolchain: "emmake",
 			dir: "build/web"
+        },
+        
+        run: {
+			cmd: "%target%.html",
+			dir: "bin/web",
+			ext: ".html"
         }
     }
 }

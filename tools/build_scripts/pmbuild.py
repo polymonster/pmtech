@@ -10,10 +10,11 @@ import shutil
 import time
 import dependencies
 import glob
-import threading
 import jsn.jsn as jsn
 import cgu.cgu as cgu
-
+from http.server import HTTPServer, CGIHTTPRequestHandler
+import webbrowser
+import threading
 
 # returns tool to run from cmdline with .exe
 def tool_to_platform(tool):
@@ -662,6 +663,29 @@ def run_make(config, options):
     os.chdir(cwd)
 
 
+# start a simple webserver serving path on port
+def start_server(path, port=8000):
+    httpd = HTTPServer(('', port), CGIHTTPRequestHandler)
+    httpd.serve_forever()
+
+
+# starts a web server on a thread and loads a sample in the browser
+def run_web(cmd):
+    port = 8000
+    daemon = threading.Thread(name='daemon_server', target=start_server, args=('.', port))
+    daemon.setDaemon(True)
+    daemon.start()
+    chrome_path = {
+        "osx": 'open -a /Applications/Google\ Chrome.app %s',
+        "win32": "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe %s",
+        "linux": ""
+    }
+    plat = util.get_platform_name()
+    webbrowser.get(chrome_path[plat]).open('http://localhost:{}/{}'.format(port, cmd))
+    while True:
+        time.sleep(1)
+
+
 # launches and exectuable program from the commandline
 def run_exe(config, options):
     print("--------------------------------------------------------------------------------")
@@ -687,10 +711,13 @@ def run_exe(config, options):
     for t in targets:
         cmd = run_config["cmd"]
         cmd = cmd.replace("%target%", t)
-        for o in options[1:]:
-            cmd += " " + o
-        print(cmd)
-        subprocess.call(cmd, shell=True)
+        if run_config["ext"] == ".html":
+            run_web(cmd)
+        else:
+            for o in options[1:]:
+                cmd += " " + o
+            print(cmd)
+            subprocess.call(cmd, shell=True)
     os.chdir(cwd)
 
 
