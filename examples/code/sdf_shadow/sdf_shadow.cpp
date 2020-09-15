@@ -20,9 +20,9 @@ namespace pen
 
 vec3f random_vel(f32 min, f32 max)
 {
-    f32 x = min + (((f32)(rand() % RAND_MAX) / RAND_MAX) * (max - min));
-    f32 y = min + (((f32)(rand() % RAND_MAX) / RAND_MAX) * (max - min));
-    f32 z = min + (((f32)(rand() % RAND_MAX) / RAND_MAX) * (max - min));
+    f32 x = min + ((f32)((rand() % RAND_MAX) / RAND_MAX) * (max - min));
+    f32 y = min + ((f32)((rand() % RAND_MAX) / RAND_MAX) * (max - min));
+    f32 z = min + ((f32)((rand() % RAND_MAX) / RAND_MAX) * (max - min));
 
     return vec3f(x, y, z);
 }
