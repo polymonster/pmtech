@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no"/>
-    <title>powered by pmtech</title>
+    <title>Loading</title>
     <style>
         body { margin: 0; background-color: black }
         .backbuffer {
@@ -25,9 +25,25 @@
             image-rendering: pixelated;
             -ms-interpolation-mode: nearest-neighbor;
         }
+        .title {
+			pointer-events: none;
+			position: absolute;
+			top: 10px;
+			margin-top: 0px;
+			padding-left: 10px;
+			color: white;
+			text-decoration: none;
+			z-index: 1;
+			text-align: left;
+			font-family: "Roboto", Helvetica, sans-serif;
+			font-size: 20px;
+		}
     </style>
   </head>
   <body>
+	<div class="title">
+	  <span class="title" id="title-text"></span>
+  	</div>
     <canvas class="backbuffer" id="canvas" oncontextmenu="event.preventDefault()"></canvas>
     <script type='text/javascript'>
       var Module = {
@@ -49,9 +65,11 @@
         })(),
         setStatus: function(text) {
             console.log("status: " + text);
+            document.getElementById("title-text").innerHTML = text
         },
         monitorRunDependencies: function(left) {
             console.log("monitor run deps: " + left);
+            document.getElementById("title-text").innerHTML = "run deps: " + left
         }
       };
       window.onerror = function() {

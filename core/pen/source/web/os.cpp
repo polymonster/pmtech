@@ -27,6 +27,10 @@ EM_JS(int, get_canvas_height, (), {
   return canvas.clientHeight;
 });
 
+EM_JS(void, set_title, (const char* title), {
+    document.title = UTF8ToString(title);
+});
+
 using namespace pen;
 
 void pen_make_gl_context_current()
@@ -256,6 +260,8 @@ namespace
 
     void init()
     {
+        set_title(s_ctx.pcp.window_title);
+
         create_sdl_surface();
         SDL_EnableUNICODE(1);
         timer_system_intialise();
@@ -347,6 +353,7 @@ namespace pen
 
 int main() 
 {
+    set_title("Loading");
   	s_ctx.pcp = pen_entry(0, nullptr);
     init();
     emscripten_request_animation_frame_loop(run, 0);

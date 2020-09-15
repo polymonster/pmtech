@@ -853,7 +853,7 @@ namespace pen
 
         // wait for the first swap.
         u32 count = _renderer_frame_index();
-        if (count < 3)
+        if (count < 16)
             return;
 
         // run once, wait for result

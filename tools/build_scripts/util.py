@@ -1,6 +1,7 @@
 import platform
 import os
 import shutil
+import cgu
 
 
 def get_platform_name_args(args):

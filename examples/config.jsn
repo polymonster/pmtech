@@ -427,6 +427,11 @@
             ["../assets/textures", "build/web/data/textures"]
         ],
         
+        build: [
+        	"touch ../core/pen/lib/web/debug/libpen.a",
+        	"touch ../core/pen/lib/web/release/libpen.a",
+        ],
+        
         models: [
             ["assets/mesh", "build/web/data/models"]
         ],

@@ -346,7 +346,7 @@ namespace
             return;
         }
         PEN_ASSERT(0);
-        
+
         *min_filter = GL_LINEAR;
         *mag_filter = GL_LINEAR;
     }
