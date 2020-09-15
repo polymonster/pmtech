@@ -112,8 +112,10 @@ namespace
     };
 
     const mode_map k_filter_mode_map[] = {
-        "linear",   PEN_FILTER_MIN_MAG_MIP_LINEAR,
-        "point",    PEN_FILTER_MIN_MAG_MIP_POINT,
+        "linear",       PEN_FILTER_MIN_MAG_MIP_LINEAR,
+        "point",        PEN_FILTER_MIN_MAG_MIP_POINT,
+        "linear_lod",   PEN_FILTER_LINEAR,
+        "point_lod",    PEN_FILTER_POINT,
         nullptr, 0
     };
 

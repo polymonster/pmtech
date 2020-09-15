@@ -47,6 +47,12 @@
             address: clamp
         },
         
+		clamp_linear_lod:
+        {
+            filter : linear_lod,
+            address: clamp
+        },
+        
         shadow_compare:
         {
 			filter : linear,
@@ -239,7 +245,7 @@
             sampler_bindings:
             [
                 { texture: shadow_map, unit: 15, state: shadow_compare, shader: ps },
-                { texture: area_light_textures, unit: 11, state: clamp_linear, shader: ps },
+                { texture: area_light_textures, unit: 11, state: clamp_linear_lod, shader: ps },
                 { texture: omni_shadow_map, unit: 10, state: clamp_linear, shader: ps },
             ],
         },
@@ -260,7 +266,7 @@
             sampler_bindings:
             [
                 { texture: shadow_map, unit: 15, state: shadow_compare, shader: ps },
-                { texture: area_light_textures, unit: 11, state: clamp_linear, shader: ps },
+                { texture: area_light_textures, unit: 11, state: clamp_linear_lod, shader: ps },
                 { texture: omni_shadow_map, unit: 10, state: clamp_linear, shader: ps },
             ],
         },

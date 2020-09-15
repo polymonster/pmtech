@@ -346,6 +346,7 @@ namespace
             return;
         }
         PEN_ASSERT(0);
+        
         *min_filter = GL_LINEAR;
         *mag_filter = GL_LINEAR;
     }
@@ -843,6 +844,12 @@ namespace pen
         u32 mag_filter;
     };
 
+    struct gl_sampler_object
+    {
+        u32 sampler;
+        u32 depth_sampler; // gles3 does not allow linear filtering on depth textures unlike other platforms
+    };
+
     struct resource_allocation
     {
         u8     asigned_flag;
@@ -857,7 +864,7 @@ namespace pen
             texture_info                   texture;
             pen::render_target             render_target;
             pen::shader_program*           shader_program;
-            u32                            sampler_object;
+            gl_sampler_object              sampler_object;
         };
     };
     static res_pool<resource_allocation> _res_pool;
@@ -2140,48 +2147,56 @@ namespace pen
             sampler.comparison_func = to_gl_comparison(scp.comparison_func);
         to_gl_filter_mode(scp.filter, &sampler.min_filter, &sampler.mag_filter);
 
-        u32 sampler_object;
-        glGenSamplers(1, &sampler_object);
+        u32 sampler_objects[2];
+        glGenSamplers(2, &sampler_objects[0]);
 
-#ifndef PEN_GLES3
-        CHECK_CALL(glSamplerParameteri(sampler_object, GL_TEXTURE_MIN_FILTER, sampler.min_filter));
-        CHECK_CALL(glSamplerParameteri(sampler_object, GL_TEXTURE_MAG_FILTER, sampler.mag_filter));
-#else
-        // GLES3 has issues with bilinear on depth textures, this is temporary to fix the
-        CHECK_CALL(glSamplerParameteri(sampler_object, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
-        CHECK_CALL(glSamplerParameteri(sampler_object, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-#endif
-
-        CHECK_CALL(glSamplerParameteri(sampler_object, GL_TEXTURE_WRAP_S, sampler.address_u));
-        CHECK_CALL(glSamplerParameteri(sampler_object, GL_TEXTURE_WRAP_T, sampler.address_v));
-        CHECK_CALL(glSamplerParameteri(sampler_object, GL_TEXTURE_WRAP_R, sampler.address_w));
-
-        // mip control
-#ifdef GL_TEXTURE_LOD_BIAS
-        CHECK_CALL(glSamplerParameterf(sampler_object, GL_TEXTURE_LOD_BIAS, sampler.mip_lod_bias));
-#endif
-        if (sampler.max_lod > -1.0f)
-            CHECK_CALL(glSamplerParameterf(sampler_object, GL_TEXTURE_MAX_LOD, sampler.max_lod));
-
-        if (sampler.min_lod > -1.0f)
-            CHECK_CALL(glSamplerParameterf(sampler_object, GL_TEXTURE_MIN_LOD, sampler.min_lod));
-
-        if (sampler.comparison_func != PEN_COMPARISON_DISABLED)
+        // creates 2 samplers, one of which is safe for depth textures by forcing nearest filtering
+        for(u32 i = 0; i < 2; ++i)
         {
-            CHECK_CALL(glSamplerParameteri(sampler_object, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE));
-            CHECK_CALL(glSamplerParameteri(sampler_object, GL_TEXTURE_COMPARE_FUNC, GL_LESS));
-        }
-        else
-        {
-            CHECK_CALL(glSamplerParameteri(sampler_object, GL_TEXTURE_COMPARE_MODE, GL_NONE));
-            CHECK_CALL(glSamplerParameteri(sampler_object, GL_TEXTURE_COMPARE_FUNC, GL_ALWAYS));
-        }
+            if(i == 0)
+            {
+                CHECK_CALL(glSamplerParameteri(sampler_objects[i], GL_TEXTURE_MIN_FILTER, sampler.min_filter));
+                CHECK_CALL(glSamplerParameteri(sampler_objects[i], GL_TEXTURE_MAG_FILTER, sampler.mag_filter));
+            }
+            else
+            {
+                // GLES3 has issues with bilinear on depth textures, this is temporary
+                CHECK_CALL(glSamplerParameteri(sampler_objects[i], GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+                CHECK_CALL(glSamplerParameteri(sampler_objects[i], GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+            }
 
-#ifndef PEN_GLES3
-        CHECK_CALL(glSamplerParameteri(sampler_object, GL_TEXTURE_CUBE_MAP_SEAMLESS, 1));
-#endif
+            CHECK_CALL(glSamplerParameteri(sampler_objects[i], GL_TEXTURE_WRAP_S, sampler.address_u));
+            CHECK_CALL(glSamplerParameteri(sampler_objects[i], GL_TEXTURE_WRAP_T, sampler.address_v));
+            CHECK_CALL(glSamplerParameteri(sampler_objects[i], GL_TEXTURE_WRAP_R, sampler.address_w));
+
+            // mip control
+    #ifdef GL_TEXTURE_LOD_BIAS
+            CHECK_CALL(glSamplerParameterf(sampler_objects[i], GL_TEXTURE_LOD_BIAS, sampler.mip_lod_bias));
+    #endif
+            if (sampler.max_lod > -1.0f)
+                CHECK_CALL(glSamplerParameterf(sampler_objects[i], GL_TEXTURE_MAX_LOD, sampler.max_lod));
+
+            if (sampler.min_lod > -1.0f)
+                CHECK_CALL(glSamplerParameterf(sampler_objects[i], GL_TEXTURE_MIN_LOD, sampler.min_lod));
+
+            if (sampler.comparison_func != PEN_COMPARISON_DISABLED)
+            {
+                CHECK_CALL(glSamplerParameteri(sampler_objects[i], GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE));
+                CHECK_CALL(glSamplerParameteri(sampler_objects[i], GL_TEXTURE_COMPARE_FUNC, GL_LESS));
+            }
+            else
+            {
+                CHECK_CALL(glSamplerParameteri(sampler_objects[i], GL_TEXTURE_COMPARE_MODE, GL_NONE));
+                CHECK_CALL(glSamplerParameteri(sampler_objects[i], GL_TEXTURE_COMPARE_FUNC, GL_ALWAYS));
+            }
+
+    #ifndef PEN_GLES3
+            CHECK_CALL(glSamplerParameteri(sampler_objects[i], GL_TEXTURE_CUBE_MAP_SEAMLESS, 1));
+    #endif
+        }
         
-        _res_pool[resource_slot].sampler_object = sampler_object;
+        _res_pool[resource_slot].sampler_object.sampler = sampler_objects[0];
+        _res_pool[resource_slot].sampler_object.depth_sampler = sampler_objects[1];
     }
 
     void direct::renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 bind_flags)
@@ -2258,7 +2273,13 @@ namespace pen
             return;
         }
 
-        u32 sampler_object = _res_pool[sampler_index].sampler_object;
+        u32 sampler_object = _res_pool[sampler_index].sampler_object.sampler;
+        if(res.texture.attachment == GL_DEPTH_ATTACHMENT || res.texture.attachment == GL_DEPTH_STENCIL_ATTACHMENT)
+        {
+            sampler_object = _res_pool[sampler_index].sampler_object.depth_sampler;
+        }
+
+        //sampler_object = _res_pool[sampler_index].sampler_object.depth_sampler;
         glBindSampler(resource_slot, sampler_object);
 
         if (target == GL_TEXTURE_2D_ARRAY)
@@ -2612,7 +2633,8 @@ namespace pen
     void direct::renderer_release_sampler(u32 sampler)
     {
         resource_allocation& res = _res_pool[sampler];
-        glDeleteSamplers(1, &res.sampler_object);
+        glDeleteSamplers(1, &res.sampler_object.sampler);
+        glDeleteSamplers(1, &res.sampler_object.depth_sampler);
     }
 
     void direct::renderer_release_depth_stencil_state(u32 depth_stencil_state)
