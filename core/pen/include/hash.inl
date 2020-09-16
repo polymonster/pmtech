@@ -17,6 +17,9 @@ namespace pen
 
     inline bool isAligned(const void* _ptr, size_t _align)
     {
+#if PEN_PLATFORM_WEB
+        return false;
+#endif
         union {
             const void* ptr;
             uintptr_t   addr;

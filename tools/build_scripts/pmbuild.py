@@ -503,6 +503,8 @@ def run_textures(config):
                     cmd += " --cubearray "
                 if "mips" in export.keys() and export["mips"]:
                     cmd += " --mips "
+                if "texturec" in export.keys():
+                    cmd += export["texturec"]
                 cmd += "-o " + dst
                 dep = dependencies.create_dependency_info(dep_inputs, [dst], cmd)
                 if not dependencies.check_up_to_date_single(dst, dep):

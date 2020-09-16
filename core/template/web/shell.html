@@ -41,8 +41,7 @@
     </style>
   </head>
   <body>
-	<div class="title">
-	  <span class="title" id="title-text"></span>
+	<div class="title" id="title-text">
   	</div>
     <canvas class="backbuffer" id="canvas" oncontextmenu="event.preventDefault()"></canvas>
     <script type='text/javascript'>
@@ -65,11 +64,24 @@
         })(),
         setStatus: function(text) {
             console.log("status: " + text);
-            document.getElementById("title-text").innerHTML = text
+            display = ""
+            if (text.includes("Running...")) {
+            	display = "Loading..."
+            }
+            else if (text.includes("Downloading data...")) {
+            	var matches = text.match(/\((.*?)\)/);
+            	display = "Downloading: " 
+            	if (matches) {
+            		var progress = matches[1].split("/")
+            		var pct = progress[0]/progress[1]
+            		display += Math.floor(pct*100.0) + "%"
+            	}
+            }
+            document.getElementById("title-text").innerHTML = display
         },
         monitorRunDependencies: function(left) {
             console.log("monitor run deps: " + left);
-            document.getElementById("title-text").innerHTML = "run deps: " + left
+            document.getElementById("title-text").innerHTML = "Initializing..."
         }
       };
       window.onerror = function() {
