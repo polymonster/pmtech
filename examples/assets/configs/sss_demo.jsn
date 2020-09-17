@@ -6,7 +6,7 @@ import post_process.jsn
     {
         single_shadow_view:
         {
-            target             : [shadow_map],
+            target             : [single_shadow_map],
             clear_depth        : 1.0,
             colour_write_mask  : 0xf,
             blend_state        : disabled,
@@ -28,10 +28,8 @@ import post_process.jsn
             
             sampler_bindings:
             [
-			    { texture: shadow_map, unit: 8, state: clamp_linear, shader: ps },
-                { texture: shadow_map, unit: 15, state: shadow_compare, shader: ps },
-                { texture: area_light_textures, unit: 11, state: clamp_linear, shader: ps },
-                { texture: omni_shadow_map, unit: 10, state: clamp_linear, shader: ps }
+			    { texture: single_shadow_map, unit: 8, state: clamp_linear, shader: ps },
+                { texture: single_shadow_map, unit: 7, state: shadow_compare, shader: ps }
             ],
         }
     },

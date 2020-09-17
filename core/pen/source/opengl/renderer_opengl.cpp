@@ -846,8 +846,9 @@ namespace pen
 
     struct gl_sampler_object
     {
-        u32 sampler;
-        u32 depth_sampler; // gles3 does not allow linear filtering on depth textures unlike other platforms
+        u32     sampler;
+        u32     depth_sampler; // gles3 does not allow linear filtering on depth textures unlike other platforms
+        bool    compare;
     };
 
     struct resource_allocation
@@ -1303,6 +1304,8 @@ namespace pen
                 case CT_SAMPLER_2DMS:
                 case CT_SAMPLER_CUBE:
                 case CT_SAMPLER_2D_ARRAY:
+                case CT_SAMPLER_2D_DEPTH:
+                case CT_SAMPLER_2D_DEPTH_ARRAY:
                 {
                     loc = CHECK_CALL(glGetUniformLocation(prog, constant.name));
 
@@ -2149,6 +2152,7 @@ namespace pen
 
         u32 sampler_objects[2];
         glGenSamplers(2, &sampler_objects[0]);
+        _res_pool[resource_slot].sampler_object.compare = false;
 
         // creates 2 samplers, one of which is safe for depth textures by forcing nearest filtering
         for(u32 i = 0; i < 2; ++i)
@@ -2183,6 +2187,7 @@ namespace pen
             {
                 CHECK_CALL(glSamplerParameteri(sampler_objects[i], GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE));
                 CHECK_CALL(glSamplerParameteri(sampler_objects[i], GL_TEXTURE_COMPARE_FUNC, GL_LESS));
+                _res_pool[resource_slot].sampler_object.compare = true;
             }
             else
             {
@@ -2274,12 +2279,19 @@ namespace pen
         }
 
         u32 sampler_object = _res_pool[sampler_index].sampler_object.sampler;
-        if(res.texture.attachment == GL_DEPTH_ATTACHMENT || res.texture.attachment == GL_DEPTH_STENCIL_ATTACHMENT)
-        {
-            sampler_object = _res_pool[sampler_index].sampler_object.depth_sampler;
-        }
 
-        //sampler_object = _res_pool[sampler_index].sampler_object.depth_sampler;
+#ifdef PEN_GLES3
+        // gles3 does not allow linear sampling on depth textures unless its compare to texture
+        // this forces nearest filtering to maintain parity woth other gl versions and other rendering api's
+        if(!_res_pool[sampler_index].sampler_object.compare)
+        {
+            if(res.texture.attachment == GL_DEPTH_ATTACHMENT || res.texture.attachment == GL_DEPTH_STENCIL_ATTACHMENT)
+            {
+                sampler_object = _res_pool[sampler_index].sampler_object.depth_sampler;
+            }
+        }
+#endif
+
         glBindSampler(resource_slot, sampler_object);
 
         if (target == GL_TEXTURE_2D_ARRAY)

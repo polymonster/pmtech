@@ -196,8 +196,15 @@ namespace put
                 cc++;
             }
 
-            static Str sampler_type_names[] = {"texture_2d", "texture_3d", "texture_cube", "texture_2dms",
-                                               "texture_2d_array"};
+            static Str sampler_type_names[] = {
+                "texture_2d", 
+                "texture_3d", 
+                "texture_cube", 
+                "texture_2dms", 
+                "texture_2d_array", 
+                "depth_2d", 
+                "depth_2d_array"
+            };
 
             const pen::json& j_samplers = j_technique["texture_sampler_bindings"];
 

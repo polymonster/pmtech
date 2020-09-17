@@ -1,9 +1,7 @@
 #include "../example_common.h"
-#include "shader_structs/forward_render.h"
 
 using namespace put;
 using namespace ecs;
-using namespace forward_render;
 
 namespace pen
 {
@@ -12,7 +10,7 @@ namespace pen
         pen::pen_creation_params p;
         p.window_width = 1280;
         p.window_height = 720;
-        p.window_title = "rigid_body_primitives";
+        p.window_title = "single_shadow";
         p.window_sample_count = 4;
         p.user_thread_function = user_setup;
         p.flags = pen::e_pen_create_flags::renderer;
@@ -23,7 +21,7 @@ namespace pen
 void example_setup(ecs_scene* scene, camera& cam)
 {
     pmfx::set_view_set("editor_basic");
-    
+
     scene->view_flags &= ~e_scene_view_flags::hide_debug;
     editor_set_transform_mode(e_transform_mode::physics);
 
@@ -56,7 +54,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->names[ground] = "ground";
     scene->transforms[ground].translation = vec3f::zero();
     scene->transforms[ground].rotation = quat();
-    scene->transforms[ground].scale = vec3f(50.0f, 1.0f, 50.0f);
+    scene->transforms[ground].scale = vec3f(20.0f, 1.0f, 20.0f);
     scene->entities[ground] |= e_cmp::transform;
     scene->parents[ground] = ground;
     instantiate_geometry(box, scene, ground);
@@ -66,52 +64,15 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->physics_data[ground].rigid_body.shape = physics::e_shape::box;
     scene->physics_data[ground].rigid_body.mass = 0.0f;
     instantiate_rigid_body(scene, ground);
-    
-    vec3f wall_pos[] = {
-        vec3f(-51.0f, 2.0f, 0.0f),
-        vec3f( 51.0f, 2.0f, 0.0f),
-        vec3f( 0.0f, 2.0f, -51.0f),
-        vec3f( 0.0f, 2.0f, 51.0f)
-    };
-    
-    vec3f wall_size[] = {
-        vec3f(1.0f, 2.0f, 50.0f),
-        vec3f(1.0f, 2.0f, 50.0f),
-        vec3f(52.0f, 2.0f, 1.0f),
-        vec3f(52.0f, 2.0f, 1.0f)
-    };
-    
-    // walls to stop falling bodies
-    for(u32 i = 0; i < 4; ++i)
-    {
-        u32 wall = get_new_entity(scene);
-        scene->names[wall] = "wall";
-        scene->transforms[wall].translation = wall_pos[i];
-        scene->transforms[wall].rotation = quat();
-        scene->transforms[wall].scale = wall_size[i];
-        scene->entities[wall] |= e_cmp::transform;
-        scene->parents[wall] = wall;
-        scene->physics_data[wall].rigid_body.shape = physics::e_shape::box;
-        scene->physics_data[wall].rigid_body.mass = 0.0f;
-        instantiate_geometry(box, scene, wall);
-        instantiate_material(default_material, scene, wall);
-        instantiate_model_cbuffer(scene, wall);
-        instantiate_rigid_body(scene, wall);
-    }
 
     vec3f start_positions[] = {
-        vec3f(-20.0f, 10.0f, -20.0f), vec3f(20.0f, 10.0f, 20.0f), vec3f(-20.0f, 10.0f, 20.0f),
-        vec3f(20.0f, 10.0f, -20.0f),  vec3f(0.0f, 10.0f, 0.0f),
+        vec3f(-4.f, 2.0f, -4.f)
     };
 
     const c8* primitive_names[] = {"box", "cylinder", "capsule", "cone", "sphere"};
-
-    physics::shape_type primitive_types[] = {physics::e_shape::box, physics::e_shape::cylinder, physics::e_shape::capsule,
-                                             physics::e_shape::cone, physics::e_shape::sphere};
-
     geometry_resource* primitive_resources[] = {box, cylinder, capsule, cone, sphere};
 
-    s32 num_prims = 5;
+    s32 num_prims = 1;
 
     for (s32 p = 0; p < num_prims; ++p)
     {
@@ -140,17 +101,6 @@ void example_setup(ecs_scene* scene, camera& cam)
                     instantiate_material(default_material, scene, new_prim);
                     instantiate_model_cbuffer(scene, new_prim);
 
-                    scene->physics_data[new_prim].rigid_body.shape = primitive_types[p];
-                    scene->physics_data[new_prim].rigid_body.mass = 1.0f;
-                    instantiate_rigid_body(scene, new_prim);
-                    
-                    simple_lighting* m = (simple_lighting*)&scene->material_data[new_prim].data[0];
-                    
-                    ImColor ii = ImColor::HSV((rand() % 255) / 255.0f, 1.0f, 1.0f);
-                    m->m_albedo = vec4f(ii.Value.x, ii.Value.y, ii.Value.z, 1.0f);
-                    m->m_roughness = 0.09f;
-                    m->m_reflectivity = 0.3f;
-
                     cur_pos.x += 2.5f;
                 }
 
@@ -168,4 +118,25 @@ void example_setup(ecs_scene* scene, camera& cam)
 
 void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
 {
+    quat q;
+    q.euler_angles(0.01f, 0.01f, 0.01f);
+    
+    dt *= 0.05f;
+
+    static f32 lr[] = {M_PI};
+
+    for (u32 i = 0; i < 1; ++i)
+    {
+        // animate lights
+        f32 dirsign = 1.0f;
+        if (i % 2 == 0)
+            dirsign = -1.0f;
+
+        lr[i] += (dt * 5.0f * dirsign * (i + 1));
+
+        vec2f xz = vec2f(cos(lr[i]), sin(lr[i]));
+
+        vec3f dir = vec3f(xz.x, 1.0f, xz.y);
+        scene->lights[i].direction = dir;
+    }
 }

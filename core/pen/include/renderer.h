@@ -161,6 +161,8 @@ namespace pen
         CT_SAMPLER_CUBE,
         CT_SAMPLER_2DMS,
         CT_SAMPLER_2D_ARRAY,
+        CT_SAMPLER_2D_DEPTH,
+        CT_SAMPLER_2D_DEPTH_ARRAY,
         CT_CBUFFER,
         CT_CONSTANT
     };

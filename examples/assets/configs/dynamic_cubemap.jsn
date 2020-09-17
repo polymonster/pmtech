@@ -11,34 +11,49 @@ import post_process.jsn
             type: cube
         },
         
+		chrome_depth:
+        {
+            size  : [256,256],
+            format: d24s8,
+            type: cube
+        },
+        
         chrome2:
         {
             size  : [256,256],
             format: rgba8,
             type: cube        
-        }
+        },
+        
+		chrome2_depth:
+        {
+            size  : [256,256],
+            format: d24s8,
+            type: cube
+        },
     },
                 
     views:
     {
         demo_main(main_view):
         {
-            clear_colour: [1.0, 1.0, 1.0, 1.0]
+            clear_colour: [1.0, 1.0, 1.0, 1.0],
+            
+            sampler_bindings:
+            [
+                { texture: single_shadow_map, unit: 7, state: shadow_compare, shader: ps }
+            ]
         },
         
         chrome1_cubemap_render(demo_main):
         {
-            pmfx_shader : forward_render,
-            technique: "forward_lit",
-            target : [chrome],
+            target : [chrome, chrome_depth],
             camera : "chrome_camera"
         },
         
         chrome2_cubemap_render(demo_main):
         {
-            pmfx_shader : forward_render,
-            technique: "forward_lit",
-            target : [chrome2],
+            target : [chrome2, chrome2_depth],
             camera : "chrome2_camera"
         }
     },
@@ -46,6 +61,7 @@ import post_process.jsn
     view_sets: 
     {
         dynamic_cubemap: [
+        	single_shadow_view,
             chrome1_cubemap_render,
             chrome2_cubemap_render,
             demo_main

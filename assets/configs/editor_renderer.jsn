@@ -47,6 +47,19 @@ import post_process.jsn
     		raster_state : default,
     		clear_colour : [0.0, 0.0, 0.0, 1.0]
     	},
+    	
+		editor_main_basic(main_view):
+    	{
+    		raster_state : default,
+    		clear_colour : [0.0, 0.0, 0.0, 1.0],
+			pmfx_shader  : forward_render,
+            technique    : simple_lighting,
+	
+			sampler_bindings:
+            [
+                { texture: single_shadow_map, unit: 7, state: shadow_compare, shader: ps }
+            ]
+    	},
 		
 		editor_main_gi(main_view_temporal_aa):
     	{
@@ -147,7 +160,8 @@ import post_process.jsn
         ],
         
         editor_basic: [
-			editor_main,
+        	single_shadow_view,
+			editor_main_basic,
             editor_view
         ],
         

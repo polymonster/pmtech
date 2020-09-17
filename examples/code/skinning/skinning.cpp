@@ -1,7 +1,9 @@
 #include "../example_common.h"
+#include "shader_structs/forward_render.h"
 
 using namespace put;
 using namespace ecs;
+using namespace forward_render;
 
 namespace pen
 {
@@ -20,6 +22,8 @@ namespace pen
 
 void example_setup(ecs_scene* scene, camera& cam)
 {
+    pmfx::set_view_set("editor_basic");
+    
     clear_scene(scene);
 
     material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
@@ -33,6 +37,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->lights[light].colour = vec3f::one();
     scene->lights[light].direction = vec3f::one();
     scene->lights[light].type = e_light_type::dir;
+    scene->lights[light].flags = e_light_flags::shadow_map;
     scene->transforms[light].translation = vec3f::zero();
     scene->transforms[light].rotation = quat();
     scene->transforms[light].scale = vec3f::one();
@@ -44,13 +49,13 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->names[ground] = "ground";
     scene->transforms[ground].translation = vec3f::zero();
     scene->transforms[ground].rotation = quat();
-    scene->transforms[ground].scale = vec3f(50.0f, 1.0f, 50.0f);
+    scene->transforms[ground].scale = vec3f(30.0f, 1.0f, 30.0f);
     scene->entities[ground] |= e_cmp::transform;
     scene->parents[ground] = ground;
     instantiate_geometry(box, scene, ground);
     instantiate_material(default_material, scene, ground);
     instantiate_model_cbuffer(scene, ground);
-
+    
     // load a skinned character
     u32 skinned_char = load_pmm("data/models/characters/testcharacter/testcharacter.pmm", scene);
     PEN_ASSERT(is_valid(skinned_char));
@@ -67,6 +72,11 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->anim_controller_v2[skinned_char].blend.anim_a = 0;
     scene->anim_controller_v2[skinned_char].blend.anim_b = 0;
     scene->anim_controller_v2[skinned_char].blend.ratio = 0.0f;
+    
+    simple_lighting* m = (simple_lighting*)&scene->material_data[skinned_char].data[0];
+    m->m_albedo = vec4f::white();
+    m->m_roughness = 0.05f;
+    m->m_reflectivity = 0.3f;
 }
 
 void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)

@@ -1028,6 +1028,8 @@ namespace put
                 // single
                 pen::renderer_draw_indexed(p_geom->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
             }
+            
+            sb_free(culled_entities);
         }
 
         void update_animations(ecs_scene* scene, f32 dt)
@@ -1620,19 +1622,19 @@ namespace put
             pen::renderer_update_buffer(scene->area_light_buffer, &al_buffer, sizeof(al_buffer));
 
             const pmfx::render_target* alrt = pmfx::get_render_target(PEN_HASH("area_light_textures"));
-            if (!alrt)
-                return;
-
-            if (alrt->num_arrays < num_area_lights)
+            if (alrt)
             {
-                pmfx::rt_resize_params rrp;
-                rrp.width = 640;
-                rrp.height = 480;
-                rrp.format = nullptr;
-                rrp.num_arrays = std::max<u32>(num_area_lights, 1);
-                rrp.num_mips = -1;
-                rrp.collection = pen::TEXTURE_COLLECTION_ARRAY;
-                pmfx::resize_render_target(PEN_HASH("area_light_textures"), rrp);
+                if (alrt->num_arrays < num_area_lights)
+                {
+                    pmfx::rt_resize_params rrp;
+                    rrp.width = 640;
+                    rrp.height = 480;
+                    rrp.format = nullptr;
+                    rrp.num_arrays = std::max<u32>(num_area_lights, 1);
+                    rrp.num_mips = -1;
+                    rrp.collection = pen::TEXTURE_COLLECTION_ARRAY;
+                    pmfx::resize_render_target(PEN_HASH("area_light_textures"), rrp);
+                }
             }
 
             // Distance field shadows
@@ -1674,16 +1676,19 @@ namespace put
 
             // resize shadow maps..
             const pmfx::render_target* sm = pmfx::get_render_target(PEN_HASH("shadow_map"));
-            if (sm->num_arrays < num_shadow_maps)
+            if(sm)
             {
-                pmfx::rt_resize_params rrp;
-                rrp.width = sm->width;
-                rrp.height = sm->height;
-                rrp.format = nullptr;
-                rrp.num_arrays = num_shadow_maps;
-                rrp.num_mips = 1;
-                rrp.collection = pen::TEXTURE_COLLECTION_ARRAY;
-                pmfx::resize_render_target(PEN_HASH("shadow_map"), rrp);
+                if (sm->num_arrays < num_shadow_maps)
+                {
+                    pmfx::rt_resize_params rrp;
+                    rrp.width = sm->width;
+                    rrp.height = sm->height;
+                    rrp.format = nullptr;
+                    rrp.num_arrays = num_shadow_maps;
+                    rrp.num_mips = 1;
+                    rrp.collection = pen::TEXTURE_COLLECTION_ARRAY;
+                    pmfx::resize_render_target(PEN_HASH("shadow_map"), rrp);
+                }
             }
 
             // resize omni directional

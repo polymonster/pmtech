@@ -95,8 +95,9 @@ void example_setup(ecs_scene* scene, camera& cam)
 
                 scene->entities[new_prim] |= e_cmp::sub_instance;
 
-                ImColor ii = ImColor::HSV((rand() % 255) / 255.0f, (rand() % 255) / 255.0f, (rand() % 255) / 255.0f);
-                scene->draw_call_data[new_prim].v2 = vec4f(ii.Value.x, ii.Value.y, ii.Value.z, 1.0f);
+                vec3f hsv = vec3f((f32)(rand() % RAND_MAX) / (f32)RAND_MAX, 1.0f, 1.0f);
+                vec3f rgb = maths::hsv_to_rgb(hsv);
+                scene->draw_call_data[new_prim].v2 = vec4f(rgb, 1.0f);
 
                 cur_pos.x += spacing;
             }

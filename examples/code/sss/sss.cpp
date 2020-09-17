@@ -64,19 +64,18 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->samplers[head_model].sb[1].sampler_unit = 1;
 
     // set material to sss
-    scene->material_resources[head_model].id_technique = PEN_HASH("forward_lit");
+    scene->material_resources[head_model].id_technique = PEN_HASH("simple_lighting");
     scene->material_resources[head_model].shader_name = "forward_render";
     scene->material_resources[head_model].id_shader = PEN_HASH(scene->material_resources[head_model].shader_name);
+    scene->material_permutation[head_model] |= SIMPLE_LIGHTING_SSS;
 
-    scene->material_permutation[head_model] |= FORWARD_LIT_SSS;
-
-    forward_lit_sss mat_data;
+    simple_lighting_sss mat_data;
     mat_data.m_albedo = float4::one();
     mat_data.m_roughness = 0.5f;
     mat_data.m_reflectivity = 0.22f;
     mat_data.m_sss_scale = 370.0f;
 
-    memcpy(scene->material_data[head_model].data, &mat_data, sizeof(forward_lit_sss));
+    memcpy(scene->material_data[head_model].data, &mat_data, sizeof(simple_lighting_sss));
 
     bake_material_handles();
 

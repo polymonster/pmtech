@@ -163,7 +163,13 @@
     },
     
     render_targets:
-    {                
+    {       
+    	single_shadow_map:
+    	{
+			size: [2048, 2048],
+            format: d32f
+    	},
+    	         
         shadow_map:
         {
             size: [2048, 2048],
@@ -250,6 +256,19 @@
             ],
         },
         
+		main_view_basic(main_view):
+    	{
+    		raster_state : default,
+    		clear_colour : [0.0, 0.0, 0.0, 1.0],
+			pmfx_shader  : forward_render,
+            technique    : simple_lighting,
+	
+			sampler_bindings:
+            [
+                { texture: single_shadow_map, unit: 7, state: shadow_compare, shader: ps }
+            ]
+    	},
+        
         main_view_alpha_blended:
         {
             target             : [main_colour, main_depth],
@@ -285,6 +304,11 @@
             scene              : main_scene,
             scene_views        : ["ecs_render_shadow_maps"],
             render_flags       : ["shadow_map"]
+        },
+        
+        single_shadow_view(multiple_shadow_views):
+        {
+        	target             : [single_shadow_map],
         },
         
 		multiple_colour_shadow_views:
