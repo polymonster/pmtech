@@ -179,6 +179,12 @@ namespace
     {
         static f32 ft = 0.0f;
         static pen::timer* t = pen::timer_create();
+        static bool start = true;
+        if(start)
+        {
+            pen::timer_start(t);
+            start = false;
+        }
         ft += pen::timer_elapsed_ms(t);
         pen::timer_start(t);
 
