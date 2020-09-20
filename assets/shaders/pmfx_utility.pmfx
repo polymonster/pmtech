@@ -306,7 +306,6 @@ ps_output ps_cubemapped( vs_output input )
     ps_output output;
     
     float3 rd = normalize(input.world_pos.xyz - camera_view_pos.xyz);
-    
     float3 r = reflect(rd, normalize(input.normal.xyz));
     
     output.colour = sample_texture( cubemap_texture, r );

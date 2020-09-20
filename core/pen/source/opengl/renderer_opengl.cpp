@@ -1284,6 +1284,9 @@ namespace pen
         {
             constant_layout_desc& constant = params.constants[i];
             GLint                 loc;
+            
+            if(constant.location == 2)
+                continue;
 
             switch (constant.type)
             {
@@ -1308,11 +1311,12 @@ namespace pen
                 case CT_SAMPLER_2D_DEPTH_ARRAY:
                 {
                     loc = CHECK_CALL(glGetUniformLocation(prog, constant.name));
-
-                    linked_program->texture_location[constant.location] = loc;
-
-                    if (loc != -1 && loc != constant.location)
-                        CHECK_CALL(glUniform1i(loc, constant.location));
+                    if(loc != -1)
+                    {
+                        linked_program->texture_location[constant.location] = loc;
+                        if (loc != -1 && loc != constant.location)
+                            CHECK_CALL(glUniform1i(loc, constant.location));
+                    }
                 }
                 break;
                 default:
@@ -1747,6 +1751,9 @@ namespace pen
             }
         }
 
+        // slightly confusing and messy, faces is used for cubemaps they have 6
+        // mip_d is number of slices in array or 3D textures, and with 3D texture they downsize.
+        // with arrays mip_d remains constant for all mip levels
         for (u32 a = 0; a < num_faces; ++a)
         {
             mip_w = tcp.width;
@@ -1771,15 +1778,20 @@ namespace pen
                     }
                     else
                     {
-                        if (base_texture_target == GL_TEXTURE_3D ||
-                            tcp.collection_type == TEXTURE_COLLECTION_ARRAY ||
-                            tcp.collection_type == TEXTURE_COLLECTION_CUBE_ARRAY)
+                        if (base_texture_target == GL_TEXTURE_3D)
                         {
                             CHECK_CALL(glTexImage3D(base_texture_target, mip, sized_format, mip_w, mip_h, mip_d, 0, format,
                                                     type, mip_data));
                         }
+                        else if ( tcp.collection_type == TEXTURE_COLLECTION_ARRAY ||
+                            tcp.collection_type == TEXTURE_COLLECTION_CUBE_ARRAY)
+                        {
+                            CHECK_CALL(glTexImage3D(base_texture_target, mip, sized_format, mip_w, mip_h, mip_d, 0, format,
+                                                    type, nullptr));
+                        }
                         else
                         {
+                            // cubemap
                             CHECK_CALL(glTexImage2D(base_texture_target + a, mip, sized_format, mip_w, mip_h, 0, format, type,
                                                     mip_data));
                         }
@@ -1791,11 +1803,45 @@ namespace pen
 
                 mip_w /= 2;
                 mip_h /= 2;
-                mip_d /= 2;
-
+                
                 mip_w = max<u32>(1, mip_w);
                 mip_h = max<u32>(1, mip_h);
-                mip_d = max<u32>(1, mip_d);
+                
+                if(base_texture_target == GL_TEXTURE_3D)
+                {
+                    mip_d /= 2;
+                    mip_d = max<u32>(1, mip_d);
+                }
+            }
+            
+            // array layouts coming for dds do not plug in to glTexImage3D in a friendly way
+            // glTexSubImage3D is required to supply per-slice, per-mip
+            if(tcp.data)
+            {
+                if(tcp.collection_type == TEXTURE_COLLECTION_ARRAY)
+                {
+                    mip_data = (c8*)tcp.data;
+                    for (u32 a = 0; a < num_slices; ++a)
+                    {
+                        mip_w = tcp.width;
+                        mip_h = tcp.height;
+                    
+                        for (u32 mip = 0; mip < tcp.num_mips; ++mip)
+                        {
+                            u32 pitch = tcp.block_size * (mip_w / tcp.pixels_per_block);
+                            u32 depth_pitch = pitch * (mip_h / tcp.pixels_per_block);
+
+                            glTexSubImage3D(base_texture_target, mip, 0, 0, a, mip_w, mip_h, 1, format, type, mip_data);
+                            
+                            mip_w /= 2;
+                            mip_h /= 2;
+                            mip_w = max<u32>(1, mip_w);
+                            mip_h = max<u32>(1, mip_h);
+                            
+                            mip_data += depth_pitch;
+                        }
+                    }
+                }
             }
         }
 
@@ -2264,9 +2310,7 @@ namespace pen
                 if (max_mip > 1 && res.render_target.invalidate)
                 {
                     res.render_target.invalidate = 0;
-#ifndef PEN_GLES3
                     CHECK_CALL(glGenerateMipmap(target));
-#endif
                 }
             }
         }

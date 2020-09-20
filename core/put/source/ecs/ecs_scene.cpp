@@ -1760,8 +1760,8 @@ namespace put
                     // bind stream out targets
                     cmp_pre_skin& pre_skin = scene->pre_skin[n];
                     pen::renderer_set_stream_out_target(geom.vertex_buffer);
-                    pen::renderer_set_constant_buffer(geom.p_skin->bone_cbuffer, 2, pen::CBUFFER_BIND_VS);
                     pen::renderer_set_vertex_buffer(pre_skin.vertex_buffer, 0, pre_skin.vertex_size, 0);
+                    pen::renderer_set_constant_buffer(geom.p_skin->bone_cbuffer, 2, pen::CBUFFER_BIND_VS);
 
                     // render point list
                     pen::renderer_draw(pre_skin.num_verts, 0, PEN_PT_POINTLIST);

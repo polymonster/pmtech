@@ -259,9 +259,19 @@ vs_output_pre_skin vs_main_pre_skin( vs_input_skinned input )
     output.vb_position = sp;
     output.normal = input.normal;
     output.tangent = input.tangent;
-    output.bitangent = input.tangent;
+    output.bitangent = input.bitangent;
     output.texcoord = input.texcoord;
-        
+    
+    float3 t = input.tangent.xyz;
+    float3 b = input.bitangent.xyz;
+    float3 n = input.normal.xyz;
+    
+    skin_tbn(t, b, n, input.blend_weights, input.blend_indices);
+    
+	output.normal.xyz = n;
+    output.tangent.xyz = t;
+    output.bitangent.xyz = b;
+    
     return output;
 }
 
@@ -526,47 +536,6 @@ ps_output ps_forward_lit( vs_output input )
             shadow = sample_shadow_array_pcf_9(float(shadow_map_index), sp.xyz);
             
             lit_colour += light_col * shadow;
-            
-            /*
-            if:(SSS)
-            {
-                // sss
-                float sss_offset = 0.1;
-                float4 shrink_pos = float4(input.world_pos.xyz - input.normal.xyz * sss_offset, 1.0);
-                
-                sp = mul( shrink_pos, shadow_matrix[i] );
-                sp.xyz /= sp.w;
-                sp.y *= -1.0;
-                sp.xy = sp.xy * 0.5 + 0.5;
-				sp.z = remap_depth(sp.z);
-                
-                float4 sm = sample_texture_array_level( shadowmap_texture_sss, sp.xy, float(shadow_map_index), 0.0 );
-                d = sm.r;
-                
-                float fp = 1.0;
-                float3 light_dir = input.world_pos.xyz - lights[i].pos_radius.xyz;
-            
-                float d1 = d;
-                float d2 = sp.z;
-                d1 *= fp;
-                float sssd = m_sss_scale * abs(d1 - d2) * 0.5 + 0.5;
-                            
-                float dd = -(sssd * sssd);
-                float3 profile = float3(0.233, 0.455, 0.649) * exp(dd / 0.0064) +
-                     float3(0.1,   0.336, 0.344) * exp(dd / 0.0484) +
-                     float3(0.118, 0.198, 0.0)   * exp(dd / 0.187)  +
-                     float3(0.113, 0.007, 0.007) * exp(dd / 0.567)  +
-                     float3(0.358, 0.004, 0.0)   * exp(dd / 1.99)   +
-                     float3(0.078, 0.0,   0.0)   * exp(dd / 7.41);
-                            
-                float sss = saturate(0.5 + dot(light_dir, n));
-                
-                profile *= albedo.rgb;
-                
-                lit_colour.rgb += profile * sss;
-                lit_colour += albedo.rgb * 0.15;
-            }
-            */
             
             ++shadow_map_index;
         }
