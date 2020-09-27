@@ -4,10 +4,11 @@
 
 #include <windows.h>
 
+#include "os.h"
+
 #include "data_struct.h"
 #include "hash.h"
 #include "input.h"
-#include "os.h"
 #include "pen.h"
 #include "pen_string.h"
 #include "renderer.h"
@@ -16,8 +17,7 @@
 #include "threads.h"
 #include "timer.h"
 
-// the last 2 global externs! \o/
-pen::user_info              pen_user_info;
+// the last global extern!
 pen::window_creation_params pen_window;
 
 //
@@ -124,12 +124,17 @@ namespace
         int       cmdshow;
     };
 
-    pen::ring_buffer<os_cmd> s_cmd_buffer;
-    HWND                     s_hwnd = nullptr;
-    HINSTANCE                s_hinstance = nullptr;
-    bool                     s_terminate_app = false;
-    u32                      s_return_code = 0;
-    pen::pen_creation_params s_creation_params;
+    struct os_context
+    {
+        pen::user_info           user_info = {};
+        HWND                     hwnd = nullptr;
+        HINSTANCE                hinstance = nullptr;
+        bool                     terminate_app = false;
+        u32                      return_code = 0;
+        pen::pen_creation_params creation_params = {};
+        pen::ring_buffer<os_cmd> cmd_buffer;
+    };
+    os_context s_ctx;
 
     void pen_window_resize(u32 w, u32 h)
     {
@@ -151,12 +156,12 @@ namespace
         if (pen::window_init(((void*)&wp)))
             return 0;
 
-        // init renderer will enter a loop wait for rendering commands, and call os update
+        // renderer_init will enter a loop wait for rendering commands, and call os update
         HWND hwnd = (HWND)pen::window_get_primary_display_handle();
         create_ctx(hwnd);
-        pen::renderer_init((void*)&hwnd, true, s_creation_params.max_renderer_commands);
+        pen::renderer_init((void*)&hwnd, true, s_ctx.creation_params.max_renderer_commands);
 
-        return s_return_code;
+        return s_ctx.return_code;
     }
 
     u32 pen_run_console()
@@ -166,7 +171,7 @@ namespace
             pen::os_update();
         }
 
-        return s_return_code;
+        return s_ctx.return_code;
     }
 } // namespace
 
@@ -179,11 +184,10 @@ namespace pen
         static bool init_jobs = true;
         if (init_jobs)
         {
-            auto& pcp = s_creation_params;
+            auto& pcp = s_ctx.creation_params;
             jobs_create_job(pcp.user_thread_function, 1024 * 1024, pcp.user_data, pen::e_thread_start_flags::detached);
             init_jobs = false;
         }
-
 
         for (;;)
         {
@@ -194,7 +198,7 @@ namespace pen
                 DispatchMessage(&msg);
 
                 if (WM_QUIT == msg.message)
-                    s_terminate_app = true;
+                    s_ctx.terminate_app = true;
             }
             else
             {
@@ -202,8 +206,7 @@ namespace pen
             }
         }
 
-
-        os_cmd* cmd = s_cmd_buffer.get();
+        os_cmd* cmd = s_ctx.cmd_buffer.get();
         while (cmd)
         {
             // process cmd
@@ -212,8 +215,8 @@ namespace pen
                 case e_os_cmd::set_window_frame:
                 {
                     RECT r;
-                    SetWindowPos(s_hwnd, HWND_TOP, cmd->frame.x, cmd->frame.y, cmd->frame.width, cmd->frame.height, 0);
-                    GetClientRect(s_hwnd, &r);
+                    SetWindowPos(s_ctx.hwnd, HWND_TOP, cmd->frame.x, cmd->frame.y, cmd->frame.width, cmd->frame.height, 0);
+                    GetClientRect(s_ctx.hwnd, &r);
                     pen_window_resize(r.right - r.left, r.bottom - r.top);
                 }
                 break;
@@ -222,13 +225,14 @@ namespace pen
             }
 
             // get next
-            cmd = s_cmd_buffer.get();
+            cmd = s_ctx.cmd_buffer.get();
         }
 
         pen::input_gamepad_update();
 
-        if (s_terminate_app)
+        if (s_ctx.terminate_app)
         {
+            // waits for other threads to terminate gracefully
             if (pen::jobs_terminate_all())
                 return false;
         }
@@ -239,13 +243,13 @@ namespace pen
 
     void os_terminate(u32 return_code)
     {
-        s_return_code = return_code;
-        s_terminate_app = true;
+        s_ctx.return_code = return_code;
+        s_ctx.terminate_app = true;
     }
 
     u32 window_init(void* params)
     {
-        s_cmd_buffer.create(32);
+        s_ctx.cmd_buffer.create(32);
 
         window_params* wp = (window_params*)params;
 
@@ -269,7 +273,7 @@ namespace pen
             return E_FAIL;
 
         // Create window
-        s_hinstance = wp->hinstance;
+        s_ctx.hinstance = wp->hinstance;
 
         // pass in as params
         RECT rc = {0, 0, (LONG)pen_window.width, (LONG)pen_window.height};
@@ -284,35 +288,35 @@ namespace pen
         LONG half_window_x = (rc.right - rc.left) / 2;
         LONG half_window_y = (rc.bottom - rc.top) / 2;
 
-        s_hwnd = CreateWindowA(pen_window.window_title, pen_window.window_title, WS_OVERLAPPEDWINDOW,
+        s_ctx.hwnd = CreateWindowA(pen_window.window_title, pen_window.window_title, WS_OVERLAPPEDWINDOW,
                                screen_mid_x - half_window_x, screen_mid_y - half_window_y, rc.right - rc.left,
                                rc.bottom - rc.top, nullptr, nullptr, wp->hinstance, nullptr);
 
         DWORD lasterror = GetLastError();
 
-        if (!s_hwnd)
+        if (!s_ctx.hwnd)
             return E_FAIL;
 
-        ShowWindow(s_hwnd, wp->cmdshow);
+        ShowWindow(s_ctx.hwnd, wp->cmdshow);
 
-        SetForegroundWindow(s_hwnd);
+        SetForegroundWindow(s_ctx.hwnd);
 
         return S_OK;
     }
 
     void set_unicode_key(u32 key_index, bool down)
     {
-        static wchar_t buf[32];
-        static char    utf8[32];
+        static wchar_t  buf[32];
+        static c8       utf8[32];
 
         // modifiers
         BYTE key_state[256] = {0};
         GetKeyboardState(key_state);
 
-        int result =
+        s32 result =
             ToUnicodeEx(key_index, MapVirtualKey(key_index, MAPVK_VK_TO_VSC), key_state, buf, _countof(buf), 0, nullptr);
 
-        int num = WideCharToMultiByte(CP_UTF8, 0, buf, -1, utf8, 32, nullptr, nullptr);
+        s32 num = WideCharToMultiByte(CP_UTF8, 0, buf, -1, utf8, 32, nullptr, nullptr);
 
         if (down)
             pen::input_add_unicode_input(utf8);
@@ -407,13 +411,13 @@ namespace pen
 
     void* window_get_primary_display_handle()
     {
-        return s_hwnd;
+        return s_ctx.hwnd;
     }
 
     void window_get_frame(window_frame& f)
     {
         RECT r;
-        GetWindowRect(s_hwnd, &r);
+        GetWindowRect(s_ctx.hwnd, &r);
 
         f.x = r.left;
         f.y = r.top;
@@ -427,8 +431,7 @@ namespace pen
         os_cmd cmd;
         cmd.cmd_index = e_os_cmd::set_window_frame;
         cmd.frame = f;
-
-        s_cmd_buffer.put(cmd);
+        s_ctx.cmd_buffer.put(cmd);
     }
 
     void os_set_cursor_pos(u32 client_x, u32 client_y)
@@ -462,7 +465,7 @@ namespace pen
 
     const user_info& os_get_user_info()
     {
-        return pen_user_info;
+        return s_ctx.user_info;
     }
 
     void window_get_size(s32& width, s32& height)
@@ -505,7 +508,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     u32 dir = pen::str_find_reverse(working_directory, "/");
     working_directory = pen::str_substr(working_directory, 0, dir + 1);
 
-    pen_user_info.working_directory = working_directory.c_str();
+    s_ctx.user_info.working_directory = working_directory.c_str();
 
     // call user entry / setup
     pen::pen_creation_params pc = pen::pen_entry(0, nullptr);
@@ -513,7 +516,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     pen_window.height = pc.window_height;
     pen_window.window_title = pc.window_title;
     pen_window.sample_count = pc.window_sample_count;
-    s_creation_params = pc;
+    s_ctx.creation_params = pc;
 
     if (pc.flags & pen::e_pen_create_flags::renderer)
     {
@@ -537,5 +540,5 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     }
 
     // exit program
-    return s_return_code;
+    return s_ctx.return_code;
 }
