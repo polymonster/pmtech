@@ -33,16 +33,14 @@ namespace
         u32                         return_code = 0;
         pen::user_info              pen_user_info;
         pen::pen_creation_params    creation_params;
+        NSWindow*                   window;
+        bool                        terminate_app = false;
     };
     os_context s_ctx;
 
-    // todo.. move into context
-    NSWindow* _window;
-    bool      pen_terminate_app = false;
-
     void _update_window_frame()
     {
-        NSRect rect = [_window frame];
+        NSRect rect = [s_ctx.window frame];
 
         s_ctx.frame.x = rect.origin.x;
         s_ctx.frame.y = rect.origin.y;
@@ -85,6 +83,7 @@ namespace
 //
 // Metal Context
 //
+
 #ifdef PEN_RENDERER_METAL
 #import <MetalKit/MetalKit.h>
 #import <QuartzCore/CAMetalLayer.h>
@@ -129,7 +128,7 @@ namespace
 
 void create_metal_context()
 {
-    NSRect frame = [[_window contentView] bounds];
+    NSRect frame = [[s_ctx.window contentView] bounds];
     _metal_view = [[MTKView alloc] initWithFrame:frame device:MTLCreateSystemDefaultDevice()];
     _metal_view.depthStencilPixelFormat = MTLPixelFormatDepth24Unorm_Stencil8;
     _metal_view.sampleCount = pen_window.sample_count;
@@ -139,12 +138,12 @@ void create_metal_context()
     _metal_view.delegate = dg;
 
     //assign metal view to window sub view
-    [_window.contentView addSubview:_metal_view];
+    [s_ctx.window.contentView addSubview:_metal_view];
 }
 
 void pen_window_resize()
 {
-    NSRect view_rect = [[_window contentView] bounds];
+    NSRect view_rect = [[s_ctx.window contentView] bounds];
     [_metal_view setFrameSize:view_rect.size];
     pen::_renderer_resize_backbuffer(view_rect.size.width, view_rect.size.height);
 
@@ -173,6 +172,7 @@ void run()
 //
 // OpenGL Context
 //
+
 #define GL_SILENCE_DEPRECATION
 #import <OpenGL/gl3.h>
 #define PEN_GL_PROFILE_VERSION NSOpenGLProfileVersion4_1Core
@@ -405,9 +405,9 @@ namespace
 
     void get_mouse_pos(f32& x, f32& y)
     {
-        NSRect  original_frame = [_window frame];
-        NSPoint location = [_window mouseLocationOutsideOfEventStream];
-        NSRect  adjust_frame = [_window contentRectForFrameRect:original_frame];
+        NSRect  original_frame = [s_ctx.window frame];
+        NSPoint location = [s_ctx.window mouseLocationOutsideOfEventStream];
+        NSRect  adjust_frame = [s_ctx.window contentRectForFrameRect:original_frame];
 
         x = location.x;
         y = (int)adjust_frame.size.height - location.y;
@@ -592,20 +592,19 @@ namespace
             NSUInteger style_mask = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable |
                                     NSWindowStyleMaskResizable;
 
-            _window = [[NSWindow alloc] initWithContentRect:frame
+            s_ctx.window = [[NSWindow alloc] initWithContentRect:frame
                                                   styleMask:style_mask
                                                     backing:NSBackingStoreBuffered
                                                       defer:NO];
 
-            [_window makeKeyAndOrderFront:_window];
+            [s_ctx.window makeKeyAndOrderFront:s_ctx.window];
 
             id wd = [window_delegate shared_delegate];
-            [_window setDelegate:wd];
-            [_window setTitle:[NSString stringWithUTF8String:pen_window.window_title]];
-            [_window setAcceptsMouseMovedEvents:YES];
-            [_window center];
-
-            [_window registerForDraggedTypes:[NSArray arrayWithObjects:NSFilenamesPboardType, nil]];
+            [s_ctx.window setDelegate:wd];
+            [s_ctx.window setTitle:[NSString stringWithUTF8String:pen_window.window_title]];
+            [s_ctx.window setAcceptsMouseMovedEvents:YES];
+            [s_ctx.window center];
+            [s_ctx.window registerForDraggedTypes:[NSArray arrayWithObjects:NSFilenamesPboardType, nil]];
             _update_window_frame();
 
             // creates an opengl or metal rendering context
@@ -641,7 +640,7 @@ namespace pen
             thread_started = true;
         }
         
-        if (pen_terminate_app)
+        if (s_ctx.terminate_app)
         {
             if (pen::jobs_terminate_all())
                 return false;
@@ -679,22 +678,22 @@ namespace pen
                 {
                     case OS_CMD_SET_WINDOW_FRAME:
                     {
-                        NSRect frame = [_window frame];
+                        NSRect frame = [s_ctx.window frame];
 
                         frame.origin.x = cmd->frame.x;
                         frame.origin.y = cmd->frame.y;
                         frame.size.width = cmd->frame.width;
                         frame.size.height = cmd->frame.height;
 
-                        [_window setFrame:frame display:YES animate:NO];
+                        [s_ctx.window setFrame:frame display:YES animate:NO];
                     }
                     case OS_CMD_SET_WINDOW_SIZE:
                     {
-                        NSRect frame = [_window frame];
+                        NSRect frame = [s_ctx.window frame];
                         frame.size.width = cmd->frame.width;
                         frame.size.height = cmd->frame.height;
                         
-                        [_window setFrame:frame display:YES animate:NO];
+                        [s_ctx.window setFrame:frame display:YES animate:NO];
                     }
                     break;
                     default:
@@ -724,7 +723,7 @@ namespace pen
     void os_terminate(u32 error_code)
     {
         s_ctx.return_code = error_code;
-        pen_terminate_app = true;
+        s_ctx.terminate_app = true;
     }
 
     bool input_undo_pressed()
@@ -785,7 +784,7 @@ namespace pen
 
     void* window_get_primary_display_handle()
     {
-        return (void*)_window;
+        return (void*)s_ctx.window;
     }
 
     const user_info& os_get_user_info()
@@ -822,7 +821,7 @@ namespace pen
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication*)sender
 {
     self->terminated = true;
-    pen_terminate_app = true;
+    s_ctx.terminate_app = true;
     return NSTerminateCancel;
 }
 
