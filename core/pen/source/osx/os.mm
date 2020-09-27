@@ -224,7 +224,7 @@ void create_gl_context()
 
     _pixel_format = [[NSOpenGLPixelFormat alloc] initWithAttributes:pixel_format_attribs];
 
-    NSRect glViewRect = [[_window contentView] bounds];
+    NSRect glViewRect = [[s_ctx.window contentView] bounds];
 
     NSOpenGLView* glView = [[NSOpenGLView alloc] initWithFrame:glViewRect pixelFormat:_pixel_format];
 
@@ -232,7 +232,7 @@ void create_gl_context()
 
     [_pixel_format release];
 
-    [_window.contentView addSubview:glView];
+    [s_ctx.window.contentView addSubview:glView];
 
     NSOpenGLContext* glContext = [glView openGLContext];
 
@@ -256,7 +256,7 @@ void pen_gl_swap_buffers()
 
 void pen_window_resize()
 {
-    NSRect view_rect = [[_window contentView] bounds];
+    NSRect view_rect = [[s_ctx.window contentView] bounds];
     [_gl_view setFrameSize:view_rect.size];
     pen::_renderer_resize_backbuffer(view_rect.size.width, view_rect.size.height);
     _update_window_frame();
