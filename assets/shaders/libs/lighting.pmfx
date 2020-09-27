@@ -32,8 +32,8 @@ float3 phong(
     float3 lit_colour = light_colour * n_dot_l * albedo.rgb;
     
     //phong
-    float3  v_view         = normalize(view_pos.xyz - world_pos.xyz);
-    float3    v_reflect     = reflect(-l, n.xyz);
+    float3 v_view = normalize(view_pos.xyz - world_pos.xyz);
+    float3 v_reflect = reflect(-l, n.xyz);
     
     float spec = pow( max( dot(v_reflect, v_view), 0.0), spec_power ) * spec_strength;
     
