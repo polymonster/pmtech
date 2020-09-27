@@ -45,18 +45,13 @@ import editor_renderer.jsn
             scene_views : ["ecs_render_scene"],
             render_flags : ["forward_lit"],
             pmfx_shader : "forward_render",
-            technique : "forward_lit",
+            technique : "simple_lighting",
             stencil_ref: 0x22,
             
-            sampler_bindings:
-            [
-                { texture: shadow_map, unit: 15, state: wrap_linear, shader: ps },
-                { texture: area_light_textures, unit: 11, state: clamp_linear, shader: ps },
-                { texture: omni_shadow_map, unit: 10, state: clamp_linear, shader: ps },
-            ],
+            
         }
     },
-              
+    
     view_sets: 
     {
         stencil_buffer_test: [
