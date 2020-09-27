@@ -450,6 +450,24 @@ namespace forward_render
         float m_reflectivity;
         float2 m_padding;
     };
+    #define LAMBERT_SKINNED 2147483648
+    #define LAMBERT_INSTANCED 1073741824
+    struct lambert
+    {
+        float4 m_albedo;
+    };
+    struct lambert_skinned
+    {
+        float4 m_albedo;
+    };
+    struct lambert_instanced
+    {
+        float4 m_albedo;
+    };
+    struct lambert_instanced_skinned
+    {
+        float4 m_albedo;
+    };
     #define GI_SKINNED 2147483648
     #define GI_INSTANCED 1073741824
     struct gi

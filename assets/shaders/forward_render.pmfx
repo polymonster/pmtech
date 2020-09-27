@@ -819,7 +819,7 @@ ps_output ps_forward_lit( vs_output input )
 		gi /= float(num_rays);
 		
 		// could multiply gi with albedo but additive gi gives a stronger effect
-		output.colour.rgb = gi.rgb * albedo.rgb + lit_colour.rgb;
+		output.colour.rgb = gi.rgb * 2.0 * m_albedo.rgb + lit_colour.rgb;
 	}
 	    
     if(albedo.a <= 0.0)
@@ -946,7 +946,6 @@ ps_output ps_simple_lighting( vs_output input )
     
     float3 lit_colour = float3( 0.0, 0.0, 0.0 );
         
-    //todo these need to be passed from vs for instancing
     float reflectivity = saturate(user_data.z);
     float roughness = saturate(user_data.y); 
 
@@ -1053,7 +1052,7 @@ ps_output ps_simple_lighting( vs_output input )
             ++shadow_map_index;
         }
         
-        // double orne nayar with back light
+        // double oren nayar with back light
 		lit_colour += oren_nayar( 
             lights[i].pos_radius * -1.0, 
             lights[i].colour.rgb * 0.25,
@@ -1067,6 +1066,51 @@ ps_output ps_simple_lighting( vs_output input )
     
     output.colour.rgb = lit_colour;
     
+    return output;
+}
+
+ps_output ps_lambert( vs_output input )
+{
+	ps_output output;
+    
+    float4 albedo = sample_texture( diffuse_texture, input.texcoord.xy );
+    float3 normal_sample = sample_texture( normal_texture, input.texcoord.xy ).rgb;
+    float4 ro_sample = sample_texture( specular_texture, input.texcoord.xy );
+    float4 specular_sample = float4(1.0, 1.0, 1.0, 1.0);
+    
+    normal_sample = normal_sample * 2.0 - 1.0;
+
+    float3 n = transform_ts_normal( 
+        input.tangent, 
+        input.bitangent, 
+        input.normal, 
+        normal_sample );
+        
+    albedo *= input.colour;    
+    float3 lit_colour = float3( 0.0, 0.0, 0.0 );
+        
+    // double lambert
+    for(int i = 0; i < 1; ++i )
+    {                
+        lit_colour += lambert( 
+            lights[i].pos_radius, 
+            lights[i].colour.rgb,
+            n,
+            input.world_pos.xyz,
+            albedo.rgb
+        );
+        
+        lit_colour += lambert( 
+            lights[i].pos_radius * -1.0, 
+            lights[i].colour.rgb,
+            n,
+            input.world_pos.xyz,
+            albedo.rgb
+        ) * 0.2;
+    }
+    
+    output.colour.rgb = lit_colour;
+    output.colour.a = albedo.a;
     return output;
 }
 
@@ -1217,6 +1261,23 @@ pmfx:
             albedo       : { type: float4, widget: colour, default: [1.0, 1.0, 1.0, 1.0] },
             roughness    : { type: float, widget: slider, min: 0, max: 1, default: 0.5 },
             reflectivity : { type: float, widget: slider, min: 0, max: 1, default: 0.3 }
+        }
+    },
+    
+    lambert:
+    {
+		vs: vs_main,
+        ps: ps_lambert,
+        
+        permutations:
+        {
+            SKINNED: [31, [0,1]],
+            INSTANCED: [30, [0,1]]
+        },
+        
+		constants:
+        {
+            albedo : { type: float4, widget: colour, default: [1.0, 1.0, 1.0, 1.0] }
         }
     },
 	

@@ -45,10 +45,8 @@ import editor_renderer.jsn
             scene_views : ["ecs_render_scene"],
             render_flags : ["forward_lit"],
             pmfx_shader : "forward_render",
-            technique : "simple_lighting",
-            stencil_ref: 0x22,
-            
-            
+            technique : "lambert",
+            stencil_ref: 0x22
         }
     },
     
