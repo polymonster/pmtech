@@ -69,7 +69,6 @@ namespace forward_render
     #define FORWARD_LIT_SKINNED 2147483648
     #define FORWARD_LIT_INSTANCED 1073741824
     #define FORWARD_LIT_UV_SCALE 2
-    #define FORWARD_LIT_SSS 4
     #define FORWARD_LIT_SDF_SHADOW 8
     #define FORWARD_LIT_GI 16
     struct forward_lit
@@ -127,74 +126,6 @@ namespace forward_render
         float2 m_uv_scale;
         float m_roughness;
         float m_reflectivity;
-    };
-    struct forward_lit_sss
-    {
-        float4 m_albedo;
-        float m_roughness;
-        float m_reflectivity;
-        float m_sss_scale;
-        float m_padding;
-    };
-    struct forward_lit_sss_skinned
-    {
-        float4 m_albedo;
-        float m_roughness;
-        float m_reflectivity;
-        float m_sss_scale;
-        float m_padding;
-    };
-    struct forward_lit_sss_instanced
-    {
-        float4 m_albedo;
-        float m_roughness;
-        float m_reflectivity;
-        float m_sss_scale;
-        float m_padding;
-    };
-    struct forward_lit_sss_instanced_skinned
-    {
-        float4 m_albedo;
-        float m_roughness;
-        float m_reflectivity;
-        float m_sss_scale;
-        float m_padding;
-    };
-    struct forward_lit_sss_uv_scale
-    {
-        float4 m_albedo;
-        float2 m_uv_scale;
-        float m_roughness;
-        float m_reflectivity;
-        float m_sss_scale;
-        float3 m_padding;
-    };
-    struct forward_lit_sss_uv_scale_skinned
-    {
-        float4 m_albedo;
-        float2 m_uv_scale;
-        float m_roughness;
-        float m_reflectivity;
-        float m_sss_scale;
-        float3 m_padding;
-    };
-    struct forward_lit_sss_uv_scale_instanced
-    {
-        float4 m_albedo;
-        float2 m_uv_scale;
-        float m_roughness;
-        float m_reflectivity;
-        float m_sss_scale;
-        float3 m_padding;
-    };
-    struct forward_lit_sss_uv_scale_instanced_skinned
-    {
-        float4 m_albedo;
-        float2 m_uv_scale;
-        float m_roughness;
-        float m_reflectivity;
-        float m_sss_scale;
-        float3 m_padding;
     };
     struct forward_lit_sdf_shadow
     {
@@ -264,78 +195,6 @@ namespace forward_render
         float m_surface_offset;
         float3 m_padding;
     };
-    struct forward_lit_sdf_shadow_sss
-    {
-        float4 m_albedo;
-        float m_roughness;
-        float m_reflectivity;
-        float m_sss_scale;
-        float m_surface_offset;
-    };
-    struct forward_lit_sdf_shadow_sss_skinned
-    {
-        float4 m_albedo;
-        float m_roughness;
-        float m_reflectivity;
-        float m_sss_scale;
-        float m_surface_offset;
-    };
-    struct forward_lit_sdf_shadow_sss_instanced
-    {
-        float4 m_albedo;
-        float m_roughness;
-        float m_reflectivity;
-        float m_sss_scale;
-        float m_surface_offset;
-    };
-    struct forward_lit_sdf_shadow_sss_instanced_skinned
-    {
-        float4 m_albedo;
-        float m_roughness;
-        float m_reflectivity;
-        float m_sss_scale;
-        float m_surface_offset;
-    };
-    struct forward_lit_sdf_shadow_sss_uv_scale
-    {
-        float4 m_albedo;
-        float2 m_uv_scale;
-        float m_roughness;
-        float m_reflectivity;
-        float m_sss_scale;
-        float m_surface_offset;
-        float2 m_padding;
-    };
-    struct forward_lit_sdf_shadow_sss_uv_scale_skinned
-    {
-        float4 m_albedo;
-        float2 m_uv_scale;
-        float m_roughness;
-        float m_reflectivity;
-        float m_sss_scale;
-        float m_surface_offset;
-        float2 m_padding;
-    };
-    struct forward_lit_sdf_shadow_sss_uv_scale_instanced
-    {
-        float4 m_albedo;
-        float2 m_uv_scale;
-        float m_roughness;
-        float m_reflectivity;
-        float m_sss_scale;
-        float m_surface_offset;
-        float2 m_padding;
-    };
-    struct forward_lit_sdf_shadow_sss_uv_scale_instanced_skinned
-    {
-        float4 m_albedo;
-        float2 m_uv_scale;
-        float m_roughness;
-        float m_reflectivity;
-        float m_sss_scale;
-        float m_surface_offset;
-        float2 m_padding;
-    };
     struct forward_lit_gi
     {
         float4 m_albedo;
@@ -391,74 +250,6 @@ namespace forward_render
         float2 m_uv_scale;
         float m_roughness;
         float m_reflectivity;
-    };
-    struct forward_lit_gi_sss
-    {
-        float4 m_albedo;
-        float m_roughness;
-        float m_reflectivity;
-        float m_sss_scale;
-        float m_padding;
-    };
-    struct forward_lit_gi_sss_skinned
-    {
-        float4 m_albedo;
-        float m_roughness;
-        float m_reflectivity;
-        float m_sss_scale;
-        float m_padding;
-    };
-    struct forward_lit_gi_sss_instanced
-    {
-        float4 m_albedo;
-        float m_roughness;
-        float m_reflectivity;
-        float m_sss_scale;
-        float m_padding;
-    };
-    struct forward_lit_gi_sss_instanced_skinned
-    {
-        float4 m_albedo;
-        float m_roughness;
-        float m_reflectivity;
-        float m_sss_scale;
-        float m_padding;
-    };
-    struct forward_lit_gi_sss_uv_scale
-    {
-        float4 m_albedo;
-        float2 m_uv_scale;
-        float m_roughness;
-        float m_reflectivity;
-        float m_sss_scale;
-        float3 m_padding;
-    };
-    struct forward_lit_gi_sss_uv_scale_skinned
-    {
-        float4 m_albedo;
-        float2 m_uv_scale;
-        float m_roughness;
-        float m_reflectivity;
-        float m_sss_scale;
-        float3 m_padding;
-    };
-    struct forward_lit_gi_sss_uv_scale_instanced
-    {
-        float4 m_albedo;
-        float2 m_uv_scale;
-        float m_roughness;
-        float m_reflectivity;
-        float m_sss_scale;
-        float3 m_padding;
-    };
-    struct forward_lit_gi_sss_uv_scale_instanced_skinned
-    {
-        float4 m_albedo;
-        float2 m_uv_scale;
-        float m_roughness;
-        float m_reflectivity;
-        float m_sss_scale;
-        float3 m_padding;
     };
     struct forward_lit_gi_sdf_shadow
     {
@@ -528,77 +319,68 @@ namespace forward_render
         float m_surface_offset;
         float3 m_padding;
     };
-    struct forward_lit_gi_sdf_shadow_sss
+    #define SIMPLE_LIGHTING_SKINNED 2147483648
+    #define SIMPLE_LIGHTING_INSTANCED 1073741824
+    #define SIMPLE_LIGHTING_SSS 4
+    struct simple_lighting
     {
         float4 m_albedo;
         float m_roughness;
         float m_reflectivity;
-        float m_sss_scale;
-        float m_surface_offset;
-    };
-    struct forward_lit_gi_sdf_shadow_sss_skinned
-    {
-        float4 m_albedo;
-        float m_roughness;
-        float m_reflectivity;
-        float m_sss_scale;
-        float m_surface_offset;
-    };
-    struct forward_lit_gi_sdf_shadow_sss_instanced
-    {
-        float4 m_albedo;
-        float m_roughness;
-        float m_reflectivity;
-        float m_sss_scale;
-        float m_surface_offset;
-    };
-    struct forward_lit_gi_sdf_shadow_sss_instanced_skinned
-    {
-        float4 m_albedo;
-        float m_roughness;
-        float m_reflectivity;
-        float m_sss_scale;
-        float m_surface_offset;
-    };
-    struct forward_lit_gi_sdf_shadow_sss_uv_scale
-    {
-        float4 m_albedo;
-        float2 m_uv_scale;
-        float m_roughness;
-        float m_reflectivity;
-        float m_sss_scale;
-        float m_surface_offset;
         float2 m_padding;
     };
-    struct forward_lit_gi_sdf_shadow_sss_uv_scale_skinned
+    struct simple_lighting_skinned
     {
         float4 m_albedo;
-        float2 m_uv_scale;
         float m_roughness;
         float m_reflectivity;
-        float m_sss_scale;
-        float m_surface_offset;
         float2 m_padding;
     };
-    struct forward_lit_gi_sdf_shadow_sss_uv_scale_instanced
+    struct simple_lighting_instanced
     {
         float4 m_albedo;
-        float2 m_uv_scale;
         float m_roughness;
         float m_reflectivity;
-        float m_sss_scale;
-        float m_surface_offset;
         float2 m_padding;
     };
-    struct forward_lit_gi_sdf_shadow_sss_uv_scale_instanced_skinned
+    struct simple_lighting_instanced_skinned
     {
         float4 m_albedo;
-        float2 m_uv_scale;
+        float m_roughness;
+        float m_reflectivity;
+        float2 m_padding;
+    };
+    struct simple_lighting_sss
+    {
+        float4 m_albedo;
         float m_roughness;
         float m_reflectivity;
         float m_sss_scale;
-        float m_surface_offset;
-        float2 m_padding;
+        float m_padding;
+    };
+    struct simple_lighting_sss_skinned
+    {
+        float4 m_albedo;
+        float m_roughness;
+        float m_reflectivity;
+        float m_sss_scale;
+        float m_padding;
+    };
+    struct simple_lighting_sss_instanced
+    {
+        float4 m_albedo;
+        float m_roughness;
+        float m_reflectivity;
+        float m_sss_scale;
+        float m_padding;
+    };
+    struct simple_lighting_sss_instanced_skinned
+    {
+        float4 m_albedo;
+        float m_roughness;
+        float m_reflectivity;
+        float m_sss_scale;
+        float m_padding;
     };
     #define GBUFFER_SKINNED 2147483648
     #define GBUFFER_INSTANCED 1073741824
@@ -661,6 +443,31 @@ namespace forward_render
     };
     #define ZONLY_SKINNED 2147483648
     #define ZONLY_INSTANCED 1073741824
+    struct single_light_directional
+    {
+        float4 m_albedo;
+        float m_roughness;
+        float m_reflectivity;
+        float2 m_padding;
+    };
+    #define LAMBERT_SKINNED 2147483648
+    #define LAMBERT_INSTANCED 1073741824
+    struct lambert
+    {
+        float4 m_albedo;
+    };
+    struct lambert_skinned
+    {
+        float4 m_albedo;
+    };
+    struct lambert_instanced
+    {
+        float4 m_albedo;
+    };
+    struct lambert_instanced_skinned
+    {
+        float4 m_albedo;
+    };
     #define GI_SKINNED 2147483648
     #define GI_INSTANCED 1073741824
     struct gi
