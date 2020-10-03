@@ -174,6 +174,8 @@ void run()
 //
 
 #define GL_SILENCE_DEPRECATION
+#define GLES_SILENCE_DEPRECATION
+
 #import <OpenGL/gl3.h>
 #define PEN_GL_PROFILE_VERSION NSOpenGLProfileVersion4_1Core
 #define create_renderer_context create_gl_context
