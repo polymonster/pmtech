@@ -6,7 +6,6 @@
 #include "debug_render.h"
 #include "camera.h"
 #include "pmfx.h"
-#include "timer.h"
 using namespace pen;
 using namespace put;
 using namespace pmfx;
@@ -340,40 +339,14 @@ struct __pmfx {
     void* __pmfx_end;
 };
 
-typedef void (*proc_timer_system_intialise)(void);
-typedef timer* (*proc_timer_create)(void);
-typedef void (*proc_timer_destroy)(timer*);
-typedef void (*proc_timer_start)(timer*);
-typedef f32 (*proc_timer_elapsed_ms)(timer*);
-typedef f32 (*proc_timer_elapsed_us)(timer*);
-typedef f32 (*proc_timer_elapsed_ns)(timer*);
-typedef f32 (*proc_get_time_ms)(void);
-typedef f32 (*proc_get_time_us)(void);
-typedef f32 (*proc_get_time_ns)(void);
-struct __pen {
-    void* __pen_start;
-    proc_timer_system_intialise timer_system_intialise;
-    proc_timer_create timer_create;
-    proc_timer_destroy timer_destroy;
-    proc_timer_start timer_start;
-    proc_timer_elapsed_ms timer_elapsed_ms;
-    proc_timer_elapsed_us timer_elapsed_us;
-    proc_timer_elapsed_ns timer_elapsed_ns;
-    proc_get_time_ms get_time_ms;
-    proc_get_time_us get_time_us;
-    proc_get_time_ns get_time_ns;
-    void* __pen_end;
-};
-
 struct live_context:
-public __ecs, public __dbg, public __put, public __pmfx, public __pen{
+public __ecs, public __dbg, public __put, public __pmfx{
     f32 dt;
     ecs::ecs_scene* scene;
     __ecs* ecs_funcs;
     __dbg* dbg_funcs;
     __put* put_funcs;
     __pmfx* pmfx_funcs;
-    __pen* pen_funcs;
     live_context() {
         #if !DLL
         init = &put::ecs::init;
@@ -530,16 +503,6 @@ public __ecs, public __dbg, public __put, public __pmfx, public __pen{
         has_technique_samplers = &put::pmfx::has_technique_samplers;
         has_technique_params = &put::pmfx::has_technique_params;
         poll_for_changes = &put::pmfx::poll_for_changes;
-        timer_system_intialise = &pen::timer_system_intialise;
-        timer_create = &pen::timer_create;
-        timer_destroy = &pen::timer_destroy;
-        timer_start = &pen::timer_start;
-        timer_elapsed_ms = &pen::timer_elapsed_ms;
-        timer_elapsed_us = &pen::timer_elapsed_us;
-        timer_elapsed_ns = &pen::timer_elapsed_ns;
-        get_time_ms = &pen::get_time_ms;
-        get_time_us = &pen::get_time_us;
-        get_time_ns = &pen::get_time_ns;
         #endif
     }
 };
