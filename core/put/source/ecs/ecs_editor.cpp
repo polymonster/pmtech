@@ -3180,6 +3180,8 @@ namespace put
                         mat4 rbmat = physics::get_rb_matrix(scene->physics_handles[n]);
                         dc.world_matrix = rbmat * scale;
                     }
+                    
+                    dc.v2 = vec4f::white();
 
                     pen::renderer_update_buffer(scene->physics_debug_cbuffer[n], &dc, sizeof(cmp_draw_call));
 

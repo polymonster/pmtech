@@ -268,7 +268,7 @@ namespace put
             vec3f up = cross(axis, right);
             right = cross(axis, up);
 
-            static const s32 segments = 16;
+            static const s32 segments = 32;
             f32              angle = 0.0;
             f32              angle_step = (f32)M_TWO_PI / segments;
             for (s32 i = 0; i < segments; ++i)
