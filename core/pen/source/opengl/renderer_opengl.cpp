@@ -66,9 +66,17 @@
 #define PEN_GL_MSAA_SUPPORT true
 #endif
 
+#define MAX_VERTEX_BUFFERS 4
+#define MAX_VERTEX_ATTRIBUTES 16
+#define MAX_UNIFORM_BUFFERS 32
+#define MAX_SHADER_TEXTURES 32
+#define INVALID_LOC 255
+
 // these are required for platform specific gl implementation calls.
 extern void pen_make_gl_context_current();
 extern void pen_gl_swap_buffers();
+
+using namespace pen;
 
 namespace
 {
@@ -145,9 +153,9 @@ namespace
 #endif
 
 #ifdef PEN_GLES3
-#define PEN_SET_BASE_VERTEX(BV) g_bound_state.base_vertex = BV
+#define PEN_SET_BASE_VERTEX(BV) s_state.base_vertex = BV
 #else
-#define PEN_SET_BASE_VERTEX(BV) g_bound_state.base_vertex = 0;
+#define PEN_SET_BASE_VERTEX(BV) s_state.base_vertex = 0;
 #endif
 
     u32 to_gl_shader_type(u32 pen_shader_type)
@@ -728,15 +736,10 @@ namespace pen
         s_perf.buf = bb;
 #endif
     }
+}
 
-//--------------------------------------------------------------------------------------
-//  COMMON API
-//--------------------------------------------------------------------------------------
-#define MAX_VERTEX_BUFFERS 4
-#define MAX_VERTEX_ATTRIBUTES 16
-#define MAX_UNIFORM_BUFFERS 32
-#define MAX_SHADER_TEXTURES 32
-
+namespace
+{
     struct context_state
     {
         context_state()
@@ -745,7 +748,6 @@ namespace pen
 
         u32 backbuffer_colour;
         u32 backbuffer_depth;
-
         u32 active_colour_target;
         u32 active_depth_target;
     };
@@ -783,6 +785,7 @@ namespace pen
     {
         GLenum cull_face;
         GLenum polygon_mode;
+        bool   gles_wireframe;
         bool   front_ccw;
         bool   culling_enabled;
         bool   depth_clip_enabled;
@@ -813,7 +816,7 @@ namespace pen
         hash_id hash;
         GLuint  _framebuffer;
     };
-    static framebuffer* s_framebuffers = nullptr;
+    framebuffer* s_framebuffers = nullptr;
 
     enum resource_type : s32
     {
@@ -823,7 +826,6 @@ namespace pen
         RES_RENDER_TARGET_MSAA
     };
 
-#define INVALID_LOC 255
     struct shader_program
     {
         u32    vs;
@@ -836,7 +838,7 @@ namespace pen
         u8     uniform_block_location[MAX_UNIFORM_BUFFERS];
         u8     texture_location[MAX_SHADER_TEXTURES];
     };
-    static shader_program* s_shader_programs = nullptr;
+    shader_program* s_shader_programs = nullptr;
 
     struct gl_sampler : public sampler_creation_params
     {
@@ -856,19 +858,19 @@ namespace pen
         u8     asigned_flag;
         GLuint type;
         union {
-            clear_state_internal           clear_state;
-            pen::input_layout*             input_layout;
-            pen::raster_state              raster_state;
-            depth_stencil_creation_params* depth_stencil;
-            blend_creation_params*         blend_state;
-            GLuint                         handle;
-            texture_info                   texture;
-            pen::render_target             render_target;
-            pen::shader_program*           shader_program;
-            gl_sampler_object              sampler_object;
+            clear_state_internal            clear_state;
+            ::input_layout*                 input_layout;
+            ::raster_state                  raster_state;
+            depth_stencil_creation_params*  depth_stencil;
+            blend_creation_params*          blend_state;
+            GLuint                          handle;
+            texture_info                    texture;
+            ::render_target                 render_target;
+            ::shader_program*               shader_program;
+            gl_sampler_object               sampler_object;
         };
     };
-    static res_pool<resource_allocation> _res_pool;
+    res_pool<resource_allocation> _res_pool;
 
     struct active_state
     {
@@ -893,17 +895,30 @@ namespace pen
         u8   stencil_ref;
     };
 
-    active_state g_bound_state;
-    active_state g_current_state;
-    viewport     g_current_vp;
+    active_state    s_state;
+    active_state    s_live_state;
+    viewport        s_current_vp;
+    context_state   s_ctx;
 
-    void clear_resource_table()
+    void _clear_resource_table()
     {
         // reserve resource 0 for NULL binding.
         _res_pool[0].asigned_flag |= 0xff;
     }
 
-    context_state g_context;
+    // support for gles to allow almost correct wireframe, by using line strip
+    u32 _gles_wireframe(u32 primitve_topology)
+    {
+        if(primitve_topology != GL_LINES && primitve_topology != GL_LINE_STRIP)
+            if(_res_pool[s_state.raster_state].raster_state.gles_wireframe)
+                return GL_LINE_STRIP;
+        return primitve_topology;
+    }
+#ifdef PEN_GLES3
+#define PEN_GLES_WIREFRAME_TOPOLOGY(pt) _gles_wireframe(pt)
+#else
+#define PEN_GLES_WIREFRAME_TOPOLOGY(pt) pt
+#endif
 
     void _set_depth_stencil_state(u32 dss, u8 ref)
     {
@@ -952,23 +967,7 @@ namespace pen
         }
     }
 
-    void direct::renderer_create_clear_state(const clear_state& cs, u32 resource_slot)
-    {
-        _res_pool.grow(resource_slot);
-
-        _res_pool[resource_slot].clear_state.rgba[0] = cs.r;
-        _res_pool[resource_slot].clear_state.rgba[1] = cs.g;
-        _res_pool[resource_slot].clear_state.rgba[2] = cs.b;
-        _res_pool[resource_slot].clear_state.rgba[3] = cs.a;
-        _res_pool[resource_slot].clear_state.depth = cs.depth;
-        _res_pool[resource_slot].clear_state.stencil = cs.stencil;
-        _res_pool[resource_slot].clear_state.flags = to_gl_clear_flags(cs.flags);
-
-        _res_pool[resource_slot].clear_state.num_colour_targets = cs.num_colour_targets;
-        memcpy(&_res_pool[resource_slot].clear_state.mrt, cs.mrt, sizeof(mrt_clear) * MAX_MRT);
-    }
-
-    u32 link_program_internal(u32 vs, u32 ps, u32 cs, const shader_link_params* params = nullptr)
+    u32 _link_program_internal(u32 vs, u32 ps, u32 cs, const shader_link_params* params = nullptr)
     {
         // link the shaders
         GLuint program_id = CHECK_CALL(glCreateProgram());
@@ -1054,6 +1053,25 @@ namespace pen
 
         sb_push(s_shader_programs, program);
         return sb_count(s_shader_programs) - 1;
+    }
+}
+
+namespace pen
+{
+    void direct::renderer_create_clear_state(const clear_state& cs, u32 resource_slot)
+    {
+        _res_pool.grow(resource_slot);
+
+        _res_pool[resource_slot].clear_state.rgba[0] = cs.r;
+        _res_pool[resource_slot].clear_state.rgba[1] = cs.g;
+        _res_pool[resource_slot].clear_state.rgba[2] = cs.b;
+        _res_pool[resource_slot].clear_state.rgba[3] = cs.a;
+        _res_pool[resource_slot].clear_state.depth = cs.depth;
+        _res_pool[resource_slot].clear_state.stencil = cs.stencil;
+        _res_pool[resource_slot].clear_state.flags = to_gl_clear_flags(cs.flags);
+
+        _res_pool[resource_slot].clear_state.num_colour_targets = cs.num_colour_targets;
+        memcpy(&_res_pool[resource_slot].clear_state.mrt, cs.mrt, sizeof(mrt_clear) * MAX_MRT);
     }
 
     void direct::renderer_sync()
@@ -1151,7 +1169,7 @@ namespace pen
         pen_gl_swap_buffers();
         _renderer_end_frame();
         
-        g_bound_state = { };
+        s_state = { };
 
 // gpu counters
 #ifndef __linux__
@@ -1226,16 +1244,16 @@ namespace pen
         switch(shader_type)
         {
             case PEN_SHADER_TYPE_VS:
-                g_current_state.vertex_shader = shader_index;
-                g_current_state.stream_out_shader = 0;
+                s_live_state.vertex_shader = shader_index;
+                s_live_state.stream_out_shader = 0;
                 break;
             case PEN_SHADER_TYPE_PS:
-                g_current_state.pixel_shader = shader_index;
+                s_live_state.pixel_shader = shader_index;
                 break;
             case PEN_SHADER_TYPE_SO:
-                g_current_state.stream_out_shader = shader_index;
-                g_current_state.vertex_shader = 0;
-                g_current_state.pixel_shader = 0;
+                s_live_state.stream_out_shader = shader_index;
+                s_live_state.vertex_shader = 0;
+                s_live_state.pixel_shader = 0;
                 break;
 #if GL_ARB_compute_shader
             case PEN_SHADER_TYPE_CS:
@@ -1269,7 +1287,7 @@ namespace pen
         _res_pool.grow(resource_slot);
 
         shader_link_params slp = params;
-        u32                program_index = link_program_internal(0, 0, 0, &slp);
+        u32                program_index = _link_program_internal(0, 0, 0, &slp);
 
         shader_program* linked_program = &s_shader_programs[program_index];
 
@@ -1329,7 +1347,7 @@ namespace pen
 
     void direct::renderer_set_stream_out_target(u32 buffer_index)
     {
-        g_current_state.stream_out_buffer = buffer_index;
+        s_live_state.stream_out_buffer = buffer_index;
     }
 
     void direct::renderer_draw_auto()
@@ -1397,38 +1415,38 @@ namespace pen
     {
         for (s32 i = 0; i < num_buffers; ++i)
         {
-            g_current_state.vertex_buffer[start_slot + i] = buffer_indices[i];
-            g_current_state.vertex_buffer_stride[start_slot + i] = strides[i];
-            g_current_state.vertex_buffer_offset[start_slot + i] = offsets[i];
+            s_live_state.vertex_buffer[start_slot + i] = buffer_indices[i];
+            s_live_state.vertex_buffer_stride[start_slot + i] = strides[i];
+            s_live_state.vertex_buffer_offset[start_slot + i] = offsets[i];
         }
 
-        g_current_state.num_bound_vertex_buffers = num_buffers;
+        s_live_state.num_bound_vertex_buffers = num_buffers;
     }
 
     void direct::renderer_set_input_layout(u32 layout_index)
     {
-        g_current_state.input_layout = layout_index;
+        s_live_state.input_layout = layout_index;
     }
 
     void direct::renderer_set_index_buffer(u32 buffer_index, u32 format, u32 offset)
     {
-        g_bound_state.index_buffer = buffer_index;
-        g_bound_state.index_format = to_gl_index_format(format);
+        s_state.index_buffer = buffer_index;
+        s_state.index_format = to_gl_index_format(format);
     }
 
     void bind_state(u32 primitive_topology)
     {
         // bind shaders
-        if (g_current_state.stream_out_shader != 0 && (g_current_state.stream_out_shader != g_bound_state.stream_out_shader))
+        if (s_live_state.stream_out_shader != 0 && (s_live_state.stream_out_shader != s_state.stream_out_shader))
         {
             // stream out
-            g_bound_state.vertex_shader = g_current_state.vertex_shader;
-            g_bound_state.pixel_shader = g_current_state.pixel_shader;
-            g_bound_state.stream_out_shader = g_current_state.stream_out_shader;
+            s_state.vertex_shader = s_live_state.vertex_shader;
+            s_state.pixel_shader = s_live_state.pixel_shader;
+            s_state.stream_out_shader = s_live_state.stream_out_shader;
 
             shader_program* linked_program = nullptr;
 
-            u32 so_handle = _res_pool[g_bound_state.stream_out_shader].handle;
+            u32 so_handle = _res_pool[s_state.stream_out_shader].handle;
 
             u32 num_shaders = sb_count(s_shader_programs);
             for (s32 i = 0; i < num_shaders; ++i)
@@ -1457,19 +1475,19 @@ namespace pen
         }
         else
         {
-            if (g_current_state.vertex_shader != g_bound_state.vertex_shader ||
-                g_current_state.pixel_shader != g_bound_state.pixel_shader || 
-                g_current_state.v_flip != g_bound_state.v_flip)
+            if (s_live_state.vertex_shader != s_state.vertex_shader ||
+                s_live_state.pixel_shader != s_state.pixel_shader || 
+                s_live_state.v_flip != s_state.v_flip)
             {
-                g_bound_state.vertex_shader = g_current_state.vertex_shader;
-                g_bound_state.pixel_shader = g_current_state.pixel_shader;
-                g_bound_state.stream_out_shader = g_current_state.stream_out_shader;
-                g_bound_state.v_flip = g_current_state.v_flip;
+                s_state.vertex_shader = s_live_state.vertex_shader;
+                s_state.pixel_shader = s_live_state.pixel_shader;
+                s_state.stream_out_shader = s_live_state.stream_out_shader;
+                s_state.v_flip = s_live_state.v_flip;
 
                 shader_program* linked_program = nullptr;
 
-                auto vs_handle = _res_pool[g_bound_state.vertex_shader].handle;
-                auto ps_handle = _res_pool[g_bound_state.pixel_shader].handle;
+                auto vs_handle = _res_pool[s_state.vertex_shader].handle;
+                auto ps_handle = _res_pool[s_state.pixel_shader].handle;
 
                 u32 num_shaders = sb_count(s_shader_programs);
                 for (s32 i = 0; i < num_shaders; ++i)
@@ -1483,7 +1501,7 @@ namespace pen
 
                 if (linked_program == nullptr)
                 {
-                    u32 index = link_program_internal(vs_handle, ps_handle, 0);
+                    u32 index = _link_program_internal(vs_handle, ps_handle, 0);
                     linked_program = &s_shader_programs[index];
                 }
 
@@ -1496,17 +1514,17 @@ namespace pen
 
                 // we need to flip all geometry that is rendered into render targets to be consistent with d3d
                 float v_flip = 1.0f;
-                if (!g_current_state.backbuffer_bound)
+                if (!s_live_state.backbuffer_bound)
                     v_flip = -1.0f;
 
                 glUniform1f(linked_program->vflip_uniform, v_flip);
             }
         }
 
-        g_bound_state.input_layout = g_current_state.input_layout;
-        if(g_current_state.input_layout)
+        s_state.input_layout = s_live_state.input_layout;
+        if(s_live_state.input_layout)
         {
-            auto* input_res = _res_pool[g_current_state.input_layout].input_layout;
+            auto* input_res = _res_pool[s_live_state.input_layout].input_layout;
             if (input_res->vertex_array_handle == 0)
             {
                 CHECK_CALL(glGenVertexArrays(1, &input_res->vertex_array_handle));
@@ -1514,12 +1532,12 @@ namespace pen
 
             CHECK_CALL(glBindVertexArray(input_res->vertex_array_handle));
 
-            for (s32 v = 0; v < g_current_state.num_bound_vertex_buffers; ++v)
+            for (s32 v = 0; v < s_live_state.num_bound_vertex_buffers; ++v)
             {
-                g_bound_state.vertex_buffer[v] = g_current_state.vertex_buffer[v];
-                g_bound_state.vertex_buffer_stride[v] = g_current_state.vertex_buffer_stride[v];
+                s_state.vertex_buffer[v] = s_live_state.vertex_buffer[v];
+                s_state.vertex_buffer_stride[v] = s_live_state.vertex_buffer_stride[v];
 
-                auto& res = _res_pool[g_bound_state.vertex_buffer[v]].handle;
+                auto& res = _res_pool[s_state.vertex_buffer[v]].handle;
                 CHECK_CALL(glBindBuffer(GL_ARRAY_BUFFER, res));
 
                 u32 num_attribs = sb_count(input_res->attributes);
@@ -1533,11 +1551,11 @@ namespace pen
 
                     CHECK_CALL(glEnableVertexAttribArray(attribute.location));
 
-                    u32 base_vertex_offset = g_bound_state.vertex_buffer_stride[v] * g_bound_state.base_vertex;
+                    u32 base_vertex_offset = s_state.vertex_buffer_stride[v] * s_state.base_vertex;
 
                     CHECK_CALL(glVertexAttribPointer(attribute.location, attribute.num_elements, attribute.type,
                                                     attribute.type == GL_UNSIGNED_BYTE ? true : false,
-                                                    g_bound_state.vertex_buffer_stride[v],
+                                                    s_state.vertex_buffer_stride[v],
                                                     (void*)(attribute.offset + base_vertex_offset)));
 
                     CHECK_CALL(glVertexAttribDivisor(attribute.location, attribute.step_rate));
@@ -1545,16 +1563,16 @@ namespace pen
             }
         }
 
-        if (g_bound_state.raster_state != g_current_state.raster_state ||
-            g_bound_state.backbuffer_bound != g_current_state.backbuffer_bound)
+        if (s_state.raster_state != s_live_state.raster_state ||
+            s_state.backbuffer_bound != s_live_state.backbuffer_bound)
         {
-            g_bound_state.raster_state = g_current_state.raster_state;
-            g_bound_state.backbuffer_bound = g_current_state.backbuffer_bound;
+            s_state.raster_state = s_live_state.raster_state;
+            s_state.backbuffer_bound = s_live_state.backbuffer_bound;
 
-            auto& rs = _res_pool[g_bound_state.raster_state].raster_state;
+            auto& rs = _res_pool[s_state.raster_state].raster_state;
 
             bool ccw = rs.front_ccw;
-            if (!g_current_state.backbuffer_bound)
+            if (!s_live_state.backbuffer_bound)
                 ccw = !ccw;
 
             if (ccw)
@@ -1601,25 +1619,25 @@ namespace pen
             }
         }
 
-        if (g_current_state.stream_out_buffer != g_bound_state.stream_out_buffer)
+        if (s_live_state.stream_out_buffer != s_state.stream_out_buffer)
         {
-            g_bound_state.stream_out_buffer = g_current_state.stream_out_buffer;
+            s_state.stream_out_buffer = s_live_state.stream_out_buffer;
 
-            if (g_bound_state.stream_out_buffer)
+            if (s_state.stream_out_buffer)
             {
-                u32 so_buffer = _res_pool[g_bound_state.stream_out_buffer].handle;
+                u32 so_buffer = _res_pool[s_state.stream_out_buffer].handle;
 
                 CHECK_CALL(glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, so_buffer));
                 CHECK_CALL(glBeginTransformFeedback(primitive_topology));
             }
         }
 
-        if (g_bound_state.depth_stencil_state != g_current_state.depth_stencil_state ||
-            g_bound_state.stencil_ref != g_current_state.stencil_ref)
+        if (s_state.depth_stencil_state != s_live_state.depth_stencil_state ||
+            s_state.stencil_ref != s_live_state.stencil_ref)
         {
-            _set_depth_stencil_state(g_current_state.depth_stencil_state, g_current_state.stencil_ref);
-            g_bound_state.depth_stencil_state = g_current_state.depth_stencil_state;
-            g_bound_state.stencil_ref = g_current_state.stencil_ref;
+            _set_depth_stencil_state(s_live_state.depth_stencil_state, s_live_state.stencil_ref);
+            s_state.depth_stencil_state = s_live_state.depth_stencil_state;
+            s_state.stencil_ref = s_live_state.stencil_ref;
         }
     }
 
@@ -1627,13 +1645,14 @@ namespace pen
     {
         primitive_topology = to_gl_primitive_topology(primitive_topology);
         bind_state(primitive_topology);
+        primitive_topology = PEN_GLES_WIREFRAME_TOPOLOGY(primitive_topology);
 
         CHECK_CALL(glDrawArrays(primitive_topology, start_vertex, vertex_count));
 
-        if (g_bound_state.stream_out_buffer)
+        if (s_state.stream_out_buffer)
         {
-            g_current_state.stream_out_buffer = 0;
-            g_bound_state.stream_out_buffer = 0;
+            s_live_state.stream_out_buffer = 0;
+            s_state.stream_out_buffer = 0;
 
             CHECK_CALL(glEndTransformFeedback());
             CHECK_CALL(glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, 0));
@@ -1647,15 +1666,16 @@ namespace pen
 
         primitive_topology = to_gl_primitive_topology(primitive_topology);
         bind_state(primitive_topology);
+        primitive_topology = PEN_GLES_WIREFRAME_TOPOLOGY(primitive_topology);
 
         // bind index buffer -this must always be re-bound
-        GLuint res = _res_pool[g_bound_state.index_buffer].handle;
+        GLuint res = _res_pool[s_state.index_buffer].handle;
         CHECK_CALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, res));
 
         void* offset = (void*)(size_t)(start_index * 2);
 
         CHECK_CALL(
-            glDrawElementsBaseVertex(primitive_topology, index_count, g_bound_state.index_format, offset, base_vertex));
+            glDrawElementsBaseVertex(primitive_topology, index_count, s_state.index_format, offset, base_vertex));
     }
 
     void direct::renderer_draw_indexed_instanced(u32 instance_count, u32 start_instance, u32 index_count, u32 start_index,
@@ -1665,15 +1685,16 @@ namespace pen
 
         primitive_topology = to_gl_primitive_topology(primitive_topology);
         bind_state(primitive_topology);
+        primitive_topology = PEN_GLES_WIREFRAME_TOPOLOGY(primitive_topology);
 
         // bind index buffer -this must always be re-bound
-        GLuint res = _res_pool[g_bound_state.index_buffer].handle;
+        GLuint res = _res_pool[s_state.index_buffer].handle;
         CHECK_CALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, res));
 
         // todo this needs to check index size 32 or 16 bit
         void* offset = (void*)(size_t)(start_index * 2);
 
-        CHECK_CALL(glDrawElementsInstancedBaseVertex(primitive_topology, index_count, g_bound_state.index_format, offset,
+        CHECK_CALL(glDrawElementsInstancedBaseVertex(primitive_topology, index_count, s_state.index_format, offset,
                                                      instance_count, base_vertex));
     }
 
@@ -1926,16 +1947,16 @@ namespace pen
 
         if (use_back_buffer)
         {
-            g_current_state.backbuffer_bound = true;
-            g_current_state.v_flip = false;
+            s_live_state.backbuffer_bound = true;
+            s_live_state.v_flip = false;
 
             CHECK_CALL(glBindFramebuffer(GL_FRAMEBUFFER, s_backbuffer_fbo));
             CHECK_CALL(glDrawBuffer(GL_BACK));
             return;
         }
 
-        g_current_state.v_flip = true;
-        g_current_state.backbuffer_bound = false;
+        s_live_state.v_flip = true;
+        s_live_state.backbuffer_bound = false;
 
         bool msaa = false;
 
@@ -2241,9 +2262,9 @@ namespace pen
                 CHECK_CALL(glSamplerParameteri(sampler_objects[i], GL_TEXTURE_COMPARE_FUNC, GL_ALWAYS));
             }
 
-    #ifndef PEN_GLES3
+#ifndef PEN_GLES3
             CHECK_CALL(glSamplerParameteri(sampler_objects[i], GL_TEXTURE_CUBE_MAP_SEAMLESS, 1));
-    #endif
+#endif
         }
         
         _res_pool[resource_slot].sampler_object.sampler = sampler_objects[0];
@@ -2365,17 +2386,22 @@ namespace pen
         rs.scissor_enabled = rscp.scissor_enable;
 
         rs.polygon_mode = to_gl_polygon_mode(rscp.fill_mode);
+        rs.gles_wireframe = false;
+#ifdef PEN_GLES3
+        if(rscp.fill_mode == PEN_FILL_WIREFRAME)
+            rs.gles_wireframe = true;
+#endif
     }
 
     void direct::renderer_set_rasterizer_state(u32 rasterizer_state_index)
     {
-        g_current_state.raster_state = rasterizer_state_index;
+        s_live_state.raster_state = rasterizer_state_index;
     }
 
     void direct::renderer_set_viewport(const viewport& vp)
     {
         viewport _vp = _renderer_resolve_viewport_ratio(vp);
-        g_current_vp = _vp;
+        s_current_vp = _vp;
         CHECK_CALL(glViewport(_vp.x, _vp.y, _vp.width, _vp.height));
         CHECK_CALL(glDepthRangef(_vp.min_depth, _vp.max_depth));
     }
@@ -2383,7 +2409,7 @@ namespace pen
     void direct::renderer_set_scissor_rect(const rect& r)
     {
         rect _r = _renderer_resolve_scissor_ratio(r);
-        f32  top = g_current_vp.height - _r.bottom;
+        f32  top = s_current_vp.height - _r.bottom;
         CHECK_CALL(glScissor(_r.left, top, _r.right - _r.left, _r.bottom - _r.top));
     }
 
@@ -2606,12 +2632,12 @@ namespace pen
 
     void direct::renderer_set_depth_stencil_state(u32 depth_stencil_state)
     {
-        g_current_state.depth_stencil_state = depth_stencil_state;
+        s_live_state.depth_stencil_state = depth_stencil_state;
     }
 
     void direct::renderer_set_stencil_ref(u8 ref)
     {
-        g_current_state.stencil_ref = ref;
+        s_live_state.stencil_ref = ref;
     }
 
     void direct::renderer_release_shader(u32 shader_index, u32 shader_type)
