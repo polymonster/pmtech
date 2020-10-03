@@ -1257,10 +1257,10 @@ namespace pen
                 break;
 #if GL_ARB_compute_shader
             case PEN_SHADER_TYPE_CS:
-                g_current_state.compute_shader = shader_index;
-                g_current_state.vertex_shader = 0;
-                g_current_state.pixel_shader = 0;
-                g_current_state.stream_out_shader = 0;
+                s_live_state.compute_shader = shader_index;
+                s_live_state.vertex_shader = 0;
+                s_live_state.pixel_shader = 0;
+                s_live_state.stream_out_shader = 0;
                 break;
 #endif
         }
@@ -1358,7 +1358,7 @@ namespace pen
     {
 #if GL_ARB_compute_shader
         // look for linked cs program
-        u32 cs = _res_pool[g_current_state.compute_shader].handle;
+        u32 cs = _res_pool[s_live_state.compute_shader].handle;
         shader_program* linked_program = nullptr;
         u32 num_shaders = sb_count(s_shader_programs);
         for (s32 i = 0; i < num_shaders; ++i)
@@ -1373,7 +1373,7 @@ namespace pen
         // link if we need to on the fly
         if (linked_program == nullptr)
         {
-            u32 index = link_program_internal(0, 0, cs, nullptr);
+            u32 index = _link_program_internal(0, 0, cs, nullptr);
             linked_program = &s_shader_programs[index];
         }
         
