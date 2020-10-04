@@ -330,7 +330,7 @@ namespace put
             svr_volume_gi.name = "ecs_compute_volume_gi";
             svr_volume_gi.id_name = PEN_HASH(svr_volume_gi.name.c_str());
             svr_volume_gi.render_function = &ecs::compute_volume_gi;
-            
+                        
             pmfx::register_scene_view_renderer(svr_main);
             pmfx::register_scene_view_renderer(svr_light_volumes);
             pmfx::register_scene_view_renderer(svr_shadow_maps);
@@ -1029,7 +1029,15 @@ namespace put
                 pen::renderer_draw_indexed(p_geom->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
             }
             
-            sb_free(culled_entities);
+            if(filtered_entities)
+            {
+                sb_free(filtered_entities);
+            }
+            
+            if(culled_entities)
+            {
+                sb_free(culled_entities);
+            }
         }
 
         void update_animations(ecs_scene* scene, f32 dt)
