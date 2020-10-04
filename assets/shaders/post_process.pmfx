@@ -39,7 +39,7 @@ cbuffer src_info : register(b10)
 
 cbuffer filter_kernel : register(b2)
 {
-    float4 filter_info; 				// xy = mask / direction, z = num samples, w = unused
+    float4 filter_info; // xy = mask / direction, z = num samples, w = unused
     float4 filter_offset_weight[16];
 };
 

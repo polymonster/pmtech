@@ -323,6 +323,7 @@ namespace put
 
     void camera_set_cubemap_face(camera* p_camera, u32 face)
     {
+        // clang-format off
         static const vec3f at[] = {
             vec3f(-1.0, 0.0, 0.0), //+x
             vec3f(1.0, 0.0, 0.0),  //-x
@@ -332,11 +333,24 @@ namespace put
             vec3f(0.0, 0.0, -1.0)  //-z
         };
 
-        static const vec3f right[] = {vec3f(0.0, 0.0, 1.0), vec3f(0.0, 0.0, -1.0), vec3f(1.0, 0.0, 0.0),
-                                      vec3f(1.0, 0.0, 0.0), vec3f(1.0, 0.0, 0.0),  vec3f(-1.0, 0.0, -0.0)};
+        static const vec3f right[] = {
+            vec3f(0.0, 0.0, 1.0),
+            vec3f(0.0, 0.0, -1.0),
+            vec3f(1.0, 0.0, 0.0),
+            vec3f(1.0, 0.0, 0.0),
+            vec3f(1.0, 0.0, 0.0),
+            vec3f(-1.0, 0.0, -0.0)
+        };
 
-        static const vec3f up[] = {vec3f(0.0, 1.0, 0.0),  vec3f(0.0, 1.0, 0.0), vec3f(0.0, 0.0, 1.0),
-                                   vec3f(0.0, 0.0, -1.0), vec3f(0.0, 1.0, 0.0), vec3f(0.0, 1.0, 0.0)};
+        static const vec3f up[] = {
+            vec3f(0.0, 1.0, 0.0),
+            vec3f(0.0, 1.0, 0.0),
+            vec3f(0.0, 0.0, 1.0),
+            vec3f(0.0, 0.0, -1.0),
+            vec3f(0.0, 1.0, 0.0),
+            vec3f(0.0, 1.0, 0.0)
+        };
+        // clang-format on
 
         p_camera->view.set_row(0, vec4f(right[face], 0.0f));
         p_camera->view.set_row(1, vec4f(up[face], 0.0f));

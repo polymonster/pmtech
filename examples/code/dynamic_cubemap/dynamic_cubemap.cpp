@@ -36,10 +36,21 @@ namespace
 
 } // namespace
 
+void render_sky(const scene_view& view)
+{
+    pmfx::fullscreen_quad(view);
+}
+
 void example_setup(ecs_scene* scene, camera& cam)
 {
+    // sly renderer
+    put::scene_view_renderer svr_render_sky;
+    svr_render_sky.name = "ecs_render_sky";
+    svr_render_sky.id_name = PEN_HASH(svr_render_sky.name.c_str());
+    svr_render_sky.render_function = &render_sky;
+    pmfx::register_scene_view_renderer(svr_render_sky);
+    
     // chrome cameras
-
     put::camera_create_cubemap(&chrome_camera, 0.01f, 1000.0f);
     chrome_camera.pos = vec3f(0.0f, 0.0f, 0.0f);
 

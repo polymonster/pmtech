@@ -1,0 +1,69 @@
+cbuffer per_pass_view : register(b0)
+{
+    float4x4 	vp_matrix;
+    float4x4 	view_matrix;
+    float4x4 	vp_matrix_inverse;
+    float4x4 	view_matrix_inverse;
+    float4 		camera_view_pos; // w = near
+    float4 		camera_view_dir; // w = far
+};
+
+struct vs_input
+{
+    float4 position : POSITION;
+    float2 texcoord : TEXCOORD0;
+};
+
+struct vs_output
+{
+    float4 position : SV_POSITION;
+    float2 texcoord : TEXCOORD0;
+};
+
+struct ps_output
+{
+    float4 colour : SV_Target;
+};
+
+vs_output vs_main( vs_input input )
+{    
+    vs_output output;
+    
+    output.position = input.position;
+    output.texcoord = input.texcoord;
+    
+    return output;
+}
+
+ps_output ps_main( vs_output input )
+{
+    ps_output output;
+    output.colour = float4(1.0, 0.0, 1.0, 1.0);  
+    
+    float2 ndc = input.texcoord.xy * float2(2.0, 2.0) - float2(1.0, 1.0);
+    ndc = remap_ndc_ray(ndc);
+    ndc.y *= -1.0;
+    
+    // unproject ray
+    float4 near = float4(ndc.x, ndc.y, 0.0, 1.0);
+    float4 far = float4(ndc.x, ndc.y, 1.0, 1.0);
+    
+    float4 wnear = mul(near, vp_matrix_inverse);
+    wnear /= wnear.w;
+    
+    float4 wfar = mul(far, vp_matrix_inverse);
+    wfar /= wfar.w;
+        
+    float3 ray_origin = wnear.xyz;
+    float3 ray_dir = normalize(wfar.xyz - wnear.xyz);
+    
+    float3 grad_a = float3(0.9, 0.5, 0.0);
+    float3 grad_b = float3(0.5, 0.0, 1.0);
+    float grad_t = ray_dir.y * 0.5 + 0.5;
+    
+    float4 sky = float4(lerp(grad_a, grad_b, grad_t), 1.0);
+    
+    output.colour = sky;
+    
+    return output;
+}
