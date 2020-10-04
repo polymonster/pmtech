@@ -305,11 +305,12 @@ ps_output ps_cubemapped( vs_output input )
 {
     ps_output output;
     
-    float3 rd = normalize(input.world_pos.xyz - camera_view_pos.xyz);
-    float3 r = reflect(rd, normalize(input.normal.xyz));
+    // cubemap space z is inverted, so we must invert z of the ray and also the z of the normal
+    float3 rd = normalize(input.world_pos.xyz - camera_view_pos.xyz) * float3(1.0, 1.0, -1.0);
+    float3 n = normalize(input.normal.xyz * float3(1.0, 1.0, -1.0));
+    float3 r = reflect(rd, n);
     
-    output.colour = sample_texture( cubemap_texture, r );
-    
+    output.colour = sample_texture( cubemap_texture, r);    
     return output;
 }
 
@@ -317,10 +318,9 @@ ps_output ps_glass( vs_output input )
 {
     ps_output output;
     
-    float3 rd = normalize(input.world_pos.xyz - camera_view_pos.xyz);
-
-    float3 n = normalize(input.normal.xyz);
-    float3 r = refract(rd, n, 0.0);
+    float3 rd = normalize(input.world_pos.xyz - camera_view_pos.xyz) * float3(1.0, 1.0, -1.0);
+    float3 n = normalize(input.normal.xyz) * float3(1.0, 1.0, -1.0);
+    float3 r = refract(rd, n, 1.458);
     
     output.colour = sample_texture(cubemap_texture, rd);
     
