@@ -1121,12 +1121,14 @@ namespace pen
             // we must enable depth writes when clearing..
             CHECK_CALL(glEnable(GL_DEPTH_TEST));
             CHECK_CALL(glDepthMask(true));
+            s_state.depth_stencil_state = PEN_INVALID_HANDLE;
         }
 
         if(rc.clear_state.flags & GL_STENCIL_BUFFER_BIT)
         {
             CHECK_CALL(glEnable(GL_STENCIL_TEST));
             CHECK_CALL(glStencilMask(0xff));
+            s_state.depth_stencil_state = PEN_INVALID_HANDLE;
         }
 
         if (cs.num_colour_targets == 0)
@@ -1303,9 +1305,6 @@ namespace pen
             constant_layout_desc& constant = params.constants[i];
             GLint                 loc;
             
-            if(constant.location == 2)
-                continue;
-
             switch (constant.type)
             {
                 case CT_CBUFFER:
