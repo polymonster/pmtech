@@ -1045,12 +1045,12 @@ namespace // pen consts -> metal consts
         
         for(u32 i = 0; i < PEN_ARRAY_SIZE(clears); ++i)
         {
-            NSString* str = [[NSString alloc] initWithBytes:clears[i]
+            NSString* str = [[[NSString alloc] initWithBytes:clears[i]
                                                  length:strlen(clears[i])
-                                               encoding:NSASCIIStringEncoding];
+                                               encoding:NSASCIIStringEncoding] autorelease];
 
             NSError*           err = nil;
-            MTLCompileOptions* opts = [MTLCompileOptions alloc];
+            MTLCompileOptions* opts = [[MTLCompileOptions alloc] autorelease];
             opts.fastMathEnabled = YES;
 
             id<MTLLibrary> lib = [_metal_device newLibraryWithSource:str options:opts error:&err];
@@ -1346,12 +1346,12 @@ namespace pen
             if (!bin) // compile source
             {
                 const c8* csrc = (const c8*)params.byte_code;
-                NSString* str = [[NSString alloc] initWithBytes:csrc
+                NSString* str = [[[NSString alloc] initWithBytes:csrc
                                                          length:params.byte_code_size
-                                                       encoding:NSASCIIStringEncoding];
+                                                       encoding:NSASCIIStringEncoding] autorelease];
 
                 NSError*           err = nil;
-                MTLCompileOptions* opts = [MTLCompileOptions alloc];
+                MTLCompileOptions* opts = [[MTLCompileOptions alloc] autorelease];
                 opts.fastMathEnabled = YES;
 
                 lib = [_metal_device newLibraryWithSource:str options:opts error:&err];
@@ -1429,7 +1429,7 @@ namespace pen
             {
                 input_layout_desc& il = params.input_layout[i];
 
-                MTLVertexAttributeDescriptor* ad = [[MTLVertexAttributeDescriptor alloc] init];
+                MTLVertexAttributeDescriptor* ad = [[[MTLVertexAttributeDescriptor alloc] init] autorelease];
                 ad.format = to_metal_vertex_format(il.format);
                 ad.offset = il.aligned_byte_offset;
                 ad.bufferIndex = il.input_slot;
@@ -1602,7 +1602,7 @@ namespace pen
             bool msaa = false;
             if (_tcp.sample_count > 1)
                 msaa = true;
-
+                
             if (tcp.collection_type == TEXTURE_COLLECTION_NONE || tcp.collection_type == TEXTURE_COLLECTION_ARRAY)
             {
                 td = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:fmt
@@ -1642,7 +1642,7 @@ namespace pen
             }
             else if (tcp.collection_type == TEXTURE_COLLECTION_VOLUME)
             {
-                td = [[MTLTextureDescriptor alloc] init];
+                td = [[[MTLTextureDescriptor alloc] init] autorelease];
 
                 td.pixelFormat = fmt;
                 td.width = _tcp.width;
@@ -1658,7 +1658,7 @@ namespace pen
             }
             else if (tcp.collection_type == TEXTURE_COLLECTION_CUBE_ARRAY)
             {
-                td = [[MTLTextureDescriptor alloc] init];
+                td = [[[MTLTextureDescriptor alloc] init] autorelease];
 
                 td.pixelFormat = fmt;
                 td.width = _tcp.width;
@@ -1752,7 +1752,7 @@ namespace pen
         void renderer_create_sampler(const sampler_creation_params& scp, u32 resource_slot)
         {
             // create sampler state
-            MTLSamplerDescriptor* sd = [[MTLSamplerDescriptor alloc] init];
+            MTLSamplerDescriptor* sd = [[[MTLSamplerDescriptor alloc] init] autorelease];
 
             sd.sAddressMode = to_metal_sampler_address_mode(scp.address_u);
             sd.tAddressMode = to_metal_sampler_address_mode(scp.address_v);
@@ -1886,7 +1886,7 @@ namespace pen
         {
             _res_pool.insert(resource(), resource_slot);
 
-            MTLDepthStencilDescriptor* dsd = [[MTLDepthStencilDescriptor alloc] init];
+            MTLDepthStencilDescriptor* dsd = [[[MTLDepthStencilDescriptor alloc] init] autorelease];
             dsd.depthCompareFunction = to_metal_compare_function(dscp.depth_func);
             dsd.depthWriteEnabled = dscp.depth_write_mask > 0 ? YES : NO;
 

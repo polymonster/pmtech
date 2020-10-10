@@ -512,6 +512,7 @@ namespace put
             scene_flags      flags = 0;
             scene_view_flags view_flags = 0;
             extents          renderable_extents;
+            extents          shadow_extent_constraints = {0};
             u32*             selection_list = nullptr;
             u32              version = k_version;
             Str              filename = "";

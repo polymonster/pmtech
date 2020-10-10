@@ -266,9 +266,9 @@ namespace put
 
                 for (s32 x = 0; x < 2; ++x)
                 {
-                    v[vi].normal = vec4f(n, 1.0f);
-                    v[vi].tangent = vec4f(t, 1.0f);
-                    v[vi].bitangent = vec4f(b, 1.0f);
+                    v[vi + x].normal = vec4f(n, 1.0f);
+                    v[vi + x].tangent = vec4f(t, 1.0f);
+                    v[vi + x].bitangent = vec4f(b, 1.0f);
                 }
             }
 
@@ -396,8 +396,11 @@ namespace put
                         p_next += 0.5f;
                     }
 
+                    // cylindrical normals for the centre cause artifacts
+                    /*
                     if (fabs(r - (segments / 2.0f)) < 2.0f)
                         n = normalised(xz);
+                    */
 
                     vec3f t = normalised(p_next - p);
                     vec3f bt = cross(p, t);
@@ -824,7 +827,7 @@ namespace put
 
                 v[vi].pos = vec4f(bottom_points[i], 1.0f);
                 v[vi].normal = vec4f(0.0f, -1.0f, 0.0f, 1.0f);
-                v[vi].tangent = vec4f(1.0f, 0.0f, 1.0f, 1.0f);
+                v[vi].tangent = vec4f(1.0f, 0.0f, 0.0f, 1.0f);
                 v[vi].bitangent = vec4f(0.0f, 0.0f, 1.0f, 1.0f);
             }
 
@@ -835,16 +838,20 @@ namespace put
 
                 v[vi].pos = vec4f(top_points[i], 1.0f);
                 v[vi].normal = vec4f(0.0f, 1.0f, 0.0f, 1.0f);
-                v[vi].tangent = vec4f(1.0f, 0.0f, 1.0f, 1.0f);
+                v[vi].tangent = vec4f(1.0f, 0.0f, 0.0f, 1.0f);
                 v[vi].bitangent = vec4f(0.0f, 0.0f, 1.0f, 1.0f);
             }
 
             // centre points
             v[64].pos = vec4f(0.0f, -1.0f, 0.0f, 1.0f);
             v[64].normal = vec4f(0.0f, -1.0f, 0.0f, 1.0f);
+            v[64].tangent = vec4f(1.0f, 0.0f, 0.0f, 1.0f);
+            v[64].bitangent = vec4f(0.0f, 0.0f, 1.0f, 1.0f);
 
             v[65].pos = vec4f(0.0f, 1.0f, 0.0f, 1.0f);
-            v[65].normal = vec4f(0.0f, 1.0f, 1.0f, 1.0f);
+            v[65].normal = vec4f(0.0f, 1.0f, 0.0f, 1.0f);
+            v[65].tangent = vec4f(1.0f, 0.0f, 0.0f, 1.0f);
+            v[65].bitangent = vec4f(0.0f, 0.0f, 1.0f, 1.0f);
 
             // sides
             const u32 num_indices = segments * 6 + segments * 3 * 2;

@@ -489,9 +489,18 @@ namespace put
         {
             if (scene->lights[n].type == e_light_type::dir)
             {
+                // clamp to shadow map max extents to prevent large shadow maps
+                vec3f emin = scene->renderable_extents.min;
+                vec3f emax = scene->renderable_extents.max;
+                
+                if(mag2(scene->shadow_extent_constraints.min - scene->shadow_extent_constraints.max))
+                {
+                    emin = max_union(scene->shadow_extent_constraints.min, emin);
+                    emax = min_union(scene->shadow_extent_constraints.max, emax);
+                }
+            
                 vec3f light_dir = normalised(-scene->lights[n].direction);
-                camera_update_shadow_frustum(&cam, light_dir, scene->renderable_extents.min - vec3f(0.1f),
-                                             scene->renderable_extents.max + vec3f(0.1f));
+                camera_update_shadow_frustum(&cam, light_dir, emin - vec3f(0.1f), emax + vec3f(0.1f));
             }
             else
             {
