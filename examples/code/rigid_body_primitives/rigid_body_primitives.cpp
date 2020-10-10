@@ -36,6 +36,9 @@ void example_setup(ecs_scene* scene, camera& cam)
     geometry_resource* capsule = get_geometry_resource(PEN_HASH("capsule"));
     geometry_resource* sphere = get_geometry_resource(PEN_HASH("sphere"));
     geometry_resource* cone = get_geometry_resource(PEN_HASH("physics_cone"));
+    
+    scene->shadow_extent_constraints.min = vec3f(-50.0f, 0.0f, -50.0f);
+    scene->shadow_extent_constraints.max = vec3f( 50.0f, 50.0f,  50.0f);
 
     // add light
     u32 light = get_new_entity(scene);
