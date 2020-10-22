@@ -429,7 +429,7 @@ namespace put
                 }
 
                 // flush cmd buff
-                pen::renderer_consume_cmd_buffer();
+                // pen::renderer_consume_cmd_buffer();
             }
 
             scene->flags |= e_scene_flags::invalidate_scene_tree;
