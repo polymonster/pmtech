@@ -897,6 +897,12 @@ namespace put
             // gi volume
             pen::renderer_set_constant_buffer(scene->gi_volume_buffer, 11, pen::CBUFFER_BIND_PS);
             
+            // blue noise
+            static hash_id id_wrap_point = PEN_HASH("wrap_point");
+            u32 wrap_point = pmfx::get_render_state(id_wrap_point, pmfx::e_render_state::sampler);
+            static u32 blue_noise = put::load_texture("data/textures/noise/blue_noise_ldr_rgba_0.dds");
+            pen::renderer_set_texture(blue_noise, wrap_point, 5, pen::TEXTURE_BIND_PS);
+            
             // filter and cull
             u32* filtered_entities = nullptr;
             u32* culled_entities = nullptr;
@@ -1801,6 +1807,7 @@ namespace put
 
                 // store node index in v1.x
                 scene->draw_call_data[n].v1.x = (f32)n;
+                scene->draw_call_data[n].v1.y = pen::get_time_ms();
 
                 if (is_invalid_or_null(scene->cbuffer[n]))
                     continue;
