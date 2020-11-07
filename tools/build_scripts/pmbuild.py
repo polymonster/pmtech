@@ -16,6 +16,7 @@ from http.server import HTTPServer, CGIHTTPRequestHandler
 import webbrowser
 import threading
 
+
 # returns tool to run from cmdline with .exe
 def tool_to_platform(tool):
     tool = util.sanitize_file_path(tool)
