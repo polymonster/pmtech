@@ -253,8 +253,12 @@ namespace pen
 
     struct viewport
     {
-        f32 x, y, width, height;
-        f32 min_depth, max_depth;
+        f32 x;
+        f32 y;
+        f32 width;
+        f32 height;
+        f32 min_depth;
+        f32 max_depth;
     };
 
     struct rect
