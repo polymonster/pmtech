@@ -2910,7 +2910,7 @@ namespace put
                 pen::renderer_set_texture(0, 0, i, pen::TEXTURE_BIND_PS | pen::TEXTURE_BIND_VS);
 
             // render state
-            pen::viewport vp = {0};
+            pen::viewport vp = {0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f};
             get_rt_viewport(v.rt_width, v.rt_height, v.rt_ratio, v.viewport, vp);
             pen::renderer_set_depth_stencil_state(v.depth_stencil_state);
             pen::renderer_set_stencil_ref(v.stencil_ref);
