@@ -1,7 +1,7 @@
 {
 	texturec:
 	{
-		"--cubemap": true
+		"--cubearray": true
 	}
 	
 	container:
