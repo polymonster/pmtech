@@ -11,6 +11,14 @@
 		build_models: "../tools/build_scripts/build_models.py"
 	}
 	
+	tools<windows>: {
+		jsn: "py -3 ${pmbuild_dir}/scripts/jsn/jsn.py"
+		premake: "${pmbuild_dir}/bin/windows/premake5.exe"
+		texturec: "${pmbuild_dir}/bin/windows/texturec.exe"
+		pmfx: "py -3 ${pmbuild_dir}/scripts/pmfx-shader/build_pmfx.py"
+		build_models: "../tools/build_scripts/build_models.py"
+	}
+		
 	extensions: {
 		models:
 		{
@@ -75,6 +83,7 @@
 				"export.jsn"
 				"*.txt"
 				"*.DS_Store"
+				"*.dds"
 			]
 			change_ext: ".dds"
 			dependencies: true
@@ -135,5 +144,49 @@
 				["bin/osx/**/*.app"]
 			]
         }
+	}
+	
+	win32(base):
+	{
+		jsn_vars: {
+			data_dir: "bin/win32/data"
+			build_dir: "build/win32"
+			bin_dir: "bin/win32"
+		}
+		
+		premake: {
+			args: [
+				"%{vs_latest}"
+				"--renderer=dx11"
+				"--platform_dir=win32"
+				"--sdk_version=%{windows_sdk_version}"
+			]
+        },
+        
+		pmfx: {
+			args: [
+				"-shader_platform hlsl"
+				"-shader_version 5_0"
+				"-i assets/shaders ../assets/shaders"
+				"-o bin/win32/data/pmfx/hlsl"
+				"-h shader_structs"
+				"-t temp/shaders"
+				"-source"
+			]
+		}
+		
+		make: {
+			toolchain: "msbuild",
+			files: [
+				["build/win32/*.vcxproj", ""]
+			]
+		}
+		
+		launch: {
+			cmd: "%{target_path}"
+			files: [
+				["bin/win32/*.exe", ""]
+			]
+		}
 	}
 }

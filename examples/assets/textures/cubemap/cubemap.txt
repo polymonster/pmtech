@@ -1,0 +1,6 @@
+assets\textures\cubemap\posx.jpg
+assets\textures\cubemap\negx.jpg
+assets\textures\cubemap\posy.jpg
+assets\textures\cubemap\negy.jpg
+assets\textures\cubemap\posz.jpg
+assets\textures\cubemap\negz.jpg
