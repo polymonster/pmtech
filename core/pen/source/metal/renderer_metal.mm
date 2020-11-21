@@ -696,7 +696,9 @@ namespace // pen consts -> metal consts
     {
         switch(format)
         {
+#if !PEN_PLATFORM_IOS
             case MTLPixelFormatDepth24Unorm_Stencil8:
+#endif
             case MTLPixelFormatDepth32Float_Stencil8:
                 return true;
             default:
