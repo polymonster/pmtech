@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
+python3 -m pip install cryptography
 cd examples
-../pmbuild mac -libs -all
-../pmbuild mac make all -configuration Debug
-../pmbuild mac make all -configuration Release
+../pmbuild mac -libs
