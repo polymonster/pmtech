@@ -67,7 +67,7 @@ function setup_from_action()
             link_cmd = "-stdlib=libc++"
         else
             build_cmd = "-std=c++11 -stdlib=libc++ -mfma -mavx -mavx2 -msse2"
-            link_cmd = "-stdlib=libc++ -mmacosx-version-min=10.8"
+            link_cmd = "-stdlib=libc++"
         end
     elseif _ACTION == "android-studio" then 
         build_cmd = { "-std=c++11" }
@@ -119,7 +119,7 @@ end
 
 function setup_env_osx()
 	xcodebuildsettings {
-		["MACOSX_DEPLOYMENT_TARGET"] = "10.14"
+		["MACOSX_DEPLOYMENT_TARGET"] = "10.13"
 	}
 	architecture "x64"
 end
