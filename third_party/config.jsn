@@ -79,4 +79,22 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
 			change_ext: ""
         }	
 	}
+	
+	bullet-win32:
+	{
+		premake: {
+			args: [
+				"%{vs_latest}"
+				"--platform_dir=win32"
+				"--sdk_version=%{windows_sdk_version}"
+			]
+        }
+        
+		make: {
+			toolchain: "msbuild"
+			files: [
+				"build/win32/*.vcxproj"
+			]
+		}
+	}
 }

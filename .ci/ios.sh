@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 cd examples
-../pmbuild ios-ci -libs -premake
-cd build/ios
-xcodebuild -scheme pen -destination generic/platform=iOS -workspace pmtech_examples_ios.xcworkspace -configuration Debug CODE_SIGNING_ALLOWED=NO
-xcodebuild -scheme put -destination generic/platform=iOS -workspace pmtech_examples_ios.xcworkspace -configuration Debug CODE_SIGNING_ALLOWED=NO
+../pmbuild ios -libs
+../pmbuild ios
+pmbuild make ios all -destination generic/platform=iOS -configuration Debug CODE_SIGNING_ALLOWED=NO
+pmbuild make ios all -destination generic/platform=iOS -configuration Release CODE_SIGNING_ALLOWED=NO
+
