@@ -392,7 +392,8 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
     // web
     //
     
-    web(base): {
+    web(base): 
+    {
 		jsn_vars: {
             data_dir: "build/web/data"
 			build_dir: "build/web"
@@ -447,4 +448,40 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
 			ext: ".html"
         }
     }
+    
+    //
+    // android
+    //
+    
+    android(base): 
+    {
+    	jsn_vars: {
+            data_dir: "bin/android/data"
+			build_dir: "build/android"
+			bin_dir: "bin/android"
+        }
+        
+    	premake: {
+			args: [
+				"android-studio"
+				"--renderer=opengl"
+				"--platform_dir=android"
+				"--pmtech_dir=../"
+				"--scripts=${pmbuild_dir}/scripts/premake-android-studio"
+			]
+		}
+		pmfx: {
+			args: [
+            	"-shader_platform gles"
+            	"-shader_version 300"
+            	"-i assets/shaders ../assets/shaders"
+            	"-o build/web/data/pmfx/glsl"
+            	"-h shader_structs"
+            	"-t temp/shaders"
+            	"-v_flip"
+            	"-source"
+			]
+		}
+    }
+    
 }

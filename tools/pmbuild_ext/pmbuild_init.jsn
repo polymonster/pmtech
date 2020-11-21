@@ -5,6 +5,7 @@
 		texturec: "${pmbuild_dir}/bin/mac/texturec"
 		pmfx: "python3 ${pmbuild_dir}/scripts/pmfx-shader/build_pmfx.py"
 		build_models: "${pmtech_dir}/tools/pmbuild_ext/build_models.py"
+		mesh_opt: "${pmtech_dir}/tools/bin/osx/mesh_opt"
 	}
 	
 	tools<windows>: {
@@ -13,7 +14,16 @@
 		texturec: "${pmbuild_dir}/bin/windows/texturec.exe"
 		pmfx: "py -3 ${pmbuild_dir}/scripts/pmfx-shader/build_pmfx.py"
 		build_models: "${pmtech_dir}/tools/pmbuild_ext/build_models.py"
-		mesh_opt: "../"
+		mesh_opt: "${pmtech_dir}/tools/bin/win32/mesh_opt.exe"
+	}
+	
+	tools<linux>: {
+		jsn: "${pmbuild_dir}/scripts/jsn/jsn"
+		premake: "${pmbuild_dir}/bin/linux/premake5"
+		texturec: "${pmbuild_dir}/bin/linux/texturec"
+		pmfx: "python3 ${pmbuild_dir}/scripts/pmfx-shader/build_pmfx.py"
+		build_models: "${pmtech_dir}/tools/pmbuild_ext/build_models.py"
+		mesh_opt: "${pmtech_dir}/tools/bin/linux/mesh_opt"
 	}
 	
 	extensions: {
