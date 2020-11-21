@@ -3,9 +3,6 @@ dofile("../../tools/premake/globals.lua")
 
 link_cmd = ""
 build_cmd = ""
-if platform_dir == "osx" then
-	link_cmd = "-mmacosx-version-min=10.8"
-end
 
 solution "bullet_build"
 	location ("build/" .. platform_dir ) 
