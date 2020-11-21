@@ -2,6 +2,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
 {
 	jsn_vars: {
 		pmbuild_dir: "pmbuild"
+		pmtech_dir: ".."
 	}
 		
 	bullet-mac:

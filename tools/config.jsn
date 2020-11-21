@@ -1,113 +1,111 @@
+import "../tools/pmbuild_ext/pmbuild_init.jsn"
 {
-    //
-    // common
-    //
-    
-	jsn_vars<windows>: {
-		texturec: "../third_party/texturec/win32/texturec",
-        premake: "../tools/premake/premake5"
-	},
+	jsn_vars: {
+		pmbuild_dir: "../third_party/pmbuild"
+		pmtech_dir: ".."
+		data_dir: ""
+		bin_dir: ""
+		platform: ""
+	}
 	
-	jsn_vars<mac>: {
-		texturec: "../third_party/texturec/osx/texturec",
-        premake: "../tools/premake/premake5"
-	},
-	
-	jsn_vars<linux>: {
-		texturec: "../third_party/texturec/linux/texturec",
-        premake: "../tools/premake/premake5_linux"
-	},
-    
-    base: {
-		jsn_vars: {
-    		data: "",
-    		bin: "",
-    		platform: ""
-    	},
-    	
-        tools: {
-            premake: "${premake}",
-            texturec: "${texturec}",
-			pmfx: "../third_party/pmfx-shader/build_pmfx.py",
-            models: "../tools/build_scripts/build_models.py",
-            jsn: "../tools/build_scripts/jsn/jsn.py"
-        },
-    
-        env: {
-            pmtech_dir: "../"
-        },
-    },
-    
     //
     // cmdline build of libs for pmbuild dependencies
     //
     
-    mac(base): {
-        premake: [
-            "gmake",
-            "--renderer=metal", 
-            "--platform_dir=osx"
-        ],
-        build: [
-        	"cd build/osx && make mesh_opt config=release",
-        	"cd ../..",
-        	"rsync ../third_party/shared_libs/osx/libfmod.dylib bin/osx/",
-        	"install_name_tool -add_rpath @executable_path/. bin/osx/mesh_opt"
-        ]
+    mac-meshopt(base): {
+    	premake: {
+			args: [
+				"gmake"
+				"--renderer=metal"
+				"--platform_dir=osx"
+			]
+        }
+        
+        shell: {
+        	commands: [
+        		"cd build/osx && make mesh_opt config=release"
+        		"rsync ../third_party/shared_libs/osx/libfmod.dylib bin/osx/"
+        		"install_name_tool -add_rpath @executable_path/. bin/osx/mesh_opt"
+        	]
+        }
     },
     
     linux(base): {
-        tools: {
-            premake: "../tools/premake/premake5_linux"
-	    },
-        premake: [
-            "gmake",
-            "--renderer=opengl", 
-            "--platform_dir=linux"
-        ],
-        build: [
-            "cd build/linux/ && make mesh_opt config=release"
-        ]
-    },
+    	premake: {
+			args: [
+				"gmake"
+				"--renderer=opengl",
+				"--platform_dir=linux"
+			]
+        }
+        shell: {
+			commands: [
+				"cd build/linux/ && make mesh_opt config=release"
+			]
+        }
+    }
     
 	win32(base): {
-		premake: [
-            "vs2017",
-            "--renderer=dx11", 
-            "--platform_dir=win32"
-        ],
-		build: [
-			"cd build/win32 && msbuild pmtech_tools_win32.sln /p:Configuration=Release"
-		]
-	},
+		premake: {
+			args: [
+				"vs2017"
+				"--renderer=dx11"
+				"--platform_dir=win32"
+			]
+        }
+        shell: {
+			commands: [
+				"cd build/win32 && msbuild pmtech_tools_win32.sln /p:Configuration=Release"
+			]
+		}
+	}
 	
 	//
     // tools workspace, pmtech editor, live lib, mesh opt
     //
 
-    tools-data(base): {
-    	data_dir: "${data}",
-    	
-        textures: [
-            ["../assets/textures", "${data}/textures"]
-        ],
+    data(base): 
+    {
+    	base_copy: {
+        	type: copy
+        	files: [
+            	["../assets/fonts", "${data_dir}/fonts"],
+            	["../third_party/shared_libs/${platform}", "${bin_dir}"]
+            ]
+        }
         
-        copy: [
-            ["../assets/fonts", "${data}/fonts"],
-            ["../third_party/shared_libs/${platform}", "${bin}"]
-        ],
+        texturec: {
+			args: [
+				"-f %{input_file}"
+				"%{export_args}"
+				"-o %{output_file}"
+			]
+			files: [
+				["../assets/textures", "${data_dir}/textures"]
+        	]
+			excludes: [
+				"export.jsn"
+				"*.txt"
+				"*.DS_Store"
+				"*.dds"
+			]
+			change_ext: ".dds"
+			dependencies: true
+        }
         
         jsn: {
-			files:[
-				["../assets/configs", "${data}/configs"],
-			],
-			import_dirs:[
-				"../assets/configs"
+			args: [
+				"-i %{input_file} -o %{output_file}"
+				"-I ../assets/configs"
 			]
-        },
+			files:[
+				["../assets/configs", "${data_dir}/configs"]
+			]
+			change_ext: ".json"
+        }
         
         cr: {
-        	files: [
+        	file_list: [
             	"../core/put/source/ecs/ecs_scene.h",
             	"../core/put/source/ecs/ecs_resources.h",
             	"../core/put/source/ecs/ecs_utilities.h",
@@ -117,29 +115,34 @@
         	],
         	output: "../core/put/source/ecs/ecs_live.h"
         }
-    },
+    }
 	
-	mac-tools(base, tools-data): {
+	mac-editor(data): 
+	{
     	jsn_vars: {
-    		data: "bin/osx/data",
-    		bin: "bin/osx",
+    		data_dir: "bin/osx/data"
+    		bin_dir: "bin/osx"
     		platform: "osx"
-    	},
+    	}
     	
-    	premake: [
-            "xcode4",
-            "--renderer=metal", 
-            "--platform_dir=osx"
-        ],
+    	premake: {
+			args: [
+				"xcode4"
+				"--renderer=metal"
+				"--platform_dir=osx"
+			]
+        }
         
-		pmfx: [
-            "-shader_platform metal",
-            "-metal_sdk macosx",
-            "-i ../assets/shaders",
-            "-o bin/osx/data/pmfx/metal",
-            "-h shader_structs",
-            "-t temp/shaders",
-            "-source"
-        ],
-    },
+        pmfx: {
+			args: [
+				"-shader_platform metal"
+				"-metal_sdk macosx"
+				"-i ../assets/shaders"
+				"-o bin/osx/data/pmfx/metal"
+				"-h shader_structs"
+				"-t temp/shaders"
+				"-source"
+			]
+        }
+    }
 }

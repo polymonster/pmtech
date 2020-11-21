@@ -14,4 +14,18 @@
 		pmfx: "py -3 ${pmbuild_dir}/scripts/pmfx-shader/build_pmfx.py"
 		build_models: "../tools/pmbuild_ext/build_models.py"
 	}
+	
+	extensions: {
+		models: {
+			search_path: "${pmtech_dir}/tools/pmbuild_ext"
+			module: "pmbuild_ext"
+			function: "run_models"
+		}
+		cr:
+		{
+			search_path: "${pmtech_dir}/tools/pmbuild_ext"
+			module: "pmbuild_ext"
+			function: "run_cr"
+		}
+	}
 }
