@@ -1,449 +1,449 @@
-{
-    //
-    // common
-    //
-    
-	jsn_vars<windows>: {
-		mesh_opt: "../tools/bin/win32/mesh_opt.exe",
-		texturec: "../third_party/texturec/win32/texturec",
-        premake: "../tools/premake/premake5"
-	},
+import "../tools/pmbuild_ext/pmbuild_init.jsn"
+{	
+	//
+	// common
+	//
 	
-	jsn_vars<mac>: {
-		mesh_opt: "../tools/bin/osx/mesh_opt",
-		texturec: "../third_party/texturec/osx/texturec",
-        premake: "../tools/premake/premake5"
-	},
+	jsn_vars: {
+		pmbuild_dir: "../../pmbuild"
+		pmtech_dir: ".."
+	}
 	
-	jsn_vars<linux>: {
-		mesh_opt: "../tools/bin/linux/mesh_opt",
-		texturec: "../third_party/texturec/linux/texturec",
-        premake: "../tools/premake/premake5_linux"
-	},
-    
-    base: {
-        jsn_vars: {
-            data_dir: ""
-        },
-
-        tools: {
-			texturec: "${texturec}",
-			mesh_opt: "${mesh_opt}",
-            premake: "${premake}",
-            pmfx: "../third_party/pmfx-shader/build_pmfx.py",
-            models: "../tools/build_scripts/build_models.py",
-            jsn: "../tools/build_scripts/jsn/jsn.py"
-        },
-    
-        env: {
-            pmtech_dir: "../"
-        },
-        
-        jsn: {
-			files:[
-				["assets/configs", "${data_dir}/configs"],
-				["../assets/configs", "${data_dir}/configs"]
-			],
-			import_dirs:[
-				"../assets/configs", "assets/configs"
-			]
+	base:
+	{
+		jsn_vars: {
+			data_dir: ""
+			build_dir: ""
+			bin_dir: ""
         }
-    },
-    
-    //
-    // mac
-    //
-    
-    mac(base): {
-        jsn_vars: {
-            data_dir: "bin/osx/data"
-        },
-        data_dir: "bin/osx/data/",
-
-        clean: [
-            "build/osx",
-            "bin/osx",
-            "temp"
-        ],
         
-        libs: [
-            "cd ../third_party && ./build_libs.sh osx",
-            "cd ../tools && pmbuild mac"
-        ],
+		clean: {
+			directories: [
+				"${data_dir}"
+				"${build_dir}"
+				"${bin_dir}"
+				"temp"
+            ]
+        }
         
-        premake: [
-            "xcode4",
-            "--renderer=metal", 
-            "--platform_dir=osx"
-        ],
+		render_configs: {
+			type: jsn
+			args: [
+				"-i %{input_file} -o %{output_file}"
+				"-I ../assets/configs assets/configs",
+			]
+			files: [
+				["assets/configs", "${data_dir}/configs"]
+				["../assets/configs", "${data_dir}/configs"]
+			]
+			dependencies: true
+        }
         
-        pmfx: [
-            "-shader_platform metal",
-            "-metal_sdk macosx",
-            "-i assets/shaders ../assets/shaders",
-            "-o bin/osx/data/pmfx/metal",
-            "-h shader_structs",
-            "-t temp/shaders",
-            "-source"
-        ],
+        base_copy: {
+        	type: copy
+        	files: [
+        		["assets/audio", "${data_dir}/audio"]
+        		["assets/scene", "${data_dir}/scene"]
+            	["../assets/fonts", "${data_dir}/fonts"]
+            	["assets/textures/**/*.pmv", "${data_dir}/textures"]
+            	["assets/textures/**/*.dds", "${data_dir}/textures"]
+            	["../assets/textures/**/*.dds", "${data_dir}/textures"]
+            ]
+        }
         
-        models: [
-            ["assets/mesh", "bin/osx/data/models"]
-        ],
+        texturec: {
+			args: [
+				"-f %{input_file}"
+				"%{export_args}"
+				"-o %{output_file}"
+			]
+			files: [
+            	["assets/textures", "${data_dir}/textures"]
+            	["../assets/textures", "${data_dir}/textures"]
+        	]
+			excludes: [
+				"export.jsn"
+				"*.txt"
+				"*.DS_Store"
+				"*.dds"
+			]
+			change_ext: ".dds"
+			dependencies: true
+        }
         
-        textures: [
-            ["assets/textures", "bin/osx/data/textures"],
-            ["../assets/textures", "bin/osx/data/textures"]
-        ],
+        models: {
+        	files: [
+        		["assets/mesh", "${data_dir}/models"]
+        	]
+        }
+	}
+	
+	//
+	// mac
+	//
+	
+	mac(base):
+	{
+		jsn_vars: {
+			data_dir: "bin/osx/data"
+			build_dir: "build/osx"
+			bin_dir: "bin/osx"
+		}
+		
+		premake: {
+			args: [
+            	"xcode4"
+            	"--renderer=metal"
+            	"--platform_dir=osx"
+			]
+		}
+		
+		pmfx: {
+			args: [
+				"-shader_platform metal",
+				"-metal_sdk macosx",
+				"-i assets/shaders ../assets/shaders",
+				"-o bin/osx/data/pmfx/metal",
+				"-h shader_structs",
+				"-t temp/shaders",
+				"-source"
+            ]
+        }
         
-        copy: [
-            ["assets/audio", "bin/osx/data/audio"],
-            ["../assets/audio", "bin/osx/data/audio"],
-            ["../assets/fonts", "bin/osx/data/fonts"],
-            ["assets/scene", "bin/osx/data/scene"],
-            ["../third_party/shared_libs/osx", "bin/osx"]
-        ],
+        shared_libs: {
+        	type: copy
+        	files: [
+        		["../third_party/shared_libs/osx", "bin/osx"]
+        	]
+        }
         
         make: {
         	toolchain: "xcodebuild",
-			dir: "build/osx"
-        },
-        
-		run: {
-        	cmd: "%target%.app/Contents/MacOS/%target%",
-			dir: "bin/osx",
-			ext: ".app"
+			files: [
+				"build/osx/**/*.xcodeproj"
+			]
         }
-    },
-    
-    mac-gl(mac): {
-        premake: [
-            "xcode4",
-            "--renderer=opengl", 
-            "--platform_dir=osx"
-        ],
         
-        pmfx: [
-            "-shader_platform glsl",
-            "-shader_version 330",
-            "-i assets/shaders ../assets/shaders",
-            "-o bin/osx/data/pmfx/glsl",
-            "-h shader_structs",
-            "-t temp/shaders",
-            "-source",
-            "-v_flip"
-        ]
-    },
-
-    mac-gl-ci(mac): {
-        premake: [
-            "gmake",
-            "--renderer=opengl", 
-            "--platform_dir=osx"
-        ]
-    },
-
-    mac-metal-ci(mac): {
-        premake: [
-            "gmake",
-            "--renderer=metal", 
-            "--platform_dir=osx"
-        ]
-    },
-    
-    //
-    // iOS
-    //
-    
-    ios(base): {
-        require_teamid: true,
-
-        jsn_vars: {
-            data_dir: "bin/ios/data"
-        },
-
-        clean: [
-            "build/ios",
-            "bin/ios",
-            "temp"
-        ],
+        launch: {
+        	cmd: "%{target_path}/Contents/MacOS/%{target_name}",
+			files: [
+				"bin/osx/**/*.app"
+			]
+        }
         
-        libs: [
-            "cd ../third_party && ./build_libs.sh ios",
-            "cd ../tools && pmbuild mac"
-        ],
-        
-        premake: [
-            "xcode4",
-            "--renderer=metal", 
-            "--platform_dir=ios",
-            "--xcode_target=ios"
-        ],
-        
-        pmfx: [
-            "-shader_platform metal",
-            "-metal_sdk iphoneos",
-            "-i assets/shaders ../assets/shaders",
-            "-o bin/ios/data/pmfx/metal",
-            "-h shader_structs",
-            "-t temp/shaders",
-            "-source"
-        ],
-        
-        copy: [
-            ["assets/audio", "bin/ios/data/audio"],
-            ["../assets/fonts", "bin/ios/data/fonts"],
-            ["assets/scene", "bin/ios/data/scene"]
-        ],
-        
-        textures: [
-            ["assets/textures", "bin/ios/data/textures"],
-            ["../assets/textures", "bin/ios/data/textures"]
-        ],
-        
-        models: [
-            ["assets/mesh", "bin/ios/data/models"]
-        ],
-    },
-    
-    ios-ci(base): {
-        premake: [
-            "xcode4",
-            "--renderer=metal", 
-            "--xcode_target=ios",
-            "--platform_dir=osx"
-        ]
-    },
+        libs: {
+        	type: shell
+        	explicit: true
+        	commands: [
+        		"cd ../third_party && ../pmbuild bullet-mac"
+        		"cd ../third_party && ../pmbuild make bullet-mac all -configuration Release"
+        		"cd ../third_party && ../pmbuild make bullet-mac all -configuration Debug"
+        	]
+        }
+	}
+	
+	mac-gl(mac): {
+		premake: {
+			args: [
+            	"xcode4"
+            	"--renderer=opengl"
+            	"--platform_dir=osx"
+			]
+		}
+		
+		pmfx: {
+			args: [
+				"-shader_platform glsl"
+				"-shader_version 330"
+				"-i assets/shaders ../assets/shaders"
+				"-o bin/osx/data/pmfx/glsl"
+				"-h shader_structs"
+				"-t temp/shaders"
+				"-source"
+				"-v_flip"
+            ]
+        }
+    }
     
     //
     // win32
     //
-    
-    win32(base): {
-        jsn_vars: {
-            data_dir: "bin/win32/data"
+	
+	win32(base):
+	{
+		jsn_vars: {
+			data_dir: "bin/win32/data"
+			build_dir: "build/win32"
+			bin_dir: "bin/win32"
+		}
+		
+		premake: {
+			args: [
+				"%{vs_latest}"
+				"--renderer=dx11"
+				"--platform_dir=win32"
+				"--sdk_version=%{windows_sdk_version}"
+			]
         },
-
-        vs_version: "latest",
-
-        clean: [
-            "build/win32",
-            "bin/win32",
-            "shader_structs",
-            "temp"
-        ],
         
-        libs: [
-            "cd ..\\third_party && .\\build_libs.bat ",
-        ],
-        
-        premake: [
-            "vs_version",
-            "--renderer=dx11", 
-            "--platform_dir=win32"
-        ],
-        
-        pmfx: [
-            "-shader_platform hlsl",
-            "-shader_version 5_0",
-            "-i assets/shaders ../assets/shaders",
-            "-o bin/win32/data/pmfx/hlsl",
-            "-h shader_structs",
-            "-t temp/shaders",
-            "-source"
-        ],
-        
-        models: [
-            ["assets/mesh", "bin/win32/data/models"]
-        ],
-        
-        textures: [
-            ["assets/textures", "bin/win32/data/textures"],
-            ["../assets/textures", "bin/win32/data/textures"]
-        ],
-        
-        copy: [
-            ["assets/audio", "bin/win32/data/audio"],
-            ["assets/scene", "bin/win32/data/scene"],
-            ["../third_party/shared_libs/win32", "bin/win32"],
-            ["../assets/fonts", "bin/win32/data/fonts"]
-        ],
+		pmfx: {
+			args: [
+				"-shader_platform hlsl"
+				"-shader_version 5_0"
+				"-i assets/shaders ../assets/shaders"
+				"-o bin/win32/data/pmfx/hlsl"
+				"-h shader_structs"
+				"-t temp/shaders"
+				"-source"
+			]
+		}
 		
 		make: {
-        	toolchain: "msbuild",
-			dir: "build/win32"
-        },
+			toolchain: "msbuild"
+			files: [
+				"build/win32/*.vcxproj"
+			]
+		}
 		
-		run: {
-			cmd: "%target%.exe",
-			dir: "bin/win32",
-			ext: ".exe"
-		},
-        
-        data_dir: "bin/win32/data/"
-    },
-    
-    win32-vulkan(win32): {
-        premake: [
-            "vs_version",
-            "--renderer=vulkan", 
-            "--platform_dir=win32"
-        ],
-        
-        pmfx: [
-            "-shader_platform spirv",
-            "-shader_version 420",
-            "-i assets/shaders ../assets/shaders",
-            "-o bin/win32/data/pmfx/spirv",
-            "-h shader_structs",
-            "-t temp/shaders",
-            "-source"
-        ],
-    },
-    
-    win32-gl(win32): {
-        premake: [
-            "vs_version",
-            "--renderer=opengl", 
-            "--platform_dir=win32"
-        ],
-        
-        pmfx: [
-            "-shader_platform glsl",
-            "-shader_version 420",
-            "-i assets/shaders ../assets/shaders",
-            "-o bin/win32/data/pmfx/glsl",
-            "-h shader_structs",
-            "-t temp/shaders",
-            "-source",
-            "-v_flip"
-        ],
-    },
-    
-    // linux
-    
-    linux(base): {
-        jsn_vars: {
-            data_dir: "bin/linux/data"
+		launch: {
+			cmd: "%{target_path}"
+			files: [
+				"bin/win32/*.exe"
+			]
+		}
+	}
+	
+	win32-vulkan(win32): 
+	{
+		premake: {
+			args: [
+				"%{vs_latest}"
+				"--renderer=vulkan"
+				"--platform_dir=win32"
+				"--sdk_version=%{windows_sdk_version}"
+			]
         },
+        
+		pmfx: {
+			args: [
+				"-shader_platform spirv"
+				"-shader_version 420"
+				"-i assets/shaders ../assets/shaders"
+				"-o bin/win32/data/pmfx/spirv"
+				"-h shader_structs"
+				"-t temp/shaders"
+			]
+		}
+    }
+    
+    win32-gl(win32): 
+    {
+    	premake: {
+			args: [
+				"%{vs_latest}"
+				"--renderer=opengl"
+				"--platform_dir=win32"
+				"--sdk_version=%{windows_sdk_version}"
+			]
+        },
+        
+		pmfx: {
+			args: [
+				"-shader_platform glsl"
+				"-shader_version 420"
+				"-i assets/shaders ../assets/shaders"
+				"-o bin/win32/data/pmfx/glsl"
+				"-h shader_structs"
+				"-t temp/shaders"
+				"-source"
+				"-v_flip"
+			]
+		}
+    }
+	
+	//
+	// iOS
+	//
+	
+	ios(base): 
+	{
+        jsn_vars: {
+            data_dir: "bin/ios/data"
+			build_dir: "build/ios"
+			bin_dir: "bin/ios"
+        }
 
-        clean: [
-            "build/linux",
-            "bin/linux",
-            "shader_structs",
-            "temp"
-        ],
+		premake: {
+			args: [
+				"xcode4"
+				"--renderer=metal"
+				"--platform_dir=ios"
+				"--xcode_target=ios"
+				"--teamid=%{teamid}"
+			]
+		}
+		
+		pmfx: {
+			args: [
+				"-shader_platform metal"
+				"-metal_sdk iphoneos"
+				"-i assets/shaders ../assets/shaders"
+				"-o bin/ios/data/pmfx/metal"
+				"-h shader_structs"
+				"-t temp/shaders"
+				"-source"
+            ]
+        }
         
-        libs: [
-            "cd ../third_party && ./build_libs.sh linux",
-            "cd ../tools && ../pmbuild linux"
-        ],
+        libs: {
+        	type: shell
+        	explicit: true
+        	commands: [
+        		"cd ../third_party && ../pmbuild bullet-ios"
+        		"cd ../third_party && ../pmbuild make bullet-ios all -configuration Release"
+        		"cd ../third_party && ../pmbuild make bullet-ios all -configuration Debug"
+        	]
+        }
         
-        premake: [
-            "gmake",
-            "--renderer=opengl", 
-            "--platform_dir=linux"
-        ],
+        make: {
+        	toolchain: "xcodebuild",
+			files: [
+				"build/ios/**/*.xcodeproj"
+			]
+        }
+    }
+    
+    //
+    // linux
+    //
+    
+    linux(base): 
+    {
+		jsn_vars: {
+            data_dir: "bin/linux/data"
+			build_dir: "build/linux"
+			bin_dir: "bin/linux"
+        }
         
-        pmfx: [
-            "-shader_platform glsl",
-            "-shader_version 450",
-            "-i assets/shaders ../assets/shaders",
-            "-o bin/linux/data/pmfx/glsl",
-            "-h shader_structs",
-            "-t temp/shaders",
-            "-v_flip",
-            "-source"
-        ],
+        libs: {
+        	type: shell
+        	explicit: true
+        	commands: [
+        		"cd ../third_party && ../pmbuild bullet-linux"
+        		"cd ../third_party && ../pmbuild make bullet-linux all config=release"
+        		"cd ../third_party && ../pmbuild make bullet-linux all config=debug"
+        	]
+        }
         
-        models: [
-            ["assets/mesh", "bin/linux/data/models"]
-        ],
+        premake: {
+			args: [
+				"gmake"
+				"--renderer=opengl"
+				"--platform_dir=linux"
+			]
+		}
+		
+		pmfx: {
+			args: [
+				"-shader_platform glsl"
+				"-shader_version 450"
+				"-i assets/shaders ../assets/shaders"
+				"-o bin/linux/data/pmfx/glsl"
+				"-h shader_structs"
+				"-t temp/shaders"
+				"-v_flip"
+				"-source"
+            ]
+        }
         
-        textures: [
-            ["assets/textures", "bin/linux/data/textures"],
-            ["../assets/textures", "bin/linux/data/textures"]
-        ],
-        
-        copy: [
-            ["assets/audio", "bin/linux/data/audio"],
-            ["../assets/audio", "bin/linux/data/audio"],
-            ["../assets/fonts", "bin/linux/data/fonts"],
-            ["assets/scene", "bin/linux/data/scene"]
-        ],
-        
-        data_dir: "bin/linux/data/"
-    },
+        make: {
+        	toolchain: "make",
+			files: [
+				"build/linux/*.make"
+			]
+			change_ext: ""
+        }
+    }
 
-    linux-vulkan(linux): {
-        premake: [
-            "gmake",
-            "--renderer=vulkan", 
-            "--platform_dir=linux"
-        ],
+    linux-vulkan(linux): 
+    {
+		premake: {
+			args: [
+				"gmake"
+				"--renderer=vulkan"
+				"--platform_dir=linux"
+			]
+		}
 
-        pmfx: [
-            "-shader_platform spirv",
-            "-shader_version 450",
-            "-i assets/shaders ../assets/shaders",
-            "-o bin/linux/data/pmfx/spirv",
-            "-h shader_structs",
-            "-t temp/shaders",
-            "-source"
-        ]
-    },
+		pmfx: {
+			args: [
+				"-shader_platform spirv"
+				"-shader_version 450"
+				"-i assets/shaders ../assets/shaders"
+				"-o bin/linux/data/pmfx/spirv"
+				"-h shader_structs"
+				"-t temp/shaders"
+				"-source"
+			]
+		}
+    }
+    
+    //
+    // web
+    //
     
     web(base): {
 		jsn_vars: {
             data_dir: "build/web/data"
-        },
+			build_dir: "build/web"
+			bin_dir: "bin/web"
+        }
+		
+        libs: {
+        	type: shell
+        	explicit: true
+        	commands: [
+        		"cd ../third_party && ../pmbuild bullet-web"
+        		"cd ../third_party && ../pmbuild make bullet-web all config=release"
+        		"cd ../third_party && ../pmbuild make bullet-web all config=debug"
+        	]
+        }
         
-		premake: [
-            "gmake --platform_dir=web --renderer=opengl"
-        ],
-        
-        libs: [
-            "cd ../third_party && ./build_libs.sh web"
-        ],
-        
-		pmfx: [
-            "-shader_platform gles",
-            "-shader_version 300",
-            "-i assets/shaders ../assets/shaders",
-            "-o build/web/data/pmfx/glsl",
-            "-h shader_structs",
-            "-t temp/shaders",
-            "-v_flip",
-            "-source"
-        ],
-        
-        copy: [
-            ["../assets/fonts", "build/web/data/fonts"],
-            ["assets/scene", "build/web/data/scene"],
-        ],
-        
-		textures: [
-            ["assets/textures", "build/web/data/textures"],
-            ["../assets/textures", "build/web/data/textures"]
-        ],
-        
-        build: [
-        	"touch ../core/pen/lib/web/debug/libpen.a",
-        	"touch ../core/pen/lib/web/release/libpen.a",
-        ],
-        
-        models: [
-            ["assets/mesh", "build/web/data/models"]
-        ],
-        
+        premake: {
+			args: [
+				"gmake"
+				"--renderer=opengl"
+				"--platform_dir=web"
+				"--pmtech_dir=../"
+			]
+		}
+
+		pmfx: {
+			args: [
+            	"-shader_platform gles"
+            	"-shader_version 300"
+            	"-i assets/shaders ../assets/shaders"
+            	"-o build/web/data/pmfx/glsl"
+            	"-h shader_structs"
+            	"-t temp/shaders"
+            	"-v_flip"
+            	"-source"
+			]
+		}
+
         make: {
         	toolchain: "emmake",
-			dir: "build/web"
-        },
+			files: [
+				"build/web/*.make"
+			]
+			change_ext: ""
+        }
         
-        run: {
-			cmd: "%target%.html",
-			dir: "bin/web",
+        launch: {
+			cmd: "%{target_name}.html",
+			files:[
+				"bin/web/*.html"
+			]
 			ext: ".html"
         }
     }
