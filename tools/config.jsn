@@ -70,6 +70,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
         	type: copy
         	files: [
             	["../assets/fonts", "${data_dir}/fonts"],
+            	["../assets/textures/**/*.dds", "${data_dir}/textures"],
             	["../third_party/shared_libs/${platform}", "${bin_dir}"]
             ]
         }
@@ -101,7 +102,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
 			files:[
 				["../assets/configs", "${data_dir}/configs"]
 			]
-			change_ext: ".json"
+			dependencies: true
         }
         
         cr: {

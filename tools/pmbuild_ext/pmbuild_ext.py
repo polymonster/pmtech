@@ -47,8 +47,8 @@ def run_models(config, task_name, files):
     tool_cmd = python_tool_to_platform(config["tools"]["build_models"])
     threads = []
     mesh_opt = ""
-    # if os.path.exists(config["tools"]["mesh_opt"]):
-        # mesh_opt = config["tools"]["mesh_opt"]
+    if os.path.exists(config["tools"]["mesh_opt"]):
+        mesh_opt = config["tools"]["mesh_opt"]
     for f in files:
         cmd = " -i " + f[0] + " -o " + os.path.dirname(f[1])
         if len(mesh_opt) > 0:

@@ -4,7 +4,7 @@
 		premake: "${pmbuild_dir}/bin/mac/premake5"
 		texturec: "${pmbuild_dir}/bin/mac/texturec"
 		pmfx: "python3 ${pmbuild_dir}/scripts/pmfx-shader/build_pmfx.py"
-		build_models: "../tools/pmbuild_ext/build_models.py"
+		build_models: "${pmtech_dir}/tools/pmbuild_ext/build_models.py"
 	}
 	
 	tools<windows>: {
@@ -12,7 +12,8 @@
 		premake: "${pmbuild_dir}/bin/windows/premake5.exe"
 		texturec: "${pmbuild_dir}/bin/windows/texturec.exe"
 		pmfx: "py -3 ${pmbuild_dir}/scripts/pmfx-shader/build_pmfx.py"
-		build_models: "../tools/pmbuild_ext/build_models.py"
+		build_models: "${pmtech_dir}/tools/pmbuild_ext/build_models.py"
+		mesh_opt: "../"
 	}
 	
 	extensions: {
