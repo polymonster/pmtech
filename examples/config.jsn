@@ -5,7 +5,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
 	//
 	
 	jsn_vars: {
-		pmbuild_dir: "../thirdparty/pmbuild"
+		pmbuild_dir: "../third_party/pmbuild"
 		pmtech_dir: ".."
 	}
 	
