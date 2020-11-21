@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 cd examples
-../pmbuild mac-gl-ci -libs -premake
-cd build/osx
-make config=debug
-make config=release
+../pmbuild mac-gl -libs -all
+../pmbuild mac make all -configuration Debug
+../pmbuild mac make all -configuration Release
