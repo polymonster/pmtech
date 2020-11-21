@@ -1,0 +1,38 @@
+{
+	jsn_vars: {
+		pmbuild_dir: "../pmbuild"
+	}
+	
+	tools<mac>: {
+		jsn: "${pmbuild_dir}/scripts/jsn/jsn"
+		premake: "${pmbuild_dir}/bin/mac/premake5"
+		texturec: "${pmbuild_dir}/bin/mac/texturec"
+		pmfx: "python3 ${pmbuild_dir}/scripts/pmfx-shader/build_pmfx.py"
+		build_models: "../tools/pmbuild_ext/build_models.py"
+	}
+	
+	tools<windows>: {
+		jsn: "py -3 ${pmbuild_dir}/scripts/jsn/jsn.py"
+		premake: "${pmbuild_dir}/bin/windows/premake5.exe"
+		texturec: "${pmbuild_dir}/bin/windows/texturec.exe"
+		pmfx: "py -3 ${pmbuild_dir}/scripts/pmfx-shader/build_pmfx.py"
+		build_models: "../tools/pmbuild_ext/build_models.py"
+	}
+	
+	mac:
+	{
+		premake: {
+			args: [
+            	"xcode4"
+            	"--platform_dir=osx"
+			]
+		}
+		
+		make: {
+        	toolchain: "xcodebuild",
+			files: [
+				["build/osx/**/*.xcodeproj", ""]
+			]
+        }	
+	}
+}

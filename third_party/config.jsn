@@ -1,0 +1,81 @@
+import "../tools/pmbuild_ext/pmbuild_init.jsn"
+{
+	jsn_vars: {
+		pmbuild_dir: "pmbuild"
+	}
+		
+	bullet-mac:
+	{
+		premake: {
+			args: [
+            	"xcode4"
+            	"--platform_dir=osx"
+            	"--file=bullet/premake5.lua"
+			]
+		}
+		
+		make: {
+        	toolchain: "xcodebuild",
+			files: [
+				"bullet/build/osx/**/*.xcodeproj"
+			]
+        }	
+	}
+	
+	bullet-ios:
+	{
+		premake: {
+			args: [
+            	"xcode4"
+            	"--platform_dir=ios"
+            	"--xcode_target=ios"
+            	"--file=bullet/premake5.lua"
+			]
+		}
+		
+		make: {
+        	toolchain: "xcodebuild",
+			files: [
+				"bullet/build/ios/**/*.xcodeproj"
+			]
+        }	
+	}
+	
+	bullet-linux:
+	{
+		premake: {
+			args: [
+            	"gmake"
+            	"--platform_dir=linux"
+            	"--file=bullet/premake5.lua"
+			]
+		}
+		
+		make: {
+        	toolchain: "make",
+			files: [
+				"bullet/build/linux/*.make"
+			]
+			change_ext: ""
+        }	
+	}
+	
+	bullet-web:
+	{
+		premake: {
+			args: [
+            	"gmake"
+            	"--platform_dir=web"
+            	"--file=bullet/premake5.lua"
+			]
+		}
+		
+		make: {
+        	toolchain: "emmake",
+			files: [
+				"bullet/build/web/*.make"
+			]
+			change_ext: ""
+        }	
+	}
+}
