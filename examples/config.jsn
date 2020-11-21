@@ -136,8 +136,8 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
         	explicit: true
         	commands: [
         		"cd ../third_party && ../pmbuild bullet-mac"
-        		"cd ../third_party && ../pmbuild make bullet-mac all -configuration Release"
-        		"cd ../third_party && ../pmbuild make bullet-mac all -configuration Debug"
+        		"cd ../third_party && ../pmbuild make bullet-mac all -configuration Release -quiet"
+        		"cd ../third_party && ../pmbuild make bullet-mac all -configuration Debug -quiet"
         	]
         }
 	}
@@ -300,8 +300,8 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
         	explicit: true
         	commands: [
         		"cd ../third_party && ../pmbuild bullet-ios"
-        		"cd ../third_party && ../pmbuild make bullet-ios all -configuration Release"
-        		"cd ../third_party && ../pmbuild make bullet-ios all -configuration Debug"
+        		"cd ../third_party && ../pmbuild make bullet-ios all -configuration Release -quiet"
+        		"cd ../third_party && ../pmbuild make bullet-ios all -configuration Debug -quiet"
         	]
         }
         
