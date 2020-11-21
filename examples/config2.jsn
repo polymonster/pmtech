@@ -1,24 +1,13 @@
-{
+import "../tools/pmbuild_ext/pmbuild_init.jsn"
+{	
+	//
+	// common
+	//
+	
 	jsn_vars: {
 		pmbuild_dir: "../../pmbuild"
 	}
-        
-	tools<mac>: {
-		jsn: "${pmbuild_dir}/scripts/jsn/jsn"
-		premake: "${pmbuild_dir}/bin/premake5"
-		texturec: "${pmbuild_dir}/bin/texturec"
-		pmfx: "python3 ${pmbuild_dir}/scripts/pmfx-shader/build_pmfx.py"
-		build_models: "../tools/build_scripts/build_models.py"
-	}
 	
-	tools<windows>: {
-		jsn: "py -3 ${pmbuild_dir}/scripts/jsn/jsn.py"
-		premake: "${pmbuild_dir}/bin/windows/premake5.exe"
-		texturec: "${pmbuild_dir}/bin/windows/texturec.exe"
-		pmfx: "py -3 ${pmbuild_dir}/scripts/pmfx-shader/build_pmfx.py"
-		build_models: "../tools/build_scripts/build_models.py"
-	}
-		
 	extensions: {
 		models:
 		{
@@ -66,6 +55,7 @@
             	["../assets/fonts", "${data_dir}/fonts"]
             	["assets/textures/**/*.pmv", "${data_dir}/textures"]
             	["assets/textures/**/*.dds", "${data_dir}/textures"]
+            	["../assets/textures/**/*.dds", "${data_dir}/textures"]
             ]
         }
         
@@ -95,6 +85,10 @@
         	]
         }
 	}
+	
+	//
+	// mac
+	//
 	
 	mac(base):
 	{
@@ -134,17 +128,54 @@
         make: {
         	toolchain: "xcodebuild",
 			files: [
-				["build/osx/**/*.xcodeproj"]
+				"build/osx/**/*.xcodeproj"
 			]
         }
         
         launch: {
         	cmd: "%{target_path}/Contents/MacOS/%{target_name}",
 			files: [
-				["bin/osx/**/*.app"]
+				"bin/osx/**/*.app"
 			]
         }
+        
+        libs: {
+        	type: shell
+        	explicit: true
+        	commands: [
+        		"cd ../third_party && ../pmbuild bullet-mac"
+        		"cd ../third_party && ../pmbuild make bullet-mac all -configuration Release"
+        		"cd ../third_party && ../pmbuild make bullet-mac all -configuration Debug"
+        	]
+        }
 	}
+	
+	mac-gl(mac): {
+		premake: {
+			args: [
+            	"xcode4"
+            	"--renderer=opengl"
+            	"--platform_dir=osx"
+			]
+		}
+		
+		pmfx: {
+			args: [
+				"-shader_platform glsl"
+				"-shader_version 330"
+				"-i assets/shaders ../assets/shaders"
+				"-o bin/osx/data/pmfx/glsl"
+				"-h shader_structs"
+				"-t temp/shaders"
+				"-source"
+				"-v_flip"
+            ]
+        }
+    }
+    
+    //
+    // win32
+    //
 	
 	win32(base):
 	{
@@ -176,17 +207,252 @@
 		}
 		
 		make: {
-			toolchain: "msbuild",
+			toolchain: "msbuild"
 			files: [
-				["build/win32/*.vcxproj", ""]
+				"build/win32/*.vcxproj"
 			]
 		}
 		
 		launch: {
 			cmd: "%{target_path}"
 			files: [
-				["bin/win32/*.exe", ""]
+				"bin/win32/*.exe"
 			]
 		}
 	}
+	
+	win32-vulkan(win32): 
+	{
+		premake: {
+			args: [
+				"%{vs_latest}"
+				"--renderer=vulkan"
+				"--platform_dir=win32"
+				"--sdk_version=%{windows_sdk_version}"
+			]
+        },
+        
+		pmfx: {
+			args: [
+				"-shader_platform spirv"
+				"-shader_version 420"
+				"-i assets/shaders ../assets/shaders"
+				"-o bin/win32/data/pmfx/spirv"
+				"-h shader_structs"
+				"-t temp/shaders"
+			]
+		}
+    }
+    
+    win32-gl(win32): 
+    {
+    	premake: {
+			args: [
+				"%{vs_latest}"
+				"--renderer=opengl"
+				"--platform_dir=win32"
+				"--sdk_version=%{windows_sdk_version}"
+			]
+        },
+        
+		pmfx: {
+			args: [
+				"-shader_platform glsl"
+				"-shader_version 420"
+				"-i assets/shaders ../assets/shaders"
+				"-o bin/win32/data/pmfx/glsl"
+				"-h shader_structs"
+				"-t temp/shaders"
+				"-source"
+				"-v_flip"
+			]
+		}
+    }
+	
+	//
+	// iOS
+	//
+	
+	ios(base): 
+	{
+        jsn_vars: {
+            data_dir: "bin/ios/data"
+			build_dir: "build/ios"
+			bin_dir: "bin/ios"
+        }
+
+		premake: {
+			args: [
+				"xcode4"
+				"--renderer=metal"
+				"--platform_dir=ios"
+				"--xcode_target=ios"
+				"--teamid=%{teamid}"
+			]
+		}
+		
+		pmfx: {
+			args: [
+				"-shader_platform metal"
+				"-metal_sdk iphoneos"
+				"-i assets/shaders ../assets/shaders"
+				"-o bin/ios/data/pmfx/metal"
+				"-h shader_structs"
+				"-t temp/shaders"
+				"-source"
+            ]
+        }
+        
+        libs: {
+        	type: shell
+        	explicit: true
+        	commands: [
+        		"cd ../third_party && ../pmbuild bullet-ios"
+        		"cd ../third_party && ../pmbuild make bullet-ios all -configuration Release"
+        		"cd ../third_party && ../pmbuild make bullet-ios all -configuration Debug"
+        	]
+        }
+        
+        make: {
+        	toolchain: "xcodebuild",
+			files: [
+				"build/ios/**/*.xcodeproj"
+			]
+        }
+    }
+    
+    //
+    // linux
+    //
+    
+    linux(base): 
+    {
+		jsn_vars: {
+            data_dir: "bin/linux/data"
+			build_dir: "build/linux"
+			bin_dir: "bin/linux"
+        }
+        
+        libs: {
+        	type: shell
+        	explicit: true
+        	commands: [
+        		"cd ../third_party && ../pmbuild bullet-linux"
+        		"cd ../third_party && ../pmbuild make bullet-linux all config=release"
+        		"cd ../third_party && ../pmbuild make bullet-linux all config=debug"
+        	]
+        }
+        
+        premake: {
+			args: [
+				"gmake"
+				"--renderer=opengl"
+				"--platform_dir=linux"
+			]
+		}
+		
+		pmfx: {
+			args: [
+				"-shader_platform glsl"
+				"-shader_version 450"
+				"-i assets/shaders ../assets/shaders"
+				"-o bin/linux/data/pmfx/glsl"
+				"-h shader_structs"
+				"-t temp/shaders"
+				"-v_flip"
+				"-source"
+            ]
+        }
+        
+        make: {
+        	toolchain: "make",
+			files: [
+				"build/linux/*.make"
+			]
+			change_ext: ""
+        }
+    }
+
+    linux-vulkan(linux): 
+    {
+		premake: {
+			args: [
+				"gmake"
+				"--renderer=vulkan"
+				"--platform_dir=linux"
+			]
+		}
+
+		pmfx: {
+			args: [
+				"-shader_platform spirv"
+				"-shader_version 450"
+				"-i assets/shaders ../assets/shaders"
+				"-o bin/linux/data/pmfx/spirv"
+				"-h shader_structs"
+				"-t temp/shaders"
+				"-source"
+			]
+		}
+    }
+    
+    //
+    // web
+    //
+    
+    web(base): {
+		jsn_vars: {
+            data_dir: "build/web/data"
+			build_dir: "build/web"
+			bin_dir: "bin/web"
+        }
+		
+        libs: {
+        	type: shell
+        	explicit: true
+        	commands: [
+        		"cd ../third_party && ../pmbuild bullet-web"
+        		"cd ../third_party && ../pmbuild make bullet-web all config=release"
+        		"cd ../third_party && ../pmbuild make bullet-web all config=debug"
+        	]
+        }
+        
+        premake: {
+			args: [
+				"gmake"
+				"--renderer=opengl"
+				"--platform_dir=web"
+				"--pmtech_dir=../"
+			]
+		}
+
+		pmfx: {
+			args: [
+            	"-shader_platform gles"
+            	"-shader_version 300"
+            	"-i assets/shaders ../assets/shaders"
+            	"-o build/web/data/pmfx/glsl"
+            	"-h shader_structs"
+            	"-t temp/shaders"
+            	"-v_flip"
+            	"-source"
+			]
+		}
+
+        make: {
+        	toolchain: "emmake",
+			files: [
+				"build/web/*.make"
+			]
+			change_ext: ""
+        }
+        
+        launch: {
+			cmd: "%{target_name}.html",
+			files:[
+				"bin/web/*.html"
+			]
+			ext: ".html"
+        }
+    }
 }
