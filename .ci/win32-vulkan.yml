@@ -1,11 +1,11 @@
 version: 1.0.{build}
 image: Visual Studio 2017
 environment:
-  VK_SDK_PATH: C:/VulkanSDK/1.2.135.0
+  VK_SDK_PATH: C:/VulkanSDK/1.1.114.0
 cache:
   - VulkanSDK.exe
 init:
-  - Invoke-WebRequest -Uri "https://sdk.lunarg.com/sdk/download/1.2.135.0/windows/VulkanSDK-1.2.135.0-Installer.exe" -OutFile VulkanSDK.exe
+  - curl -L --silent --show-error --output VulkanSDK.exe "https://sdk.lunarg.com/sdk/download/1.2.135.0/windows/VulkanSDK-1.2.135.0-Installer.exe"
   - VulkanSDK.exe /S
   - rm -f VulkanSDK.exe
 build_script:
