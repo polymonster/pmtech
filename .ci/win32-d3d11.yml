@@ -10,5 +10,6 @@ build_script:
      cd examples
      ..\\pmbuild win32 -libs
      ..\\pmbuild win32
-     ..\\pmbuild make win32 all /p:Platform=x64 /p:Configuration=Debug|Release
+     ..\\pmbuild make win32 all /p:Platform=x64 /p:Configuration=Debug
+     ..\\pmbuild make win32 all /p:Platform=x64 /p:Configuration=Release
 test: off
