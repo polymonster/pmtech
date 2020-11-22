@@ -241,8 +241,10 @@ namespace
         switch (pen_filter_mode)
         {
         case PEN_FILTER_MIN_MAG_MIP_POINT:
+        case PEN_FILTER_POINT:
             return D3D11_FILTER_MIN_MAG_MIP_POINT;
         case PEN_FILTER_MIN_MAG_MIP_LINEAR:
+        case PEN_FILTER_LINEAR:
             return D3D11_FILTER_MIN_MAG_MIP_LINEAR;
         }
         PEN_ASSERT(0);
