@@ -93,7 +93,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
 		make: {
 			toolchain: "msbuild"
 			files: [
-				"build/win32/*.vcxproj"
+				"bullet/build/win32/*.vcxproj"
 			]
 		}
 	}
