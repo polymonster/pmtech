@@ -1,15 +1,6 @@
-[submodule "tools/premake/premake-android-studio"]
-	path = tools/premake/premake-android-studio
-	url = https://github.com/polymonster/premake-android-studio
 [submodule "third_party/maths"]
 	path = third_party/maths
 	url = https://github.com/polymonster/maths.git
-[submodule "third_party/pmfx-shader"]
-	path = third_party/pmfx-shader
-	url = https://github.com/polymonster/pmfx-shader.git
-[submodule "tools/build_scripts/jsn"]
-	path = tools/build_scripts/jsn
-	url = https://github.com/polymonster/jsn.git
-[submodule "tools/build_scripts/cgu"]
-	path = tools/build_scripts/cgu
-	url = https://github.com/polymonster/cgu
+[submodule "third_party/pmbuild"]
+	path = third_party/pmbuild
+	url = https://github.com/polymonster/pmbuild.git

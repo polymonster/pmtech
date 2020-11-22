@@ -47,8 +47,8 @@ def run_models(config, task_name, files):
     tool_cmd = python_tool_to_platform(config["tools"]["build_models"])
     threads = []
     mesh_opt = ""
-    # if os.path.exists(config["tools"]["mesh_opt"]):
-        # mesh_opt = config["tools"]["mesh_opt"]
+    if os.path.exists(config["tools"]["mesh_opt"]):
+        mesh_opt = config["tools"]["mesh_opt"]
     for f in files:
         cmd = " -i " + f[0] + " -o " + os.path.dirname(f[1])
         if len(mesh_opt) > 0:
@@ -60,10 +60,14 @@ def run_models(config, task_name, files):
         t.join()
 
 
+
 # generates function pointer bindings to call pmtech from a live reloaded dll.
-def run_cr(config):
-    print(config["cr"]["output"])
-    files = config["cr"]["files"]
+def run_cr(config, task_name):
+    print("--------------------------------------------------------------------------------")
+    print("cr -----------------------------------------------------------------------------")
+    print("--------------------------------------------------------------------------------")
+    print(config[task_name]["output"])
+    files = config[task_name]["file_list"]
     free_funcs = []
     added = []
     for f in files:
@@ -153,7 +157,7 @@ def run_cr(config):
     code += cgu.src_line("}")
 
     code += cgu.src_line("};")
-    output_file = open(config["cr"]["output"], "w")
+    output_file = open(config[task_name]["output"], "w")
     output_file.write(cgu.format_source(code, 4))
     return
 

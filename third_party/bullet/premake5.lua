@@ -4,7 +4,9 @@ dofile("../../tools/premake/globals.lua")
 link_cmd = ""
 build_cmd = ""
 if platform_dir == "osx" then
-	link_cmd = "-mmacosx-version-min=10.8"
+	xcodebuildsettings {
+		["MACOSX_DEPLOYMENT_TARGET"] = "10.13"
+	}
 end
 
 solution "bullet_build"

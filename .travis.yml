@@ -16,13 +16,9 @@ matrix:
       script: ./.ci/mac-gl.sh
     - compiler: clang
       os: osx
+      osx_image: xcode12
       script: ./.ci/mac-metal.sh
     - compiler: clang
       os: osx
+      osx_image: xcode12
       script: ./.ci/ios.sh
-    - compiler: clang
-      os: osx
-      script: ./.ci/glsl-shaders.sh
-    - compiler: clang
-      os: osx
-      script: ./.ci/metal-shaders.sh

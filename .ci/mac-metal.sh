@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
+python3 -m pip install cryptography
 cd examples
-../pmbuild mac-metal-ci -libs -premake
-cd build/osx
-make config=debug
-make config=release
+../pmbuild mac-gl -libs
+../pmbuild mac-gl
+../pmbuild make mac-gl all -configuration Debug -quiet
+../pmbuild make mac-gl all -configuration Release -quiet

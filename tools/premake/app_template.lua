@@ -127,6 +127,11 @@ local function setup_ios()
 	{
 		"bin/ios/data"
 	}
+	
+	xcodebuildsettings
+	{
+		["IPHONEOS_DEPLOYMENT_TARGET"] = "14.0"
+	}
 end
 
 local function setup_android()
