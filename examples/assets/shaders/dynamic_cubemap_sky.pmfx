@@ -42,7 +42,10 @@ ps_output ps_main( vs_output input )
     
     float2 ndc = input.texcoord.xy * float2(2.0, 2.0) - float2(1.0, 1.0);
     ndc = remap_ndc_ray(ndc);
-    ndc.y *= -1.0;
+	if: (GLSL || METAL)
+	{
+		ndc.y *= -1.0;
+	}
     
     // unproject ray
     float4 near = float4(ndc.x, ndc.y, 0.0, 1.0);

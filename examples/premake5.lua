@@ -1,4 +1,4 @@
-require "../tools/premake/premake-android-studio/android_studio"
+require "../third_party/pmbuild/scripts/premake-android-studio/android_studio"
 
 dofile "../tools/premake/options.lua"
 dofile "../tools/premake/globals.lua"
