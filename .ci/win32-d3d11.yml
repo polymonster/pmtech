@@ -5,5 +5,5 @@ init:
 environment:
   APPVEYOR_RDP_PASSWORD: PmtechSecret99*
 build_script:
-- cmd: "py -3 -m pip install cryptography\n git submodule update --init --recursive\n cd examples\n..\\pmbuild win32 -libs\n..\\pmbuild win32\n..\\pmbuild make win32 all p:/Platform=x64 /p:Configuration=Debug\n..\\pmbuild make win32 all p:/Platform=x64 /p:Configuration=Release"
+- cmd: "py -3 -m pip install cryptography\n git submodule update --init --recursive\n cd examples\n..\\pmbuild win32 -libs\n..\\pmbuild win32\n..\\pmbuild make win32 all /p:Platform=x64 /p:Configuration=Debug\n..\\pmbuild make win32 all /p:Platform=x64 /p:Configuration=Release"
 test: off
