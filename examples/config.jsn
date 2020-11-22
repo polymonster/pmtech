@@ -177,6 +177,16 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
 			bin_dir: "bin/win32"
 		}
 		
+		libs: {
+        	type: shell
+        	explicit: true
+        	commands: [
+        		"cd ../third_party && ../pmbuild bullet-win32"
+        		"cd ../third_party && ../pmbuild make bullet-win32 all /p:Platform=x64 /p:Configuration=Debug"
+        		"cd ../third_party && ../pmbuild make bullet-win32 all /p:Platform=x64 /p:Configuration=Release"
+        	]
+        }
+		
 		premake: {
 			args: [
 				"%{vs_latest}"
