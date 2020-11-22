@@ -7,8 +7,10 @@ environment:
 build_script:
 - cmd: >-
      git submodule update --init --recursive
-     cd examples; ..\\pmbuild win32 -libs
-     cd examples; ..\\pmbuild win32
-     cd examples; ..\\pmbuild make win32 all /p:Platform=x64 /p:Configuration=Debug
-     cd examples; ..\\pmbuild make win32 all /p:Platform=x64 /p:Configuration=Release
+     cd examples
+     ls
+     ..\\pmbuild win32 -libs
+     ..\\pmbuild win32
+     ..\\pmbuild make win32 all /p:Platform=x64 /p:Configuration=Debug
+     ..\\pmbuild make win32 all /p:Platform=x64 /p:Configuration=Release
 test: off
