@@ -300,8 +300,8 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
         	explicit: true
         	commands: [
         		"cd ../third_party && ../pmbuild bullet-ios"
-        		"cd ../third_party && ../pmbuild make bullet-ios all -configuration Release -quiet"
-        		"cd ../third_party && ../pmbuild make bullet-ios all -configuration Debug -quiet"
+        		"cd ../third_party && ../pmbuild make bullet-ios all -destination generic/platform=iOS -configuration Release -quiet"
+        		"cd ../third_party && ../pmbuild make bullet-ios all -destination generic/platform=iOS -configuration Debug -quiet"
         	]
         }
         
@@ -311,6 +311,18 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
 				"build/ios/**/*.xcodeproj"
 			]
         }
+    }
+    
+    ios-ci(ios):
+    {
+    	premake: {
+			args: [
+				"xcode4"
+				"--renderer=metal"
+				"--platform_dir=ios"
+				"--xcode_target=ios"
+			]
+		}
     }
     
     //

@@ -2,5 +2,5 @@
 cd examples
 ../pmbuild linux -libs
 ../pmbuild linux
-../pmbuild make all config=debug
-../pmbuild make all config=release
+../pmbuild make linux all config=debug
+../pmbuild make linux all config=release
