@@ -87,6 +87,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
 				"%{vs_latest}"
 				"--platform_dir=win32"
 				"--sdk_version=%{windows_sdk_version}"
+				"--file=bullet/premake5.lua"
 			]
         }
         
