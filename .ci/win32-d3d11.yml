@@ -6,9 +6,9 @@ environment:
   APPVEYOR_RDP_PASSWORD: PmtechSecret99*
 build_script:
 - cmd: >-
-     "git submodule update --init --recursive"
-     "cd examples"
-     "..\\pmbuild win32 -libs"
-     "..\\pmbuild win32"
-     "..\\pmbuild make win32 all /p:Platform=x64 /p:Configuration=Debug|Release"
+     git submodule update --init --recursive
+     cd examples
+     ..\\pmbuild win32 -libs
+     ..\\pmbuild win32
+     ..\\pmbuild make win32 all /p:Platform=x64 /p:Configuration=Debug|Release
 test: off
