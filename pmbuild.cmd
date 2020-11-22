@@ -1,1 +1,1 @@
-py -3 %~dp0/third_party/pmbuild/pmbuild.py %*
+py -3 %~dp0\\third_party\\pmbuild\\scripts\\pmbuild.py %*
