@@ -5,5 +5,5 @@ init:
 environment:
   APPVEYOR_RDP_PASSWORD: PmtechSecret99*
 build_script:
-- cmd: "git submodule update --init --recursive\n cd examples \n..\\pmbuild win32 -libs"
+- cmd: "py -3 -m pip install cryptography\ngit submodule update --init --recursive\n cd examples \n..\\pmbuild win32 -libs\n"
 test: off
