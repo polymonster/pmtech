@@ -319,7 +319,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
         
         make: {
         	toolchain: "xcodebuild"
-        	workspace: "pmtech_examples_osx.workspace"
+        	workspace: "pmtech_examples_ios.workspace"
 			files: [
 				"build/ios/**/*.xcodeproj"
 			]
