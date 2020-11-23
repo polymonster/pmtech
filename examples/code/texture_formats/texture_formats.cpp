@@ -15,10 +15,10 @@ using namespace put;
 
 namespace
 {
-    void*   user_setup(void* params);
-    loop_t  user_update();
-    void    user_shutdown();
-}
+    void*  user_setup(void* params);
+    loop_t user_update();
+    void   user_shutdown();
+} // namespace
 
 namespace pen
 {
@@ -43,13 +43,13 @@ namespace
         u32       handle;
     };
 
-    job_thread_params*      s_job_params = nullptr;
-    job*                    s_thread_info = nullptr;
-    const c8**              s_texture_formats = nullptr;
-    typed_texture*          s_textures = nullptr;
-    u32                     s_num_textures = 0;
-    u32                     s_clear_state = 0;
-    
+    job_thread_params* s_job_params = nullptr;
+    job*               s_thread_info = nullptr;
+    const c8**         s_texture_formats = nullptr;
+    typed_texture*     s_textures = nullptr;
+    u32                s_num_textures = 0;
+    u32                s_clear_state = 0;
+
     template <typename T>
     u32 create_float_texture(u32 w, u32 h, texture_format fmt, T r, T g, T b, T a)
     {
@@ -180,7 +180,7 @@ namespace
         pen::semaphore_post(s_thread_info->p_sem_continue, 1);
 
         dev_ui::init();
-    
+
         // create 2 clear states one for the render target and one for the main screen, so we can see the difference
         pen::clear_state cs = {
             0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 0x00, PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
@@ -189,25 +189,25 @@ namespace
         s_clear_state = pen::renderer_create_clear_state(cs);
 
         load_textures();
-    
+
         pen_main_loop(user_update);
         return PEN_THREAD_OK;
     }
 
     void user_shutdown()
     {
-    	pen::renderer_new_frame();
-     
+        pen::renderer_new_frame();
+
         dev_ui::shutdown();
-     
+
         pen::renderer_release_clear_state(s_clear_state);
-        
-        for(u32 i = 0; i < s_num_textures; ++i)
+
+        for (u32 i = 0; i < s_num_textures; ++i)
             pen::renderer_release_texture(s_textures[i].handle);
-    	
+
         pen::renderer_present();
         pen::renderer_consume_cmd_buffer();
-        
+
         pen::semaphore_post(s_thread_info->p_sem_terminated, 1);
     }
 
@@ -231,14 +231,14 @@ namespace
         // present
         pen::renderer_present();
         pen::renderer_consume_cmd_buffer();
-        
+
         // msg from the engine we want to terminate
         if (pen::semaphore_try_wait(s_thread_info->p_sem_exit))
         {
             user_shutdown();
             pen_main_loop_exit();
         }
-        
+
         pen_main_loop_continue();
     }
-}
+} // namespace

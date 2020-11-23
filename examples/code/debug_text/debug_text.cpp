@@ -1,10 +1,10 @@
 #include "debug_render.h"
 #include "loader.h"
 
-#include "pen.h"
 #include "file_system.h"
 #include "memory.h"
 #include "os.h"
+#include "pen.h"
 #include "pen_string.h"
 #include "renderer.h"
 #include "threads.h"
@@ -15,10 +15,10 @@ using namespace pen;
 
 namespace
 {
-    void*   user_setup(void* params);
-    loop_t  user_update();
-    void    user_shutdown();
-}
+    void*  user_setup(void* params);
+    loop_t user_update();
+    void   user_shutdown();
+} // namespace
 
 namespace pen
 {
@@ -48,11 +48,11 @@ namespace
         float u, v;
     };
 
-    job*                s_thread_info = nullptr;
-    job_thread_params*  s_job_params = nullptr;
-    u32                 s_clear_state = 0;
-    u32                 s_raster_state = 0;
-    u32                 s_cb_2d_view = 0;
+    job*               s_thread_info = nullptr;
+    job_thread_params* s_job_params = nullptr;
+    u32                s_clear_state = 0;
+    u32                s_raster_state = 0;
+    u32                s_cb_2d_view = 0;
 
     void* user_setup(void* params)
     {
@@ -145,14 +145,14 @@ namespace
             user_shutdown();
             pen_main_loop_exit();
         }
-        
+
         pen_main_loop_continue();
     }
 
     void user_shutdown()
     {
         dbg::shutdown();
-        
+
         pen::renderer_new_frame();
         pen::renderer_release_clear_state(s_clear_state);
         pen::renderer_release_raster_state(s_raster_state);
@@ -163,4 +163,4 @@ namespace
         // signal to the engine the thread has finished
         pen::semaphore_post(s_thread_info->p_sem_terminated, 1);
     }
-}
+} // namespace

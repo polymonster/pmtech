@@ -1,9 +1,9 @@
 #include "loader.h"
 #include "pmfx.h"
 
-#include "pen.h"
 #include "memory.h"
 #include "os.h"
+#include "pen.h"
 #include "renderer.h"
 #include "threads.h"
 #include "timer.h"
@@ -13,10 +13,10 @@ using namespace put;
 
 namespace
 {
-    void*   user_setup(void* params);
-    loop_t  user_update();
-    void    user_shutdown();
-}
+    void*  user_setup(void* params);
+    loop_t user_update();
+    void   user_shutdown();
+} // namespace
 
 namespace pen
 {
@@ -46,18 +46,18 @@ namespace
         f32 u, v;
     };
 
-    job_thread_params*  s_job_params = nullptr;
-    job*                s_thread_info = nullptr;
-    u32                 s_clear_state = 0;
-    u32                 s_raster_state = 0;
-    u32                 s_texture_array_shader = 0;
-    u32                 s_texture_array = 0;
-    u32                 s_quad_vertex_buffer = 0;
-    u32                 s_quad_index_buffer = 0;
-    u32                 s_cbuffer = 0;
-    u32                 s_linear_sampler = 0;
-    f32                 s_num_frames = 0;
-    f32                 s_time[4] = {0};
+    job_thread_params* s_job_params = nullptr;
+    job*               s_thread_info = nullptr;
+    u32                s_clear_state = 0;
+    u32                s_raster_state = 0;
+    u32                s_texture_array_shader = 0;
+    u32                s_texture_array = 0;
+    u32                s_quad_vertex_buffer = 0;
+    u32                s_quad_index_buffer = 0;
+    u32                s_cbuffer = 0;
+    u32                s_linear_sampler = 0;
+    f32                s_num_frames = 0;
+    f32                s_time[4] = {0};
 
     void* user_setup(void* params)
     {
@@ -67,7 +67,13 @@ namespace
         pen::semaphore_post(s_thread_info->p_sem_continue, 1);
 
         static pen::clear_state cs = {
-            133.0f / 255.0f, 179.0f / 255.0f, 178.0f / 255.0f, 1.0f, 1.0f, 0x00, PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
+            133.0f / 255.0f,
+            179.0f / 255.0f,
+            178.0f / 255.0f,
+            1.0f,
+            1.0f,
+            0x00,
+            PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
         };
 
         s_clear_state = pen::renderer_create_clear_state(cs);
@@ -156,14 +162,14 @@ namespace
         bcp.data = &s_time[0];
 
         s_cbuffer = pen::renderer_create_buffer(bcp);
-        
+
         pen_main_loop(user_update);
         return PEN_THREAD_OK;
     }
 
     void user_shutdown()
     {
-    	pen::renderer_new_frame();
+        pen::renderer_new_frame();
         pmfx::release_shader(s_texture_array_shader);
         pen::renderer_release_buffer(s_quad_vertex_buffer);
         pen::renderer_release_buffer(s_quad_index_buffer);
@@ -171,16 +177,16 @@ namespace
         pen::renderer_release_texture(s_texture_array);
         pen::renderer_present();
         pen::renderer_consume_cmd_buffer();
-        
+
         pen::semaphore_post(s_thread_info->p_sem_terminated, 1);
     }
 
     loop_t user_update()
     {
-        static f32 ft = 0.0f;
+        static f32         ft = 0.0f;
         static pen::timer* t = pen::timer_create();
-        static bool start = true;
-        if(start)
+        static bool        start = true;
+        if (start)
         {
             pen::timer_start(t);
             start = false;
@@ -197,7 +203,7 @@ namespace
 
             ft -= ms_frame;
         }
-        
+
         pen::renderer_new_frame();
 
         pen::renderer_set_rasterizer_state(s_raster_state);
@@ -232,14 +238,14 @@ namespace
         // present
         pen::renderer_present();
         pen::renderer_consume_cmd_buffer();
-        
+
         // msg from the engine we want to terminate
         if (pen::semaphore_try_wait(s_thread_info->p_sem_exit))
         {
             user_shutdown();
             pen_main_loop_exit();
         }
-        
+
         pen_main_loop_continue();
     }
-}
+} // namespace

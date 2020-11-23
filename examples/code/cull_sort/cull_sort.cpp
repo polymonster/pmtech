@@ -13,7 +13,7 @@ namespace pen
         p.window_title = "cull_sort";
         p.window_sample_count = 4;
         p.user_thread_function = user_setup;
-        p.max_renderer_commands = 1<<22;
+        p.max_renderer_commands = 1 << 22;
         p.flags = pen::e_pen_create_flags::renderer;
         return p;
     }
@@ -45,12 +45,12 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
     // add some spheres
     f32   num_spheres = 32.0f;
     f32   d = 10.0f;
-    vec3f start_pos = vec3f(-d * (num_spheres+1.0f)/2.0f);
+    vec3f start_pos = vec3f(-d * (num_spheres + 1.0f) / 2.0f);
     vec3f pos = start_pos;
     for (s32 i = 0; i < num_spheres; ++i)
     {
         pos.x = start_pos.x;
-        
+
         for (s32 i = 0; i < num_spheres; ++i)
         {
             pos.z = start_pos.z;

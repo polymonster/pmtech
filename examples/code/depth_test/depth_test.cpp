@@ -1,8 +1,8 @@
-#include "pen.h"
 #include "console.h"
 #include "file_system.h"
 #include "memory.h"
 #include "os.h"
+#include "pen.h"
 #include "pen_string.h"
 #include "renderer.h"
 #include "threads.h"
@@ -12,10 +12,10 @@ using namespace pen;
 
 namespace
 {
-    void*   user_setup(void* params);
-    loop_t  user_update();
-    void    user_shutdown();
-}
+    void*  user_setup(void* params);
+    loop_t user_update();
+    void   user_shutdown();
+} // namespace
 
 namespace pen
 {
@@ -40,18 +40,18 @@ namespace
         f32 r, g, b, a;
     };
     const u32 k_stride = sizeof(vertex);
-    
-    job_thread_params*  s_job_params = nullptr;
-    job*                s_thread_info = nullptr;
-    u32                 s_clear_state = 0;
-    u32                 s_raster_state = 0;
-    u32                 s_vertex_shader = 0;
-    u32                 s_pixel_shader = 0;
-    u32                 s_vertex_buffer_gold = 0;
-    u32                 s_vertex_buffer_teal = 0;
-    u32                 s_depth_stencil_state = 0;
-    u32                 s_input_layout = 0;
-    
+
+    job_thread_params* s_job_params = nullptr;
+    job*               s_thread_info = nullptr;
+    u32                s_clear_state = 0;
+    u32                s_raster_state = 0;
+    u32                s_vertex_shader = 0;
+    u32                s_pixel_shader = 0;
+    u32                s_vertex_buffer_gold = 0;
+    u32                s_vertex_buffer_teal = 0;
+    u32                s_depth_stencil_state = 0;
+    u32                s_input_layout = 0;
+
     void* user_setup(void* params)
     {
         // unpack the params passed to the thread and signal to the engine it ok to proceed
@@ -61,7 +61,13 @@ namespace
 
         // create clear state
         static pen::clear_state cs = {
-            214.0f / 255.0f, 219.0f / 255.0f, 178.0f / 255.0f, 1.0f, 1.0f, 0x00, PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
+            214.0f / 255.0f,
+            219.0f / 255.0f,
+            178.0f / 255.0f,
+            1.0f,
+            1.0f,
+            0x00,
+            PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
         };
 
         s_clear_state = pen::renderer_create_clear_state(cs);
@@ -86,12 +92,12 @@ namespace
         c8 shader_file_buf[256];
 
         pen::string_format(shader_file_buf, 256, "data/pmfx/%s/%s/%s", pen::renderer_get_shader_platform(), "vertex_colour",
-                        "default.vsc");
+                           "default.vsc");
         pen_error err = pen::filesystem_read_file_to_buffer(shader_file_buf, &vs_slp.byte_code, vs_slp.byte_code_size);
         PEN_ASSERT(!err);
 
         pen::string_format(shader_file_buf, 256, "data/pmfx/%s/%s/%s", pen::renderer_get_shader_platform(), "vertex_colour",
-                        "default.psc");
+                           "default.psc");
         err = pen::filesystem_read_file_to_buffer(shader_file_buf, &ps_slp.byte_code, ps_slp.byte_code_size);
         PEN_ASSERT(!err);
 
@@ -137,7 +143,7 @@ namespace
 
         // gold trialngle
         vertex vertices_gold[] = {0.0f, 0.3f, 0.5f,  1.0f, 0.8f,  0.7f,  0.07f, 1.0f, 0.3f, -0.3f, 0.5f,  1.0f,
-                                0.8f, 0.7f, 0.07f, 1.0f, -0.3f, -0.3f, 0.5f,  1.0f, 0.8f, 0.7f,  0.07f, 1.0f};
+                                  0.8f, 0.7f, 0.07f, 1.0f, -0.3f, -0.3f, 0.5f,  1.0f, 0.8f, 0.7f,  0.07f, 1.0f};
 
         bcp.buffer_size = sizeof(vertex) * 3;
         bcp.data = (void*)&vertices_gold[0];
@@ -146,7 +152,7 @@ namespace
 
         // teal triangle
         vertex vertices_teal[] = {0.0f, 0.7f, 0.7f, 1.0f, 0.0f,  0.5f,  0.5f, 1.0f, 0.7f, -0.7f, 0.7f, 1.0f,
-                                0.0f, 0.5f, 0.5f, 1.0f, -0.7f, -0.7f, 0.7f, 1.0f, 0.0f, 0.5f,  0.5f, 1.0f};
+                                  0.0f, 0.5f, 0.5f, 1.0f, -0.7f, -0.7f, 0.7f, 1.0f, 0.0f, 0.5f,  0.5f, 1.0f};
 
         bcp.buffer_size = sizeof(vertex) * 3;
         bcp.data = (void*)&vertices_teal[0];
@@ -211,7 +217,7 @@ namespace
             user_shutdown();
             pen_main_loop_exit();
         }
-        
+
         pen_main_loop_continue();
     }
 
@@ -233,4 +239,4 @@ namespace
         // signal to the engine the thread has finished
         pen::semaphore_post(s_thread_info->p_sem_terminated, 1);
     }
-}
+} // namespace

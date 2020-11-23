@@ -40,7 +40,7 @@ namespace
 void render_boids(const scene_view& view)
 {
     geometry_resource* gr = get_geometry_resource(PEN_HASH("cube"));
-    pmm_renderable& r = gr->renderable[e_pmm_renderable::full_vertex_buffer];
+    pmm_renderable&    r = gr->renderable[e_pmm_renderable::full_vertex_buffer];
 
     pmfx::set_technique_perm(view.pmfx_shader, view.id_technique, 0);
 

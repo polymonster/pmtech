@@ -58,7 +58,7 @@ void render_stencil_shadows(const scene_view& view)
     ecs_scene*         scene = view.scene;
     geometry_resource* gr = get_geometry_resource(PEN_HASH("cube"));
     gr = &s_sgr;
-    
+
     pmm_renderable& r = gr->renderable[e_pmm_renderable::full_vertex_buffer];
 
     // bind cbuffer
@@ -143,7 +143,7 @@ void render_multi_pass_lights(const scene_view& view)
 void generate_edge_mesh(geometry_resource* gr, shadow_volume_edge** sve_out, geometry_resource* gr_out)
 {
     pmm_renderable& r = gr->renderable[e_pmm_renderable::full_vertex_buffer];
-    
+
     vertex_model* vm = (vertex_model*)r.cpu_vertex_buffer;
     u16*          ib = (u16*)r.cpu_index_buffer;
 
@@ -251,7 +251,7 @@ void generate_edge_mesh(geometry_resource* gr, shadow_volume_edge** sve_out, geo
     }
 
     pmm_renderable& r_out = gr_out->renderable[e_pmm_renderable::full_vertex_buffer];
-    
+
     // vb
     u32                         num_verts = sb_count(svv);
     pen::buffer_creation_params bcp;
@@ -451,7 +451,7 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
 void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
 {
     dt *= 0.1f;
-    
+
     // rotate lights
     for (u32 i = 0; i < 4; ++i)
     {

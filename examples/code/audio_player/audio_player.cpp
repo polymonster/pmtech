@@ -20,10 +20,10 @@ void audio_player_update();
 
 namespace
 {
-    void*   user_setup(void* params);
-    loop_t  user_update();
-    void    user_shutdown();
-}
+    void*  user_setup(void* params);
+    loop_t user_update();
+    void   user_shutdown();
+} // namespace
 
 namespace pen
 {
@@ -42,11 +42,11 @@ namespace pen
 
 namespace
 {
-    job_thread_params*  job_params;
-    job*                p_thread_info;
-    u32                 clear_state_grey;
-    u32                 raster_state_cull_back;
-    u32                 default_depth_stencil_state;
+    job_thread_params* job_params;
+    job*               p_thread_info;
+    u32                clear_state_grey;
+    u32                raster_state_cull_back;
+    u32                default_depth_stencil_state;
 
     void renderer_state_init()
     {
@@ -85,28 +85,28 @@ namespace
         job_params = (pen::job_thread_params*)params;
         p_thread_info = job_params->job_info;
         pen::semaphore_post(p_thread_info->p_sem_continue, 1);
-        
+
         pen::jobs_create_job(put::audio_thread_function, 1024 * 10, nullptr, pen::e_thread_start_flags::detached);
         renderer_state_init();
         put::dev_ui::init();
-		
+
         pen_main_loop(user_update);
         return PEN_THREAD_OK;
     }
 
     void user_shutdown()
     {
-    	pen::renderer_new_frame();
-     
+        pen::renderer_new_frame();
+
         dev_ui::shutdown();
-        
+
         pen::renderer_release_clear_state(clear_state_grey);
         pen::renderer_release_raster_state(raster_state_cull_back);
         pen::renderer_release_depth_stencil_state(default_depth_stencil_state);
-    	
+
         pen::renderer_present();
         pen::renderer_consume_cmd_buffer();
-        
+
         pen::semaphore_post(p_thread_info->p_sem_terminated, 1);
     }
 
@@ -130,20 +130,20 @@ namespace
         audio_player_update();
 
         put::dev_ui::render();
-        
+
         pen::renderer_present();
         pen::renderer_consume_cmd_buffer();
-        
+
         // msg from the engine we want to terminate
         if (pen::semaphore_try_wait(p_thread_info->p_sem_exit))
         {
             user_shutdown();
             pen_main_loop_exit();
         }
-        
+
         pen_main_loop_continue();
     }
-}
+} // namespace
 
 enum playback_deck_flags : s32
 {

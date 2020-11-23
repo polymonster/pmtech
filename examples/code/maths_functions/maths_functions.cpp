@@ -846,19 +846,19 @@ void test_sphere_vs_frustum(ecs_scene* scene, bool initialise)
     }
 
     static camera dc;
-    camera_create_perspective(&dc, 60.0f, 16.0f/9.0f, 0.01f, 50.0f);
+    camera_create_perspective(&dc, 60.0f, 16.0f / 9.0f, 0.01f, 50.0f);
     camera_update_look_at(&dc);
     camera_update_frustum(&dc);
-    
+
     dbg::add_frustum(dc.camera_frustum.corners[0], dc.camera_frustum.corners[1]);
-    
+
     vec4f planes[6];
-    mat4 view_proj = dc.proj * dc.view;
+    mat4  view_proj = dc.proj * dc.view;
     maths::get_frustum_planes_from_matrix(view_proj, &planes[0]);
-    
+
     bool i = maths::sphere_vs_frustum(sphere.pos, sphere.radius, &planes[0]);
-    
-    if(ImGui::Button("Gen Test"))
+
+    if (ImGui::Button("Gen Test"))
     {
         std::cout << "vec3f pos = {" << sphere.pos << "};\n";
         std::cout << "f32 radius = {" << sphere.radius << "};\n";
@@ -888,27 +888,27 @@ void test_aabb_vs_frustum(ecs_scene* scene, bool initialise)
         add_debug_solid_aabb(e, scene, aabb0);
         ecs::update_scene(scene, 1.0f / 60.0f);
     }
-    
+
     static camera dc;
-    camera_create_perspective(&dc, 60.0f, 16.0f/9.0f, 0.01f, 50.0f);
+    camera_create_perspective(&dc, 60.0f, 16.0f / 9.0f, 0.01f, 50.0f);
     camera_update_look_at(&dc);
     camera_update_frustum(&dc);
-    
+
     dbg::add_frustum(dc.camera_frustum.corners[0], dc.camera_frustum.corners[1]);
-    
+
     vec4f planes[6];
-    mat4 view_proj = dc.proj * dc.view;
+    mat4  view_proj = dc.proj * dc.view;
     maths::get_frustum_planes_from_matrix(view_proj, &planes[0]);
-    
+
     vec3f epos = aabb0.min + (aabb0.max - aabb0.min) * 0.5f;
-    bool i = maths::aabb_vs_frustum(epos, aabb0.max - epos, &planes[0]);
-        
-    if(ImGui::Button("Gen Test"))
+    bool  i = maths::aabb_vs_frustum(epos, aabb0.max - epos, &planes[0]);
+
+    if (ImGui::Button("Gen Test"))
     {
         std::cout << "mat4 view_proj = {\n";
         std::cout << view_proj;
         std::cout << "}\n";
-        
+
         std::cout << "vec3f epos = {" << epos << "};\n";
         std::cout << "vec3f eext = {" << (aabb0.max - epos) << "};\n";
     }
@@ -1087,7 +1087,7 @@ void maths_test_ui(ecs_scene* scene)
     static bool animate = false;
     static bool initialise = true;
     static bool gen_tests = false;
-    bool opened = true;
+    bool        opened = true;
 
     ImGui::Begin("Maths Functions", &opened, ImGuiWindowFlags_AlwaysAutoResize);
 
@@ -1140,7 +1140,7 @@ void maths_test_ui(ecs_scene* scene)
 
     initialise = false;
 
-    if(ImGui::CollapsingHeader("Controls"))
+    if (ImGui::CollapsingHeader("Controls"))
     {
         ImGui::Text("Alt / Option + Left Mouse Drag To Rotate");
         ImGui::Text("Cmd / Ctrl + Left Mouse Drag To Pan");
@@ -1164,5 +1164,5 @@ void example_setup(ecs::ecs_scene* scene, camera& cam)
 
 void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
 {
-    maths_test_ui(scene); 
+    maths_test_ui(scene);
 }

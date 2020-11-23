@@ -15,10 +15,10 @@ using namespace put;
 
 namespace
 {
-    void*   user_setup(void* params);
-    loop_t  user_update();
-    void    user_shutdown();
-}
+    void*  user_setup(void* params);
+    loop_t user_update();
+    void   user_shutdown();
+} // namespace
 
 namespace pen
 {
@@ -37,13 +37,8 @@ namespace pen
 
 namespace
 {
-    const c8* sampler_types[] = {
-        "linear_clamp",
-        "linear_wrap",
-        "point_clamp",
-        "point_wrap"
-    };
-    
+    const c8* sampler_types[] = {"linear_clamp", "linear_wrap", "point_clamp", "point_wrap"};
+
     struct vertex
     {
         float x, y, z, w;
@@ -70,7 +65,7 @@ namespace
         float        foff[4][4];
         tweakable_cb cb;
     };
-    
+
     struct texture_sampler_mapping
     {
         u32 texture = 0;
@@ -117,8 +112,7 @@ namespace
             pen::renderer_release_sampler(sampler_point_wrap);
         }
     };
-    
-    
+
     pen::job_thread_params* s_job_params = nullptr;
     pen::job*               s_thread_info = nullptr;
     render_handles          s_render_handles;
@@ -126,11 +120,11 @@ namespace
     texture_sampler_mapping s_tex_samplers[4] = {};
     u32                     s_sampler_states[4] = {0};
     u32                     s_shader_toy_pmfx = 0;
-    
+
     void init_renderer()
     {
         s_shader_toy_pmfx = pmfx::load_shader("shader_toy");
-        
+
         // clear state
         static pen::clear_state cs = {
             0.5f, 0.5, 0.5f, 1.0f, 1.0f, 0x00, PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
@@ -233,7 +227,7 @@ namespace
         bcp.buffer_size = sizeof(tweakable_cb);
         s_render_handles.tweakable_cbuffer = pen::renderer_create_buffer(bcp);
     }
-    
+
     void show_ui()
     {
         s_sampler_states[0] = s_render_handles.sampler_linear_clamp;
@@ -283,19 +277,19 @@ namespace
 
         ImGui::End();
     }
-    
+
     void* user_setup(void* params)
     {
         // unpack the params passed to the thread and signal to the engine it ok to proceed
         s_job_params = (pen::job_thread_params*)params;
         s_thread_info = s_job_params->job_info;
         pen::semaphore_post(s_thread_info->p_sem_continue, 1);
-        
+
         init_renderer();
 
         put::dev_ui::init();
         put::init_hot_loader();
-		
+
         pen_main_loop(user_update);
         return PEN_THREAD_OK;
     }
@@ -303,15 +297,15 @@ namespace
     void user_shutdown()
     {
         put::dev_ui::shutdown();
-        
-    	pen::renderer_new_frame();
-     
+
+        pen::renderer_new_frame();
+
         pmfx::release_shader(s_shader_toy_pmfx);
         s_render_handles.release();
-    	
+
         pen::renderer_present();
         pen::renderer_consume_cmd_buffer();
-        
+
         pen::semaphore_post(s_thread_info->p_sem_terminated, 1);
     }
 
@@ -395,14 +389,14 @@ namespace
 
         pmfx::poll_for_changes();
         put::poll_hot_loader();
-        
+
         // msg from the engine we want to terminate
         if (pen::semaphore_try_wait(s_thread_info->p_sem_exit))
         {
             user_shutdown();
             pen_main_loop_exit();
         }
-        
+
         pen_main_loop_continue();
     }
-}
+} // namespace

@@ -23,7 +23,7 @@ namespace pen
 void example_setup(ecs_scene* scene, camera& cam)
 {
     pmfx::set_view_set("editor_basic");
-    
+
     scene->view_flags &= ~e_scene_view_flags::hide_debug;
     editor_set_transform_mode(e_transform_mode::physics);
 
@@ -36,9 +36,9 @@ void example_setup(ecs_scene* scene, camera& cam)
     geometry_resource* capsule = get_geometry_resource(PEN_HASH("capsule"));
     geometry_resource* sphere = get_geometry_resource(PEN_HASH("sphere"));
     geometry_resource* cone = get_geometry_resource(PEN_HASH("physics_cone"));
-    
+
     scene->shadow_extent_constraints.min = vec3f(-50.0f, 0.0f, -50.0f);
-    scene->shadow_extent_constraints.max = vec3f( 50.0f, 50.0f,  50.0f);
+    scene->shadow_extent_constraints.max = vec3f(50.0f, 50.0f, 50.0f);
 
     // add light
     u32 light = get_new_entity(scene);
@@ -69,23 +69,15 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->physics_data[ground].rigid_body.shape = physics::e_shape::box;
     scene->physics_data[ground].rigid_body.mass = 0.0f;
     instantiate_rigid_body(scene, ground);
-    
-    vec3f wall_pos[] = {
-        vec3f(-51.0f, 2.0f, 0.0f),
-        vec3f( 51.0f, 2.0f, 0.0f),
-        vec3f( 0.0f, 2.0f, -51.0f),
-        vec3f( 0.0f, 2.0f, 51.0f)
-    };
-    
-    vec3f wall_size[] = {
-        vec3f(1.0f, 2.0f, 50.0f),
-        vec3f(1.0f, 2.0f, 50.0f),
-        vec3f(52.0f, 2.0f, 1.0f),
-        vec3f(52.0f, 2.0f, 1.0f)
-    };
-    
+
+    vec3f wall_pos[] = {vec3f(-51.0f, 2.0f, 0.0f), vec3f(51.0f, 2.0f, 0.0f), vec3f(0.0f, 2.0f, -51.0f),
+                        vec3f(0.0f, 2.0f, 51.0f)};
+
+    vec3f wall_size[] = {vec3f(1.0f, 2.0f, 50.0f), vec3f(1.0f, 2.0f, 50.0f), vec3f(52.0f, 2.0f, 1.0f),
+                         vec3f(52.0f, 2.0f, 1.0f)};
+
     // walls to stop falling bodies
-    for(u32 i = 0; i < 4; ++i)
+    for (u32 i = 0; i < 4; ++i)
     {
         u32 wall = get_new_entity(scene);
         scene->names[wall] = "wall";
@@ -146,9 +138,9 @@ void example_setup(ecs_scene* scene, camera& cam)
                     scene->physics_data[new_prim].rigid_body.shape = primitive_types[p];
                     scene->physics_data[new_prim].rigid_body.mass = 1.0f;
                     instantiate_rigid_body(scene, new_prim);
-                    
+
                     simple_lighting* m = (simple_lighting*)&scene->material_data[new_prim].data[0];
-                    
+
                     ImColor ii = ImColor::HSV((rand() % 255) / 255.0f, 1.0f, 1.0f);
                     m->m_albedo = vec4f(ii.Value.x, ii.Value.y, ii.Value.z, 1.0f);
                     m->m_roughness = 0.09f;

@@ -1,6 +1,6 @@
 #include "../example_common.h"
-#include "shader_structs/forward_render.h"
 #include "maths/vec.h"
+#include "shader_structs/forward_render.h"
 
 using namespace put;
 using namespace ecs;
@@ -31,7 +31,7 @@ namespace
 
     put::camera chrome_camera;
     put::camera chrome2_camera;
-    
+
     u32 orbit_balls[4];
 
 } // namespace
@@ -49,7 +49,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     svr_render_sky.id_name = PEN_HASH(svr_render_sky.name.c_str());
     svr_render_sky.render_function = &render_sky;
     pmfx::register_scene_view_renderer(svr_render_sky);
-    
+
     // chrome cameras
     put::camera_create_cubemap(&chrome_camera, 0.01f, 1000.0f);
     chrome_camera.pos = vec3f(0.0f, 0.0f, 0.0f);
@@ -61,30 +61,28 @@ void example_setup(ecs_scene* scene, camera& cam)
     pmfx::register_camera(&chrome2_camera, "chrome2_camera");
 
     pmfx::init("data/configs/dynamic_cubemap.jsn");
-    
+
     u32 wrap_linear = pmfx::get_render_state(PEN_HASH("wrap_linear"), pmfx::e_render_state::sampler);
 
     // setup scene
     clear_scene(scene);
-    
+
     material_resource* simple_light_material = new material_resource;
     simple_light_material->id_shader = PEN_HASH("forward_render");
     simple_light_material->id_technique = PEN_HASH("simple_lighting");
     simple_light_material->material_name = "simple_lighting";
     simple_light_material->shader_name = "forward_render";
     simple_light_material->hash = PEN_HASH("simple_lighting");
-    
+
     static const u32 default_maps[] = {
-        put::load_texture("data/textures/defaults/albedo.dds"),
-        put::load_texture("data/textures/defaults/normal.dds"),
-        put::load_texture("data/textures/defaults/spec.dds"),
-        put::load_texture("data/textures/defaults/black.dds")};
+        put::load_texture("data/textures/defaults/albedo.dds"), put::load_texture("data/textures/defaults/normal.dds"),
+        put::load_texture("data/textures/defaults/spec.dds"), put::load_texture("data/textures/defaults/black.dds")};
 
     for (s32 i = 0; i < 4; ++i)
     {
         simple_light_material->texture_handles[i] = default_maps[i];
     }
-        
+
     add_material_resource(simple_light_material);
 
     material_resource* default_material = get_material_resource(PEN_HASH("simple_lighting"));
@@ -122,32 +120,32 @@ void example_setup(ecs_scene* scene, camera& cam)
     // ground tiles
     vec3f start = vec3f(-9.0f * 7.0f * 0.5f, -4.0f, -9.0f * 7.0f * 0.5f);
     vec3f pos = start;
-    for(u32 i = 0; i < 8; ++i)
+    for (u32 i = 0; i < 8; ++i)
     {
         pos.x = start.x;
-        
-        for(u32 i = 0; i < 8; ++i)
+
+        for (u32 i = 0; i < 8; ++i)
         {
             u32 ground = get_new_entity(scene);
             scene->names[ground] = "ground";
             scene->transforms[ground].translation = pos;
             scene->transforms[ground].rotation = quat();
-            scene->transforms[ground].scale = vec3f(4.0f, ((rand()%255) / 255.0f) * 2.0f + 2.0f, 4.0f);
+            scene->transforms[ground].scale = vec3f(4.0f, ((rand() % 255) / 255.0f) * 2.0f + 2.0f, 4.0f);
             scene->entities[ground] |= e_cmp::transform;
             scene->parents[ground] = ground;
-            
-            for(u32 i = 0; i < 4; ++i)
+
+            for (u32 i = 0; i < 4; ++i)
             {
                 scene->samplers[ground].sb[i].sampler_unit = i;
                 scene->samplers[ground].sb[i].sampler_state = wrap_linear;
             }
-            
+
             instantiate_geometry(box, scene, ground);
             instantiate_material(default_material, scene, ground);
             instantiate_model_cbuffer(scene, ground);
-            
-            vec3f hsv = vec3f(lerp(0.1f, 0.4f, (f32)(pos.x+pos.y*8.0f)/(8.0f*8.0f*2.0f)) + 0.9f, 1.0f, 0.5f);
-                                
+
+            vec3f hsv = vec3f(lerp(0.1f, 0.4f, (f32)(pos.x + pos.y * 8.0f) / (8.0f * 8.0f * 2.0f)) + 0.9f, 1.0f, 0.5f);
+
             simple_lighting* m = (simple_lighting*)&scene->material_data[ground].data[0];
             m->m_albedo = vec4f(maths::hsv_to_rgb(hsv), 1.0f);
             m->m_roughness = 0.09f;
@@ -155,11 +153,11 @@ void example_setup(ecs_scene* scene, camera& cam)
 
             pos.x += 9.0f;
         }
-        
+
         pos.z += 9.0f;
     }
-    
-    for(u32 i = 0; i < 4; ++i)
+
+    for (u32 i = 0; i < 4; ++i)
     {
         u32 orbit = get_new_entity(scene);
         scene->names[orbit] = "orbit";
@@ -168,27 +166,27 @@ void example_setup(ecs_scene* scene, camera& cam)
         scene->transforms[orbit].scale = vec3f(0.5f);
         scene->entities[orbit] |= e_cmp::transform;
         scene->parents[orbit] = orbit;
-        
-        for(u32 i = 0; i < 4; ++i)
+
+        for (u32 i = 0; i < 4; ++i)
         {
             scene->samplers[orbit].sb[i].sampler_unit = i;
             scene->samplers[orbit].sb[i].sampler_state = wrap_linear;
         }
-        
+
         instantiate_geometry(sphere, scene, orbit);
         instantiate_material(default_material, scene, orbit);
         instantiate_model_cbuffer(scene, orbit);
-        
-        vec3f hsv = vec3f((f32)(rand()%RAND_MAX)/(f32)RAND_MAX, 1.0f, 1.0f);
-                            
+
+        vec3f hsv = vec3f((f32)(rand() % RAND_MAX) / (f32)RAND_MAX, 1.0f, 1.0f);
+
         simple_lighting* m = (simple_lighting*)&scene->material_data[orbit].data[0];
         m->m_albedo = vec4f(maths::hsv_to_rgb(hsv), 1.0f);
         m->m_roughness = 0.09f;
         m->m_reflectivity = 0.3f;
-        
+
         orbit_balls[i] = orbit;
     }
-    
+
     u32 pillar = get_new_entity(scene);
     scene->names[pillar] = "pillar";
     scene->transforms[pillar].translation = vec3f(0.0f, 10.0f, 0.0f);
@@ -196,22 +194,22 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->transforms[pillar].scale = vec3f(3.0f, 3.0f, 3.0f);
     scene->entities[pillar] |= e_cmp::transform;
     scene->parents[pillar] = pillar;
-    
-    for(u32 i = 0; i < 4; ++i)
+
+    for (u32 i = 0; i < 4; ++i)
     {
         scene->samplers[pillar].sb[i].sampler_unit = i;
         scene->samplers[pillar].sb[i].sampler_state = wrap_linear;
     }
-    
+
     instantiate_geometry(capsule, scene, pillar);
     instantiate_material(default_material, scene, pillar);
     instantiate_model_cbuffer(scene, pillar);
-    
+
     simple_lighting* m = (simple_lighting*)&scene->material_data[pillar].data[0];
     m->m_albedo = vec4f(1.0f, 0.75f, 0.1f, 1.0f);
     m->m_roughness = 0.09f;
     m->m_reflectivity = 0.3f;
-    
+
     // chrome ball
     chorme_ball = get_new_entity(scene);
     scene->names[chorme_ball] = "chrome_ball";
@@ -263,7 +261,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->material_resources[glass_ball].shader_name = "pmfx_utility";
     scene->material_resources[glass_ball].id_shader = PEN_HASH("pmfx_utility");
     scene->state_flags[glass_ball] &= ~e_state::samplers_initialised;
-    
+
     bake_material_handles(scene, glass_ball);
 
     scene->samplers[glass_ball].sb[0].handle = chrome2_cubemap_handle;
@@ -279,40 +277,42 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
 {
     chrome_camera.pos = scene->world_matrices[chorme_ball].get_translation();
     chrome2_camera.pos = scene->world_matrices[glass_ball].get_translation();
-    
+
     static f32 acc = 0.0f;
     acc += dt;
-    
+
     f32 rx = sin(acc);
     f32 ry = cos(acc);
-    scene->transforms[chorme_ball].translation = vec3f(rx, 0.0f, ry) * 15.0f + vec3f(0.0f, 8.0f + sin(acc*2.0f) * 3.0f, 0.0f);
+    scene->transforms[chorme_ball].translation =
+        vec3f(rx, 0.0f, ry) * 15.0f + vec3f(0.0f, 8.0f + sin(acc * 2.0f) * 3.0f, 0.0f);
     scene->entities[chorme_ball] |= e_cmp::transform;
-    
-    rx = sin(acc+M_PI);
-    ry = cos(acc+M_PI);
-    scene->transforms[glass_ball].translation = vec3f(rx, 0.0f, ry) * 15.0f + vec3f(0.0f, 8.0f + cos(acc*2.0f) * 3.0f, 0.0f);
+
+    rx = sin(acc + M_PI);
+    ry = cos(acc + M_PI);
+    scene->transforms[glass_ball].translation =
+        vec3f(rx, 0.0f, ry) * 15.0f + vec3f(0.0f, 8.0f + cos(acc * 2.0f) * 3.0f, 0.0f);
     scene->entities[glass_ball] |= e_cmp::transform;
-    
-    for(u32 i = 0; i < 2; ++i)
+
+    for (u32 i = 0; i < 2; ++i)
     {
         u32 b = orbit_balls[i];
-        
-        f32 rx = sin(acc+M_PI*i);
-        f32 ry = cos(acc+M_PI*i);
+
+        f32   rx = sin(acc + M_PI * i);
+        f32   ry = cos(acc + M_PI * i);
         vec3f sp = scene->transforms[chorme_ball].translation;
-        
+
         scene->transforms[b].translation = sp + vec3f(rx, ry, ry) * 6.0f;
         scene->entities[b] |= e_cmp::transform;
     }
-    
-    for(u32 i = 0; i < 2; ++i)
+
+    for (u32 i = 0; i < 2; ++i)
     {
         u32 b = orbit_balls[i] + 2;
-        
-        f32 rx = sin(acc+M_PI*i);
-        f32 ry = cos(acc+M_PI*i);
+
+        f32   rx = sin(acc + M_PI * i);
+        f32   ry = cos(acc + M_PI * i);
         vec3f sp = scene->transforms[glass_ball].translation;
-        
+
         scene->transforms[b].translation = sp + vec3f(rx, ry, ry) * 6.0f;
         scene->entities[b] |= e_cmp::transform;
     }

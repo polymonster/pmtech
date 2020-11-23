@@ -2,9 +2,9 @@
 #include "dev_ui.h"
 #include "loader.h"
 
-#include "pen.h"
-#include "memory.h"
 #include "file_system.h"
+#include "memory.h"
+#include "pen.h"
 #include "pen_string.h"
 #include "renderer.h"
 #include "threads.h"
@@ -14,10 +14,10 @@ using namespace pen;
 
 namespace
 {
-    void*   user_setup(void* params);
-    loop_t  user_update();
-    void    user_shutdown();
-}
+    void*  user_setup(void* params);
+    loop_t user_update();
+    void   user_shutdown();
+} // namespace
 
 namespace pen
 {
@@ -36,11 +36,11 @@ namespace pen
 
 namespace
 {
-    job_thread_params*      s_job_params = nullptr;
-    job*                    s_thread_info = nullptr;
-    u32                     s_clear_state_grey = 0;
-    u32                     s_raster_state_cull_back = 0;
-    u32                     s_default_depth_stencil_state = 0;
+    job_thread_params* s_job_params = nullptr;
+    job*               s_thread_info = nullptr;
+    u32                s_clear_state_grey = 0;
+    u32                s_raster_state_cull_back = 0;
+    u32                s_default_depth_stencil_state = 0;
 
     void* user_setup(void* params)
     {
@@ -80,7 +80,7 @@ namespace
         put::dev_ui::init();
 
         // we call user_update once per frame
-        pen_main_loop(user_update);    
+        pen_main_loop(user_update);
         return PEN_THREAD_OK;
     }
 
@@ -89,7 +89,7 @@ namespace
         pen::renderer_release_clear_state(s_clear_state_grey);
         pen::renderer_release_depth_stencil_state(s_default_depth_stencil_state);
         pen::renderer_release_raster_state(s_raster_state_cull_back);
-        
+
         pen::semaphore_post(s_thread_info->p_sem_terminated, 1);
     }
 
@@ -145,10 +145,10 @@ namespace
         if (show_test_window)
         {
             ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiSetCond_FirstUseEver); // Normally user code doesn't need/want to
-                                                                                // call it because positions are saved in
-                                                                                // .ini file anyway. Here we just want to
-                                                                                // make the demo initial state a bit more
-                                                                                // friendly!
+                                                                                 // call it because positions are saved in
+                                                                                 // .ini file anyway. Here we just want to
+                                                                                 // make the demo initial state a bit more
+                                                                                 // friendly!
             ImGui::ShowTestWindow(&show_test_window);
         }
 
@@ -171,6 +171,5 @@ namespace
         }
 
         pen_main_loop_continue();
-        
     }
-}
+} // namespace

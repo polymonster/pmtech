@@ -5,10 +5,10 @@
 
 namespace
 {
-    void*   user_setup(void* params);
-    loop_t  user_update();
-    void    user_shutdown();
-}
+    void*  user_setup(void* params);
+    loop_t user_update();
+    void   user_shutdown();
+} // namespace
 
 // entry function, where we can configure low level details, like window or renderer in pen_creation_params
 namespace pen
@@ -42,7 +42,7 @@ namespace
         pen::semaphore_post(p_thread_info->p_sem_continue, 1);
 
         // we call user_update once per frame
-        pen_main_loop(user_update);    
+        pen_main_loop(user_update);
         return PEN_THREAD_OK;
     }
 
@@ -65,8 +65,8 @@ namespace
             user_shutdown();
             pen_main_loop_exit();
         }
-        
+
         exit(0);
         pen_main_loop_continue();
     }
-}
+} // namespace

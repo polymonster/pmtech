@@ -41,7 +41,7 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
 {
     // show dev ui for choice of deferred, fwd, zpp
     put::dev_ui::enable(true);
-    
+
     dt *= 5000.0f;
 
     ImGui::Begin("Lighting", nullptr, ImGuiWindowFlags_AlwaysAutoResize);

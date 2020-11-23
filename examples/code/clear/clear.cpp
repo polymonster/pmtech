@@ -1,14 +1,14 @@
-#include "pen.h"
 #include "console.h"
-#include "threads.h"
+#include "pen.h"
 #include "renderer.h"
+#include "threads.h"
 
 namespace
 {
-    void*   user_setup(void* params);
-    loop_t  user_update();
-    void    user_shutdown();
-}
+    void*  user_setup(void* params);
+    loop_t user_update();
+    void   user_shutdown();
+} // namespace
 
 namespace pen
 {
@@ -35,7 +35,7 @@ namespace
     void* user_setup(void* params)
     {
         PEN_LOG("User Setup");
-        
+
         // unpack the params passed to the thread and signal to the engine it ok to proceed
         job_params = (pen::job_thread_params*)params;
         p_thread_info = job_params->job_info;
@@ -45,9 +45,9 @@ namespace
         static pen::clear_state cs = {
             0.0f, 0.3f, 0.2f, 1.0f, 1.0f, 0x00, PEN_CLEAR_COLOUR_BUFFER,
         };
-        
+
         s_clear_state = pen::renderer_create_clear_state(cs);
-        
+
         pen_main_loop(user_update);
         return PEN_THREAD_OK;
     }
@@ -55,7 +55,7 @@ namespace
     void user_shutdown()
     {
         PEN_LOG("User Shutdown");
-        
+
         pen::renderer_new_frame();
         pen::renderer_release_clear_state(s_clear_state);
         pen::renderer_present();
@@ -85,7 +85,7 @@ namespace
             user_shutdown();
             pen_main_loop_exit();
         }
-        
+
         pen_main_loop_continue();
     }
-}
+} // namespace

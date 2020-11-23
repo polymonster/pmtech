@@ -1,11 +1,11 @@
 #include "loader.h"
 #include "pmfx.h"
 
-#include "pen.h"
 #include "file_system.h"
 #include "hash.h"
 #include "memory.h"
 #include "os.h"
+#include "pen.h"
 #include "pen_string.h"
 #include "renderer.h"
 #include "threads.h"
@@ -16,10 +16,10 @@ using namespace put;
 
 namespace
 {
-    void*   user_setup(void* params);
-    loop_t  user_update();
-    void    user_shutdown();
-}
+    void*  user_setup(void* params);
+    loop_t user_update();
+    void   user_shutdown();
+} // namespace
 
 namespace pen
 {
@@ -49,18 +49,18 @@ namespace
         f32 u, v;
     };
 
-    job_thread_params*  s_job_params = nullptr;
-    job*                s_thread_info = nullptr;
-    u32                 s_clear_state = 0;
-    u32                 s_raster_state = 0;
-    u32                 s_textured_shader = 0;
-    u32                 s_compute_shader = 0;
-    u32                 s_rgb_texture = 0;
-    u32                 s_greyscale_texture = 0;
-    u32                 s_quad_vertex_buffer = 0;
-    u32                 s_quad_index_buffer = 0;
-    u32                 s_linear_sampler = 0;
-    texture_info        s_texture_info;
+    job_thread_params* s_job_params = nullptr;
+    job*               s_thread_info = nullptr;
+    u32                s_clear_state = 0;
+    u32                s_raster_state = 0;
+    u32                s_textured_shader = 0;
+    u32                s_compute_shader = 0;
+    u32                s_rgb_texture = 0;
+    u32                s_greyscale_texture = 0;
+    u32                s_quad_vertex_buffer = 0;
+    u32                s_quad_index_buffer = 0;
+    u32                s_linear_sampler = 0;
+    texture_info       s_texture_info;
 
     void* user_setup(void* params)
     {
@@ -68,7 +68,7 @@ namespace
         s_job_params = (pen::job_thread_params*)params;
         s_thread_info = s_job_params->job_info;
         pen::semaphore_post(s_thread_info->p_sem_continue, 1);
-        
+
         static pen::clear_state cs = {
             0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0x00, PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
         };
@@ -157,7 +157,7 @@ namespace
         scp.max_lod = 4.0f;
 
         s_linear_sampler = pen::renderer_create_sampler(scp);
-		
+
         pen_main_loop(user_update);
         return PEN_THREAD_OK;
     }
@@ -176,7 +176,7 @@ namespace
         pen::renderer_release_render_target(s_greyscale_texture);
         pen::renderer_present();
         pen::renderer_consume_cmd_buffer();
-    
+
         pen::semaphore_post(s_thread_info->p_sem_terminated, 1);
     }
 
@@ -186,8 +186,8 @@ namespace
 
         // do a compute job to make the image greyscale
         pmfx::set_technique_perm(s_compute_shader, PEN_HASH("greyscale"), 0);
-        pen::renderer_set_texture(s_rgb_texture, 0, 0, pen::TEXTURE_BIND_CS); // read
-        pen::renderer_set_texture(s_greyscale_texture, 0, 1, pen::TEXTURE_BIND_CS);  // write
+        pen::renderer_set_texture(s_rgb_texture, 0, 0, pen::TEXTURE_BIND_CS);       // read
+        pen::renderer_set_texture(s_greyscale_texture, 0, 1, pen::TEXTURE_BIND_CS); // write
 
         uint3 grid = {s_texture_info.width, s_texture_info.height, 1};
         uint3 threads = {16, 16, 1};
@@ -202,7 +202,7 @@ namespace
 
         // bind back buffer and clear
         pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
-        
+
         pen::viewport vp = {0.0f, 0.0f, PEN_BACK_BUFFER_RATIO, 1.0f, 0.0f, 1.0f};
         pen::renderer_set_viewport(vp);
         pen::renderer_set_scissor_rect(rect{vp.x, vp.y, vp.width, vp.height});
@@ -238,7 +238,7 @@ namespace
             user_shutdown();
             pen_main_loop_exit();
         }
-        
+
         pen_main_loop_continue();
     }
-}
+} // namespace

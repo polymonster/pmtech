@@ -33,7 +33,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     editor_set_transform_mode(e_transform_mode::physics);
 
     clear_scene(scene);
-    
+
     cam.focus = vec3f(5.0f, 1.0f, 5.0f);
     cam.rot = vec2f(-0.9f, 0.0f);
     cam.zoom = 20.0f;
@@ -89,10 +89,10 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->physics_data[pitch_constraint].constraint.upper_limit_translation = vec3f::unit_z() * 5.0f;
     scene->physics_data[pitch_constraint].constraint.linear_damping = 0.999f;
     instantiate_constraint(scene, pitch_constraint);
-    
+
     //
     vec3f platter_pos = vec3f(0.0f, 1.0f, 00.0f);
-    
+
     u32 platter = get_new_entity(scene);
     scene->names[platter] = "platter";
     scene->parents[platter] = platter;

@@ -135,6 +135,6 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
     }
     f32 operator_cost = pen::timer_elapsed_ms(timer);
 
-   // PEN_LOG("operator: %f, array: %f\n", operator_cost, array_cost);
+    // PEN_LOG("operator: %f, array: %f\n", operator_cost, array_cost);
 #endif
 }

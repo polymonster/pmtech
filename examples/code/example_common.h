@@ -7,18 +7,18 @@
 #include "ecs/ecs_utilities.h"
 #include "pmfx.h"
 
-#include "data_struct.h"
 #include "console.h"
+#include "data_struct.h"
 #include "file_system.h"
 #include "hash.h"
 #include "input.h"
 #include "loader.h"
+#include "pen.h"
 #include "pen_json.h"
 #include "pen_string.h"
 #include "renderer.h"
 #include "str_utilities.h"
 #include "timer.h"
-#include "pen.h"
 
 using namespace put;
 using namespace ecs;
@@ -28,10 +28,10 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt);
 
 namespace
 {
-    void*   user_setup(void* params);
-    loop_t  user_update();
-    void    user_shutdown();
-}
+    void*  user_setup(void* params);
+    loop_t user_update();
+    void   user_shutdown();
+} // namespace
 
 namespace physics
 {
@@ -40,10 +40,10 @@ namespace physics
 
 namespace
 {
-    put::camera main_camera;
+    put::camera          main_camera;
     put::ecs::ecs_scene* main_scene = nullptr;
-    pen::job* p_thread_info = nullptr;
-    pen::timer* frame_timer = nullptr;
+    pen::job*            p_thread_info = nullptr;
+    pen::timer*          frame_timer = nullptr;
 
     void* user_setup(void* params)
     {
@@ -80,13 +80,13 @@ namespace
 
         frame_timer = pen::timer_create();
         pen::timer_start(frame_timer);
-        
+
         pen_main_loop(user_update);
         return PEN_THREAD_OK;
     }
 
     void user_shutdown()
-    {        
+    {
         pen::timer_destroy(frame_timer);
 
         pen::renderer_new_frame();
@@ -96,7 +96,7 @@ namespace
         put::pmfx::shutdown();
         put::dbg::shutdown();
         put::dev_ui::shutdown();
-        
+
         pen::renderer_present();
         pen::renderer_consume_cmd_buffer();
 
@@ -106,22 +106,22 @@ namespace
 
     loop_t user_update()
     {
-        f32 dt = pen::timer_elapsed_ms(frame_timer)/1000.0f;
+        f32 dt = pen::timer_elapsed_ms(frame_timer) / 1000.0f;
         pen::timer_start(frame_timer);
 
         pen::renderer_new_frame();
-        
+
         put::dev_ui::new_frame();
-        
+
         example_update(main_scene, main_camera, dt);
-                
+
         ecs::update(dt);
 
         pmfx::render();
 
         pmfx::show_dev_ui();
         put::dev_ui::render();
-        
+
         pen::renderer_test_run();
         pen::renderer_present();
         pen::renderer_consume_cmd_buffer();
@@ -134,7 +134,7 @@ namespace
             user_shutdown();
             pen_main_loop_exit();
         }
-        
+
         pen_main_loop_continue();
     }
-}
+} // namespace

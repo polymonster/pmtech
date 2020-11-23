@@ -8,15 +8,15 @@
 #include "loader.h"
 #include "pmfx.h"
 
+#include "file_system.h"
+#include "hash.h"
+#include "input.h"
 #include "pen.h"
 #include "pen_json.h"
 #include "pen_string.h"
 #include "renderer.h"
 #include "str_utilities.h"
 #include "timer.h"
-#include "file_system.h"
-#include "hash.h"
-#include "input.h"
 
 using namespace pen;
 using namespace put;
@@ -24,10 +24,10 @@ using namespace ecs;
 
 namespace
 {
-    void*   user_setup(void* params);
-    loop_t  user_update();
-    void    user_shutdown();
-}
+    void*  user_setup(void* params);
+    loop_t user_update();
+    void   user_shutdown();
+} // namespace
 
 namespace physics
 {
@@ -53,7 +53,7 @@ namespace
 {
     pen::job_thread_params* job_params;
     pen::job*               p_thread_info;
-    
+
     void blend_mode_ui()
     {
         bool opened = true;
@@ -94,7 +94,7 @@ namespace
     void blend_layers(const scene_view& scene_view)
     {
         static ecs::geometry_resource* quad = ecs::get_geometry_resource(PEN_HASH("full_screen_quad"));
-        static pmm_renderable& r = quad->renderable[e_pmm_renderable::full_vertex_buffer];
+        static pmm_renderable&         r = quad->renderable[e_pmm_renderable::full_vertex_buffer];
 
         static u32 background_texture = put::load_texture("data/textures/blend_test_bg.dds");
         static u32 foreground_texture = put::load_texture("data/textures/blend_test_fg.dds");
@@ -122,7 +122,7 @@ namespace
         pen::renderer_set_texture(foreground_texture, wrap_linear, 0, pen::TEXTURE_BIND_PS);
         pen::renderer_draw_indexed(r.num_indices, 0, 0, PEN_PT_TRIANGLELIST);
     }
-    
+
     void* user_setup(void* params)
     {
         // unpack the params passed to the thread and signal to the engine it ok to proceed
@@ -145,23 +145,23 @@ namespace
 
         pmfx::register_scene_view_renderer(svr_main);
         pmfx::init("data/configs/blend_modes.jsn");
-		
+
         pen_main_loop(user_update);
         return PEN_THREAD_OK;
     }
 
     void user_shutdown()
     {
-    	pen::renderer_new_frame();
-     
+        pen::renderer_new_frame();
+
         ecs::editor_shutdown();
         put::pmfx::shutdown();
         put::dbg::shutdown();
         put::dev_ui::shutdown();
-    	
+
         pen::renderer_present();
         pen::renderer_consume_cmd_buffer();
-        
+
         pen::semaphore_post(p_thread_info->p_sem_terminated, 1);
     }
 
@@ -192,7 +192,7 @@ namespace
             user_shutdown();
             pen_main_loop_exit();
         }
-        
+
         pen_main_loop_continue();
     }
-}
+} // namespace

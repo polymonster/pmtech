@@ -1,10 +1,10 @@
-#include "pmfx.h"
 #include "loader.h"
+#include "pmfx.h"
 
-#include "pen.h"
-#include "os.h"
-#include "memory.h"
 #include "file_system.h"
+#include "memory.h"
+#include "os.h"
+#include "pen.h"
 #include "pen_string.h"
 #include "renderer.h"
 #include "threads.h"
@@ -15,10 +15,10 @@ using namespace pen;
 
 namespace
 {
-    void*   user_setup(void* params);
-    loop_t  user_update();
-    void    user_shutdown();
-}
+    void*  user_setup(void* params);
+    loop_t user_update();
+    void   user_shutdown();
+} // namespace
 
 namespace pen
 {
@@ -48,16 +48,16 @@ namespace
         f32 u, v;
     };
 
-    job_thread_params*  s_job_params = nullptr;
-    job*                s_thread_info = nullptr;
-    u32                 s_clear_state = 0;
-    u32                 s_raster_state = 0;
-    u32                 s_textured_shader = 0;
-    u32                 s_test_texture = 0;
-    u32                 s_quad_vertex_buffer = 0;
-    u32                 s_quad_index_buffer = 0;
-    u32                 s_linear_sampler = 0;
-    
+    job_thread_params* s_job_params = nullptr;
+    job*               s_thread_info = nullptr;
+    u32                s_clear_state = 0;
+    u32                s_raster_state = 0;
+    u32                s_textured_shader = 0;
+    u32                s_test_texture = 0;
+    u32                s_quad_vertex_buffer = 0;
+    u32                s_quad_index_buffer = 0;
+    u32                s_linear_sampler = 0;
+
     void* user_setup(void* params)
     {
         // unpack the params passed to the thread and signal to the engine it ok to proceed
@@ -143,7 +143,7 @@ namespace
         pen_main_loop(user_update);
         return PEN_THREAD_OK;
     }
-    
+
     void user_shutdown()
     {
         // clean up mem
@@ -196,13 +196,13 @@ namespace
         // present
         pen::renderer_present();
         pen::renderer_consume_cmd_buffer();
-            
+
         if (pen::semaphore_try_wait(s_thread_info->p_sem_exit))
         {
             user_shutdown();
             pen_main_loop_exit();
         }
-        
+
         pen_main_loop_continue();
     }
-}
+} // namespace

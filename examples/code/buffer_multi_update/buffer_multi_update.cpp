@@ -1,10 +1,10 @@
 #include "loader.h"
 #include "pmfx.h"
 
-#include "pen.h"
-#include "os.h"
-#include "memory.h"
 #include "file_system.h"
+#include "memory.h"
+#include "os.h"
+#include "pen.h"
 #include "pen_string.h"
 #include "renderer.h"
 #include "threads.h"
@@ -15,10 +15,10 @@ using namespace put;
 
 namespace
 {
-    void*   user_setup(void* params);
-    loop_t  user_update();
-    void    user_shutdown();
-}
+    void*  user_setup(void* params);
+    loop_t user_update();
+    void   user_shutdown();
+} // namespace
 
 namespace pen
 {
@@ -47,16 +47,16 @@ namespace
         f32 x, y, z, w;
         f32 r, g, b, a;
     };
-    
-    job_thread_params*  s_job_params;
-    job*                s_thread_info;
-    u32                 s_clear_state = 0;
-    u32                 s_raster_state = 0;
-    u32                 s_textured_shader = 0;
-    u32                 s_quad_vertex_buffer = 0;
-    u32                 s_quad_index_buffer = 0;
-    u32                 s_cbuffer_draw = 0;
-    draw_call           s_draw_calls[4];
+
+    job_thread_params* s_job_params;
+    job*               s_thread_info;
+    u32                s_clear_state = 0;
+    u32                s_raster_state = 0;
+    u32                s_textured_shader = 0;
+    u32                s_quad_vertex_buffer = 0;
+    u32                s_quad_index_buffer = 0;
+    u32                s_cbuffer_draw = 0;
+    draw_call          s_draw_calls[4];
 
     void* user_setup(void* params)
     {
@@ -133,7 +133,7 @@ namespace
         s_draw_calls[1] = {offsetx, -offsety, 0.0f, 1.0f, 0.0f, 0.5f, 1.0f, 1.0f};
         s_draw_calls[2] = {offsetx, offsety, 0.0f, 1.0f, 1.0f, 0.5f, 0.0f, 1.0f};
         s_draw_calls[3] = {-offsetx, offsety, 0.0f, 1.0f, 0.5f, 0.0f, 0.5f, 1.0f};
-        
+
         pen_main_loop(user_update);
         return PEN_THREAD_OK;
     }
@@ -149,7 +149,7 @@ namespace
         pen::renderer_release_buffer(s_cbuffer_draw);
         pen::renderer_present();
         pen::renderer_consume_cmd_buffer();
-    
+
         pen::semaphore_post(s_thread_info->p_sem_terminated, 1);
     }
 
@@ -193,14 +193,14 @@ namespace
         // present
         pen::renderer_present();
         pen::renderer_consume_cmd_buffer();
-        
+
         // msg from the engine we want to terminate
         if (pen::semaphore_try_wait(s_thread_info->p_sem_exit))
         {
             user_shutdown();
             pen_main_loop_exit();
         }
-        
+
         pen_main_loop_continue();
     }
-}
+} // namespace

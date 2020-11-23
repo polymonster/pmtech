@@ -15,10 +15,10 @@ using namespace put;
 
 namespace
 {
-    void*   user_setup(void* params);
-    loop_t  user_update();
-    void    user_shutdown();
-}
+    void*  user_setup(void* params);
+    loop_t user_update();
+    void   user_shutdown();
+} // namespace
 
 namespace pen
 {
@@ -52,8 +52,8 @@ namespace
     pen::job*               s_thread_info = nullptr;
     u32                     s_clear_state = 0;
     u32                     s_raster_state = 0;
-    u32                     s_cb_2d_view  = 0;
-    
+    u32                     s_cb_2d_view = 0;
+
     void* user_setup(void* params)
     {
         // unpack the params passed to the thread and signal to the engine it ok to proceed
@@ -91,7 +91,7 @@ namespace
         bcp.data = (void*)nullptr;
 
         s_cb_2d_view = pen::renderer_create_buffer(bcp);
-		
+
         pen_main_loop(user_update);
         return PEN_THREAD_OK;
     }
@@ -99,14 +99,14 @@ namespace
     void user_shutdown()
     {
         dbg::shutdown();
-        
-    	pen::renderer_new_frame();
+
+        pen::renderer_new_frame();
         pen::renderer_release_clear_state(s_clear_state);
         pen::renderer_release_buffer(s_cb_2d_view);
         pen::renderer_release_raster_state(s_raster_state);
         pen::renderer_present();
         pen::renderer_consume_cmd_buffer();
-        
+
         pen::semaphore_post(s_thread_info->p_sem_terminated, 1);
     }
 
@@ -280,14 +280,14 @@ namespace
         // present
         pen::renderer_present();
         pen::renderer_consume_cmd_buffer();
-        
+
         // msg from the engine we want to terminate
         if (pen::semaphore_try_wait(s_thread_info->p_sem_exit))
         {
             user_shutdown();
             pen_main_loop_exit();
         }
-        
+
         pen_main_loop_continue();
     }
-}
+} // namespace

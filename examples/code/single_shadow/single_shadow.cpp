@@ -65,11 +65,9 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->physics_data[ground].rigid_body.mass = 0.0f;
     instantiate_rigid_body(scene, ground);
 
-    vec3f start_positions[] = {
-        vec3f(-4.f, 2.0f, -4.f)
-    };
+    vec3f start_positions[] = {vec3f(-4.f, 2.0f, -4.f)};
 
-    const c8* primitive_names[] = {"box", "cylinder", "capsule", "cone", "sphere"};
+    const c8*          primitive_names[] = {"box", "cylinder", "capsule", "cone", "sphere"};
     geometry_resource* primitive_resources[] = {box, cylinder, capsule, cone, sphere};
 
     s32 num_prims = 1;
@@ -120,7 +118,7 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
 {
     quat q;
     q.euler_angles(0.01f, 0.01f, 0.01f);
-    
+
     dt *= 0.05f;
 
     static f32 lr[] = {M_PI};

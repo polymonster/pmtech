@@ -1,8 +1,8 @@
-#include "pen.h"
-#include "memory.h"
-#include "os.h"
 #include "console.h"
 #include "file_system.h"
+#include "memory.h"
+#include "os.h"
+#include "pen.h"
 #include "pen_string.h"
 #include "renderer.h"
 #include "threads.h"
@@ -10,10 +10,10 @@
 
 namespace
 {
-    void*   user_setup(void* params);
-    loop_t  user_update();
-    void    user_shutdown();
-}
+    void*  user_setup(void* params);
+    loop_t user_update();
+    void   user_shutdown();
+} // namespace
 
 namespace pen
 {
@@ -37,13 +37,13 @@ namespace
         f32 x, y, z, w;
     };
 
-    pen::job*   s_thread_info = nullptr;
-    u32         s_clear_state = 0;
-    u32         s_raster_state = 0;
-    u32         s_vertex_shader = 0;
-    u32         s_pixel_shader = 0;
-    u32         s_input_layout = 0;
-    u32         s_vertex_buffer = 0;
+    pen::job* s_thread_info = nullptr;
+    u32       s_clear_state = 0;
+    u32       s_raster_state = 0;
+    u32       s_vertex_shader = 0;
+    u32       s_pixel_shader = 0;
+    u32       s_input_layout = 0;
+    u32       s_vertex_buffer = 0;
 
     void* user_setup(void* params)
     {
@@ -51,7 +51,7 @@ namespace
         pen::job_thread_params* job_params = (pen::job_thread_params*)params;
         s_thread_info = job_params->job_info;
         pen::semaphore_post(s_thread_info->p_sem_continue, 1);
-    
+
         // create clear state
         static pen::clear_state cs = {
             0.0f, 0.0, 0.5f, 1.0f, 1.0f, 0x00, PEN_CLEAR_COLOUR_BUFFER | PEN_CLEAR_DEPTH_BUFFER,
@@ -77,7 +77,7 @@ namespace
         ps_slp.type = PEN_SHADER_TYPE_PS;
 
         c8 shader_file_buf[256];
-        
+
         auto platform = pen::renderer_get_shader_platform();
 
         pen::string_format(shader_file_buf, 256, "data/pmfx/%s/%s/%s", platform, "basictri", "default.vsc");
@@ -129,7 +129,7 @@ namespace
         bcp.data = (void*)&vertices[0];
 
         s_vertex_buffer = pen::renderer_create_buffer(bcp);
-        
+
         pen_main_loop(user_update);
         return PEN_THREAD_OK;
     }
@@ -137,7 +137,7 @@ namespace
     void user_shutdown()
     {
         PEN_LOG("User Shutdown");
-        
+
         pen::renderer_new_frame();
         pen::renderer_release_clear_state(s_clear_state);
         pen::renderer_release_raster_state(s_raster_state);
@@ -190,7 +190,7 @@ namespace
             user_shutdown();
             pen_main_loop_exit();
         }
-        
+
         pen_main_loop_continue();
     }
-}
+} // namespace

@@ -188,7 +188,7 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
 {
     quat q;
     q.euler_angles(0.01f, 0.01f, 0.01f);
-    
+
     dt *= 0.05f;
 
     static f32 lr[] = {0.0f, M_PI * 0.5f, M_PI, M_PI * 1.5f};
