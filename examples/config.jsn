@@ -118,10 +118,12 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
         }
         
         make: {
-        	toolchain: "xcodebuild",
+        	toolchain: "xcodebuild"
+        	workspace: "pmtech_examples_osx.workspace"
 			files: [
 				"build/osx/**/*.xcodeproj"
 			]
+			change_ext: ""
         }
         
         launch: {
@@ -316,7 +318,8 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
         }
         
         make: {
-        	toolchain: "xcodebuild",
+        	toolchain: "xcodebuild"
+        	workspace: "pmtech_examples_osx.workspace"
 			files: [
 				"build/ios/**/*.xcodeproj"
 			]
