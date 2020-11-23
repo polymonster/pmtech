@@ -2,10 +2,10 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
+#include "dev_ui.h"
 #include "camera.h"
 #include "console.h"
 #include "data_struct.h"
-#include "dev_ui.h"
 #include "file_system.h"
 #include "input.h"
 #include "loader.h"
@@ -47,7 +47,7 @@ namespace
         u32 constant_buffer;
         u32 imgui_shader;
         u32 imgui_ex_shader;
-        
+
         void* vb_copy_buffer = nullptr;
         void* ib_copy_buffer = nullptr;
     };
@@ -423,7 +423,7 @@ namespace put
             style.Colors[ImGuiCol_PlotHistogram] = accent;
             style.Colors[ImGuiCol_PlotHistogramHovered] = accent_light;
             style.Colors[ImGuiCol_ModalWindowDarkening] = ImVec4(0.04f, 0.10f, 0.09f, 0.51f);
-            
+
             style.ScaleAllSizes(DEV_UI_SCALE);
 
             dev_ui::util_init();
@@ -541,7 +541,7 @@ namespace put
             ImGuiIO& io = ImGui::GetIO();
 
             // set delta time
-            f64 cur_time = pen::get_time_ms();
+            f64        cur_time = pen::get_time_ms();
             static f64 prev_time = cur_time;
             io.DeltaTime = (f32)max((cur_time - prev_time) / 1000.0, 0.0);
             prev_time = cur_time;
@@ -553,7 +553,7 @@ namespace put
             // Hide OS mouse cursor if ImGui is drawing it
             if (io.MouseDrawCursor)
                 pen::input_show_cursor(false);
-                
+
             ImGui::NewFrame();
 
             put::dev_ui::update();
@@ -561,11 +561,11 @@ namespace put
 
         u32 want_capture()
         {
-            if(!s_enable_rendering)
+            if (!s_enable_rendering)
                 return 0;
-                
+
             ImGuiIO& io = ImGui::GetIO();
-            u32 flags = 0;
+            u32      flags = 0;
             if (io.WantCaptureMouse)
                 flags |= dev_ui::e_io_capture::mouse;
             if (io.WantCaptureKeyboard)
@@ -1263,7 +1263,6 @@ namespace put
 
             void ExecCommand(const char* command_line)
             {
-
             }
 
             static int TextEditCallbackStub(ImGuiTextEditCallbackData* data) // In C++11 you are better off using lambdas for
@@ -1398,8 +1397,8 @@ namespace put
         {
             va_list args;
             va_start(args, fmt);
-            
-            if(s_initialised)
+
+            if (s_initialised)
             {
                 sp_dev_console->AddLogV(0, fmt, args);
             }
@@ -1407,7 +1406,7 @@ namespace put
             {
                 PEN_LOG_VA(fmt, args);
             }
-            
+
             va_end(args);
         }
 
@@ -1415,8 +1414,8 @@ namespace put
         {
             va_list args;
             va_start(args, fmt);
-            
-            if(s_initialised)
+
+            if (s_initialised)
             {
                 sp_dev_console->AddLogV(level, fmt, args);
             }

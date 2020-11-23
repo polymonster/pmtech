@@ -611,34 +611,33 @@ namespace pen
     void*             detect_devices_async(void* params)
     {
         pen::job_thread_params* job_params = (pen::job_thread_params*)params;
-        pen::job* p_thread_info = job_params->job_info;
+        pen::job*               p_thread_info = job_params->job_info;
         pen::semaphore_post(p_thread_info->p_sem_continue, 1);
-        
+
         static pen::timer* htimer = timer_create();
         static const f64   detect_time = 10000.0f;
         static f64         detect_timer = 0.0f;
-        
-        for(;;)
+
+        for (;;)
         {
-            if(detect_timer <= 0.0f)
+            if (detect_timer <= 0.0f)
             {
                 a_detecting = true;
                 Gamepad_detectDevices();
                 a_detecting = false;
-                
+
                 detect_timer = detect_time;
             }
-            
+
             if (pen::semaphore_try_wait(p_thread_info->p_sem_exit))
             {
                 break;
             }
-            
+
             thread_sleep_ms(16);
-            
+
             detect_timer -= timer_elapsed_ms(htimer);
             timer_start(htimer);
-
         }
 
         pen::semaphore_post(p_thread_info->p_sem_terminated, 1);
@@ -648,10 +647,10 @@ namespace pen
     void input_gamepad_update()
     {
         Gamepad_processEvents();
-        
+
         // polling thread to detect new devices, as some platforms are quite costly to constantly poll.
         static bool detect_thread = true;
-        if(detect_thread)
+        if (detect_thread)
         {
             pen::jobs_create_job(detect_devices_async, 1024 * 1024, nullptr, pen::e_thread_start_flags::detached);
             detect_thread = false;

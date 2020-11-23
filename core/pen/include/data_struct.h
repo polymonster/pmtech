@@ -92,8 +92,8 @@ namespace pen
     {
         T* data = nullptr;
 
-        a_u32 get_pos;
-        a_u32 put_pos;
+        a_u32               get_pos;
+        a_u32               put_pos;
         std::atomic<size_t> _capacity;
 
         ring_buffer();
@@ -109,7 +109,7 @@ namespace pen
     template <typename T>
     struct res_pool
     {
-        T*    _resources = nullptr;
+        T*                  _resources = nullptr;
         std::atomic<size_t> _capacity;
 
         res_pool();
@@ -262,7 +262,7 @@ namespace pen
 
         return &data[gp];
     }
-    
+
     template <typename T>
     pen_inline T* ring_buffer<T>::check()
     {

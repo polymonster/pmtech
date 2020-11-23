@@ -191,7 +191,7 @@ namespace pen
 
         for (;;)
         {
-            MSG msg = { 0 };
+            MSG msg = {0};
             if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
             {
                 TranslateMessage(&msg);
@@ -289,8 +289,8 @@ namespace pen
         LONG half_window_y = (rc.bottom - rc.top) / 2;
 
         s_ctx.hwnd = CreateWindowA(pen_window.window_title, pen_window.window_title, WS_OVERLAPPEDWINDOW,
-                               screen_mid_x - half_window_x, screen_mid_y - half_window_y, rc.right - rc.left,
-                               rc.bottom - rc.top, nullptr, nullptr, wp->hinstance, nullptr);
+                                   screen_mid_x - half_window_x, screen_mid_y - half_window_y, rc.right - rc.left,
+                                   rc.bottom - rc.top, nullptr, nullptr, wp->hinstance, nullptr);
 
         DWORD lasterror = GetLastError();
 
@@ -306,8 +306,8 @@ namespace pen
 
     void set_unicode_key(u32 key_index, bool down)
     {
-        static wchar_t  buf[32];
-        static c8       utf8[32];
+        static wchar_t buf[32];
+        static c8      utf8[32];
 
         // modifiers
         BYTE key_state[256] = {0};

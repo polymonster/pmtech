@@ -16,21 +16,21 @@ namespace put
 {
     namespace ecs
     {
-        void create_position_only_buffers(geometry_resource* p_geometry,
-            vertex_model* v, u32 num_verts, u16* indices, u32 num_indices)
+        void create_position_only_buffers(geometry_resource* p_geometry, vertex_model* v, u32 num_verts, u16* indices,
+                                          u32 num_indices)
         {
             // position only from full vertex
             pmm_renderable& rp = p_geometry->renderable[e_pmm_renderable::position_only];
-            
+
             // assign from full vertex
             rp = p_geometry->renderable[e_pmm_renderable::full_vertex_buffer];
-            
+
             // create pos only buffer
             rp.cpu_vertex_buffer = pen::memory_alloc(sizeof(vec4f) * num_verts);
             vec4f* cpu_pos = (vec4f*)rp.cpu_vertex_buffer;
             for (u32 i = 0; i < num_verts; ++i)
                 cpu_pos[i] = v[i].pos;
-                
+
             // create the gpu copy
             pen::buffer_creation_params bcp;
             bcp.usage_flags = PEN_USAGE_DEFAULT;
@@ -40,16 +40,16 @@ namespace put
             bcp.data = rp.cpu_vertex_buffer;
 
             rp.vertex_buffer = pen::renderer_create_buffer(bcp);
-            
+
             // change vertex size
             rp.vertex_size = sizeof(vec4f);
         }
-        
+
         void create_cpu_buffers(geometry_resource* p_geometry, vertex_model* v, u32 num_verts, u16* indices, u32 num_indices)
         {
             // Create position and index buffer of primitives
             pmm_renderable& r = p_geometry->renderable[e_pmm_renderable::full_vertex_buffer];
-                        
+
             r.cpu_index_buffer = pen::memory_alloc(sizeof(u16) * num_indices);
             r.cpu_vertex_buffer = pen::memory_alloc(sizeof(vertex_model) * num_verts);
 
@@ -120,7 +120,7 @@ namespace put
             r.num_vertices = num_verts;
             r.vertex_size = sizeof(vertex_model);
             r.index_type = PEN_FORMAT_R16_UINT;
-            
+
             // info
             p_geometry->min_extents = -vec3f(1.0f, 0.00001f, 1.0f);
             p_geometry->max_extents = vec3f(1.0f, 0.00001f, 1.0f);
@@ -171,7 +171,7 @@ namespace put
             r.num_vertices = num_verts;
             r.vertex_size = sizeof(vertex_2d);
             r.index_type = PEN_FORMAT_R16_UINT;
-            
+
             // info
             p_geometry->min_extents = -vec3f(1.0f, 1.0f, 0.0f);
             p_geometry->max_extents = vec3f(1.0f, 1.0f, 0.0f);
@@ -327,7 +327,7 @@ namespace put
             r.num_vertices = num_verts;
             r.vertex_size = sizeof(vertex_model);
             r.index_type = PEN_FORMAT_R16_UINT;
-            
+
             // info
             p_geometry->min_extents = vec3f(-1.0f, bottom, -1.0f);
             p_geometry->max_extents = vec3f(1.0f, top, 1.0f);
@@ -930,7 +930,7 @@ namespace put
             r.num_vertices = num_verts;
             r.vertex_size = sizeof(vertex_model);
             r.index_type = PEN_FORMAT_R16_UINT;
-            
+
             p_geometry->min_extents = -vec3f::one();
             p_geometry->max_extents = vec3f::one();
             p_geometry->geometry_name = "cylinder";

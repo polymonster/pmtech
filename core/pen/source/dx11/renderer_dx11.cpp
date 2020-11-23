@@ -60,176 +60,176 @@ namespace
     ID3D11DeviceContext1*   s_immediate_context_1 = nullptr;
     u64                     s_frame = 0; // to remove
 
-	D3D11_FILL_MODE to_d3d11_fill_mode(u32 pen_fill_mode)
-	{
-		switch (pen_fill_mode)
-		{
-		case PEN_FILL_SOLID:
-			return D3D11_FILL_SOLID;
-		case PEN_FILL_WIREFRAME:
-			return D3D11_FILL_WIREFRAME;
-		}
-		PEN_ASSERT(0);
-		return D3D11_FILL_SOLID;
-	}
+    D3D11_FILL_MODE to_d3d11_fill_mode(u32 pen_fill_mode)
+    {
+        switch (pen_fill_mode)
+        {
+            case PEN_FILL_SOLID:
+                return D3D11_FILL_SOLID;
+            case PEN_FILL_WIREFRAME:
+                return D3D11_FILL_WIREFRAME;
+        }
+        PEN_ASSERT(0);
+        return D3D11_FILL_SOLID;
+    }
 
-	D3D11_CULL_MODE to_d3d11_cull_mode(u32 pen_cull_mode)
-	{
-		switch (pen_cull_mode)
-		{
-		case PEN_CULL_NONE:
-			return D3D11_CULL_NONE;
-		case PEN_CULL_FRONT:
-			return D3D11_CULL_FRONT;
-		case PEN_CULL_BACK:
-			return D3D11_CULL_BACK;
-		}
-		PEN_ASSERT(0);
-		return D3D11_CULL_NONE;
-	}
+    D3D11_CULL_MODE to_d3d11_cull_mode(u32 pen_cull_mode)
+    {
+        switch (pen_cull_mode)
+        {
+            case PEN_CULL_NONE:
+                return D3D11_CULL_NONE;
+            case PEN_CULL_FRONT:
+                return D3D11_CULL_FRONT;
+            case PEN_CULL_BACK:
+                return D3D11_CULL_BACK;
+        }
+        PEN_ASSERT(0);
+        return D3D11_CULL_NONE;
+    }
 
-	D3D11_USAGE to_d3d11_usage(u32 pen_usage)
-	{
-		switch (pen_usage)
-		{
-		case PEN_USAGE_DEFAULT:	
-			return D3D11_USAGE_DEFAULT;
-		case PEN_USAGE_IMMUTABLE:
-			return D3D11_USAGE_IMMUTABLE;
-		case PEN_USAGE_DYNAMIC:
-			return D3D11_USAGE_DYNAMIC;
-		case PEN_USAGE_STAGING:
-			return D3D11_USAGE_STAGING;
-		}
-		PEN_ASSERT(0);
-		return D3D11_USAGE_DEFAULT;
-	}
+    D3D11_USAGE to_d3d11_usage(u32 pen_usage)
+    {
+        switch (pen_usage)
+        {
+            case PEN_USAGE_DEFAULT:
+                return D3D11_USAGE_DEFAULT;
+            case PEN_USAGE_IMMUTABLE:
+                return D3D11_USAGE_IMMUTABLE;
+            case PEN_USAGE_DYNAMIC:
+                return D3D11_USAGE_DYNAMIC;
+            case PEN_USAGE_STAGING:
+                return D3D11_USAGE_STAGING;
+        }
+        PEN_ASSERT(0);
+        return D3D11_USAGE_DEFAULT;
+    }
 
-	UINT to_d3d11_bind_flags(u32 pen_bind_flags)
-	{
-		u32 bf = 0;
-		if (pen_bind_flags & PEN_BIND_SHADER_RESOURCE)
-			bf |= D3D11_BIND_SHADER_RESOURCE;
-		if (pen_bind_flags & PEN_BIND_VERTEX_BUFFER)
-			bf |= D3D11_BIND_VERTEX_BUFFER;
-		if (pen_bind_flags & PEN_BIND_INDEX_BUFFER)
-			bf |= D3D11_BIND_INDEX_BUFFER;
-		if (pen_bind_flags & PEN_BIND_CONSTANT_BUFFER)
-			bf |= D3D11_BIND_CONSTANT_BUFFER;
-		if (pen_bind_flags & PEN_BIND_RENDER_TARGET)
-			bf |= D3D11_BIND_RENDER_TARGET;
-		if (pen_bind_flags & PEN_BIND_DEPTH_STENCIL)
-			bf |= D3D11_BIND_DEPTH_STENCIL;
-		if (pen_bind_flags & PEN_BIND_SHADER_WRITE)
-			bf |= D3D11_BIND_UNORDERED_ACCESS;
-		if (pen_bind_flags & PEN_STREAM_OUT_VERTEX_BUFFER)
-			bf |= (D3D11_BIND_STREAM_OUTPUT | D3D11_BIND_VERTEX_BUFFER);
-		return bf;
-	}
+    UINT to_d3d11_bind_flags(u32 pen_bind_flags)
+    {
+        u32 bf = 0;
+        if (pen_bind_flags & PEN_BIND_SHADER_RESOURCE)
+            bf |= D3D11_BIND_SHADER_RESOURCE;
+        if (pen_bind_flags & PEN_BIND_VERTEX_BUFFER)
+            bf |= D3D11_BIND_VERTEX_BUFFER;
+        if (pen_bind_flags & PEN_BIND_INDEX_BUFFER)
+            bf |= D3D11_BIND_INDEX_BUFFER;
+        if (pen_bind_flags & PEN_BIND_CONSTANT_BUFFER)
+            bf |= D3D11_BIND_CONSTANT_BUFFER;
+        if (pen_bind_flags & PEN_BIND_RENDER_TARGET)
+            bf |= D3D11_BIND_RENDER_TARGET;
+        if (pen_bind_flags & PEN_BIND_DEPTH_STENCIL)
+            bf |= D3D11_BIND_DEPTH_STENCIL;
+        if (pen_bind_flags & PEN_BIND_SHADER_WRITE)
+            bf |= D3D11_BIND_UNORDERED_ACCESS;
+        if (pen_bind_flags & PEN_STREAM_OUT_VERTEX_BUFFER)
+            bf |= (D3D11_BIND_STREAM_OUTPUT | D3D11_BIND_VERTEX_BUFFER);
+        return bf;
+    }
 
-	UINT to_d3d11_cpu_access_flags(u32 pen_access_flags)
-	{
-		u32 af = 0;
-		if (pen_access_flags & PEN_CPU_ACCESS_WRITE)
-			af |= D3D11_CPU_ACCESS_WRITE;
-		if (pen_access_flags & PEN_CPU_ACCESS_READ)
-			af |= D3D11_CPU_ACCESS_READ;
-		return af;
-	}
+    UINT to_d3d11_cpu_access_flags(u32 pen_access_flags)
+    {
+        u32 af = 0;
+        if (pen_access_flags & PEN_CPU_ACCESS_WRITE)
+            af |= D3D11_CPU_ACCESS_WRITE;
+        if (pen_access_flags & PEN_CPU_ACCESS_READ)
+            af |= D3D11_CPU_ACCESS_READ;
+        return af;
+    }
 
-	D3D_PRIMITIVE_TOPOLOGY to_d3d11_primitive_topology(u32 pen_primitive_topology)
-	{
-		switch (pen_primitive_topology)
-		{
-		case PEN_PT_POINTLIST:
-			return D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
-		case PEN_PT_LINELIST:
-			return D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
-		case PEN_PT_LINESTRIP:
-			return D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP;
-		case PEN_PT_TRIANGLELIST:
-			return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-		case PEN_PT_TRIANGLESTRIP:
-			return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
-		}
-		PEN_ASSERT(0);
-		return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	}
+    D3D_PRIMITIVE_TOPOLOGY to_d3d11_primitive_topology(u32 pen_primitive_topology)
+    {
+        switch (pen_primitive_topology)
+        {
+            case PEN_PT_POINTLIST:
+                return D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
+            case PEN_PT_LINELIST:
+                return D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
+            case PEN_PT_LINESTRIP:
+                return D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP;
+            case PEN_PT_TRIANGLELIST:
+                return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+            case PEN_PT_TRIANGLESTRIP:
+                return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
+        }
+        PEN_ASSERT(0);
+        return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+    }
 
-	DXGI_FORMAT to_d3d11_vertex_format(u32 pen_vertex_format)
-	{
-		switch (pen_vertex_format)
-		{
-		case PEN_VERTEX_FORMAT_FLOAT1:
-			return DXGI_FORMAT_R32_FLOAT;
-		case PEN_VERTEX_FORMAT_FLOAT2:
-			return DXGI_FORMAT_R32G32_FLOAT;
-		case PEN_VERTEX_FORMAT_FLOAT3:
-			return DXGI_FORMAT_R32G32B32_FLOAT;
-		case PEN_VERTEX_FORMAT_FLOAT4:
-			return DXGI_FORMAT_R32G32B32A32_FLOAT;
-		case PEN_VERTEX_FORMAT_UNORM1:
-			return DXGI_FORMAT_R8_UNORM;
-		case PEN_VERTEX_FORMAT_UNORM2:
-			return DXGI_FORMAT_R8G8_UNORM;
-		case PEN_VERTEX_FORMAT_UNORM4:
-			return DXGI_FORMAT_R8G8B8A8_UNORM;
-		}
-		PEN_ASSERT(0);
-		return DXGI_FORMAT_UNKNOWN;
-	}
+    DXGI_FORMAT to_d3d11_vertex_format(u32 pen_vertex_format)
+    {
+        switch (pen_vertex_format)
+        {
+            case PEN_VERTEX_FORMAT_FLOAT1:
+                return DXGI_FORMAT_R32_FLOAT;
+            case PEN_VERTEX_FORMAT_FLOAT2:
+                return DXGI_FORMAT_R32G32_FLOAT;
+            case PEN_VERTEX_FORMAT_FLOAT3:
+                return DXGI_FORMAT_R32G32B32_FLOAT;
+            case PEN_VERTEX_FORMAT_FLOAT4:
+                return DXGI_FORMAT_R32G32B32A32_FLOAT;
+            case PEN_VERTEX_FORMAT_UNORM1:
+                return DXGI_FORMAT_R8_UNORM;
+            case PEN_VERTEX_FORMAT_UNORM2:
+                return DXGI_FORMAT_R8G8_UNORM;
+            case PEN_VERTEX_FORMAT_UNORM4:
+                return DXGI_FORMAT_R8G8B8A8_UNORM;
+        }
+        PEN_ASSERT(0);
+        return DXGI_FORMAT_UNKNOWN;
+    }
 
-	DXGI_FORMAT to_d3d11_index_format(u32 pen_index_format)
-	{
-		switch (pen_index_format)
-		{
-		case PEN_FORMAT_R16_UINT:
-			return DXGI_FORMAT_R16_UINT;
-		case PEN_FORMAT_R32_UINT:
-			return DXGI_FORMAT_R32_UINT;
-		}
-		PEN_ASSERT(0);
-		return DXGI_FORMAT_UNKNOWN;
-	}
+    DXGI_FORMAT to_d3d11_index_format(u32 pen_index_format)
+    {
+        switch (pen_index_format)
+        {
+            case PEN_FORMAT_R16_UINT:
+                return DXGI_FORMAT_R16_UINT;
+            case PEN_FORMAT_R32_UINT:
+                return DXGI_FORMAT_R32_UINT;
+        }
+        PEN_ASSERT(0);
+        return DXGI_FORMAT_UNKNOWN;
+    }
 
     DXGI_FORMAT to_d3d11_texture_format(u32 pen_texture_format)
     {
         switch (pen_texture_format)
         {
-        case PEN_TEX_FORMAT_BGRA8_UNORM:
-            return DXGI_FORMAT_B8G8R8A8_UNORM;
-        case PEN_TEX_FORMAT_RGBA8_UNORM:
-            return DXGI_FORMAT_R8G8B8A8_UNORM;
-        case PEN_TEX_FORMAT_D24_UNORM_S8_UINT:
-            return DXGI_FORMAT_R24G8_TYPELESS;
-        case PEN_TEX_FORMAT_D32_FLOAT:
-            return DXGI_FORMAT_R32_TYPELESS;
-        case PEN_TEX_FORMAT_D32_FLOAT_S8_UINT:
-            return DXGI_FORMAT_R32G8X24_TYPELESS;
-        case PEN_TEX_FORMAT_R32G32B32A32_FLOAT:
-            return DXGI_FORMAT_R32G32B32A32_FLOAT;
-        case PEN_TEX_FORMAT_R32_FLOAT:
-            return DXGI_FORMAT_R32_FLOAT;
-        case PEN_TEX_FORMAT_R16G16B16A16_FLOAT:
-            return DXGI_FORMAT_R16G16B16A16_FLOAT;
-        case PEN_TEX_FORMAT_R16_FLOAT:
-            return DXGI_FORMAT_R16_FLOAT;
-        case PEN_TEX_FORMAT_R32_UINT:
-            return DXGI_FORMAT_R32_UINT;
-        case PEN_TEX_FORMAT_R8_UNORM:
-            return DXGI_FORMAT_R8_UNORM;
-        case PEN_TEX_FORMAT_R32G32_FLOAT:
-            return DXGI_FORMAT_R32G32_FLOAT;
-        case PEN_TEX_FORMAT_BC1_UNORM:
-            return DXGI_FORMAT_BC1_UNORM;
-        case PEN_TEX_FORMAT_BC2_UNORM:
-            return DXGI_FORMAT_BC2_UNORM;
-        case PEN_TEX_FORMAT_BC3_UNORM:
-            return DXGI_FORMAT_BC3_UNORM;
-        case PEN_TEX_FORMAT_BC4_UNORM:
-            return DXGI_FORMAT_BC4_UNORM;
-        case PEN_TEX_FORMAT_BC5_UNORM:
-            return DXGI_FORMAT_BC5_UNORM;
+            case PEN_TEX_FORMAT_BGRA8_UNORM:
+                return DXGI_FORMAT_B8G8R8A8_UNORM;
+            case PEN_TEX_FORMAT_RGBA8_UNORM:
+                return DXGI_FORMAT_R8G8B8A8_UNORM;
+            case PEN_TEX_FORMAT_D24_UNORM_S8_UINT:
+                return DXGI_FORMAT_R24G8_TYPELESS;
+            case PEN_TEX_FORMAT_D32_FLOAT:
+                return DXGI_FORMAT_R32_TYPELESS;
+            case PEN_TEX_FORMAT_D32_FLOAT_S8_UINT:
+                return DXGI_FORMAT_R32G8X24_TYPELESS;
+            case PEN_TEX_FORMAT_R32G32B32A32_FLOAT:
+                return DXGI_FORMAT_R32G32B32A32_FLOAT;
+            case PEN_TEX_FORMAT_R32_FLOAT:
+                return DXGI_FORMAT_R32_FLOAT;
+            case PEN_TEX_FORMAT_R16G16B16A16_FLOAT:
+                return DXGI_FORMAT_R16G16B16A16_FLOAT;
+            case PEN_TEX_FORMAT_R16_FLOAT:
+                return DXGI_FORMAT_R16_FLOAT;
+            case PEN_TEX_FORMAT_R32_UINT:
+                return DXGI_FORMAT_R32_UINT;
+            case PEN_TEX_FORMAT_R8_UNORM:
+                return DXGI_FORMAT_R8_UNORM;
+            case PEN_TEX_FORMAT_R32G32_FLOAT:
+                return DXGI_FORMAT_R32G32_FLOAT;
+            case PEN_TEX_FORMAT_BC1_UNORM:
+                return DXGI_FORMAT_BC1_UNORM;
+            case PEN_TEX_FORMAT_BC2_UNORM:
+                return DXGI_FORMAT_BC2_UNORM;
+            case PEN_TEX_FORMAT_BC3_UNORM:
+                return DXGI_FORMAT_BC3_UNORM;
+            case PEN_TEX_FORMAT_BC4_UNORM:
+                return DXGI_FORMAT_BC4_UNORM;
+            case PEN_TEX_FORMAT_BC5_UNORM:
+                return DXGI_FORMAT_BC5_UNORM;
         }
         // unsupported / unimplemented texture type
         PEN_ASSERT(0);
@@ -240,12 +240,12 @@ namespace
     {
         switch (pen_filter_mode)
         {
-        case PEN_FILTER_MIN_MAG_MIP_POINT:
-        case PEN_FILTER_POINT:
-            return D3D11_FILTER_MIN_MAG_MIP_POINT;
-        case PEN_FILTER_MIN_MAG_MIP_LINEAR:
-        case PEN_FILTER_LINEAR:
-            return D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+            case PEN_FILTER_MIN_MAG_MIP_POINT:
+            case PEN_FILTER_POINT:
+                return D3D11_FILTER_MIN_MAG_MIP_POINT;
+            case PEN_FILTER_MIN_MAG_MIP_LINEAR:
+            case PEN_FILTER_LINEAR:
+                return D3D11_FILTER_MIN_MAG_MIP_LINEAR;
         }
         PEN_ASSERT(0);
         return D3D11_FILTER_MIN_MAG_MIP_POINT;
@@ -255,10 +255,10 @@ namespace
     {
         switch (pen_filter_mode)
         {
-        case PEN_FILTER_MIN_MAG_MIP_POINT:
-            return D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT;
-        case PEN_FILTER_MIN_MAG_MIP_LINEAR:
-            return D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+            case PEN_FILTER_MIN_MAG_MIP_POINT:
+                return D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT;
+            case PEN_FILTER_MIN_MAG_MIP_LINEAR:
+                return D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
         }
         PEN_ASSERT(0);
         return D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT;
@@ -268,16 +268,16 @@ namespace
     {
         switch (pen_texture_address_mode)
         {
-        case PEN_TEXTURE_ADDRESS_WRAP:
-            return D3D11_TEXTURE_ADDRESS_WRAP;
-        case PEN_TEXTURE_ADDRESS_MIRROR:
-            return D3D11_TEXTURE_ADDRESS_MIRROR;
-        case PEN_TEXTURE_ADDRESS_CLAMP:
-            return D3D11_TEXTURE_ADDRESS_CLAMP;
-        case PEN_TEXTURE_ADDRESS_BORDER:
-            return D3D11_TEXTURE_ADDRESS_BORDER;
-        case PEN_TEXTURE_ADDRESS_MIRROR_ONCE:
-            return D3D11_TEXTURE_ADDRESS_MIRROR_ONCE;
+            case PEN_TEXTURE_ADDRESS_WRAP:
+                return D3D11_TEXTURE_ADDRESS_WRAP;
+            case PEN_TEXTURE_ADDRESS_MIRROR:
+                return D3D11_TEXTURE_ADDRESS_MIRROR;
+            case PEN_TEXTURE_ADDRESS_CLAMP:
+                return D3D11_TEXTURE_ADDRESS_CLAMP;
+            case PEN_TEXTURE_ADDRESS_BORDER:
+                return D3D11_TEXTURE_ADDRESS_BORDER;
+            case PEN_TEXTURE_ADDRESS_MIRROR_ONCE:
+                return D3D11_TEXTURE_ADDRESS_MIRROR_ONCE;
         }
         PEN_ASSERT(0);
         return D3D11_TEXTURE_ADDRESS_WRAP;
@@ -287,22 +287,22 @@ namespace
     {
         switch (pen_comparison)
         {
-        case PEN_COMPARISON_NEVER:
-            return D3D11_COMPARISON_NEVER;
-        case PEN_COMPARISON_LESS:
-            return D3D11_COMPARISON_LESS;
-        case PEN_COMPARISON_EQUAL:
-            return D3D11_COMPARISON_EQUAL;
-        case PEN_COMPARISON_LESS_EQUAL:
-            return D3D11_COMPARISON_LESS_EQUAL;
-        case PEN_COMPARISON_GREATER:
-            return D3D11_COMPARISON_GREATER;
-        case PEN_COMPARISON_NOT_EQUAL:
-            return D3D11_COMPARISON_NOT_EQUAL;
-        case PEN_COMPARISON_GREATER_EQUAL:
-            return D3D11_COMPARISON_GREATER_EQUAL;
-        case PEN_COMPARISON_ALWAYS:
-            return D3D11_COMPARISON_ALWAYS;
+            case PEN_COMPARISON_NEVER:
+                return D3D11_COMPARISON_NEVER;
+            case PEN_COMPARISON_LESS:
+                return D3D11_COMPARISON_LESS;
+            case PEN_COMPARISON_EQUAL:
+                return D3D11_COMPARISON_EQUAL;
+            case PEN_COMPARISON_LESS_EQUAL:
+                return D3D11_COMPARISON_LESS_EQUAL;
+            case PEN_COMPARISON_GREATER:
+                return D3D11_COMPARISON_GREATER;
+            case PEN_COMPARISON_NOT_EQUAL:
+                return D3D11_COMPARISON_NOT_EQUAL;
+            case PEN_COMPARISON_GREATER_EQUAL:
+                return D3D11_COMPARISON_GREATER_EQUAL;
+            case PEN_COMPARISON_ALWAYS:
+                return D3D11_COMPARISON_ALWAYS;
         }
         PEN_ASSERT(0);
         return D3D11_COMPARISON_NEVER;
@@ -312,22 +312,22 @@ namespace
     {
         switch (pen_stencil_op)
         {
-        case PEN_STENCIL_OP_KEEP:
-            return D3D11_STENCIL_OP_KEEP;
-        case PEN_STENCIL_OP_REPLACE:
-            return D3D11_STENCIL_OP_REPLACE;
-        case PEN_STENCIL_OP_ZERO:
-            return D3D11_STENCIL_OP_ZERO;
-        case PEN_STENCIL_OP_DECR:
-            return D3D11_STENCIL_OP_DECR;
-        case PEN_STENCIL_OP_INCR:
-            return D3D11_STENCIL_OP_INCR;
-        case PEN_STENCIL_OP_DECR_SAT:
-            return D3D11_STENCIL_OP_DECR_SAT;
-        case PEN_STENCIL_OP_INCR_SAT:
-            return D3D11_STENCIL_OP_INCR_SAT;
-        case PEN_STENCIL_OP_INVERT:
-            return D3D11_STENCIL_OP_INVERT;
+            case PEN_STENCIL_OP_KEEP:
+                return D3D11_STENCIL_OP_KEEP;
+            case PEN_STENCIL_OP_REPLACE:
+                return D3D11_STENCIL_OP_REPLACE;
+            case PEN_STENCIL_OP_ZERO:
+                return D3D11_STENCIL_OP_ZERO;
+            case PEN_STENCIL_OP_DECR:
+                return D3D11_STENCIL_OP_DECR;
+            case PEN_STENCIL_OP_INCR:
+                return D3D11_STENCIL_OP_INCR;
+            case PEN_STENCIL_OP_DECR_SAT:
+                return D3D11_STENCIL_OP_DECR_SAT;
+            case PEN_STENCIL_OP_INCR_SAT:
+                return D3D11_STENCIL_OP_INCR_SAT;
+            case PEN_STENCIL_OP_INVERT:
+                return D3D11_STENCIL_OP_INVERT;
         }
         PEN_ASSERT(0);
         return D3D11_STENCIL_OP_REPLACE;
@@ -337,38 +337,38 @@ namespace
     {
         switch (pen_blend_factor)
         {
-        case PEN_BLEND_ZERO:
-            return D3D11_BLEND_ZERO;
-        case PEN_BLEND_ONE:
-            return D3D11_BLEND_ONE;
-        case PEN_BLEND_SRC_COLOR:
-            return D3D11_BLEND_SRC_COLOR;
-        case PEN_BLEND_INV_SRC_COLOR:
-            return D3D11_BLEND_INV_SRC_COLOR;
-        case PEN_BLEND_SRC_ALPHA:
-            return D3D11_BLEND_SRC_ALPHA;
-        case PEN_BLEND_INV_SRC_ALPHA:
-            return D3D11_BLEND_INV_SRC_ALPHA;
-        case PEN_BLEND_DEST_ALPHA:
-            return D3D11_BLEND_DEST_ALPHA;
-        case PEN_BLEND_INV_DEST_ALPHA:
-            return D3D11_BLEND_INV_DEST_ALPHA;
-        case PEN_BLEND_INV_DEST_COLOR:
-            return D3D11_BLEND_DEST_COLOR;
-        case PEN_BLEND_SRC_ALPHA_SAT:
-            return D3D11_BLEND_SRC_ALPHA_SAT;
-        case PEN_BLEND_SRC1_COLOR:
-            return D3D11_BLEND_SRC1_COLOR;
-        case PEN_BLEND_INV_SRC1_COLOR:
-            return D3D11_BLEND_INV_SRC1_COLOR;
-        case PEN_BLEND_SRC1_ALPHA:
-            return D3D11_BLEND_SRC1_ALPHA;
-        case PEN_BLEND_INV_SRC1_ALPHA:
-            return D3D11_BLEND_INV_SRC1_ALPHA;
-        case PEN_BLEND_BLEND_FACTOR:
-            return D3D11_BLEND_BLEND_FACTOR;
-        case PEN_BLEND_INV_BLEND_FACTOR:
-            return D3D11_BLEND_INV_BLEND_FACTOR;
+            case PEN_BLEND_ZERO:
+                return D3D11_BLEND_ZERO;
+            case PEN_BLEND_ONE:
+                return D3D11_BLEND_ONE;
+            case PEN_BLEND_SRC_COLOR:
+                return D3D11_BLEND_SRC_COLOR;
+            case PEN_BLEND_INV_SRC_COLOR:
+                return D3D11_BLEND_INV_SRC_COLOR;
+            case PEN_BLEND_SRC_ALPHA:
+                return D3D11_BLEND_SRC_ALPHA;
+            case PEN_BLEND_INV_SRC_ALPHA:
+                return D3D11_BLEND_INV_SRC_ALPHA;
+            case PEN_BLEND_DEST_ALPHA:
+                return D3D11_BLEND_DEST_ALPHA;
+            case PEN_BLEND_INV_DEST_ALPHA:
+                return D3D11_BLEND_INV_DEST_ALPHA;
+            case PEN_BLEND_INV_DEST_COLOR:
+                return D3D11_BLEND_DEST_COLOR;
+            case PEN_BLEND_SRC_ALPHA_SAT:
+                return D3D11_BLEND_SRC_ALPHA_SAT;
+            case PEN_BLEND_SRC1_COLOR:
+                return D3D11_BLEND_SRC1_COLOR;
+            case PEN_BLEND_INV_SRC1_COLOR:
+                return D3D11_BLEND_INV_SRC1_COLOR;
+            case PEN_BLEND_SRC1_ALPHA:
+                return D3D11_BLEND_SRC1_ALPHA;
+            case PEN_BLEND_INV_SRC1_ALPHA:
+                return D3D11_BLEND_INV_SRC1_ALPHA;
+            case PEN_BLEND_BLEND_FACTOR:
+                return D3D11_BLEND_BLEND_FACTOR;
+            case PEN_BLEND_INV_BLEND_FACTOR:
+                return D3D11_BLEND_INV_BLEND_FACTOR;
         }
         PEN_ASSERT(0);
         return D3D11_BLEND_ZERO;
@@ -378,82 +378,80 @@ namespace
     {
         switch (pen_blend_op)
         {
-        case PEN_BLEND_OP_ADD:
-            return D3D11_BLEND_OP_ADD;
-        case PEN_BLEND_OP_SUBTRACT:
-            return D3D11_BLEND_OP_SUBTRACT;
-        case PEN_BLEND_OP_REV_SUBTRACT:
-            return D3D11_BLEND_OP_REV_SUBTRACT;
-        case PEN_BLEND_OP_MIN:
-            return D3D11_BLEND_OP_MIN;
-        case PEN_BLEND_OP_MAX:
-            return D3D11_BLEND_OP_MAX;
+            case PEN_BLEND_OP_ADD:
+                return D3D11_BLEND_OP_ADD;
+            case PEN_BLEND_OP_SUBTRACT:
+                return D3D11_BLEND_OP_SUBTRACT;
+            case PEN_BLEND_OP_REV_SUBTRACT:
+                return D3D11_BLEND_OP_REV_SUBTRACT;
+            case PEN_BLEND_OP_MIN:
+                return D3D11_BLEND_OP_MIN;
+            case PEN_BLEND_OP_MAX:
+                return D3D11_BLEND_OP_MAX;
         }
         PEN_ASSERT(0);
         return D3D11_BLEND_OP_ADD;
     }
 
-	u32 depth_texture_format_to_dsv_format(u32 tex_format)
-	{
-		switch (tex_format)
-		{
-		case DXGI_FORMAT_R16_TYPELESS:
-			return DXGI_FORMAT_D16_UNORM;
-		case DXGI_FORMAT_R32_TYPELESS:
-			return DXGI_FORMAT_D32_FLOAT;
-		case DXGI_FORMAT_R24G8_TYPELESS:
-			return DXGI_FORMAT_D24_UNORM_S8_UINT;
-		case DXGI_FORMAT_R32G8X24_TYPELESS:
-			return DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
-		}
-		// unsupported depth texture type
-		PEN_ASSERT(0);
-		return 0;
-	}
+    u32 depth_texture_format_to_dsv_format(u32 tex_format)
+    {
+        switch (tex_format)
+        {
+            case DXGI_FORMAT_R16_TYPELESS:
+                return DXGI_FORMAT_D16_UNORM;
+            case DXGI_FORMAT_R32_TYPELESS:
+                return DXGI_FORMAT_D32_FLOAT;
+            case DXGI_FORMAT_R24G8_TYPELESS:
+                return DXGI_FORMAT_D24_UNORM_S8_UINT;
+            case DXGI_FORMAT_R32G8X24_TYPELESS:
+                return DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
+        }
+        // unsupported depth texture type
+        PEN_ASSERT(0);
+        return 0;
+    }
 
-	u32 depth_texture_format_to_srv_format(u32 tex_format)
-	{
-		switch (tex_format)
-		{
-		case DXGI_FORMAT_R16_TYPELESS:
-			return DXGI_FORMAT_R16_FLOAT;
-		case DXGI_FORMAT_R32_TYPELESS:
-			return DXGI_FORMAT_R32_FLOAT;
-		case DXGI_FORMAT_R24G8_TYPELESS:
-			return DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
-		case DXGI_FORMAT_R32G8X24_TYPELESS:
-			return DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
-		}
-		// unsupported depth texture type
-		PEN_ASSERT(0);
-		return 0;
-	}
+    u32 depth_texture_format_to_srv_format(u32 tex_format)
+    {
+        switch (tex_format)
+        {
+            case DXGI_FORMAT_R16_TYPELESS:
+                return DXGI_FORMAT_R16_FLOAT;
+            case DXGI_FORMAT_R32_TYPELESS:
+                return DXGI_FORMAT_R32_FLOAT;
+            case DXGI_FORMAT_R24G8_TYPELESS:
+                return DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+            case DXGI_FORMAT_R32G8X24_TYPELESS:
+                return DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
+        }
+        // unsupported depth texture type
+        PEN_ASSERT(0);
+        return 0;
+    }
 
-	bool is_array(u32 srv)
-	{
-		return srv == D3D_SRV_DIMENSION_TEXTURE2DARRAY || 
-			srv == D3D_SRV_DIMENSION_TEXTURECUBEARRAY ||
-			srv == D3D_SRV_DIMENSION_TEXTURECUBE;
-	}
+    bool is_array(u32 srv)
+    {
+        return srv == D3D_SRV_DIMENSION_TEXTURE2DARRAY || srv == D3D_SRV_DIMENSION_TEXTURECUBEARRAY ||
+               srv == D3D_SRV_DIMENSION_TEXTURECUBE;
+    }
 
-	bool is_cube(u32 srv)
-	{
-		return srv == D3D_SRV_DIMENSION_TEXTURECUBEARRAY || 
-			srv == D3D_SRV_DIMENSION_TEXTURECUBE;
-	}
+    bool is_cube(u32 srv)
+    {
+        return srv == D3D_SRV_DIMENSION_TEXTURECUBEARRAY || srv == D3D_SRV_DIMENSION_TEXTURECUBE;
+    }
 
     D3D_SRV_DIMENSION to_d3d11_srv_dimension(u32 pen_collection_type, bool ms)
     {
         switch (pen_collection_type)
         {
-        case pen::TEXTURE_COLLECTION_CUBE:
-            return D3D_SRV_DIMENSION_TEXTURECUBE;
-        case pen::TEXTURE_COLLECTION_ARRAY:
-            return ms ? D3D_SRV_DIMENSION_TEXTURE2DMSARRAY : D3D_SRV_DIMENSION_TEXTURE2DARRAY;
-        case pen::TEXTURE_COLLECTION_CUBE_ARRAY:
-            return D3D_SRV_DIMENSION_TEXTURECUBEARRAY;
-        case pen::TEXTURE_COLLECTION_VOLUME:
-            return D3D_SRV_DIMENSION_TEXTURE3D;
+            case pen::TEXTURE_COLLECTION_CUBE:
+                return D3D_SRV_DIMENSION_TEXTURECUBE;
+            case pen::TEXTURE_COLLECTION_ARRAY:
+                return ms ? D3D_SRV_DIMENSION_TEXTURE2DMSARRAY : D3D_SRV_DIMENSION_TEXTURE2DARRAY;
+            case pen::TEXTURE_COLLECTION_CUBE_ARRAY:
+                return D3D_SRV_DIMENSION_TEXTURECUBEARRAY;
+            case pen::TEXTURE_COLLECTION_VOLUME:
+                return D3D_SRV_DIMENSION_TEXTURE3D;
         }
         return ms ? D3D_SRV_DIMENSION_TEXTURE2DMS : D3D_SRV_DIMENSION_TEXTURE2D;
     }
@@ -471,7 +469,6 @@ namespace
     };
     static gpu_perf_result* s_perf_results = nullptr;
 
-
     struct perf_marker
     {
         ID3D11Query* begin = nullptr;
@@ -486,7 +483,7 @@ namespace
 
     class index_stack
     {
-    public:
+      public:
         u32* indices;
         u32  pos = 0;
 
@@ -519,8 +516,8 @@ namespace
     struct perf_marker_set
     {
         static const u32 num_marker_buffers = 5;
-        perf_marker* markers[num_marker_buffers] = { 0 };
-        u32              pos[num_marker_buffers] = { 0 };
+        perf_marker*     markers[num_marker_buffers] = {0};
+        u32              pos[num_marker_buffers] = {0};
 
         ID3D11Query* disjoint_query[num_marker_buffers];
 
@@ -545,7 +542,7 @@ namespace
             // push a new marker
             perf_marker m;
 
-            static D3D11_QUERY_DESC desc = { D3D11_QUERY_TIMESTAMP, 0 };
+            static D3D11_QUERY_DESC desc = {D3D11_QUERY_TIMESTAMP, 0};
             CHECK_CALL(s_device->CreateQuery(&desc, &m.begin));
             CHECK_CALL(s_device->CreateQuery(&desc, &m.end));
 
@@ -709,12 +706,12 @@ namespace pen
 
     struct clear_state_internal
     {
-        FLOAT		rgba[4];
-        f32			depth;
-        u8			stencil;
-        u32			flags;
-        mrt_clear	mrt[MAX_MRT];
-        u32			num_colour_targets;
+        FLOAT     rgba[4];
+        f32       depth;
+        u8        stencil;
+        u32       flags;
+        mrt_clear mrt[MAX_MRT];
+        u32       num_colour_targets;
     };
 
     struct texture2d_internal
@@ -740,32 +737,32 @@ namespace pen
 
     struct render_target_internal
     {
-        texture_resource			tex;
-        ID3D11RenderTargetView**	rt;
-        texture_resource			tex_msaa;
-        ID3D11RenderTargetView**	rt_msaa;
-        texture_resource			tex_read_back;
-        texture2d_internal			tex_resolve;
-        bool						msaa_resolve_readback = false;
-        DXGI_FORMAT					format;
-        texture_creation_params*	tcp;
-        u32							invalidate;
-        u32							num_arrays = 1;
-        bool						has_mips = false;
+        texture_resource         tex;
+        ID3D11RenderTargetView** rt;
+        texture_resource         tex_msaa;
+        ID3D11RenderTargetView** rt_msaa;
+        texture_resource         tex_read_back;
+        texture2d_internal       tex_resolve;
+        bool                     msaa_resolve_readback = false;
+        DXGI_FORMAT              format;
+        texture_creation_params* tcp;
+        u32                      invalidate;
+        u32                      num_arrays = 1;
+        bool                     has_mips = false;
     };
 
     struct depth_stencil_target_internal
     {
-        texture_resource			tex;
-        ID3D11DepthStencilView**	ds;
-        texture_resource			tex_msaa;
-        ID3D11DepthStencilView**	ds_msaa;
-        texture_resource			tex_read_back;
-        DXGI_FORMAT					format;
-        texture_creation_params*	tcp;
-        u32							invalidate;
-        u32							num_arrays = 1;
-        bool						has_mips = false;
+        texture_resource         tex;
+        ID3D11DepthStencilView** ds;
+        texture_resource         tex_msaa;
+        ID3D11DepthStencilView** ds_msaa;
+        texture_resource         tex_read_back;
+        DXGI_FORMAT              format;
+        texture_creation_params* tcp;
+        u32                      invalidate;
+        u32                      num_arrays = 1;
+        bool                     has_mips = false;
     };
 
     struct shader_program
@@ -858,7 +855,7 @@ namespace pen
     {
         // unused on this platform
     }
-    
+
     void direct::renderer_retain()
     {
         // unused on this platform
@@ -1114,9 +1111,9 @@ namespace pen
         ZeroMemory(&bd, sizeof(bd));
 
         bd.Usage = to_d3d11_usage(params.usage_flags);
-		bd.BindFlags = to_d3d11_bind_flags(params.bind_flags);
+        bd.BindFlags = to_d3d11_bind_flags(params.bind_flags);
         bd.CPUAccessFlags = to_d3d11_cpu_access_flags(params.cpu_access_flags);
-		bd.ByteWidth = params.buffer_size;
+        bd.ByteWidth = params.buffer_size;
 
         if (bd.BindFlags & PEN_BIND_SHADER_WRITE)
         {
@@ -1168,17 +1165,16 @@ namespace pen
 
         u32 resource_index = resource_slot;
 
-		// convert to d3d11 types
-		input_layout_creation_params _layout = params;
-		D3D11_INPUT_ELEMENT_DESC* desc = (D3D11_INPUT_ELEMENT_DESC*)params.input_layout;
-		for (u32 i = 0; i < _layout.num_elements; ++i)
-		{
-			desc[i].Format = to_d3d11_vertex_format(params.input_layout[i].format);
-		}
+        // convert to d3d11 types
+        input_layout_creation_params _layout = params;
+        D3D11_INPUT_ELEMENT_DESC*    desc = (D3D11_INPUT_ELEMENT_DESC*)params.input_layout;
+        for (u32 i = 0; i < _layout.num_elements; ++i)
+        {
+            desc[i].Format = to_d3d11_vertex_format(params.input_layout[i].format);
+        }
 
         // Create the input layout
-        CHECK_CALL(s_device->CreateInputLayout(desc, params.num_elements,
-                                               params.vs_byte_code, params.vs_byte_code_size,
+        CHECK_CALL(s_device->CreateInputLayout(desc, params.num_elements, params.vs_byte_code, params.vs_byte_code_size,
                                                &_res_pool[resource_index].input_layout));
     }
 
@@ -1200,7 +1196,7 @@ namespace pen
 
     void direct::renderer_set_index_buffer(u32 buffer_index, u32 format, u32 offset)
     {
-		DXGI_FORMAT d3d11_format = to_d3d11_index_format(format);
+        DXGI_FORMAT d3d11_format = to_d3d11_index_format(format);
         s_immediate_context->IASetIndexBuffer(_res_pool[buffer_index].generic_buffer.buf, d3d11_format, offset);
     }
 
@@ -1230,12 +1226,11 @@ namespace pen
         D3D11_TEXTURE2D_DESC texture_desc;
         memcpy(&texture_desc, (void*)&tcp, sizeof(D3D11_TEXTURE2D_DESC));
         texture_desc.Format = to_d3d11_texture_format(tcp.format);
-		texture_desc.Usage = to_d3d11_usage(tcp.usage);
-		texture_desc.BindFlags = to_d3d11_bind_flags(tcp.bind_flags);
+        texture_desc.Usage = to_d3d11_usage(tcp.usage);
+        texture_desc.BindFlags = to_d3d11_bind_flags(tcp.bind_flags);
         texture_desc.CPUAccessFlags = to_d3d11_cpu_access_flags(tcp.cpu_access_flags);
 
-        if (tcp.collection_type == pen::TEXTURE_COLLECTION_CUBE || 
-			tcp.collection_type == pen::TEXTURE_COLLECTION_CUBE_ARRAY)
+        if (tcp.collection_type == pen::TEXTURE_COLLECTION_CUBE || tcp.collection_type == pen::TEXTURE_COLLECTION_CUBE_ARRAY)
         {
             texture_desc.MiscFlags |= 0x4L; // resource misc texture cube is required
         }
@@ -1261,7 +1256,7 @@ namespace pen
         }
 
         D3D11_SHADER_RESOURCE_VIEW_DESC resource_view_desc;
-        D3D_SRV_DIMENSION srv_dimension = ms ? D3D11_SRV_DIMENSION_TEXTURE2DMS : D3D11_SRV_DIMENSION_TEXTURE2D;
+        D3D_SRV_DIMENSION               srv_dimension = ms ? D3D11_SRV_DIMENSION_TEXTURE2DMS : D3D11_SRV_DIMENSION_TEXTURE2D;
         srv_dimension = to_d3d11_srv_dimension(tcp.collection_type, ms);
 
         if (texture_desc.BindFlags & D3D11_BIND_DEPTH_STENCIL)
@@ -1427,14 +1422,14 @@ namespace pen
             texture_creation_params read_back_tcp = _tcp;
             read_back_tcp.bind_flags = 0;
             read_back_tcp.usage = D3D11_USAGE_STAGING;
-			read_back_tcp.cpu_access_flags = to_d3d11_cpu_access_flags(_tcp.cpu_access_flags);
+            read_back_tcp.cpu_access_flags = to_d3d11_cpu_access_flags(_tcp.cpu_access_flags);
             read_back_tcp.format = to_d3d11_texture_format(_tcp.format);
 
             D3D11_TEXTURE2D_DESC texture_desc;
             memcpy(&texture_desc, (void*)&read_back_tcp, sizeof(D3D11_TEXTURE2D_DESC));
 
-            CHECK_CALL(s_device->CreateTexture2D(&texture_desc, NULL,
-                (ID3D11Texture2D**)&_res_pool[resource_index].render_target->tex_read_back.texture));
+            CHECK_CALL(s_device->CreateTexture2D(
+                &texture_desc, NULL, (ID3D11Texture2D**)&_res_pool[resource_index].render_target->tex_read_back.texture));
 
             _tcp.cpu_access_flags = 0;
         }
@@ -1560,7 +1555,7 @@ namespace pen
                                                  to_d3d11_usage(tcp.usage),
                                                  to_d3d11_bind_flags(tcp.bind_flags),
                                                  to_d3d11_cpu_access_flags(tcp.cpu_access_flags),
-                                                 tcp.flags | extra_flags };
+                                                 tcp.flags | extra_flags};
 
             _res_pool[resource_index].type = RES_TEXTURE_3D;
             _res_pool[resource_index].texture_3d = (texture3d_internal*)memory_alloc(sizeof(texture3d_internal));
@@ -1662,7 +1657,7 @@ namespace pen
     {
         _res_pool.grow(resource_slot);
 
-        u32 resource_index = resource_slot;
+        u32                resource_index = resource_slot;
         D3D11_SAMPLER_DESC desc = {};
         memcpy(&desc, &scp, sizeof(desc));
         desc.Filter = to_d3d11_filter_mode(scp.filter);
@@ -1754,11 +1749,11 @@ namespace pen
 
         u32 resource_index = resource_slot;
 
-		// convert
-		D3D11_RASTERIZER_DESC rd; 
-		memcpy(&rd, &rscp, sizeof(D3D11_RASTERIZER_DESC));
-		rd.FillMode = to_d3d11_fill_mode(rd.FillMode);
-		rd.CullMode = to_d3d11_cull_mode(rd.CullMode);
+        // convert
+        D3D11_RASTERIZER_DESC rd;
+        memcpy(&rd, &rscp, sizeof(D3D11_RASTERIZER_DESC));
+        rd.FillMode = to_d3d11_fill_mode(rd.FillMode);
+        rd.CullMode = to_d3d11_cull_mode(rd.CullMode);
 
         CHECK_CALL(s_device->CreateRasterizerState(&rd, &_res_pool[resource_index].raster_state));
     }
@@ -2266,11 +2261,13 @@ namespace pen
         rb_desc.BindFlags = 0;
         rb_desc.Usage = D3D11_USAGE_DEFAULT;
 
-        CHECK_CALL(s_device->CreateTexture2D(&rb_desc, nullptr, (ID3D11Texture2D**)&_res_pool[crtv].render_target->tex_resolve.texture));
+        CHECK_CALL(s_device->CreateTexture2D(&rb_desc, nullptr,
+                                             (ID3D11Texture2D**)&_res_pool[crtv].render_target->tex_resolve.texture));
 
         rb_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
         rb_desc.Usage = D3D11_USAGE_STAGING;
-        CHECK_CALL(s_device->CreateTexture2D(&rb_desc, nullptr, (ID3D11Texture2D**)&_res_pool[crtv].render_target->tex_read_back.texture));
+        CHECK_CALL(s_device->CreateTexture2D(&rb_desc, nullptr,
+                                             (ID3D11Texture2D**)&_res_pool[crtv].render_target->tex_read_back.texture));
 
         g_context.active_depth_target = PEN_BACK_BUFFER_DEPTH;
         g_context.active_colour_target[0] = PEN_BACK_BUFFER_COLOUR;
@@ -2293,7 +2290,8 @@ namespace pen
         descDepth.CPUAccessFlags = 0;
         descDepth.MiscFlags = 0;
 
-        CHECK_CALL(s_device->CreateTexture2D(&descDepth, nullptr, (ID3D11Texture2D**)&_res_pool[dsv].depth_target->tex.texture));
+        CHECK_CALL(
+            s_device->CreateTexture2D(&descDepth, nullptr, (ID3D11Texture2D**)&_res_pool[dsv].depth_target->tex.texture));
 
         // Create the depth stencil view
         D3D11_DEPTH_STENCIL_VIEW_DESC descDSV;

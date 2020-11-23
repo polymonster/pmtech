@@ -428,16 +428,16 @@ namespace // pen consts -> metal consts
 
     MTLStorageMode to_metal_storage_mode(const texture_creation_params& tcp)
     {
-        switch(tcp.format)
+        switch (tcp.format)
         {
             case PEN_TEX_FORMAT_D32_FLOAT:
             case PEN_TEX_FORMAT_D24_UNORM_S8_UINT:
                 return MTLStorageModePrivate;
         }
-        
-        if (tcp.sample_count > 1 )
+
+        if (tcp.sample_count > 1)
             return MTLStorageModePrivate;
-            
+
 #ifndef PEN_PLATFORM_IOS
         return MTLStorageModeManaged;
 #else
@@ -691,10 +691,10 @@ namespace // pen consts -> metal consts
         PEN_ASSERT(0);
         return MTLStencilOperationKeep;
     }
-    
+
     bool is_stencil_format(MTLPixelFormat format)
     {
-        switch(format)
+        switch (format)
         {
 #if !PEN_PLATFORM_IOS
             case MTLPixelFormatDepth24Unorm_Stencil8:
@@ -741,7 +741,7 @@ namespace // pen consts -> metal consts
         u32  colour_slice = _state.colour_slice;
         u32  depth_target = _state.depth_target;
         u32  depth_slice = _state.depth_slice;
-        
+
         _state.pass = [MTLRenderPassDescriptor renderPassDescriptor];
 
         _state.formats.colour_attachments[0] = MTLPixelFormatInvalid;
@@ -831,8 +831,8 @@ namespace // pen consts -> metal consts
                 _state.pass.depthAttachment.loadAction = MTLLoadActionLoad;
                 _state.pass.depthAttachment.storeAction = MTLStoreActionStore;
                 _state.formats.depth_attachment = r.texture.fmt;
-                
-                if(is_stencil_format(r.texture.fmt))
+
+                if (is_stencil_format(r.texture.fmt))
                 {
                     _state.pass.stencilAttachment.slice = depth_slice;
                     _state.pass.stencilAttachment.texture = texture;
@@ -919,7 +919,7 @@ namespace // pen consts -> metal consts
     {
         if (_state.cmd_buffer == nil)
             _state.cmd_buffer = [_state.command_queue commandBuffer];
-            
+
         // finish render encoding
         if (_state.render_encoder)
         {
@@ -969,8 +969,8 @@ namespace // pen consts -> metal consts
             pipeline_desc.colorAttachments[i].pixelFormat = _state.formats.colour_attachments[i];
 
         pipeline_desc.depthAttachmentPixelFormat = _state.formats.depth_attachment;
-        
-        if(is_stencil_format(_state.formats.depth_attachment))
+
+        if (is_stencil_format(_state.formats.depth_attachment))
             pipeline_desc.stencilAttachmentPixelFormat = _state.formats.depth_attachment;
 
         // apply blend state
@@ -1010,7 +1010,7 @@ namespace // pen consts -> metal consts
         sb_push(_state.cached_pipelines, cp);
 
         [_state.render_encoder setRenderPipelineState:pipeline];
-        
+
         [pipeline_desc release];
     }
 
@@ -1022,34 +1022,31 @@ namespace // pen consts -> metal consts
 
         [_state.compute_encoder setComputePipelineState:pipeline];
     }
-    
+
     id<MTLFunction>* _clear_kernels;
-    
+
     void create_clear_kernels()
     {
         // d3d11 is faster calling clear uav than using a compute shader, these shaders allow metal to emulate the d3d path
         const c8* ct2d = "#include <metal_stdlib>\nusing namespace metal;\n"
-        "kernel void cs_main(uint2 gid[[thread_position_in_grid]], "
-        "constant float4 &clear_col [[buffer(0)]], "
-        "texture2d<float, access::write> clear_tex [[texture(0)]])\n"
-        "{\nclear_tex.write(clear_col, gid);\n}\n";
-        
+                         "kernel void cs_main(uint2 gid[[thread_position_in_grid]], "
+                         "constant float4 &clear_col [[buffer(0)]], "
+                         "texture2d<float, access::write> clear_tex [[texture(0)]])\n"
+                         "{\nclear_tex.write(clear_col, gid);\n}\n";
+
         const c8* ct3d = "#include <metal_stdlib>\nusing namespace metal;\n"
-        "kernel void cs_main(uint3 gid[[thread_position_in_grid]], "
-        "constant float4 &clear_col [[buffer(0)]], "
-        "texture3d<float, access::write> clear_tex [[texture(0)]])\n"
-        "{\nclear_tex.write(clear_col, gid);\n}\n";
-        
-        const c8* clears[] = {
-            ct2d,
-            ct3d
-        };
-        
-        for(u32 i = 0; i < PEN_ARRAY_SIZE(clears); ++i)
+                         "kernel void cs_main(uint3 gid[[thread_position_in_grid]], "
+                         "constant float4 &clear_col [[buffer(0)]], "
+                         "texture3d<float, access::write> clear_tex [[texture(0)]])\n"
+                         "{\nclear_tex.write(clear_col, gid);\n}\n";
+
+        const c8* clears[] = {ct2d, ct3d};
+
+        for (u32 i = 0; i < PEN_ARRAY_SIZE(clears); ++i)
         {
             NSString* str = [[[NSString alloc] initWithBytes:clears[i]
-                                                 length:strlen(clears[i])
-                                               encoding:NSASCIIStringEncoding] autorelease];
+                                                      length:strlen(clears[i])
+                                                    encoding:NSASCIIStringEncoding] autorelease];
 
             NSError*           err = nil;
             MTLCompileOptions* opts = [[MTLCompileOptions alloc] autorelease];
@@ -1095,10 +1092,12 @@ namespace pen
     const renderer_info& renderer_get_info()
     {
         static renderer_info info;
-        
+
         static bool init = true;
-        if(init) {
-            @autoreleasepool {
+        if (init)
+        {
+            @autoreleasepool
+            {
                 static const Str device_name = (const char*)[_metal_device.name UTF8String];
                 static const Str version_name = get_metal_version_string();
 
@@ -1168,9 +1167,9 @@ namespace pen
 
             // shared init (stretchy buffer, resolve resources etc)
             _renderer_shared_init();
-            
+
             create_clear_kernels();
-            
+
             return 1;
         }
 
@@ -1194,21 +1193,20 @@ namespace pen
         {
             _renderer_end_frame();
         }
-        
+
         void renderer_retain()
         {
-            if(_state.render_encoder)
+            if (_state.render_encoder)
                 [_state.render_encoder retain];
-                
-            if(_state.blit_encoder)
+
+            if (_state.blit_encoder)
                 [_state.blit_encoder retain];
-                
-            if(_state.compute_encoder)
+
+            if (_state.compute_encoder)
                 [_state.compute_encoder retain];
-                
-            if(_state.cmd_buffer)
+
+            if (_state.cmd_buffer)
                 [_state.cmd_buffer retain];
-            
         }
 
         void renderer_sync()
@@ -1272,37 +1270,37 @@ namespace pen
             mc.depth_clear = cs.depth;
             mc.stencil_clear = (u32)cs.stencil;
         }
-        
+
         void renderer_clear_texture(u32 clear_state_index, u32 texture)
         {
             // to emulate d3d's clear uav
-            if(!clear_state_index)
+            if (!clear_state_index)
                 return;
-                
-            if(!is_valid(texture))
+
+            if (!is_valid(texture))
                 return;
-            
+
             const resource& cr = _res_pool.get(clear_state_index);
             //
-            
+
             validate_compute_encoder();
-            
-            const resource& r = _res_pool.get(texture);
+
+            const resource&                r = _res_pool.get(texture);
             const texture_creation_params& tcp = r.texture.tcp;
-            u32 depth = 1;
-            u32 kernel = 0;
-            if(tcp.collection_type == pen::TEXTURE_COLLECTION_VOLUME)
+            u32                            depth = 1;
+            u32                            kernel = 0;
+            if (tcp.collection_type == pen::TEXTURE_COLLECTION_VOLUME)
             {
                 kernel = 1;
                 depth = tcp.num_arrays;
             }
-            
-            NSError* error = nil;
+
+            NSError*                    error = nil;
             id<MTLComputePipelineState> pipeline = [_metal_device newComputePipelineStateWithFunction:_clear_kernels[kernel]
-                                                                                            error:&error];
+                                                                                                error:&error];
 
             [_state.compute_encoder setComputePipelineState:pipeline];
-            
+
             // set clear colour as float
             f32 clear_col[4] = {
                 (f32)cr.clear.colour[0].red,
@@ -1311,12 +1309,12 @@ namespace pen
                 (f32)cr.clear.colour[0].alpha,
             };
             [_state.compute_encoder setBytes:&clear_col[0] length:sizeof(clear_col) atIndex:0];
-            
+
             direct::renderer_set_texture(texture, 0, 0, pen::TEXTURE_BIND_CS);
-            
+
             uint3 grid = {r.texture.tcp.width, r.texture.tcp.height, depth};
             uint3 num_threads = {8, 8, 8};
-            
+
             MTLSize tgs = MTLSizeMake(num_threads.x, num_threads.y, num_threads.z);
 
             MTLSize tgc;
@@ -1349,8 +1347,8 @@ namespace pen
             {
                 const c8* csrc = (const c8*)params.byte_code;
                 NSString* str = [[[NSString alloc] initWithBytes:csrc
-                                                         length:params.byte_code_size
-                                                       encoding:NSASCIIStringEncoding] autorelease];
+                                                          length:params.byte_code_size
+                                                        encoding:NSASCIIStringEncoding] autorelease];
 
                 NSError*           err = nil;
                 MTLCompileOptions* opts = [[MTLCompileOptions alloc] autorelease];
@@ -1604,7 +1602,7 @@ namespace pen
             bool msaa = false;
             if (_tcp.sample_count > 1)
                 msaa = true;
-                
+
             if (tcp.collection_type == TEXTURE_COLLECTION_NONE || tcp.collection_type == TEXTURE_COLLECTION_ARRAY)
             {
                 td = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:fmt
@@ -1681,7 +1679,7 @@ namespace pen
 
             td.usage = to_metal_texture_usage(_tcp.bind_flags);
             td.storageMode = to_metal_storage_mode(_tcp);
-            
+
             texture = [_metal_device newTextureWithDescriptor:td];
 
             if (tcp.data)
@@ -1763,8 +1761,8 @@ namespace pen
             sd.minFilter = to_metal_min_mag_filter(scp.filter);
             sd.magFilter = to_metal_min_mag_filter(scp.filter);
             sd.mipFilter = to_metal_mip_filter(scp.filter);
-            
-            if(scp.comparison_func != PEN_COMPARISON_DISABLED)
+
+            if (scp.comparison_func != PEN_COMPARISON_DISABLED)
                 sd.compareFunction = to_metal_compare_function(scp.comparison_func);
 
             sd.lodMinClamp = scp.min_lod;
@@ -2064,7 +2062,7 @@ namespace pen
                 if (t.num_mips > 1)
                 {
                     t.invalidate = 0;
-                    
+
                     if (_state.compute_encoder)
                     {
                         [_state.compute_encoder endEncoding];
@@ -2074,7 +2072,7 @@ namespace pen
                     [_state.render_encoder endEncoding];
                     _state.render_encoder = nil;
                     _state.pipeline_hash = 0;
-                    
+
                     validate_blit_encoder();
 
                     [_state.blit_encoder generateMipmapsForTexture:t.tex];
@@ -2170,15 +2168,15 @@ namespace pen
 
         void renderer_read_back_resource(const resource_read_back_params& rrbp)
         {
-            if(_renderer_resized())
+            if (_renderer_resized())
                 return;
-                
+
             if (_state.render_encoder)
             {
                 [_state.render_encoder endEncoding];
                 _state.render_encoder = nil;
             }
-                
+
             if (_state.cmd_buffer == nil)
                 _state.cmd_buffer = [_state.command_queue commandBuffer];
 
@@ -2192,7 +2190,7 @@ namespace pen
                 u32 w = _metal_view.currentDrawable.texture.width;
                 u32 h = _metal_view.currentDrawable.texture.height;
 
-                        [bce copyFromTexture:_metal_view.currentDrawable.texture
+                [bce copyFromTexture:_metal_view.currentDrawable.texture
                                  sourceSlice:0
                                  sourceLevel:0
                                 sourceOrigin:MTLOriginMake(0, 0, 0)
@@ -2209,7 +2207,7 @@ namespace pen
                 _state.cmd_buffer = nil;
 
                 rrbp.call_back_function([stage contents], rrbp.row_pitch, rrbp.depth_pitch, rrbp.block_size);
-                
+
                 [stage release];
             }
             else
@@ -2250,7 +2248,7 @@ namespace pen
                     _state.cmd_buffer = nil;
 
                     rrbp.call_back_function([stage contents], rrbp.row_pitch, rrbp.depth_pitch, rrbp.block_size);
-                    
+
                     [stage release];
                 }
             }
@@ -2265,7 +2263,6 @@ namespace pen
             }
 
             _renderer_commit_stretchy_dynamic_buffers();
-            
 
             // flush cmd buf and present
             [_state.cmd_buffer presentDrawable:_metal_view.currentDrawable];
@@ -2276,7 +2273,7 @@ namespace pen
             waits++;
 
             [_state.cmd_buffer addCompletedHandler:^(id<MTLCommandBuffer> cb) {
-                g_gpu_total = 69;
+              g_gpu_total = 69;
               waits--;
             }];
 
@@ -2363,12 +2360,12 @@ namespace pen
             [vd release];
             vd = nil;
         }
-        
+
         void renderer_release_clear_state(u32 clear_state)
         {
             // no allocs
         }
-        
+
         void renderer_release_raster_state(u32 raster_state_index)
         {
             // no alloc, part of pipeline

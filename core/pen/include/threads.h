@@ -65,11 +65,11 @@ namespace pen
     void    thread_sleep_us(u32 microseconds);
 
     // Jobs
-    bool    jobs_terminate_all();
-    job*    jobs_create_job(dispatch_thread thread_func, u32 stack_size, void* user_data, thread_start_flags flags,
-                            completion_callback cb = nullptr);
-    void    jobs_create_single_thread_update(single_thread_update_func func);
-    void    jobs_run_single_threaded();
+    bool jobs_terminate_all();
+    job* jobs_create_job(dispatch_thread thread_func, u32 stack_size, void* user_data, thread_start_flags flags,
+                         completion_callback cb = nullptr);
+    void jobs_create_single_thread_update(single_thread_update_func func);
+    void jobs_run_single_threaded();
 
     // Mutex
     mutex* mutex_create();

@@ -247,16 +247,13 @@ namespace put
 
         p_camera->flags |= e_camera_flags::invalidated;
     }
-    
+
     void camera_update_look_at(camera* p_camera, vec3f pos, vec3f look_at)
     {
         vec3f at = look_at - pos;
         vec3f up = cross(at, vec3f(0.0f, 1.0f, 0.0f));
         vec3f right = cross(up, at);
         up = cross(at, right);
-        
-        
-        
     }
 
     void camera_update_projection_matrix(camera* p_camera)
@@ -295,22 +292,22 @@ namespace put
         camera_cbuffer wvp;
         wvp.view_projection = p_camera->proj * p_camera->view;
         p_camera->view_projection = wvp.view_projection;
-        
+
         // apply jitter to proj matrix
-        if(p_camera->flags & e_camera_flags::apply_jitter)
+        if (p_camera->flags & e_camera_flags::apply_jitter)
         {
             mat4 jitter = mat::create_translation(vec3f(p_camera->jitter, 0.0f));
             wvp.view_projection = (jitter * p_camera->proj) * p_camera->view;
             p_camera->flags &= ~e_camera_flags::apply_jitter;
         }
-        
+
         mat4 inv_view = mat::inverse3x4(p_camera->view);
         wvp.view_matrix = p_camera->view;
         wvp.view_position = vec4f(inv_view.get_translation(), p_camera->near_plane);
         wvp.view_direction = vec4f(inv_view.get_row(2).xyz, p_camera->far_plane);
         wvp.view_matrix_inverse = inv_view;
         wvp.view_projection_inverse = mat::inverse4x4(wvp.view_projection);
-        
+
         pen::renderer_update_buffer(p_camera->cbuffer, &wvp, sizeof(camera_cbuffer));
 
         p_camera->flags &= ~e_camera_flags::invalidated;
@@ -408,20 +405,20 @@ namespace put
             cmin = min_union(cmin, p);
             cmax = max_union(cmax, p);
         }
-        
+
         // create ortho mat and set view matrix
         p_camera->view = shadow_view;
         p_camera->proj = mat::create_orthographic_projection(cmin.x, cmax.x, cmin.y, cmax.y, cmin.z, cmax.z);
         p_camera->flags |= e_camera_flags::invalidated | e_camera_flags::orthographic;
-        
+
         camera_update_frustum(p_camera);
-        
+
         return;
-        
+
         // debug rendering.. to move into ecs
-        for(u32 i = 0; i < 8; ++i)
+        for (u32 i = 0; i < 8; ++i)
             dbg::add_point(corners[i], 5.0f, vec4f::green());
-        
+
         dbg::add_aabb(min, max, vec4f::white());
         dbg::add_frustum(p_camera->camera_frustum.corners[0], p_camera->camera_frustum.corners[1], vec4f::white());
     }

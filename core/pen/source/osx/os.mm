@@ -29,12 +29,12 @@ namespace
 {
     struct os_context
     {
-        pen::window_frame           frame;
-        u32                         return_code = 0;
-        pen::user_info              pen_user_info;
-        pen::pen_creation_params    creation_params;
-        NSWindow*                   window;
-        bool                        terminate_app = false;
+        pen::window_frame        frame;
+        u32                      return_code = 0;
+        pen::user_info           pen_user_info;
+        pen::pen_creation_params creation_params;
+        NSWindow*                window;
+        bool                     terminate_app = false;
     };
     os_context s_ctx;
 
@@ -493,7 +493,7 @@ namespace
                 pen::input_set_key_up(pen_key_code);
             }
         }
-        
+
         [key release];
     }
 
@@ -595,9 +595,9 @@ namespace
                                     NSWindowStyleMaskResizable;
 
             s_ctx.window = [[NSWindow alloc] initWithContentRect:frame
-                                                  styleMask:style_mask
-                                                    backing:NSBackingStoreBuffered
-                                                      defer:NO];
+                                                       styleMask:style_mask
+                                                         backing:NSBackingStoreBuffered
+                                                           defer:NO];
 
             [s_ctx.window makeKeyAndOrderFront:s_ctx.window];
 
@@ -641,14 +641,15 @@ namespace pen
             jobs_create_job(pcp.user_thread_function, 1024 * 1024, pcp.user_data, pen::e_thread_start_flags::detached);
             thread_started = true;
         }
-        
+
         if (s_ctx.terminate_app)
         {
             if (pen::jobs_terminate_all())
                 return false;
         }
-        
-        @autoreleasepool {
+
+        @autoreleasepool
+        {
             [NSApp updateWindows];
 
             for (;;)
@@ -694,7 +695,7 @@ namespace pen
                         NSRect frame = [s_ctx.window frame];
                         frame.size.width = cmd->frame.width;
                         frame.size.height = cmd->frame.height;
-                        
+
                         [s_ctx.window setFrame:frame display:YES animate:NO];
                     }
                     break;

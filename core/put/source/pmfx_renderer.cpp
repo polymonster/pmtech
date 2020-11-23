@@ -4,12 +4,12 @@
 
 #include "pmfx.h"
 
+#include "debug_render.h"
+#include "dev_ui.h"
 #include "ecs/ecs_cull.h"
 #include "ecs/ecs_editor.h"
 #include "ecs/ecs_resources.h"
 #include "ecs/ecs_scene.h"
-#include "dev_ui.h"
-#include "debug_render.h"
 
 #include "console.h"
 #include "data_struct.h"
@@ -253,16 +253,8 @@ namespace
         std::vector<void (*)(const put::scene_view&)> render_functions;
 
         // targets
-        u32 render_targets[pen::MAX_MRT] = {
-            PEN_INVALID_HANDLE,
-            PEN_INVALID_HANDLE,
-            PEN_INVALID_HANDLE,
-            PEN_INVALID_HANDLE,
-            PEN_INVALID_HANDLE,
-            PEN_INVALID_HANDLE,
-            PEN_INVALID_HANDLE,
-            PEN_INVALID_HANDLE
-        };
+        u32 render_targets[pen::MAX_MRT] = {PEN_INVALID_HANDLE, PEN_INVALID_HANDLE, PEN_INVALID_HANDLE, PEN_INVALID_HANDLE,
+                                            PEN_INVALID_HANDLE, PEN_INVALID_HANDLE, PEN_INVALID_HANDLE, PEN_INVALID_HANDLE};
         hash_id resolve_method[pen::MAX_MRT] = {0};
         u32     depth_target = PEN_INVALID_HANDLE;
         hash_id depth_resolve_method = 0;
@@ -1181,16 +1173,16 @@ namespace put
                         tcp.num_mips = 1;
                         tcp.num_arrays = 1;
                         tcp.collection_type = pen::TEXTURE_COLLECTION_NONE;
-                        
+
                         // mips
                         if (r["mips"].as_bool(false))
                         {
                             new_info.num_mips = pen::calc_num_mips(new_info.width, new_info.height);
                             tcp.num_mips = new_info.num_mips;
                         }
-                        
+
                         // 3d volume
-                        if(new_info.depth)
+                        if (new_info.depth)
                         {
                             tcp.collection_type = pen::TEXTURE_COLLECTION_VOLUME;
                             tcp.num_arrays = new_info.depth;
@@ -1216,7 +1208,7 @@ namespace put
                                 tcp.num_arrays = r["num_arrays"].as_u32(6);
                             }
                         }
-                                                
+
                         new_info.collection = tcp.collection_type;
                         new_info.num_arrays = tcp.num_arrays;
 
@@ -1228,7 +1220,6 @@ namespace put
 
                         if (r["cpu_write"].as_bool(false))
                             tcp.cpu_access_flags |= PEN_CPU_ACCESS_WRITE;
-                            
 
                         static hash_id id_write = PEN_HASH("write");
                         if (r["pp"].as_hash_id() == id_write)
@@ -1259,7 +1250,7 @@ namespace put
                         }
 
                         tcp.bind_flags = rt_format[f].flags | PEN_BIND_SHADER_RESOURCE;
-                        
+
                         // rw flags for compute
                         if (r["gpu_write"].as_bool(false))
                             tcp.bind_flags |= PEN_BIND_SHADER_WRITE;
@@ -1663,7 +1654,7 @@ namespace put
                                     valid = false;
                                 }
                             }
-                            
+
                             if (r.format == PEN_TEX_FORMAT_D24_UNORM_S8_UINT || r.format == PEN_TEX_FORMAT_D32_FLOAT)
                             {
                                 depth_target_index = t;
@@ -1846,9 +1837,9 @@ namespace put
                 {
                     new_view.render_flags |= mode_from_string(render_flags_map, render_flags[f].as_cstr(), 0);
                 }
-                
+
                 // camera jitter
-                if(view["jitter"].as_bool(false))
+                if (view["jitter"].as_bool(false))
                     new_view.view_flags |= e_view_flags::jitter;
 
                 // scene views
@@ -2160,7 +2151,7 @@ namespace put
                 // set flag to identify pp views
                 for (auto& v : pp_views)
                     v.post_process_flags |= e_pp_flags::bind_info;
-                    
+
                 // find render target aliases and generate automatic ping pongs
 
                 // first create virtual rt for each unique target / texture
@@ -2547,16 +2538,15 @@ namespace put
 
             for (auto& s : s_script_files)
                 load_script_internal(s.c_str());
-
         }
         void pmfx_config_hotload(std::vector<hash_id>& dirty)
         {
             pmfx_config_hotload();
         }
-        
+
         void reload()
         {
-            if(s_reload)
+            if (s_reload)
             {
                 pmfx_config_hotload();
                 s_reload = false;
@@ -2570,9 +2560,9 @@ namespace put
             svr_taa_resolve.name = "ecs_taa_resolve";
             svr_taa_resolve.id_name = PEN_HASH(svr_taa_resolve.name.c_str());
             svr_taa_resolve.render_function = &render_taa_resolve;
-            
+
             pmfx::register_scene_view_renderer(svr_taa_resolve);
-        
+
             load_script_internal(filename);
 
             s_script_files.push_back(filename);
@@ -2643,7 +2633,7 @@ namespace put
             // clear vectors of remaining stuff
             s_scene_view_renderers.clear();
         }
-        
+
         void render_taa_resolve(const scene_view& view)
         {
             static u32 cb_info = -1; //
@@ -2657,21 +2647,21 @@ namespace put
                 bcp.data = nullptr;
                 cb_info = pen::renderer_create_buffer(bcp);
             }
-            
+
             static mat4 prev_view_projection = view.camera->view_projection;
             static bool ff = true;
-            
+
             post_process::taa_cbuffer buf;
             buf.frame_inv_view_projection = mat::inverse4x4(view.camera->view_projection);
             buf.prev_view_projection = prev_view_projection;
             buf.jitter.xy = view.camera->jitter.xy;
             buf.jitter.z = ff ? 1.0f : 0.0f;
-            
+
             pen::renderer_update_buffer(cb_info, &buf, sizeof(buf));
             pen::renderer_set_constant_buffer(cb_info, 3, pen::CBUFFER_BIND_PS);
-        
+
             pmfx::fullscreen_quad(view);
-            
+
             // store for next frame
             prev_view_projection = view.camera->view_projection;
             ff = false;
@@ -2680,7 +2670,7 @@ namespace put
         void fullscreen_quad(const scene_view& sv)
         {
             static ecs::geometry_resource* quad = ecs::get_geometry_resource(PEN_HASH("full_screen_quad"));
-            static ecs::pmm_renderable& r = quad->renderable[e_pmm_renderable::full_vertex_buffer];
+            static ecs::pmm_renderable&    r = quad->renderable[e_pmm_renderable::full_vertex_buffer];
 
             if (!is_valid(sv.pmfx_shader))
                 return;
@@ -2690,7 +2680,7 @@ namespace put
 
             pen::renderer_set_constant_buffer(sv.cb_view, e_cbuffer_location::per_pass_view,
                                               pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
-                                              
+
             pen::renderer_set_index_buffer(r.index_buffer, r.index_type, 0);
             pen::renderer_set_vertex_buffer(r.vertex_buffer, 0, r.vertex_size, 0);
             pen::renderer_draw_indexed(r.num_indices, 0, 0, PEN_PT_TRIANGLELIST);
@@ -2752,9 +2742,9 @@ namespace put
             }
 
             // render
-            static u32 pp_shader = pmfx::load_shader("post_process");
+            static u32                     pp_shader = pmfx::load_shader("post_process");
             static ecs::geometry_resource* quad = ecs::get_geometry_resource(PEN_HASH("full_screen_quad"));
-            static ecs::pmm_renderable& r = quad->renderable[e_pmm_renderable::full_vertex_buffer];
+            static ecs::pmm_renderable&    r = quad->renderable[e_pmm_renderable::full_vertex_buffer];
 
             pen::renderer_set_targets(&v.stashed_output_rt, 1, PEN_NULL_DEPTH_BUFFER);
 
@@ -2895,11 +2885,11 @@ namespace put
                 // cb for 2d ortho
                 bcp.buffer_size = sizeof(float) * 20;
                 cb_2d = pen::renderer_create_buffer(bcp);
-                
+
                 // cb for sampler info
                 bcp.buffer_size = sizeof(vec4f) * 16; // 16 samplers worth, x = 1.0 / width, y = 1.0 / height
                 cb_sampler_info = pen::renderer_create_buffer(bcp);
-                
+
                 // cb for post process info
                 bcp.buffer_size = sizeof(post_process::pp_info);
                 cb_pp_info = pen::renderer_create_buffer(bcp);
@@ -3018,9 +3008,9 @@ namespace put
                     pen::renderer_set_constant_buffer(v.cbuffer_technique, e_cbuffer_location::material_constants,
                                                       pen::CBUFFER_BIND_PS);
                 }
-                
+
                 // generic buffer for post process shaders
-                if(v.post_process_flags & e_pp_flags::bind_info)
+                if (v.post_process_flags & e_pp_flags::bind_info)
                 {
                     post_process::pp_info pp_info;
                     pp_info.frame_jitter.xy = halton(pen::_renderer_frame_index());
@@ -3060,7 +3050,7 @@ namespace put
             for (auto& v : v.post_process_views)
             {
                 // default to fs quad
-                if(v.render_functions.empty())
+                if (v.render_functions.empty())
                     v.render_functions.push_back(&fullscreen_quad);
 
                 render_view(v);
@@ -3070,7 +3060,7 @@ namespace put
         void render()
         {
             reload();
-            
+
             for (auto& v : s_views)
             {
                 if (v.view_flags & e_view_flags::template_view)
@@ -3229,7 +3219,7 @@ namespace put
             s_edited_view_set_name = name;
             pmfx_config_hotload();
         }
-        
+
         void pp_ui()
         {
             ImGui::Indent();

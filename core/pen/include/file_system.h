@@ -37,5 +37,5 @@ namespace pen
     const c8*  filesystem_get_user_directory(); // returns /Users/user.name (osx), /home/user.name (linux) etc
     const c8** filesystem_get_user_directory(s32& directory_depth); // returns array of directories like the above
     s32        filesystem_exclude_slash_depth();
-    
+
 } // namespace pen

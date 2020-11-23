@@ -1145,7 +1145,7 @@ namespace put
                     }
 
                     geometry_resource* gr = get_geometry_resource(sdf_job->scene->id_geometry[n]);
-                    pmm_renderable& r = gr->renderable[e_pmm_renderable::position_only];
+                    pmm_renderable&    r = gr->renderable[e_pmm_renderable::position_only];
 
                     vec4f* vertex_positions = (vec4f*)r.cpu_vertex_buffer;
 
@@ -1522,7 +1522,7 @@ namespace put
             ec.name = "volume_rasteriser_camera";
             ec.id_name = PEN_HASH(ec.name.c_str());
             ecs::register_ecs_controller(scene, ec);
-            
+
             pmfx::register_camera(&s_volume_raster_ortho, "volume_rasteriser_camera");
         }
 

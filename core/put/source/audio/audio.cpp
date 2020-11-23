@@ -145,10 +145,10 @@ namespace put
                 break;
         }
     }
-    
+
     void audio_consume_command_buffer()
     {
-        if(!_shutdown.load())
+        if (!_shutdown.load())
         {
             pen::semaphore_post(_audio_job_thread_info->p_sem_consume, 1);
             pen::semaphore_wait(_audio_job_thread_info->p_sem_continue);
@@ -200,7 +200,7 @@ namespace put
 
         pen::semaphore_post(_audio_job_thread_info->p_sem_continue, 1);
         pen::semaphore_post(_audio_job_thread_info->p_sem_terminated, 1);
-        
+
         return PEN_THREAD_OK;
     }
 
@@ -239,19 +239,19 @@ namespace put
 
         return res;
     }
-    
-    u32  audio_create_sound(const pen::music_file& music)
+
+    u32 audio_create_sound(const pen::music_file& music)
     {
         audio_cmd ac;
-        
+
         u32 res = pen::slot_resources_get_next(&_audio_slot_resources);
-        
+
         ac.command_index = e_cmd::create_sound_music;
         ac.music = music;
         ac.resource_slot = res;
-        
+
         _cmd_buffer.put(ac);
-        
+
         return res;
     }
 

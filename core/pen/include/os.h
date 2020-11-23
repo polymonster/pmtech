@@ -41,27 +41,27 @@ namespace pen
     void             os_show_cursor(bool show);
     const c8*        os_path_for_resource(const c8* filename);
     const user_info& os_get_user_info();
-    
+
     // music
     struct music_item
     {
-        Str     artist;
-        Str     album;
-        Str     track;
-        f64     duration;
-        void*   internal;
+        Str   artist;
+        Str   album;
+        Str   track;
+        f64   duration;
+        void* internal;
     };
-    
+
     struct music_file
     {
-        f32*    pcm_data;           // interleaved stereo or mono channel pcm
-        size_t  len;                // length in bytes
-        u32     num_channels;       // indicates mono(1) or stereo(2)
-        f64     sample_frequency;
+        f32*   pcm_data;     // interleaved stereo or mono channel pcm
+        size_t len;          // length in bytes
+        u32    num_channels; // indicates mono(1) or stereo(2)
+        f64    sample_frequency;
     };
-    
-    const music_item*   music_get_items(); // returns stretchy buffer use sb_count for num items
-    music_file          music_open_file(const music_item& item);
-    void                music_close_file(const music_file& file);
+
+    const music_item* music_get_items(); // returns stretchy buffer use sb_count for num items
+    music_file        music_open_file(const music_item& item);
+    void              music_close_file(const music_file& file);
 
 } // namespace pen

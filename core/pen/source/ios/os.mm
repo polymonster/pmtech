@@ -4,6 +4,7 @@
 
 #include "os.h"
 #include "console.h"
+#include "data_struct.h"
 #include "hash.h"
 #include "input.h"
 #include "pen.h"
@@ -11,7 +12,6 @@
 #include "renderer_shared.h"
 #include "threads.h"
 #include "timer.h"
-#include "data_struct.h"
 
 #ifdef PEN_RENDERER_METAL
 #import <Metal/Metal.h>
@@ -25,9 +25,9 @@
 #import <UIKit/UIKit.h>
 
 // for music api
-#import <AVFoundation/AVAudioSession.h>
-#import <AVFoundation/AVAudioFile.h>
 #import <AVFoundation/AVAudioBuffer.h>
+#import <AVFoundation/AVAudioFile.h>
+#import <AVFoundation/AVAudioSession.h>
 #import <MediaPlayer/MPMediaQuery.h>
 
 // the last 2 global externs \o/
@@ -55,11 +55,11 @@ namespace
 {
     struct os_context
     {
-        CGRect                      wframe;
-        CGSize                      wsize;
-        f32                         wscale;
-        pen_app_delegate*           app_delegate;
-        pen::pen_creation_params    creation_params;
+        CGRect                   wframe;
+        CGSize                   wsize;
+        f32                      wscale;
+        pen_app_delegate*        app_delegate;
+        pen::pen_creation_params creation_params;
     };
     os_context s_context;
 
@@ -318,55 +318,56 @@ namespace pen
         static hash_id window_id = PEN_HASH(pen_window.window_title);
         return window_id;
     }
-    
+
     const music_item* music_get_items()
     {
         music_item* out_items = nullptr;
-        
+
         MPMediaQuery* mp = [[MPMediaQuery alloc] init];
-        NSArray* queryResults = [mp items];
-        for(s32 i = 0; i < queryResults.count; ++i)
+        NSArray*      queryResults = [mp items];
+        for (s32 i = 0; i < queryResults.count; ++i)
         {
             MPMediaItem* item = [queryResults objectAtIndex:0];
-            
+
             music_item mi;
             mi.internal = item;
             mi.album = [item.albumTitle UTF8String];
             mi.artist = [item.albumArtist UTF8String];
             mi.track = [item.title UTF8String];
             mi.duration = [item playbackDuration];
-            
+
             sb_push(out_items, mi);
         }
-        
+
         return out_items;
     }
-    
+
     music_file music_open_file(const music_item& item)
     {
         MPMediaItem* _item = (MPMediaItem*)item.internal;
-        NSURL* url = [_item valueForProperty:MPMediaItemPropertyAssetURL];
+        NSURL*       url = [_item valueForProperty:MPMediaItemPropertyAssetURL];
         AVAudioFile* file = [AVAudioFile alloc];
         [file initForReading:url error:nil];
         AVAudioFormat* fmt = [file processingFormat];
-        
+
         music_file out_file;
         out_file.num_channels = [fmt channelCount];
         out_file.len = [file length] * sizeof(f32) * out_file.num_channels;
         out_file.sample_frequency = file.processingFormat.sampleRate;
         out_file.pcm_data = (f32*)pen::memory_alloc(out_file.len);
-        
-        AVAudioPCMBuffer* pcm = [[AVAudioPCMBuffer alloc] initWithPCMFormat:[file processingFormat] frameCapacity:(u32)out_file.len];
+
+        AVAudioPCMBuffer* pcm = [[AVAudioPCMBuffer alloc] initWithPCMFormat:[file processingFormat]
+                                                              frameCapacity:(u32)out_file.len];
         [file readIntoBuffer:pcm error:nil];
-        
-        if(out_file.num_channels > 1)
+
+        if (out_file.num_channels > 1)
         {
             // interleave stereo pcm channels
-            for(size_t i = 0; i < [file length]; ++i)
+            for (size_t i = 0; i < [file length]; ++i)
             {
                 size_t ii = i * 2;
-                out_file.pcm_data [ii+0] = pcm.floatChannelData[0][i];
-                out_file.pcm_data [ii+1] = pcm.floatChannelData[1][i];
+                out_file.pcm_data[ii + 0] = pcm.floatChannelData[0][i];
+                out_file.pcm_data[ii + 1] = pcm.floatChannelData[1][i];
             }
         }
         else
@@ -374,10 +375,10 @@ namespace pen
             // copy single mono channel
             memcpy(out_file.pcm_data, &pcm.floatChannelData[0][0], out_file.len);
         }
-        
+
         return out_file;
     }
-    
+
     void music_close_file(const music_file& item)
     {
         pen::memory_free(item.pcm_data);

@@ -26,25 +26,12 @@ using namespace ecs;
 
 namespace
 {
-    const c8* semantic_names[] = {
-        "SV_POSITION",
-        "POSITION",
-        "TEXCOORD",
-        "NORMAL",
-        "TANGENT",
-        "BITANGENT",
-		"BLENDWEIGHTS",
-        "COLOR",
-        "BLENDINDICES"
-    };
+    const c8* semantic_names[] = {"SV_POSITION", "POSITION",     "TEXCOORD", "NORMAL",      "TANGENT",
+                                  "BITANGENT",   "BLENDWEIGHTS", "COLOR",    "BLENDINDICES"};
 
     shader_program null_shader = {};
 
-    hash_id id_widgets[] = {
-		PEN_HASH("slider"), 
-		PEN_HASH("input"), 
-		PEN_HASH("colour")
-	};
+    hash_id id_widgets[] = {PEN_HASH("slider"), PEN_HASH("input"), PEN_HASH("colour")};
     static_assert(PEN_ARRAY_SIZE(id_widgets) == e_constant_widget::COUNT, "mismatched array size");
 
     struct pmfx_shader
@@ -196,15 +183,8 @@ namespace put
                 cc++;
             }
 
-            static Str sampler_type_names[] = {
-                "texture_2d", 
-                "texture_3d", 
-                "texture_cube", 
-                "texture_2dms", 
-                "texture_2d_array", 
-                "depth_2d", 
-                "depth_2d_array"
-            };
+            static Str sampler_type_names[] = {"texture_2d",       "texture_3d", "texture_cube",  "texture_2dms",
+                                               "texture_2d_array", "depth_2d",   "depth_2d_array"};
 
             const pen::json& j_samplers = j_technique["texture_sampler_bindings"];
 
@@ -272,19 +252,11 @@ namespace put
                     u32 num_elements = vj["num_elements"].as_u32();
                     u32 elements_size = vj["element_size"].as_u32();
 
-                    static const s32 float_formats[4] = {
-						PEN_VERTEX_FORMAT_FLOAT1, 
-						PEN_VERTEX_FORMAT_FLOAT2,
-						PEN_VERTEX_FORMAT_FLOAT3, 
-						PEN_VERTEX_FORMAT_FLOAT4
-					};
+                    static const s32 float_formats[4] = {PEN_VERTEX_FORMAT_FLOAT1, PEN_VERTEX_FORMAT_FLOAT2,
+                                                         PEN_VERTEX_FORMAT_FLOAT3, PEN_VERTEX_FORMAT_FLOAT4};
 
-                    static const s32 byte_formats[4] = {
-						PEN_VERTEX_FORMAT_UNORM1, 
-						PEN_VERTEX_FORMAT_UNORM2,
-						PEN_VERTEX_FORMAT_UNORM2, 
-						PEN_VERTEX_FORMAT_UNORM4
-					};
+                    static const s32 byte_formats[4] = {PEN_VERTEX_FORMAT_UNORM1, PEN_VERTEX_FORMAT_UNORM2,
+                                                        PEN_VERTEX_FORMAT_UNORM2, PEN_VERTEX_FORMAT_UNORM4};
 
                     const s32* fomats = float_formats;
 
@@ -303,7 +275,7 @@ namespace put
                 }
             }
         }
-        
+
         shader_program preload_shader_technique(const c8* fx_filename, pen::json& j_technique, pen::json& j_info)
         {
             shader_program program = {};
@@ -316,10 +288,10 @@ namespace put
             program.permutation_id = j_technique["permutation_id"].as_u32();
             program.permutation_option_mask = j_technique["permutation_option_mask"].as_u32();
             program.info = j_technique;
-            
+
             return program;
         }
-        
+
         shader_program load_shader_technique(const c8* fx_filename, pen::json& j_technique, pen::json& j_info)
         {
             shader_program program = {};
@@ -449,7 +421,7 @@ namespace put
 
             // traditional vs / ps combo
             program.vertex_shader = pen::renderer_load_shader(vs_slp);
-            
+
             pen::memory_free(vs_slp.so_decl_entries);
 
             // pixel shader
@@ -607,11 +579,11 @@ namespace put
 
             return program;
         }
-        
+
         void lazy_load_shader_technique(shader_program& t, u32 shader)
         {
             auto& s = s_pmfx_list[shader];
-            if(!t.loaded)
+            if (!t.loaded)
             {
                 t = load_shader_technique(s.filename.c_str(), t.info, s.info);
                 t.loaded = true;
@@ -737,7 +709,7 @@ namespace put
         {
             if (technique_index >= sb_count(s_pmfx_list[shader].techniques))
                 return;
-                
+
             auto& t = s_pmfx_list[shader].techniques[technique_index];
 
             lazy_load_shader_technique(t, shader);
@@ -768,7 +740,7 @@ namespace put
 
             if (!is_valid(technique_index))
                 return false;
-                
+
             set_technique(shader, technique_index);
 
             return true;
@@ -788,7 +760,7 @@ namespace put
 
                 if (t.permutation_id != masked_permutation)
                     continue;
-                    
+
                 lazy_load_shader_technique(t, shader);
 
                 return i;
@@ -926,15 +898,15 @@ namespace put
             PEN_HOTLOADING_ENABLED;
 
             static c8 info_file_buf[256];
-            
+
             Str shader_compiler_str = put::get_build_cmd();
             shader_compiler_str.append("-pmfx");
 
             u32 current_counter = 0;
 
-            u32 num_pmfx = sb_count(s_pmfx_list);
+            u32  num_pmfx = sb_count(s_pmfx_list);
             u32* reload_list = nullptr;
-            
+
             for (u32 i = 0; i < num_pmfx; ++i)
             {
                 auto& pmfx_set = s_pmfx_list[i];
@@ -967,15 +939,15 @@ namespace put
                     {
                         pen::json file = files[i];
                         Str       fn = file["name"].as_str();
-                        
+
                         u32 dep_ts = 0;
                         get_pmfx_info_filename(info_file_buf, pmfx_set.filename.c_str());
-                        if(pen::filesystem_getmtime(info_file_buf, dep_ts) == PEN_ERR_OK)
+                        if (pen::filesystem_getmtime(info_file_buf, dep_ts) == PEN_ERR_OK)
                         {
                             u32 input_ts = 0;
-                            if(pen::filesystem_getmtime(fn.c_str(), input_ts) == PEN_ERR_OK)
+                            if (pen::filesystem_getmtime(fn.c_str(), input_ts) == PEN_ERR_OK)
                             {
-                                if(input_ts > dep_ts)
+                                if (input_ts > dep_ts)
                                 {
                                     put::trigger_hot_loader(shader_compiler_str);
                                     pmfx_set.invalidated = true;
@@ -988,23 +960,23 @@ namespace put
 
                 current_counter++;
             }
-            
+
             u32 num_reload = sb_count(reload_list);
-            if(num_reload)
+            if (num_reload)
             {
                 // load modified
-                for(u32 i = 0; i < num_reload; ++i)
+                for (u32 i = 0; i < num_reload; ++i)
                 {
-                    auto& pmfx_set = s_pmfx_list[reload_list[i]];
+                    auto&       pmfx_set = s_pmfx_list[reload_list[i]];
                     pmfx_shader pmfx_new = load_internal(pmfx_set.filename.c_str());
                     release_shader(current_counter);
                     pmfx_set = pmfx_new;
                 }
-                
+
                 // fixup resources / references
                 ecs::bake_material_handles();
                 generate_name_lists();
-        
+
                 sb_free(reload_list);
             }
         }

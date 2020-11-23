@@ -1,8 +1,8 @@
 #include "renderer_shared.h"
 #include "data_struct.h"
+#include "os.h"
 #include "pen.h"
 #include "types.h"
-#include "os.h"
 
 extern pen::window_creation_params pen_window;
 
@@ -185,7 +185,7 @@ namespace pen
     {
         return pen_atomic_load(s_shared_ctx.resize_index);
     }
-    
+
     bool _renderer_resized()
     {
         return pen_atomic_load(s_shared_ctx.resized);

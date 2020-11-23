@@ -56,11 +56,10 @@ namespace pen
     viewport _renderer_resolve_viewport_ratio(const viewport& v);
     rect     _renderer_resolve_scissor_ratio(const rect& r);
 
-
     // virtual interface for render backends
     class render_backend
     {
-    public:
+      public:
         virtual u32  initialise(void* params, u32 bb_res, u32 bb_depth_res) = 0;
         virtual void shutdown() = 0;
         virtual void sync() = 0;
@@ -76,7 +75,7 @@ namespace pen
         virtual void link_shader_program(const shader_link_params& params, u32 resource_slot) = 0;
         virtual void create_buffer(const buffer_creation_params& params, u32 resource_slot) = 0;
         virtual void set_vertex_buffers(u32* buffer_indices, u32 num_buffers, u32 start_slot, const u32* strides,
-            const u32* offsets) = 0;
+                                        const u32* offsets) = 0;
         virtual void set_index_buffer(u32 buffer_index, u32 format, u32 offset) = 0;
         virtual void set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 flags) = 0;
         virtual void set_structured_buffer(u32 buffer_index, u32 resource_slot, u32 flags) = 0;
@@ -96,12 +95,12 @@ namespace pen
         virtual void draw(u32 vertex_count, u32 start_vertex, u32 primitive_topology) = 0;
         virtual void draw_indexed(u32 index_count, u32 start_index, u32 base_vertex, u32 primitive_topology) = 0;
         virtual void draw_indexed_instanced(u32 instance_count, u32 start_instance, u32 index_count, u32 start_index,
-            u32 base_vertex, u32 primitive_topology) = 0;
+                                            u32 base_vertex, u32 primitive_topology) = 0;
         virtual void draw_auto() = 0;
         virtual void dispatch_compute(uint3 grid, uint3 num_threads) = 0;
         virtual void create_render_target(const texture_creation_params& tcp, u32 resource_slot, bool track = true) = 0;
         virtual void set_targets(const u32* const colour_targets, u32 num_colour_targets, u32 depth_target,
-            u32 colour_slice = 0, u32 depth_slice = 0) = 0;
+                                 u32 colour_slice = 0, u32 depth_slice = 0) = 0;
         virtual void set_resolve_targets(u32 colour_target, u32 depth_target) = 0;
         virtual void set_stream_out_target(u32 buffer_index) = 0;
         virtual void resolve_target(u32 target, e_msaa_resolve_type type, resolve_resources res) = 0;

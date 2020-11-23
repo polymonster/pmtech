@@ -277,13 +277,13 @@ namespace put
             controller.camera = cam;
 
             ecs::register_ecs_controller(scene, controller);
-            
+
             // svr
             put::scene_view_renderer svr_editor;
             svr_editor.name = "ecs_render_editor";
             svr_editor.id_name = PEN_HASH(svr_editor.name.c_str());
             svr_editor.render_function = &ecs::render_scene_editor;
-            
+
             pmfx::register_scene_view_renderer(svr_editor);
 
             // volume generator
@@ -3034,7 +3034,7 @@ namespace put
                     break;
             }
         }
-        
+
         void render_light_debug(const scene_view& view)
         {
             bool selected_only = !(view.scene->view_flags & e_scene_view_flags::lights);
@@ -3075,9 +3075,7 @@ namespace put
                         // line only
                         dbg::add_line(vec3f::zero(), scene->lights[n].direction * k_dir_light_offset,
                                       vec4f(scene->lights[n].colour, 1.0f));
-                                      
-                                      
-                        
+
                         continue;
                     }
                     break;
@@ -3101,7 +3099,7 @@ namespace put
 
                         // volume geometry
                         geometry_resource* vol = volume[snl.type];
-                        pmm_renderable& r = vol->renderable[e_pmm_renderable::full_vertex_buffer];
+                        pmm_renderable&    r = vol->renderable[e_pmm_renderable::full_vertex_buffer];
 
                         pmfx::set_technique_perm(shader, id_technique);
 
@@ -3142,7 +3140,7 @@ namespace put
                         continue;
 
                     geometry_resource* gr = get_geometry_resource(ID_PRIMITIVE[prim]);
-                    pmm_renderable& r = gr->renderable[e_pmm_renderable::full_vertex_buffer];
+                    pmm_renderable&    r = gr->renderable[e_pmm_renderable::full_vertex_buffer];
 
                     if (!gr)
                         continue;
@@ -3180,7 +3178,7 @@ namespace put
                         mat4 rbmat = physics::get_rb_matrix(scene->physics_handles[n]);
                         dc.world_matrix = rbmat * scale;
                     }
-                    
+
                     dc.v2 = vec4f::white();
 
                     pen::renderer_update_buffer(scene->physics_debug_cbuffer[n], &dc, sizeof(cmp_draw_call));
@@ -3188,7 +3186,7 @@ namespace put
                     // draw
                     pen::renderer_set_constant_buffer(scene->physics_debug_cbuffer[n], 1,
                                                       pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
-                    
+
                     pen::renderer_set_vertex_buffer(r.vertex_buffer, 0, r.vertex_size, 0);
                     pen::renderer_set_index_buffer(r.index_buffer, r.index_type, 0);
                     pen::renderer_draw_indexed(r.num_indices, 0, 0, PEN_PT_TRIANGLELIST);
@@ -3290,7 +3288,7 @@ namespace put
                     if (scene->id_geometry[s] != 0)
                     {
                         geometry_resource* gr = get_geometry_resource(scene->id_geometry[s]);
-                        pmm_renderable& r = gr->renderable[e_pmm_renderable::position_only];
+                        pmm_renderable&    r = gr->renderable[e_pmm_renderable::position_only];
 
                         s32 index_offset = trii * 3;
 

@@ -470,36 +470,36 @@ namespace
 
     struct read_back_request
     {
-        VkBuffer                    buf;
-        VkDeviceMemory              mem;
-        resource_read_back_params   params;
-        u32                         frame;
+        VkBuffer                  buf;
+        VkDeviceMemory            mem;
+        resource_read_back_params params;
+        u32                       frame;
     };
 
     struct pen_state
     {
         // hashes
-        hash_id                          hpass = 0;
-        hash_id                          hpipeline = 0;
-        hash_id                          hdescriptors = 0;
+        hash_id hpass = 0;
+        hash_id hpipeline = 0;
+        hash_id hdescriptors = 0;
         // hash for pass
-        u32*                             colour_attachments = nullptr;
-        u32                              depth_attachment = 0;
-        u32                              colour_slice;
-        u32                              depth_slice;
-        u32                              clear_state;
-        u32                              depth_stencil_state;
+        u32* colour_attachments = nullptr;
+        u32  depth_attachment = 0;
+        u32  colour_slice;
+        u32  depth_slice;
+        u32  clear_state;
+        u32  depth_stencil_state;
         // hash for pipeline
-        u32                              shader[e_shd::count]; // vs, fs, gs, so, cs
-        viewport                         vp;
-        rect                             sr;
-        u32                              vertex_buffer;
-        u32                              index_buffer;
-        u32                              input_layout;
-        u32                              raster;
-        u32                              blend = -1;
-        VkRenderPass                     pass;
-        pen_binding*                     bindings = nullptr;
+        u32          shader[e_shd::count]; // vs, fs, gs, so, cs
+        viewport     vp;
+        rect         sr;
+        u32          vertex_buffer;
+        u32          index_buffer;
+        u32          input_layout;
+        u32          raster;
+        u32          blend = -1;
+        VkRenderPass pass;
+        pen_binding* bindings = nullptr;
         // vulkan cached state
         VkPipelineLayout                 pipeline_layout;
         VkVertexInputBindingDescription* vertex_input_bindings = nullptr;
@@ -507,7 +507,7 @@ namespace
         u32                              descriptor_set_index;
         u32                              pipeline_index = -1;
         // resource readbacks must wait until cmd buf completion
-        read_back_request*               read_back_requests = nullptr;
+        read_back_request* read_back_requests = nullptr;
     };
     pen_state _state;
 
@@ -1849,17 +1849,9 @@ namespace pen
     static renderer_info s_renderer_info;
     const renderer_info& renderer_get_info()
     {
-        s_renderer_info.caps = PEN_CAPS_TEXTURE_MULTISAMPLE | 
-            PEN_CAPS_DEPTH_CLAMP | 
-            PEN_CAPS_GPU_TIMER | 
-            PEN_CAPS_COMPUTE |
-            PEN_CAPS_TEX_FORMAT_BC1 | 
-            PEN_CAPS_TEX_FORMAT_BC2 | 
-            PEN_CAPS_TEX_FORMAT_BC3 |
-            PEN_CAPS_TEX_FORMAT_BC4 | 
-            PEN_CAPS_TEX_FORMAT_BC5 |
-            PEN_CAPS_BACKBUFFER_BGRA 
-            ;
+        s_renderer_info.caps = PEN_CAPS_TEXTURE_MULTISAMPLE | PEN_CAPS_DEPTH_CLAMP | PEN_CAPS_GPU_TIMER | PEN_CAPS_COMPUTE |
+                               PEN_CAPS_TEX_FORMAT_BC1 | PEN_CAPS_TEX_FORMAT_BC2 | PEN_CAPS_TEX_FORMAT_BC3 |
+                               PEN_CAPS_TEX_FORMAT_BC4 | PEN_CAPS_TEX_FORMAT_BC5 | PEN_CAPS_BACKBUFFER_BGRA;
 
         s_renderer_info.renderer = "Vulkan";
         return s_renderer_info;
@@ -1985,7 +1977,7 @@ namespace pen
         {
             // unused on this platform
         }
-        
+
         void renderer_retain()
         {
             // unused on this platform
@@ -2000,7 +1992,6 @@ namespace pen
 
         void direct::renderer_clear_texture(u32 clear_state_index, u32 texture)
         {
-
         }
 
         void renderer_clear(u32 clear_state_index, u32 colour_face, u32 depth_face)
@@ -2589,12 +2580,8 @@ namespace pen
                 region.imageSubresource.mipLevel = 0;
                 region.imageSubresource.baseArrayLayer = 0;
                 region.imageSubresource.layerCount = 1;
-                region.imageOffset = { 0, 0, 0 };
-                region.imageExtent = {
-                    w,
-                    h,
-                    1
-                };
+                region.imageOffset = {0, 0, 0};
+                region.imageExtent = {w, h, 1};
 
                 read_back_request rr;
                 rr.frame = _renderer_frame_index();
@@ -2602,14 +2589,14 @@ namespace pen
                 u32 next = (_ctx.ii + 1) % NBB;
 
                 _create_buffer_internal(VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                    nullptr, rrbp.depth_pitch, rr.buf, rr.mem);
+                                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, nullptr,
+                                        rrbp.depth_pitch, rr.buf, rr.mem);
 
-                _transition_image(_ctx.swap_chain_images[next], VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-                    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+                _transition_image(_ctx.swap_chain_images[next], VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT,
+                                  VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
                 vkCmdCopyImageToBuffer(_ctx.cmd_bufs[_ctx.ii], _ctx.swap_chain_images[next],
-                    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, rr.buf, 1, &region);
+                                       VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, rr.buf, 1, &region);
 
                 sb_push(_state.read_back_requests, rr);
             }

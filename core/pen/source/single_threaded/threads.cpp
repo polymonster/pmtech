@@ -33,7 +33,7 @@ namespace pen
 
     pen::thread* thread_create(dispatch_thread thread_func, u32 stack_size, void* thread_params, thread_start_flags flags)
     {
-        pen::thread* new_thread = (pen::thread*)pen::memory_alloc(sizeof(pen::thread));        
+        pen::thread* new_thread = (pen::thread*)pen::memory_alloc(sizeof(pen::thread));
         thread_func(thread_params);
         return new_thread;
     }
@@ -91,13 +91,12 @@ namespace pen
 
     bool semaphore_try_wait(pen::semaphore* p_semaphore)
     {
-        if(p_semaphore->count != 0)
+        if (p_semaphore->count != 0)
             return true;
         return false;
     }
 
     void semaphore_post(semaphore* p_semaphore, u32 count)
     {
-        
     }
 } // namespace pen

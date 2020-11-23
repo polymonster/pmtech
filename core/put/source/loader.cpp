@@ -459,9 +459,9 @@ namespace
                 cmd = s_hot_loader_cmd_buffer.get();
             }
 
-            if(pen::semaphore_try_wait(p_thread_info->p_sem_exit))
+            if (pen::semaphore_try_wait(p_thread_info->p_sem_exit))
                 break;
-                
+
             // plenty of sleep
             pen::thread_sleep_ms(16);
         }
@@ -684,12 +684,12 @@ namespace put
             if (fw->invalidated)
             {
                 u32 dep_ts;
-                if(pen::filesystem_getmtime(fw->filename.c_str(), dep_ts) == PEN_ERR_OK)
+                if (pen::filesystem_getmtime(fw->filename.c_str(), dep_ts) == PEN_ERR_OK)
                 {
-                    if(dep_ts >= fw->rebuild_ts)
+                    if (dep_ts >= fw->rebuild_ts)
                     {
                         fw->dependencies = pen::json::load_from_file(fw->filename.c_str());
-                        
+
                         // rebuild has succeeded
                         dev_console_log("[file watcher] rebuild for %s complete", fw->filename.c_str());
                         fw->hotload_callback(fw->changes);
@@ -704,17 +704,17 @@ namespace put
                 s32       num_files = files.size();
                 for (s32 i = 0; i < num_files; ++i)
                 {
-                    pen::json   outputs = files[i];
-                    s32         num_inputs = outputs.size();
-                    u32         current_ts = 0;
-                    
-                    if(pen::filesystem_getmtime(fw->filename.c_str(), current_ts) == PEN_ERR_OK)
+                    pen::json outputs = files[i];
+                    s32       num_inputs = outputs.size();
+                    u32       current_ts = 0;
+
+                    if (pen::filesystem_getmtime(fw->filename.c_str(), current_ts) == PEN_ERR_OK)
                     {
                         for (s32 j = 0; j < num_inputs; ++j)
                         {
                             Str ifn = outputs[j]["name"].as_str();
                             u32 input_ts = 0;
-                            if(pen::filesystem_getmtime(ifn.c_str(), input_ts) == PEN_ERR_OK)
+                            if (pen::filesystem_getmtime(ifn.c_str(), input_ts) == PEN_ERR_OK)
                             {
                                 if (!fw->invalidated)
                                 {
@@ -725,7 +725,7 @@ namespace put
                                         Str data_file = outputs[j]["data_file"].as_str();
                                         fw->changes.push_back(PEN_HASH(data_file.c_str()));
                                         fw->rebuild_ts = input_ts;
-                                        
+
                                         fw->build_callback();
                                         fw->invalidated = true;
                                     }

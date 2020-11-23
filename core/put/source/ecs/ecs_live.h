@@ -1,10 +1,10 @@
 // codegen_2
 #pragma once
-#include "ecs_scene.h"
-#include "ecs_resources.h"
-#include "ecs_utilities.h"
-#include "debug_render.h"
 #include "camera.h"
+#include "debug_render.h"
+#include "ecs_resources.h"
+#include "ecs_scene.h"
+#include "ecs_utilities.h"
 #include "pmfx.h"
 using namespace pen;
 using namespace put;
@@ -34,8 +34,8 @@ typedef void (*proc_initialise_free_list)(ecs_scene*);
 typedef void (*proc_register_ecs_extentsions)(ecs_scene*, const ecs_extension&);
 typedef void (*proc_unregister_ecs_extensions)(ecs_scene*);
 typedef void (*proc_register_ecs_controller)(ecs_scene*, const ecs_controller&);
-typedef  u32 (*proc_get_extension_component_offset)(ecs_scene*, u32);
-typedef  u32 (*proc_get_extension_component_offset_from_id)(ecs_scene*, hash_id);
+typedef u32 (*proc_get_extension_component_offset)(ecs_scene*, u32);
+typedef u32 (*proc_get_extension_component_offset_from_id)(ecs_scene*, hash_id);
 typedef void (*proc_save_scene)(const c8*, ecs_scene*);
 typedef void (*proc_save_sub_scene)(ecs_scene*, u32);
 typedef void (*proc_load_scene)(const c8*, ecs_scene*, bool);
@@ -89,87 +89,88 @@ typedef void (*proc_scene_tree_add_entity)(scene_tree&, scene_tree&, std::vector
 typedef Str (*proc_read_parsable_string)(const u32**);
 typedef void (*proc_write_parsable_string)(const Str&, std::ofstream&);
 typedef void (*proc_write_parsable_string_u32)(const Str&, std::ofstream&);
-struct __ecs {
-    void* __ecs_start;
-    proc_init init;
-    proc_create_scene create_scene;
-    proc_destroy_scene destroy_scene;
-    proc_get_scenes get_scenes;
-    proc_update update;
-    proc_update_scene update_scene;
-    proc_render_scene_view render_scene_view;
-    proc_render_light_volumes render_light_volumes;
-    proc_render_shadow_views render_shadow_views;
-    proc_render_omni_shadow_views render_omni_shadow_views;
-    proc_render_area_light_textures render_area_light_textures;
-    proc_compute_volume_gi compute_volume_gi;
-    proc_clear_scene clear_scene;
-    proc_default_scene default_scene;
-    proc_resize_scene_buffers resize_scene_buffers;
-    proc_zero_entity_components zero_entity_components;
-    proc_delete_entity delete_entity;
-    proc_delete_entity_first_pass delete_entity_first_pass;
-    proc_delete_entity_second_pass delete_entity_second_pass;
-    proc_initialise_free_list initialise_free_list;
-    proc_register_ecs_extentsions register_ecs_extentsions;
-    proc_unregister_ecs_extensions unregister_ecs_extensions;
-    proc_register_ecs_controller register_ecs_controller;
-    proc_get_extension_component_offset get_extension_component_offset;
+struct __ecs
+{
+    void*                                       __ecs_start;
+    proc_init                                   init;
+    proc_create_scene                           create_scene;
+    proc_destroy_scene                          destroy_scene;
+    proc_get_scenes                             get_scenes;
+    proc_update                                 update;
+    proc_update_scene                           update_scene;
+    proc_render_scene_view                      render_scene_view;
+    proc_render_light_volumes                   render_light_volumes;
+    proc_render_shadow_views                    render_shadow_views;
+    proc_render_omni_shadow_views               render_omni_shadow_views;
+    proc_render_area_light_textures             render_area_light_textures;
+    proc_compute_volume_gi                      compute_volume_gi;
+    proc_clear_scene                            clear_scene;
+    proc_default_scene                          default_scene;
+    proc_resize_scene_buffers                   resize_scene_buffers;
+    proc_zero_entity_components                 zero_entity_components;
+    proc_delete_entity                          delete_entity;
+    proc_delete_entity_first_pass               delete_entity_first_pass;
+    proc_delete_entity_second_pass              delete_entity_second_pass;
+    proc_initialise_free_list                   initialise_free_list;
+    proc_register_ecs_extentsions               register_ecs_extentsions;
+    proc_unregister_ecs_extensions              unregister_ecs_extensions;
+    proc_register_ecs_controller                register_ecs_controller;
+    proc_get_extension_component_offset         get_extension_component_offset;
     proc_get_extension_component_offset_from_id get_extension_component_offset_from_id;
-    proc_save_scene save_scene;
-    proc_save_sub_scene save_sub_scene;
-    proc_load_scene load_scene;
-    proc_load_pmm load_pmm;
-    proc_load_pma load_pma;
-    proc_load_pmv load_pmv;
-    proc_optimise_pmm optimise_pmm;
-    proc_optimise_pma optimise_pma;
-    proc_instantiate_rigid_body instantiate_rigid_body;
-    proc_instantiate_compound_rigid_body instantiate_compound_rigid_body;
-    proc_instantiate_constraint instantiate_constraint;
-    proc_instantiate_geometry instantiate_geometry;
-    proc_instantiate_model_pre_skin instantiate_model_pre_skin;
-    proc_instantiate_model_cbuffer instantiate_model_cbuffer;
-    proc_instantiate_material_cbuffer instantiate_material_cbuffer;
-    proc_instantiate_anim_controller_v2 instantiate_anim_controller_v2;
-    proc_instantiate_material instantiate_material;
-    proc_instantiate_sdf_shadow instantiate_sdf_shadow;
-    proc_instantiate_light instantiate_light;
-    proc_instantiate_area_light instantiate_area_light;
-    proc_instantiate_area_light_ex instantiate_area_light_ex;
-    proc_destroy_geometry destroy_geometry;
-    proc_destroy_physics destroy_physics;
-    proc_bake_rigid_body_params bake_rigid_body_params;
-    proc_bake_material_handles bake_material_handles;
-    proc_create_geometry_primitives create_geometry_primitives;
-    proc_add_geometry_resource add_geometry_resource;
-    proc_add_material_resource add_material_resource;
-    proc_get_material_resource get_material_resource;
-    proc_get_animation_resource get_animation_resource;
-    proc_get_geometry_resource get_geometry_resource;
-    proc_get_geometry_resource_by_index get_geometry_resource_by_index;
-    proc_get_next_entity get_next_entity;
-    proc_get_new_entity get_new_entity;
-    proc_get_new_entities_contiguous get_new_entities_contiguous;
-    proc_get_new_entities_append get_new_entities_append;
-    proc_clone_entity clone_entity;
-    proc_swap_entities swap_entities;
-    proc_clone_selection_hierarchical clone_selection_hierarchical;
-    proc_instance_entity_range instance_entity_range;
-    proc_bake_entities_to_vb bake_entities_to_vb;
-    proc_set_entity_parent set_entity_parent;
-    proc_set_entity_parent_validate set_entity_parent_validate;
-    proc_trim_entities trim_entities;
-    proc_bind_animation_to_rig bind_animation_to_rig;
-    proc_tree_to_entity_index_list tree_to_entity_index_list;
-    proc_build_scene_tree build_scene_tree;
-    proc_build_heirarchy_node_list build_heirarchy_node_list;
-    proc_scene_tree_enumerate scene_tree_enumerate;
-    proc_scene_tree_add_entity scene_tree_add_entity;
-    proc_read_parsable_string read_parsable_string;
-    proc_write_parsable_string write_parsable_string;
-    proc_write_parsable_string_u32 write_parsable_string_u32;
-    void* __ecs_end;
+    proc_save_scene                             save_scene;
+    proc_save_sub_scene                         save_sub_scene;
+    proc_load_scene                             load_scene;
+    proc_load_pmm                               load_pmm;
+    proc_load_pma                               load_pma;
+    proc_load_pmv                               load_pmv;
+    proc_optimise_pmm                           optimise_pmm;
+    proc_optimise_pma                           optimise_pma;
+    proc_instantiate_rigid_body                 instantiate_rigid_body;
+    proc_instantiate_compound_rigid_body        instantiate_compound_rigid_body;
+    proc_instantiate_constraint                 instantiate_constraint;
+    proc_instantiate_geometry                   instantiate_geometry;
+    proc_instantiate_model_pre_skin             instantiate_model_pre_skin;
+    proc_instantiate_model_cbuffer              instantiate_model_cbuffer;
+    proc_instantiate_material_cbuffer           instantiate_material_cbuffer;
+    proc_instantiate_anim_controller_v2         instantiate_anim_controller_v2;
+    proc_instantiate_material                   instantiate_material;
+    proc_instantiate_sdf_shadow                 instantiate_sdf_shadow;
+    proc_instantiate_light                      instantiate_light;
+    proc_instantiate_area_light                 instantiate_area_light;
+    proc_instantiate_area_light_ex              instantiate_area_light_ex;
+    proc_destroy_geometry                       destroy_geometry;
+    proc_destroy_physics                        destroy_physics;
+    proc_bake_rigid_body_params                 bake_rigid_body_params;
+    proc_bake_material_handles                  bake_material_handles;
+    proc_create_geometry_primitives             create_geometry_primitives;
+    proc_add_geometry_resource                  add_geometry_resource;
+    proc_add_material_resource                  add_material_resource;
+    proc_get_material_resource                  get_material_resource;
+    proc_get_animation_resource                 get_animation_resource;
+    proc_get_geometry_resource                  get_geometry_resource;
+    proc_get_geometry_resource_by_index         get_geometry_resource_by_index;
+    proc_get_next_entity                        get_next_entity;
+    proc_get_new_entity                         get_new_entity;
+    proc_get_new_entities_contiguous            get_new_entities_contiguous;
+    proc_get_new_entities_append                get_new_entities_append;
+    proc_clone_entity                           clone_entity;
+    proc_swap_entities                          swap_entities;
+    proc_clone_selection_hierarchical           clone_selection_hierarchical;
+    proc_instance_entity_range                  instance_entity_range;
+    proc_bake_entities_to_vb                    bake_entities_to_vb;
+    proc_set_entity_parent                      set_entity_parent;
+    proc_set_entity_parent_validate             set_entity_parent_validate;
+    proc_trim_entities                          trim_entities;
+    proc_bind_animation_to_rig                  bind_animation_to_rig;
+    proc_tree_to_entity_index_list              tree_to_entity_index_list;
+    proc_build_scene_tree                       build_scene_tree;
+    proc_build_heirarchy_node_list              build_heirarchy_node_list;
+    proc_scene_tree_enumerate                   scene_tree_enumerate;
+    proc_scene_tree_add_entity                  scene_tree_add_entity;
+    proc_read_parsable_string                   read_parsable_string;
+    proc_write_parsable_string                  write_parsable_string;
+    proc_write_parsable_string_u32              write_parsable_string_u32;
+    void*                                       __ecs_end;
 };
 
 typedef void (*proc_shutdown)(void);
@@ -193,30 +194,31 @@ typedef void (*proc_add_text_2f)(const f32, const f32, const pen::viewport&, con
 typedef void (*proc_add_axis_transform_widget)(const mat4&, const f32, u32, u32, const mat4&, const mat4&, const vec2i&);
 typedef void (*proc_render_2d)(u32);
 typedef void (*proc_render_3d)(u32);
-struct __dbg {
-    void* __dbg_start;
-    proc_shutdown shutdown;
-    proc_add_line add_line;
-    proc_add_coord_space add_coord_space;
-    proc_add_point add_point;
-    proc_add_grid add_grid;
-    proc_add_aabb add_aabb;
-    proc_add_circle add_circle;
-    proc_add_circle_segment add_circle_segment;
-    proc_add_frustum add_frustum;
-    proc_add_triangle add_triangle;
-    proc_add_triangle_with_normal add_triangle_with_normal;
-    proc_add_plane add_plane;
-    proc_add_obb add_obb;
-    proc_add_line_2f add_line_2f;
-    proc_add_point_2f add_point_2f;
-    proc_add_quad_2f add_quad_2f;
-    proc_add_tri_2f add_tri_2f;
-    proc_add_text_2f add_text_2f;
+struct __dbg
+{
+    void*                          __dbg_start;
+    proc_shutdown                  shutdown;
+    proc_add_line                  add_line;
+    proc_add_coord_space           add_coord_space;
+    proc_add_point                 add_point;
+    proc_add_grid                  add_grid;
+    proc_add_aabb                  add_aabb;
+    proc_add_circle                add_circle;
+    proc_add_circle_segment        add_circle_segment;
+    proc_add_frustum               add_frustum;
+    proc_add_triangle              add_triangle;
+    proc_add_triangle_with_normal  add_triangle_with_normal;
+    proc_add_plane                 add_plane;
+    proc_add_obb                   add_obb;
+    proc_add_line_2f               add_line_2f;
+    proc_add_point_2f              add_point_2f;
+    proc_add_quad_2f               add_quad_2f;
+    proc_add_tri_2f                add_tri_2f;
+    proc_add_text_2f               add_text_2f;
     proc_add_axis_transform_widget add_axis_transform_widget;
-    proc_render_2d render_2d;
-    proc_render_3d render_3d;
-    void* __dbg_end;
+    proc_render_2d                 render_2d;
+    proc_render_3d                 render_3d;
+    void*                          __dbg_end;
 };
 
 typedef void (*proc_camera_create_perspective)(camera*, f32, f32, f32, f32);
@@ -230,20 +232,21 @@ typedef void (*proc_camera_update_modelling)(camera*, bool, camera_settings);
 typedef void (*proc_camera_update_fly)(camera*, bool, camera_settings);
 typedef void (*proc_camera_update_shader_constants)(camera*);
 typedef void (*proc_camera_update_shadow_frustum)(put::camera*, vec3f, vec3f, vec3f);
-struct __put {
-    void* __put_start;
-    proc_camera_create_perspective camera_create_perspective;
-    proc_camera_create_orthographic camera_create_orthographic;
-    proc_camera_create_cubemap camera_create_cubemap;
-    proc_camera_set_cubemap_face camera_set_cubemap_face;
-    proc_camera_update_look_at camera_update_look_at;
+struct __put
+{
+    void*                                __put_start;
+    proc_camera_create_perspective       camera_create_perspective;
+    proc_camera_create_orthographic      camera_create_orthographic;
+    proc_camera_create_cubemap           camera_create_cubemap;
+    proc_camera_set_cubemap_face         camera_set_cubemap_face;
+    proc_camera_update_look_at           camera_update_look_at;
     proc_camera_update_projection_matrix camera_update_projection_matrix;
-    proc_camera_update_frustum camera_update_frustum;
-    proc_camera_update_modelling camera_update_modelling;
-    proc_camera_update_fly camera_update_fly;
-    proc_camera_update_shader_constants camera_update_shader_constants;
-    proc_camera_update_shadow_frustum camera_update_shadow_frustum;
-    void* __put_end;
+    proc_camera_update_frustum           camera_update_frustum;
+    proc_camera_update_modelling         camera_update_modelling;
+    proc_camera_update_fly               camera_update_fly;
+    proc_camera_update_shader_constants  camera_update_shader_constants;
+    proc_camera_update_shadow_frustum    camera_update_shadow_frustum;
+    void*                                __put_end;
 };
 
 typedef void (*proc_show_dev_ui)(void);
@@ -290,65 +293,67 @@ typedef bool (*proc_has_technique_constants)(u32, u32);
 typedef bool (*proc_has_technique_samplers)(u32, u32);
 typedef bool (*proc_has_technique_params)(u32, u32);
 typedef void (*proc_poll_for_changes)(void);
-struct __pmfx {
-    void* __pmfx_start;
-    proc_show_dev_ui show_dev_ui;
-    proc_release_script_resources release_script_resources;
-    proc_render render;
-    proc_render_view render_view;
-    proc_register_scene register_scene;
-    proc_register_camera register_camera;
+struct __pmfx
+{
+    void*                             __pmfx_start;
+    proc_show_dev_ui                  show_dev_ui;
+    proc_release_script_resources     release_script_resources;
+    proc_render                       render;
+    proc_render_view                  render_view;
+    proc_register_scene               register_scene;
+    proc_register_camera              register_camera;
     proc_register_scene_view_renderer register_scene_view_renderer;
-    proc_resize_render_target resize_render_target;
-    proc_resize_viewports resize_viewports;
-    proc_set_view_set set_view_set;
-    proc_get_camera get_camera;
-    proc_get_cameras get_cameras;
-    proc_get_render_target get_render_target;
+    proc_resize_render_target         resize_render_target;
+    proc_resize_viewports             resize_viewports;
+    proc_set_view_set                 set_view_set;
+    proc_get_camera                   get_camera;
+    proc_get_cameras                  get_cameras;
+    proc_get_render_target            get_render_target;
     proc_get_render_target_dimensions get_render_target_dimensions;
-    proc_get_render_state get_render_state;
-    proc_get_render_state_name get_render_state_name;
-    proc_get_render_state_list get_render_state_list;
-    proc_get_render_state_id_list get_render_state_id_list;
-    proc_fullscreen_quad fullscreen_quad;
-    proc_render_taa_resolve render_taa_resolve;
-    proc_load_shader load_shader;
-    proc_release_shader release_shader;
-    proc_set_technique set_technique;
-    proc_set_technique_perm set_technique_perm;
+    proc_get_render_state             get_render_state;
+    proc_get_render_state_name        get_render_state_name;
+    proc_get_render_state_list        get_render_state_list;
+    proc_get_render_state_id_list     get_render_state_id_list;
+    proc_fullscreen_quad              fullscreen_quad;
+    proc_render_taa_resolve           render_taa_resolve;
+    proc_load_shader                  load_shader;
+    proc_release_shader               release_shader;
+    proc_set_technique                set_technique;
+    proc_set_technique_perm           set_technique_perm;
     proc_initialise_constant_defaults initialise_constant_defaults;
-    proc_initialise_sampler_defaults initialise_sampler_defaults;
-    proc_get_technique_list_index get_technique_list_index;
-    proc_get_shader_list get_shader_list;
-    proc_get_technique_list get_technique_list;
-    proc_get_shader_name get_shader_name;
-    proc_get_technique_name get_technique_name;
-    proc_get_technique_id get_technique_id;
-    proc_get_technique_index_perm get_technique_index_perm;
-    proc_get_technique_constants get_technique_constants;
-    proc_get_technique_constant get_technique_constant;
-    proc_get_technique_cbuffer_size get_technique_cbuffer_size;
-    proc_get_technique_samplers get_technique_samplers;
-    proc_get_technique_sampler get_technique_sampler;
-    proc_show_technique_ui show_technique_ui;
-    proc_has_technique_permutations has_technique_permutations;
-    proc_has_technique_constants has_technique_constants;
-    proc_has_technique_samplers has_technique_samplers;
-    proc_has_technique_params has_technique_params;
-    proc_poll_for_changes poll_for_changes;
-    void* __pmfx_end;
+    proc_initialise_sampler_defaults  initialise_sampler_defaults;
+    proc_get_technique_list_index     get_technique_list_index;
+    proc_get_shader_list              get_shader_list;
+    proc_get_technique_list           get_technique_list;
+    proc_get_shader_name              get_shader_name;
+    proc_get_technique_name           get_technique_name;
+    proc_get_technique_id             get_technique_id;
+    proc_get_technique_index_perm     get_technique_index_perm;
+    proc_get_technique_constants      get_technique_constants;
+    proc_get_technique_constant       get_technique_constant;
+    proc_get_technique_cbuffer_size   get_technique_cbuffer_size;
+    proc_get_technique_samplers       get_technique_samplers;
+    proc_get_technique_sampler        get_technique_sampler;
+    proc_show_technique_ui            show_technique_ui;
+    proc_has_technique_permutations   has_technique_permutations;
+    proc_has_technique_constants      has_technique_constants;
+    proc_has_technique_samplers       has_technique_samplers;
+    proc_has_technique_params         has_technique_params;
+    proc_poll_for_changes             poll_for_changes;
+    void*                             __pmfx_end;
 };
 
-struct live_context:
-public __ecs, public __dbg, public __put, public __pmfx{
-    f32 dt;
+struct live_context : public __ecs, public __dbg, public __put, public __pmfx
+{
+    f32             dt;
     ecs::ecs_scene* scene;
-    __ecs* ecs_funcs;
-    __dbg* dbg_funcs;
-    __put* put_funcs;
-    __pmfx* pmfx_funcs;
-    live_context() {
-        #if !DLL
+    __ecs*          ecs_funcs;
+    __dbg*          dbg_funcs;
+    __put*          put_funcs;
+    __pmfx*         pmfx_funcs;
+    live_context()
+    {
+#if !DLL
         init = &put::ecs::init;
         create_scene = &put::ecs::create_scene;
         destroy_scene = &put::ecs::destroy_scene;
@@ -503,6 +508,6 @@ public __ecs, public __dbg, public __put, public __pmfx{
         has_technique_samplers = &put::pmfx::has_technique_samplers;
         has_technique_params = &put::pmfx::has_technique_params;
         poll_for_changes = &put::pmfx::poll_for_changes;
-        #endif
+#endif
     }
 };

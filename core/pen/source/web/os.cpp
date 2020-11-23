@@ -1,35 +1,29 @@
-#include "types.h"
-#include "pen.h"
-#include "threads.h"
 #include "console.h"
 #include "hash.h"
-#include "renderer.h"
-#include "timer.h"
 #include "input.h"
+#include "pen.h"
+#include "renderer.h"
+#include "threads.h"
+#include "timer.h"
+#include "types.h"
 
-#include <emscripten.h>
-#include <emscripten/html5.h>
 #include <GLES3/gl32.h>
 #include <SDL/SDL.h>
+#include <emscripten.h>
+#include <emscripten/html5.h>
 
 #include <semaphore.h>
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <stdio.h>
 #include <map>
+#include <stdio.h>
 
-EM_JS(int, get_canvas_width, (), {
-  return canvas.clientWidth;
-});
+EM_JS(int, get_canvas_width, (), { return canvas.clientWidth; });
 
-EM_JS(int, get_canvas_height, (), {
-  return canvas.clientHeight;
-});
+EM_JS(int, get_canvas_height, (), { return canvas.clientHeight; });
 
-EM_JS(void, set_title, (const char* title), {
-    document.title = UTF8ToString(title);
-});
+EM_JS(void, set_title, (const char* title), { document.title = UTF8ToString(title); });
 
 using namespace pen;
 
@@ -46,8 +40,8 @@ namespace
 {
     struct os_context
     {
-        SDL_Surface* 		surface;
-        pen_creation_params	pcp;
+        SDL_Surface*        surface;
+        pen_creation_params pcp;
     };
     os_context s_ctx;
 
@@ -154,12 +148,12 @@ namespace
         {SDLK_BACKQUOTE, PK_GRAVE}
     };
     // clang-format on
-    
+
     void handle_key_event(bool down, u32 key)
     {
         if (k_key_map.find(key) != k_key_map.end())
         {
-            u32 pk = k_key_map[key];   
+            u32 pk = k_key_map[key];
             if (down)
             {
                 pen::input_set_key_down(pk);
@@ -176,7 +170,7 @@ namespace
         s32 x, y;
         u32 b = SDL_GetMouseState(&x, &y);
         input_set_mouse_pos((f32)x, (f32)y);
-        if(b == SDL_BUTTON_LEFT)
+        if (b == SDL_BUTTON_LEFT)
         {
             input_set_mouse_down(PEN_MOUSE_L);
         }
@@ -185,7 +179,7 @@ namespace
             input_set_mouse_up(PEN_MOUSE_L);
         }
 
-        if(b == SDL_BUTTON_RIGHT)
+        if (b == SDL_BUTTON_RIGHT)
         {
             input_set_mouse_down(PEN_MOUSE_R);
         }
@@ -194,7 +188,7 @@ namespace
             input_set_mouse_up(PEN_MOUSE_R);
         }
 
-        if(b == SDL_BUTTON_MIDDLE)
+        if (b == SDL_BUTTON_MIDDLE)
         {
             input_set_mouse_down(PEN_MOUSE_M);
         }
@@ -206,37 +200,38 @@ namespace
 
     void handle_window_resize()
     {
-        if(s_ctx.pcp.window_width != get_canvas_width() || s_ctx.pcp.window_height != get_canvas_height())
+        if (s_ctx.pcp.window_width != get_canvas_width() || s_ctx.pcp.window_height != get_canvas_height())
         {
             s_ctx.pcp.window_width = get_canvas_width();
             s_ctx.pcp.window_height = get_canvas_height();
 
-            if(s_ctx.surface)
+            if (s_ctx.surface)
                 SDL_FreeSurface(s_ctx.surface);
 
             s_ctx.surface = SDL_SetVideoMode(s_ctx.pcp.window_width, s_ctx.pcp.window_height, 32, SDL_OPENGL | SDL_RESIZABLE);
         }
     }
-    
+
     EM_BOOL run(double time, void* user_data)
-    {     
+    {
         SDL_PumpEvents();
 
         SDL_Event event;
-        while( SDL_PollEvent( &event ) )
+        while (SDL_PollEvent(&event))
         {
-            switch( event.type ){
-            case SDL_KEYDOWN:
-                handle_key_event(true, (u32)event.key.keysym.sym);
-                break;
-            case SDL_KEYUP:
-                handle_key_event(false, (u32)event.key.keysym.sym);
-                break;
-            case SDL_MOUSEWHEEL:
-                input_set_mouse_wheel(event.wheel.y);
-                break;
-            default:
-                break;
+            switch (event.type)
+            {
+                case SDL_KEYDOWN:
+                    handle_key_event(true, (u32)event.key.keysym.sym);
+                    break;
+                case SDL_KEYUP:
+                    handle_key_event(false, (u32)event.key.keysym.sym);
+                    break;
+                case SDL_MOUSEWHEEL:
+                    input_set_mouse_wheel(event.wheel.y);
+                    break;
+                default:
+                    break;
             }
         }
 
@@ -253,7 +248,7 @@ namespace
     {
         SDL_Init(SDL_INIT_VIDEO);
 
-        if(s_ctx.pcp.window_sample_count > 1)
+        if (s_ctx.pcp.window_sample_count > 1)
         {
             SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
             SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, s_ctx.pcp.window_sample_count);
@@ -272,9 +267,10 @@ namespace
         pen::renderer_init(nullptr, false, 1024);
 
         // creates user thread
-        jobs_create_job(s_ctx.pcp.user_thread_function, 1024 * 1024, s_ctx.pcp.user_data, pen::e_thread_start_flags::detached);
+        jobs_create_job(s_ctx.pcp.user_thread_function, 1024 * 1024, s_ctx.pcp.user_data,
+                        pen::e_thread_start_flags::detached);
     }
-}
+} // namespace
 
 //
 // os public api
@@ -289,7 +285,6 @@ namespace pen
 
     void os_terminate(u32 return_code)
     {
-        
     }
 
     const c8* os_path_for_resource(const c8* filename)
@@ -326,7 +321,6 @@ namespace pen
 
     void window_set_frame(const window_frame& f)
     {
-
     }
 
     void* window_get_primary_display_handle()
@@ -349,16 +343,16 @@ namespace pen
         static user_info u;
         return u;
     }
-}
+} // namespace pen
 
 //
 // entry
 //
 
-int main() 
+int main()
 {
     set_title("Loading");
-  	s_ctx.pcp = pen_entry(0, nullptr);
+    s_ctx.pcp = pen_entry(0, nullptr);
     init();
     emscripten_request_animation_frame_loop(run, 0);
     return 0;

@@ -5,9 +5,9 @@
 #pragma once
 
 #include "hash.h"
+#include "pen_json.h"
 #include "renderer.h"
 #include "types.h"
-#include "pen_json.h"
 
 #include "str/Str.h"
 
@@ -233,10 +233,10 @@ namespace put
 
         struct shader_program
         {
-            hash_id id_name;
-            hash_id id_sub_type;
-            Str     name;
-            bool    loaded = false;
+            hash_id   id_name;
+            hash_id   id_sub_type;
+            Str       name;
+            bool      loaded = false;
             pen::json info;
 
             u32 vertex_shader;
@@ -317,8 +317,8 @@ namespace put
         hash_id*             get_render_state_id_list(u32 type); // call sb_free on return value when don
 
         // render funcs
-        void                 fullscreen_quad(const scene_view& sv);
-        void                 render_taa_resolve(const scene_view& view);
+        void fullscreen_quad(const scene_view& sv);
+        void render_taa_resolve(const scene_view& view);
 
         // pmfx shader -----------------------------------------------------------------------------------------------------
 

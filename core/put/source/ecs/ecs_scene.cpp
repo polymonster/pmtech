@@ -11,17 +11,17 @@
 #include "dev_ui.h"
 #include "file_system.h"
 #include "hash.h"
+#include "input.h"
 #include "os.h"
 #include "pmfx.h"
 #include "str/Str.h"
 #include "str_utilities.h"
 #include "timer.h"
-#include "input.h"
 
+#include "ecs/ecs_cull.h"
 #include "ecs/ecs_resources.h"
 #include "ecs/ecs_scene.h"
 #include "ecs/ecs_utilities.h"
-#include "ecs/ecs_cull.h"
 
 using namespace put;
 
@@ -297,7 +297,7 @@ namespace put
 
             return dst;
         }
-        
+
         void init()
         {
             // create view renderers
@@ -325,12 +325,12 @@ namespace put
             svr_omni_shadow_maps.name = "ecs_render_omni_shadow_maps";
             svr_omni_shadow_maps.id_name = PEN_HASH(svr_omni_shadow_maps.name.c_str());
             svr_omni_shadow_maps.render_function = &ecs::render_omni_shadow_views;
-            
+
             put::scene_view_renderer svr_volume_gi;
             svr_volume_gi.name = "ecs_compute_volume_gi";
             svr_volume_gi.id_name = PEN_HASH(svr_volume_gi.name.c_str());
             svr_volume_gi.render_function = &ecs::compute_volume_gi;
-                        
+
             pmfx::register_scene_view_renderer(svr_main);
             pmfx::register_scene_view_renderer(svr_light_volumes);
             pmfx::register_scene_view_renderer(svr_shadow_maps);
@@ -387,7 +387,7 @@ namespace put
             bcp.data = nullptr;
 
             new_instance.scene->area_light_buffer = pen::renderer_create_buffer(bcp);
-            
+
             // gi volume
             bcp.usage_flags = PEN_USAGE_DYNAMIC;
             bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
@@ -396,7 +396,6 @@ namespace put
             bcp.data = nullptr;
 
             new_instance.scene->gi_volume_buffer = pen::renderer_create_buffer(bcp);
-            
 
             return new_instance.scene;
         }
@@ -456,7 +455,7 @@ namespace put
                 pmfx::fullscreen_quad(sub);
             }
         }
-        
+
         void single_light_from_entity(light_data& ld, const ecs_scene* scene, u32 n)
         {
             cmp_draw_call dc;
@@ -484,7 +483,7 @@ namespace put
                     break;
             }
         }
-        
+
         void shadow_camera_from_entity(camera& cam, const ecs_scene* scene, u32 n)
         {
             if (scene->lights[n].type == e_light_type::dir)
@@ -492,13 +491,13 @@ namespace put
                 // clamp to shadow map max extents to prevent large shadow maps
                 vec3f emin = scene->renderable_extents.min;
                 vec3f emax = scene->renderable_extents.max;
-                
-                if(mag2(scene->shadow_extent_constraints.min - scene->shadow_extent_constraints.max))
+
+                if (mag2(scene->shadow_extent_constraints.min - scene->shadow_extent_constraints.max))
                 {
                     emin = max_union(scene->shadow_extent_constraints.min, emin);
                     emax = min_union(scene->shadow_extent_constraints.max, emax);
                 }
-            
+
                 vec3f light_dir = normalised(-scene->lights[n].direction);
                 camera_update_shadow_frustum(&cam, light_dir, emin - vec3f(0.1f), emax + vec3f(0.1f));
             }
@@ -506,16 +505,16 @@ namespace put
             {
                 // spot
                 camera_create_perspective(&cam, 100.0f, 1.0f, 0.1f, 500.0f);
-                
+
                 cam.view.set_row(0, vec4f((vec3f)normalised(scene->world_matrices[n].get_column(2).xyz), 0.0f));
                 cam.view.set_row(1, vec4f((vec3f)normalised(scene->world_matrices[n].get_column(0).xyz), 0.0f));
                 cam.view.set_row(2, vec4f((vec3f)normalised(scene->world_matrices[n].get_column(1).xyz), 0.0f));
                 cam.view.set_row(3, vec4f(0.0f, 0.0f, 0.0f, 1.0f));
-                                    
+
                 mat4 translate = mat::create_translation(-scene->world_matrices[n].get_translation());
 
                 cam.view = cam.view * translate;
-                
+
                 camera_update_frustum(&cam);
             }
         }
@@ -557,13 +556,13 @@ namespace put
                 // update view and camera
                 scene_view vv = view;
                 vv.camera = &cam;
-                
+
                 mat4 shadow_vp;
 
                 // handle different clip spaces
                 if (pen::renderer_depth_0_to_1())
                 {
-                    // if clip space is 0-1 scale and bias the depth buffer 
+                    // if clip space is 0-1 scale and bias the depth buffer
                     mat4 scale = mat::create_scale(vec3f(1.0f, 1.0f, 0.5f));
                     mat4 bias = mat::create_translation(vec3f(0.0f, 0.0f, 0.5f));
                     shadow_vp = bias * scale * cam.proj * cam.view;
@@ -577,12 +576,12 @@ namespace put
                 pen::renderer_update_buffer(cb_view, &shadow_vp, sizeof(mat4));
                 shadow_matrices[shadow_index - 1] = shadow_vp;
                 vv.cb_view = cb_view;
-                
+
                 // colour shadow maps
-                if(vv.render_flags & pmfx::e_scene_render_flags::forward_lit)
+                if (vv.render_flags & pmfx::e_scene_render_flags::forward_lit)
                 {
                     // bind single light cbuffer
-                    static u32    cb_light = -1;
+                    static u32 cb_light = -1;
                     if (!is_valid(cb_light))
                     {
                         pen::buffer_creation_params bcp;
@@ -594,7 +593,7 @@ namespace put
 
                         cb_light = pen::renderer_create_buffer(bcp);
                     }
-                    
+
                     light_data ld;
                     single_light_from_entity(ld, scene, n);
                     pen::renderer_update_buffer(cb_light, &ld, sizeof(light_data));
@@ -611,7 +610,7 @@ namespace put
                                             sizeof(mat4) * e_scene_limits::max_shadow_maps);
             }
         }
-        
+
         void render_omni_shadow_views(const scene_view& view)
         {
             ecs_scene* scene = view.scene;
@@ -697,9 +696,9 @@ namespace put
                 if (!scene->cbuffer[n])
                     continue;
 
-                u32 t = scene->lights[n].type;
+                u32                t = scene->lights[n].type;
                 geometry_resource* vol = volume[t];
-                pmm_renderable& r = vol->renderable[e_pmm_renderable::full_vertex_buffer];
+                pmm_renderable&    r = vol->renderable[e_pmm_renderable::full_vertex_buffer];
 
                 pmfx::set_technique_perm(shader, id_technique[t], view.permutation);
 
@@ -768,17 +767,17 @@ namespace put
                 }
             }
         }
-        
+
         void compute_volume_gi(const scene_view& view)
         {
             ecs_scene* scene = view.scene;
- 
+
             struct gi_info
             {
-                vec4f   scene_size;
-                vec4f   volume_size;
-                vec4f   shadow_map_size;
-                mat4    inv_mat;
+                vec4f scene_size;
+                vec4f volume_size;
+                vec4f shadow_map_size;
+                mat4  inv_mat;
             };
 
             static u32 cb_info = -1; //
@@ -797,10 +796,10 @@ namespace put
             const pmfx::render_target* gi_rt = pmfx::get_render_target(PEN_HASH("volume_gi"));
             const pmfx::render_target* sm_rt = pmfx::get_render_target(PEN_HASH("colour_shadow_map_depth"));
             const pmfx::render_target* col_sm_rt = pmfx::get_render_target(PEN_HASH("colour_shadow_map"));
-            u32 volume_gi_tex = gi_rt->handle;
-            u32 colour_shadow_map = col_sm_rt->handle;
-            u32 colour_shadow_map_depth = sm_rt->handle;
-            
+            u32                        volume_gi_tex = gi_rt->handle;
+            u32                        colour_shadow_map = col_sm_rt->handle;
+            u32                        colour_shadow_map_depth = sm_rt->handle;
+
             // make info
             gi_info info;
             pmfx::get_render_target_dimensions(sm_rt, info.shadow_map_size.x, info.shadow_map_size.y);
@@ -819,14 +818,14 @@ namespace put
 
                 if (!(scene->lights[n].flags & e_light_flags::global_illumination))
                     continue;
-                    
+
                 camera cam;
                 shadow_camera_from_entity(cam, scene, n);
                 mat4 vp = cam.proj * cam.view;
 
                 info.inv_mat = mat::inverse4x4(vp);
                 info.shadow_map_size.z = i++;
-                                
+
                 pmfx::set_technique_perm(view.pmfx_shader, view.id_technique, 0);
                 pen::renderer_set_texture(volume_gi_tex, 0, 0, pen::TEXTURE_BIND_CS);
                 pen::renderer_set_texture(colour_shadow_map, 0, 1, pen::TEXTURE_BIND_CS);
@@ -835,7 +834,7 @@ namespace put
                 pen::renderer_set_constant_buffer(cb_info, 1, pen::CBUFFER_BIND_CS);
                 pen::renderer_dispatch_compute({(u32)info.shadow_map_size.x, (u32)info.shadow_map_size.y, 1}, {16, 16, 1});
             }
-            
+
             // info for the ray marching
             gi_volume_info gi_info;
             gi_info.volume_size = info.volume_size;
@@ -847,15 +846,15 @@ namespace put
             pen::renderer_set_texture(0, 0, 1, pen::TEXTURE_BIND_CS);
             pen::renderer_set_texture(0, 0, 2, pen::TEXTURE_BIND_CS);
         }
-        
+
         void render_scene_view(const scene_view& view)
         {
             // PEN_PERF_SCOPE_PRINT(render_scene_view);
-            
+
             ecs_scene* scene = view.scene;
             if (scene->view_flags & e_scene_view_flags::hide)
                 return;
-            
+
             // view
             pen::renderer_set_constant_buffer(view.cb_view, 0, pen::CBUFFER_BIND_PS | pen::CBUFFER_BIND_VS);
 
@@ -893,16 +892,16 @@ namespace put
                 // info for sdf
                 pen::renderer_set_constant_buffer(scene->sdf_shadow_buffer, 5, pen::CBUFFER_BIND_PS);
             }
-            
+
             // gi volume
             pen::renderer_set_constant_buffer(scene->gi_volume_buffer, 11, pen::CBUFFER_BIND_PS);
-            
+
             // blue noise
             static hash_id id_wrap_point = PEN_HASH("wrap_point");
-            u32 wrap_point = pmfx::get_render_state(id_wrap_point, pmfx::e_render_state::sampler);
-            static u32 blue_noise = put::load_texture("data/textures/noise/blue_noise_ldr_rgba_0.dds");
+            u32            wrap_point = pmfx::get_render_state(id_wrap_point, pmfx::e_render_state::sampler);
+            static u32     blue_noise = put::load_texture("data/textures/noise/blue_noise_ldr_rgba_0.dds");
             pen::renderer_set_texture(blue_noise, wrap_point, 5, pen::TEXTURE_BIND_PS);
-            
+
             // filter and cull
             u32* filtered_entities = nullptr;
             u32* culled_entities = nullptr;
@@ -918,20 +917,20 @@ namespace put
             u32 vc = sb_count(culled_entities);
 
             // render
-            for(u32 i = 0; i < vc; ++i)
+            for (u32 i = 0; i < vc; ++i)
             {
                 u32 n = culled_entities[i];
-                
+
                 cmp_geometry* p_geom = &scene->geometries[n];
                 if (!(scene->entities[n] & e_cmp::skinned))
-                    if(view.render_flags & pmfx::e_scene_render_flags::shadow_map)
+                    if (view.render_flags & pmfx::e_scene_render_flags::shadow_map)
                         p_geom = &scene->position_geometries[n];
 
                 cmp_material* p_mat = &scene->materials[n];
                 u32           permutation = scene->material_permutation[n];
 
                 // set shader / technique only if we need to change
-                if(p_mat->shader != cur_shader || p_mat->technique_index != cur_technique || permutation != cur_permutation)
+                if (p_mat->shader != cur_shader || p_mat->technique_index != cur_technique || permutation != cur_permutation)
                 {
                     if (!is_valid(view.pmfx_shader))
                     {
@@ -949,7 +948,7 @@ namespace put
                         cur_technique = view.id_technique;
                         cur_permutation = permutation;
                     }
-                    
+
                     // if we change pipeline, we need to rebind buffers
                     cur_vb = -1;
                     cur_ib = -1;
@@ -1014,7 +1013,7 @@ namespace put
                 }
                 else
                 {
-                    if(cur_vb != p_geom->vertex_buffer)
+                    if (cur_vb != p_geom->vertex_buffer)
                     {
                         pen::renderer_set_vertex_buffer(p_geom->vertex_buffer, 0, p_geom->vertex_size, 0);
                         cur_vb = p_geom->vertex_buffer;
@@ -1022,20 +1021,19 @@ namespace put
                 }
 
                 // set index buffer
-                if(cur_ib != p_geom->index_buffer)
+                if (cur_ib != p_geom->index_buffer)
                 {
                     pen::renderer_set_index_buffer(p_geom->index_buffer, p_geom->index_type, 0);
                     cur_ib = p_geom->index_buffer;
                 }
-                
+
                 // draw
 
                 // instances
                 if (scene->entities[n] & e_cmp::master_instance)
                 {
                     u32 num_instances = scene->master_instances[n].num_instances;
-                    pen::renderer_draw_indexed_instanced(num_instances, 0, p_geom->num_indices, 0, 0,
-                                                         PEN_PT_TRIANGLELIST);
+                    pen::renderer_draw_indexed_instanced(num_instances, 0, p_geom->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
                     n += num_instances;
                     continue;
                 }
@@ -1043,13 +1041,13 @@ namespace put
                 // single
                 pen::renderer_draw_indexed(p_geom->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
             }
-            
-            if(filtered_entities)
+
+            if (filtered_entities)
             {
                 sb_free(filtered_entities);
             }
-            
-            if(culled_entities)
+
+            if (culled_entities)
             {
                 sb_free(culled_entities);
             }
@@ -1261,7 +1259,7 @@ namespace put
         void update(f32 dt)
         {
             //PEN_PERF_SCOPE_PRINT(ecs_update);Oe
-            
+
             // allow run time switching between dynamic and fixed timestep
             static f32 fft = 1.0f / 60.0f;
             bool       bdt = dev_ui::get_program_preference("dynamic_timestep").as_bool(true);
@@ -1422,7 +1420,7 @@ namespace put
 
                 f32& trad = scene->bounding_volumes[n].radius;
                 trad = mag(tmax - tmin) * 0.5f;
-                
+
                 // pos extent for faster aabb and sphere culling
                 auto& pe = scene->pos_extent[n];
                 pe.pos.xyz = tmin + (tmax - tmin) * 0.5f;
@@ -1494,7 +1492,7 @@ namespace put
 
                 // current directional light is a point light very far away
                 // with no attenuation..
-                bool sm = l.flags & e_light_flags::shadow_map;
+                bool  sm = l.flags & e_light_flags::shadow_map;
                 vec3f light_pos = l.direction * k_dir_light_offset;
                 light_buffer.lights[pos].pos_radius = vec4f(light_pos, 0.0);
                 light_buffer.lights[pos].colour = vec4f(l.colour, sm ? 1.0 : 0.0);
@@ -1686,10 +1684,10 @@ namespace put
                     continue;
 
                 cmp_light& l = scene->lights[n];
-                
+
                 if (l.flags & e_light_flags::global_illumination)
                     num_gi_maps++;
-                
+
                 if (l.flags & e_light_flags::shadow_map)
                     num_shadow_maps++;
 
@@ -1699,7 +1697,7 @@ namespace put
 
             // resize shadow maps..
             const pmfx::render_target* sm = pmfx::get_render_target(PEN_HASH("shadow_map"));
-            if(sm)
+            if (sm)
             {
                 if (sm->num_arrays < num_shadow_maps)
                 {
@@ -1730,12 +1728,12 @@ namespace put
                     pmfx::resize_render_target(PEN_HASH("omni_shadow_map"), rrp);
                 }
             }
-            
+
             // resize gi maps
             const pmfx::render_target* gism = pmfx::get_render_target(PEN_HASH("colour_shadow_map"));
             if (gism)
             {
-                if(gism->num_arrays < num_gi_maps)
+                if (gism->num_arrays < num_gi_maps)
                 {
                     pmfx::rt_resize_params rrp;
                     rrp.width = gism->width;
@@ -1748,7 +1746,7 @@ namespace put
                     pmfx::resize_render_target(PEN_HASH("colour_shadow_map_depth"), rrp);
                 }
             }
-            
+
             // Update pre skinned vertex buffers
             static hash_id id_pre_skin_technique = PEN_HASH("pre_skin");
             static u32     shader = pmfx::load_shader("forward_render");

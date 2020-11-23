@@ -4,10 +4,10 @@
 
 #include "audio.h"
 
-#include "os.h"
 #include "console.h"
 #include "data_struct.h"
 #include "memory.h"
+#include "os.h"
 #include "slot_resource.h"
 
 #include "fmod.hpp"
@@ -259,7 +259,7 @@ namespace put
 
         _audio_resources[resource_slot].assigned_flag |= 0xff;
         _audio_resources[resource_slot].type = AUDIO_RESOURCE_SOUND;
-        
+
         FMOD_RESULT result = _sound_system->createSound(pen::os_path_for_resource(filename), FMOD_DEFAULT, NULL,
                                                         (FMOD::Sound**)&_audio_resources[resource_slot].resource);
 
@@ -274,7 +274,7 @@ namespace put
 
         return resource_slot;
     }
-    
+
     u32 direct::audio_create_sound(const pen::music_file& music, u32 resource_slot)
     {
         _audio_resources.grow(resource_slot);
@@ -283,7 +283,7 @@ namespace put
 
         _audio_resources[resource_slot].assigned_flag |= 0xff;
         _audio_resources[resource_slot].type = AUDIO_RESOURCE_SOUND;
-                                                                
+
         FMOD_CREATESOUNDEXINFO exinfo = {};
         memset(&exinfo, 0, sizeof(FMOD_CREATESOUNDEXINFO));
         exinfo.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
@@ -291,9 +291,9 @@ namespace put
         exinfo.numchannels = music.num_channels;
         exinfo.format = FMOD_SOUND_FORMAT_PCMFLOAT;
         exinfo.defaultfrequency = (s32)music.sample_frequency;
-       
-        FMOD_RESULT result = _sound_system->createSound((const char *)music.pcm_data, FMOD_OPENRAW | FMOD_OPENMEMORY_POINT,
-            &exinfo, (FMOD::Sound**)&_audio_resources[resource_slot].resource);
+
+        FMOD_RESULT result = _sound_system->createSound((const char*)music.pcm_data, FMOD_OPENRAW | FMOD_OPENMEMORY_POINT,
+                                                        &exinfo, (FMOD::Sound**)&_audio_resources[resource_slot].resource);
         PEN_ASSERT(result == FMOD_OK);
 
         // populate sound info

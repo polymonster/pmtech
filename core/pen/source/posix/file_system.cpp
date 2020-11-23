@@ -47,11 +47,11 @@ namespace
         fn.append(pen::window_get_title());
         fn.append("_data.txt");
         static bool s_first = true;
-        if(s_first)
+        if (s_first)
         {
-            if(pen::filesystem_file_exists(fn.c_str()))
+            if (pen::filesystem_file_exists(fn.c_str()))
                 remove(fn.c_str());
-                        
+
             s_first = false;
         }
         FILE* p_file = fopen(fn.c_str(), "a");
@@ -59,22 +59,22 @@ namespace
         fwrite("\n", 1, 1, p_file);
         fclose(p_file);
     }
-}
+} // namespace
 
 namespace pen
 {
     bool filesystem_file_exists(const c8* filename)
     {
         const c8* resource_name = os_path_for_resource(filename);
-        FILE* p_file = fopen(resource_name, "r");
+        FILE*     p_file = fopen(resource_name, "r");
         fclose(p_file);
         return p_file != nullptr;
     }
-    
+
     pen_error filesystem_read_file_to_buffer(const c8* filename, void** p_buffer, u32& buffer_size)
     {
         WRITE_FILE_DEPENDENCIES(filename);
-        
+
         const c8* resource_name = os_path_for_resource(filename);
 
         *p_buffer = NULL;
@@ -335,5 +335,3 @@ namespace pen
         return 0;
     }
 } // namespace pen
-
-

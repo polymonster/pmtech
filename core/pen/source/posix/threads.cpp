@@ -110,7 +110,7 @@ namespace pen
 
         c8 name_buf[32];
         pen::string_format(&name_buf[0], 32, "sem%i%i", semaphone_index++, window_get_id());
-        
+
         sem_unlink(name_buf);
         new_semaphore->handle = sem_open(name_buf, O_CREAT, 0, 0);
 
@@ -161,7 +161,7 @@ namespace pen
 
     bool semaphore_wait(semaphore* p_semaphore)
     {
-        while(p_semaphore->handle == 0)
+        while (p_semaphore->handle == 0)
             usleep(10);
 
         p_semaphore->handle = 0;

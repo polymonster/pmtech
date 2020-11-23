@@ -64,11 +64,11 @@ void pen_gl_swap_buffers()
 
 namespace
 {
-    XIM                 _xim;
-    XIC                 _xic;
-    bool                _ctx_error_occured = false;
-    window_frame        _window_frame;
-    bool                _invalidate_window_frame = false;
+    XIM          _xim;
+    XIC          _xic;
+    bool         _ctx_error_occured = false;
+    window_frame _window_frame;
+    bool         _invalidate_window_frame = false;
 
     u32                 s_error_code = 0;
     bool                s_pen_terminate_app = false;
@@ -214,7 +214,7 @@ namespace
         // enable vysnc.. we could pass this into pen create params
         PFNGLXSWAPINTERVALEXTPROC glXSwapIntervalEXT = 0;
         glXSwapIntervalEXT = (PFNGLXSWAPINTERVALEXTPROC)glXGetProcAddress((const GLubyte*)"glXSwapIntervalEXT");
-        if(glXSwapIntervalEXT)
+        if (glXSwapIntervalEXT)
             glXSwapIntervalEXT(_display, _window, 1);
 
         s_windowed = true;
@@ -544,7 +544,7 @@ namespace pen
             init_jobs = true;
         }
 
-        if(s_windowed)
+        if (s_windowed)
             update_window();
 
         // Check for terminate and poll terminated jobs

@@ -5,8 +5,8 @@
 #ifndef _audio_h
 #define _audio_h
 
-#include "pen.h"
 #include "os.h"
+#include "pen.h"
 
 namespace put
 {

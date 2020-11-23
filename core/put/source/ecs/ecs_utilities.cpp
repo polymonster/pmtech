@@ -500,7 +500,7 @@ namespace put
                 u32 n = node_list[i];
 
                 geometry_resource* gr = get_geometry_resource_by_index(PEN_HASH(scene->geometry_names[n]), 0);
-                pmm_renderable& r = gr->renderable[e_pmm_renderable::full_vertex_buffer];
+                pmm_renderable&    r = gr->renderable[e_pmm_renderable::full_vertex_buffer];
 
                 if (vertex_size && r.vertex_size != vertex_size)
                 {
@@ -540,7 +540,7 @@ namespace put
                 u32 n = node_list[i];
 
                 geometry_resource* gr = get_geometry_resource_by_index(PEN_HASH(scene->geometry_names[n]), 0);
-                pmm_renderable& r = gr->renderable[e_pmm_renderable::full_vertex_buffer];
+                pmm_renderable&    r = gr->renderable[e_pmm_renderable::full_vertex_buffer];
 
                 u32 input_index_size = r.index_type == PEN_FORMAT_R32_UINT ? 4 : 2;
                 u32 vb_stride = r.num_vertices * r.vertex_size;

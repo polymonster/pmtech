@@ -1,14 +1,14 @@
 #include "ecs_cull.h"
 
-#include "timer.h"
 #include "ecs_scene.h"
+#include "timer.h"
 
 #if __SSE2__ || __AVX2__ || __AVX__
-#include <xmmintrin.h>
 #include <immintrin.h>
+#include <xmmintrin.h>
 #endif
 
-using namespace::pen;
+using namespace ::pen;
 
 namespace put
 {
@@ -34,8 +34,8 @@ namespace put
                 for (s32 p = 0; p < 6; ++p)
                 {
                     vec3f sign_flip = sgn(frust.n[p]) * -1.0f;
-                    f32 pd = maths::plane_distance(frust.p[p], frust.n[p]);
-                    f32 d2 = dot(pos + extent * sign_flip, frust.n[p]);
+                    f32   pd = maths::plane_distance(frust.p[p], frust.n[p]);
+                    f32   d2 = dot(pos + extent * sign_flip, frust.n[p]);
 
                     if (d2 > -pd)
                     {
@@ -517,17 +517,14 @@ namespace put
 #ifdef __ARM_NEON__
         void frustum_cull_aabb_simd128(const ecs_scene* scene, const camera* cam, u32* entities_in, u32** entities_out)
         {
-
         }
 
         void frustum_cull_sphere_simd128(const ecs_scene* scene, const camera* cam, u32* entities_in, u32** entities_out)
         {
-
         }
 #endif
         void frustum_cull_simd_init()
         {
-
         }
 
         void frustum_cull_aabb(const ecs_scene* scene, const camera* cam, u32* entities_in, u32** entities_out)
@@ -541,7 +538,7 @@ namespace put
             frustum_cull_sphere_scalar(scene, cam, entities_in, entities_out);
             //frustum_cull_sphere_simd256(scene, cam, entities_in, entities_out);
         }
-        
+
         void debug_culling()
         {
             // debug culling
@@ -570,5 +567,5 @@ namespace put
             }
             */
         }
-    }
-}
+    } // namespace ecs
+} // namespace put

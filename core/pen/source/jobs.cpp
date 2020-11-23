@@ -2,10 +2,10 @@
 // Copyright 2014 - 2019 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
-#include "renderer.h"
-#include "threads.h"
 #include "console.h"
 #include "data_struct.h"
+#include "renderer.h"
+#include "threads.h"
 
 #define MAX_THREADS 32 // lazy fixed sized array to avoid any thread saftey issues
 
@@ -13,10 +13,10 @@ using namespace pen;
 
 namespace
 {
-    job                         s_jt[MAX_THREADS];
-    u32                         s_num_active_threads = 0;
-    single_thread_update_func*  s_single_thread_funcs = nullptr;
-}
+    job                        s_jt[MAX_THREADS];
+    u32                        s_num_active_threads = 0;
+    single_thread_update_func* s_single_thread_funcs = nullptr;
+} // namespace
 
 namespace pen
 {
@@ -65,19 +65,18 @@ namespace pen
 
         return true;
     }
-    
+
     void jobs_create_single_thread_update(single_thread_update_func func)
     {
         sb_push(s_single_thread_funcs, func);
     }
-    
+
     void jobs_run_single_threaded()
     {
         s32 count = sb_count(s_single_thread_funcs);
-        for(s32 i = 0; i < count; ++i)
+        for (s32 i = 0; i < count; ++i)
         {
             ((single_thread_update_func)s_single_thread_funcs[i])();
         }
-        
     }
 } // namespace pen

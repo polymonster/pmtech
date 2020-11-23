@@ -69,9 +69,9 @@ enum texture_format
 
 enum clear_bits
 {
-    PEN_CLEAR_COLOUR_BUFFER = 1<<0,
-    PEN_CLEAR_DEPTH_BUFFER = 1<<1,
-    PEN_CLEAR_STENCIL_BUFFER = 1<<2,
+    PEN_CLEAR_COLOUR_BUFFER = 1 << 0,
+    PEN_CLEAR_DEPTH_BUFFER = 1 << 1,
+    PEN_CLEAR_STENCIL_BUFFER = 1 << 2,
 };
 
 enum input_classification
@@ -128,8 +128,8 @@ enum bind_flags
 
 enum cpu_access_flags
 {
-    PEN_CPU_ACCESS_WRITE = 1<<0,
-    PEN_CPU_ACCESS_READ = 1<<1
+    PEN_CPU_ACCESS_WRITE = 1 << 0,
+    PEN_CPU_ACCESS_READ = 1 << 1
 };
 
 enum texture_address_mode

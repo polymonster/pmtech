@@ -4,12 +4,12 @@
 
 #include <fstream>
 
-#include "pen.h"
 #include "console.h"
 #include "data_struct.h"
 #include "file_system.h"
 #include "memory.h"
 #include "os.h"
+#include "pen.h"
 #include "pen_string.h"
 #include "renderer.h"
 #include "renderer_shared.h"
@@ -243,7 +243,7 @@ namespace
 
         renderer_cmd(){};
     };
-        
+
     // front end render_ctx
     struct fe_render_ctx
     {
@@ -267,7 +267,7 @@ namespace pen
 {
     void end_frame_internal();
     void new_frame_internal();
-    
+
     void renderer_get_present_time(f32& cpu_ms, f32& gpu_ms)
     {
         extern a_u64 g_gpu_total;
@@ -275,11 +275,11 @@ namespace pen
         cpu_ms = _ctx->present_time;
         gpu_ms = (f64)g_gpu_total / 1000.0 / 1000.0;
     }
-    
+
     void exec_cmd(const renderer_cmd& cmd)
     {
         //PEN_LOG("CMD %i", cmd.command_index);
-        
+
         switch (cmd.command_index)
         {
             case CMD_NEW_FRAME:
@@ -532,11 +532,11 @@ namespace pen
                 break;
         }
     }
-    
+
     //
-    // 
     //
-    
+    //
+
     void renderer_wait_init()
     {
         semaphore_wait(_ctx->continue_semaphore);
@@ -559,34 +559,34 @@ namespace pen
         _ctx->wait++;
 #endif
     }
-    
+
     void new_frame_internal()
     {
         // free slots we have now deleted the resources for
         u32 ns = sb_count(_ctx->free_slots);
-        for(u32 i = 0; i < ns; ++i)
+        for (u32 i = 0; i < ns; ++i)
         {
             slot_resources_free(&_ctx->renderer_slot_resources, _ctx->free_slots[i]);
         }
         sb_free(_ctx->free_slots);
         _ctx->free_slots = nullptr;
-        
+
         // some api's need to set the current context on the caller thread.
         direct::renderer_new_frame();
     }
-    
+
     void end_frame_internal()
     {
         // check the release cmd_buffer.. we need to wait a few frames before releasing resources
         // so they arent in flight on the gpu
         static const u32 k_waitFrames = 6;
-        for(;;)
+        for (;;)
         {
             renderer_cmd* cmd = _ctx->release_cmd_buffer.check();
-            u64 cf = pen::_renderer_frame_index();
-            if(!cmd || cf - cmd->frame_index < k_waitFrames)
+            u64           cf = pen::_renderer_frame_index();
+            if (!cmd || cf - cmd->frame_index < k_waitFrames)
                 break;
-                
+
             cmd = _ctx->release_cmd_buffer.get();
             if (cmd->resource_slot)
             {
@@ -610,8 +610,8 @@ namespace pen
         for (;;)
         {
             renderer_cmd* cmd = _ctx->cmd_buffer.get();
-            
-            while(cmd)
+
+            while (cmd)
             {
                 exec_cmd(*cmd);
 
@@ -621,30 +621,30 @@ namespace pen
 
                 cmd = _ctx->cmd_buffer.get();
             }
-            
-            if(!pen::os_update())
+
+            if (!pen::os_update())
                 break;
         }
     }
-    
+
     bool renderer_dispatch()
     {
         // this function is invoked from mtk draw in view
         //if we start renderin  we need to wait for present to prevent command buffer being released before ending encoding
 
         renderer_cmd* cmd = _ctx->cmd_buffer.get();
-        bool started = cmd;
-        while(cmd)
+        bool          started = cmd;
+        while (cmd)
         {
             exec_cmd(*cmd);
 
             // break at present to re-call os update
             if (cmd->command_index == CMD_PRESENT)
                 break;
-                    
+
             cmd = _ctx->cmd_buffer.get();
         }
-        
+
         direct::renderer_retain();
         return started;
     }
@@ -709,7 +709,7 @@ namespace pen
         ctx->resolve_resources.constant_buffer = renderer_create_buffer(bcp);
         g_resolve_resources = ctx->resolve_resources;
     }
-    
+
     render_ctx renderer_create_context(u32 max_commands)
     {
         fe_render_ctx* new_ctx = new fe_render_ctx();
@@ -724,13 +724,13 @@ namespace pen
 
         return (render_ctx*)new_ctx;
     }
-    
+
     void renderer_init(void* user_data, bool wait_for_jobs, u32 max_commands)
     {
         // create main render context and bind it
         _main_ctx = renderer_create_context(max_commands);
         _ctx = (fe_render_ctx*)_main_ctx;
-        
+
         // bb is backbuffer depth and colour
         u32 bb_res = slot_resources_get_next(&_ctx->renderer_slot_resources);
         u32 bb_depth_res = slot_resources_get_next(&_ctx->renderer_slot_resources);
@@ -740,13 +740,13 @@ namespace pen
 
         // initialise backend renderer
         direct::renderer_initialise(user_data, bb_res, bb_depth_res);
-        
+
         init_resolve_resources(_ctx);
 
         if (wait_for_jobs)
             renderer_wait_for_jobs();
     }
-    
+
     // graphics test
     static bool s_run_test = false;
     static void renderer_test_read_complete(void* data, u32 row_pitch, u32 depth_pitch, u32 block_size)
@@ -758,10 +758,10 @@ namespace pen
         void* file_data = nullptr;
         u32   file_data_size = 0;
         u32   pen_err = pen::filesystem_read_file_to_buffer(reference_filename.c_str(), &file_data, file_data_size);
-        
+
         // platform specific output dir
         auto& ri = renderer_get_info();
-        Str renderer_name = ri.api_version;
+        Str   renderer_name = ri.api_version;
         renderer_name.append("_");
         renderer_name.append(renderer_get_info().renderer);
         renderer_name = str_replace_chars(renderer_name, '.', '_');
@@ -769,7 +769,7 @@ namespace pen
         renderer_name = str_replace_chars(renderer_name, '/', '_');
         renderer_name = str_replace_chars(renderer_name, '\\', '_');
         renderer_name = str_to_lower(renderer_name);
-        
+
         Str root_dir = "../../test_results";
         root_dir = str_sanitize_filepath(root_dir);
 
@@ -783,20 +783,20 @@ namespace pen
         Str mk_root_dir = "mkdir ";
         mk_root_dir.append(root_dir.c_str());
 
-        if(!pen::filesystem_file_exists(mk_root_dir.c_str()))
+        if (!pen::filesystem_file_exists(mk_root_dir.c_str()))
             PEN_SYSTEM(mk_root_dir.c_str());
 
         if (!pen::filesystem_file_exists(mk_output_dir.c_str()))
             PEN_SYSTEM(mk_output_dir.c_str());
 
         // swizzle bgra to rgba
-        if(ri.caps & PEN_CAPS_BACKBUFFER_BGRA)
+        if (ri.caps & PEN_CAPS_BACKBUFFER_BGRA)
         {
             u8* swizz = (u8*)data;
             for (u32 i = 0; i < depth_pitch; i += 4)
-                swap(swizz[i], swizz[i+2]);
+                swap(swizz[i], swizz[i + 2]);
         }
-                
+
         // make test results
         u32 diffs = 0;
         if (pen_err == PEN_ERR_OK)
@@ -819,7 +819,7 @@ namespace pen
 
             free(file_data);
         }
-        
+
         // write result image
         Str output_file = "";
         output_file.appendf("%s/%s.jpg", output_dir.c_str(), pen_window.window_title);
@@ -883,17 +883,17 @@ namespace pen
     //
     // allow shared context for hot loaded dll
     //
-    
+
     void renderer_set_current_ctx(render_ctx ctx)
     {
         _ctx = (fe_render_ctx*)ctx;
     }
-    
+
     render_ctx renderer_get_main_context()
     {
         return _main_ctx;
     }
-    
+
     //
     // command buffer api
     //
@@ -933,7 +933,7 @@ namespace pen
     void renderer_present()
     {
         pen::renderer_test_run();
-                
+
         renderer_cmd cmd;
         cmd.command_index = CMD_PRESENT;
         add_cmd(cmd);
@@ -969,7 +969,7 @@ namespace pen
         cmd.resource_slot = resource_slot;
 
         add_cmd(cmd);
-        
+
         return resource_slot;
     }
 
@@ -1182,7 +1182,7 @@ namespace pen
         renderer_cmd cmd;
 
         PEN_ASSERT(tcp.width != 0 && tcp.height != 0);
-        if(tcp.collection_type == pen::TEXTURE_COLLECTION_ARRAY)
+        if (tcp.collection_type == pen::TEXTURE_COLLECTION_ARRAY)
         {
             PEN_ASSERT(tcp.num_arrays > 0);
         }
@@ -1257,7 +1257,7 @@ namespace pen
     void renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 bind_flags)
     {
         renderer_cmd cmd;
-        
+
         cmd.command_index = CMD_SET_TEXTURE;
 
         cmd.set_texture.texture_index = texture_index;
@@ -1364,7 +1364,7 @@ namespace pen
     void renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
     {
         renderer_cmd cmd;
-        
+
         cmd.command_index = CMD_SET_CONSTANT_BUFFER;
 
         cmd.set_buffer.buffer_index = buffer_index;
@@ -1390,7 +1390,7 @@ namespace pen
     void renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset)
     {
         renderer_cmd cmd;
-        
+
         if (buffer_index == 0)
             return;
 
@@ -1460,7 +1460,7 @@ namespace pen
 
         add_cmd(cmd);
     }
-    
+
     void renderer_release_shader(u32 shader_index, u32 shader_type)
     {
         renderer_cmd cmd;
@@ -1569,7 +1569,7 @@ namespace pen
 
         _ctx->release_cmd_buffer.put(cmd);
     }
-    
+
     void renderer_release_raster_state(u32 raster_state_index)
     {
         renderer_cmd cmd;
@@ -1587,7 +1587,7 @@ namespace pen
 
         cmd.command_index = CMD_SET_SO_TARGET;
         cmd.command_data_index = buffer_index;
-        
+
         add_cmd(cmd);
     }
 
@@ -1693,4 +1693,4 @@ namespace pen
 
         add_cmd(cmd);
     }
-}
+} // namespace pen

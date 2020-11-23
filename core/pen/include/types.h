@@ -40,12 +40,12 @@ typedef unsigned long dword; // for win32
 #endif
 
 #if PEN_SINGLE_THREADED
-typedef u8  a_u8;
-typedef u32 a_u32;
-typedef u64 a_u64;
+typedef u8     a_u8;
+typedef u32    a_u32;
+typedef u64    a_u64;
 typedef size_t a_size_t;
-typedef bool a_bool;
-typedef s32 a_s32;
+typedef bool   a_bool;
+typedef s32    a_s32;
 #define pen_atomic_load(a) a
 #else
 #include <atomic>
@@ -55,7 +55,7 @@ typedef std::atomic<uint64_t> a_u64;
 typedef std::atomic<size_t>   a_size_t;
 typedef std::atomic<bool>     a_bool;
 typedef std::atomic<s32>      a_s32;
-#define pen_atomic_load(a)    a.load()
+#define pen_atomic_load(a) a.load()
 #endif
 #define PEN_THREAD_OK 0
 

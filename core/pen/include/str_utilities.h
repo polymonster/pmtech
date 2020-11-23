@@ -209,40 +209,40 @@ namespace pen
 
         return f;
     }
-    
+
     inline Str str_basename(const Str& filepath)
     {
         Str f = str_replace_chars(filepath, '\\', '/');
         u32 last = str_find_reverse(f, "/");
-        if(last != -1)
+        if (last != -1)
         {
-            return str_substr(f, last+1, f.length());
+            return str_substr(f, last + 1, f.length());
         }
         return filepath;
     }
-    
+
     inline Str str_to_lower(const Str& string)
     {
         Str result = "";
         s32 len = string.length();
-        for(s32 i = 0; i < len; ++i)
+        for (s32 i = 0; i < len; ++i)
         {
-            if((string[i] >= 'a' && string[i] <= 'z') || (string[i] >= 'A' && string[i] <= 'Z'))
-                result.append(string[i] | (1<<5));
+            if ((string[i] >= 'a' && string[i] <= 'z') || (string[i] >= 'A' && string[i] <= 'Z'))
+                result.append(string[i] | (1 << 5));
             else
                 result.append(string[i]);
         }
         return result;
     }
-    
+
     inline Str str_to_upper(const Str& string)
     {
         Str result = "";
         s32 len = string.length();
-        for(s32 i = 0; i < len; ++i)
+        for (s32 i = 0; i < len; ++i)
         {
-           if((string[i] >= 'a' && string[i] <= 'z') || (string[i] >= 'A' && string[i] <= 'Z'))
-                result.append(string[i] & ~(1<<5));
+            if ((string[i] >= 'a' && string[i] <= 'z') || (string[i] >= 'A' && string[i] <= 'Z'))
+                result.append(string[i] & ~(1 << 5));
             else
                 result.append(string[i]);
         }
