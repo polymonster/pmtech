@@ -69,8 +69,8 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
     	base_copy: {
         	type: copy
         	files: [
-            	["../assets/fonts", "${data_dir}/fonts"],
-            	["../assets/textures/**/*.dds", "${data_dir}/textures"],
+            	["../assets/fonts", "${data_dir}/fonts"]
+            	["../assets/textures/**/*.dds", "${data_dir}/textures"]
             	["../third_party/shared_libs/${platform}", "${bin_dir}"]
             ]
         }

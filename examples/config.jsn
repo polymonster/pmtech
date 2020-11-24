@@ -320,6 +320,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
         make: {
         	toolchain: "xcodebuild"
         	workspace: "pmtech_examples_ios.xcworkspace"
+        	change_ext: ""
 			files: [
 				"build/ios/**/*.xcodeproj"
 			]
