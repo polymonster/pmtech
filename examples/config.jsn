@@ -76,6 +76,11 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
         		["assets/mesh", "${data_dir}/models"]
         	]
         }
+        
+        pmbuild_config: {
+        	pmbuild_cmd: "${pmbuild_dir}/pmbuild"
+        	destination: "${data_dir}"
+        }
 	}
 	
 	//
