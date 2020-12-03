@@ -66,6 +66,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
 				"*.txt"
 				"*.DS_Store"
 				"*.dds"
+				"*.pmv"
 			]
 			change_ext: ".dds"
 			dependencies: true
