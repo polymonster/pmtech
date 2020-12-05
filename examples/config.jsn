@@ -195,6 +195,13 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
         	]
         }
 		
+		shared_libs: {
+        	type: copy
+        	files: [
+        		["../third_party/shared_libs/win32", "bin/win32"]
+        	]
+        }
+		
 		premake: {
 			args: [
 				"%{vs_latest}"
