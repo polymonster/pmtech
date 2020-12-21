@@ -58,15 +58,15 @@ namespace
         clear_state_grey = pen::renderer_create_clear_state(cs);
 
         // raster state
-        pen::rasteriser_state_creation_params rcp;
-        pen::memory_zero(&rcp, sizeof(pen::rasteriser_state_creation_params));
+        pen::raster_state_creation_params rcp;
+        pen::memory_zero(&rcp, sizeof(pen::raster_state_creation_params));
         rcp.fill_mode = PEN_FILL_SOLID;
         rcp.cull_mode = PEN_CULL_BACK;
         rcp.depth_bias_clamp = 0.0f;
         rcp.sloped_scale_depth_bias = 0.0f;
         rcp.depth_clip_enable = true;
 
-        raster_state_cull_back = pen::renderer_create_rasterizer_state(rcp);
+        raster_state_cull_back = pen::renderer_create_raster_state(rcp);
 
         // depth stencil state
         pen::depth_stencil_creation_params depth_stencil_params = {0};
@@ -116,7 +116,7 @@ namespace
 
         put::dev_ui::new_frame();
 
-        pen::renderer_set_rasterizer_state(raster_state_cull_back);
+        pen::renderer_set_raster_state(raster_state_cull_back);
 
         // bind back buffer and clear
         pen::renderer_set_depth_stencil_state(default_depth_stencil_state);

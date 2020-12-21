@@ -56,15 +56,15 @@ namespace
         s_clear_state_grey = pen::renderer_create_clear_state(cs);
 
         // raster state
-        pen::rasteriser_state_creation_params rcp;
-        pen::memory_zero(&rcp, sizeof(pen::rasteriser_state_creation_params));
+        pen::raster_state_creation_params rcp;
+        pen::memory_zero(&rcp, sizeof(pen::raster_state_creation_params));
         rcp.fill_mode = PEN_FILL_SOLID;
         rcp.cull_mode = PEN_CULL_BACK;
         rcp.depth_bias_clamp = 0.0f;
         rcp.sloped_scale_depth_bias = 0.0f;
         rcp.depth_clip_enable = true;
 
-        s_raster_state_cull_back = pen::renderer_create_rasterizer_state(rcp);
+        s_raster_state_cull_back = pen::renderer_create_raster_state(rcp);
 
         // depth stencil state
         pen::depth_stencil_creation_params depth_stencil_params = {0};
@@ -102,7 +102,7 @@ namespace
         pen::renderer_set_viewport(vp);
         pen::renderer_set_scissor_rect(rect{vp.x, vp.y, vp.width, vp.height});
         pen::renderer_clear(s_clear_state_grey);
-        pen::renderer_set_rasterizer_state(s_raster_state_cull_back);
+        pen::renderer_set_raster_state(s_raster_state_cull_back);
         pen::renderer_set_depth_stencil_state(s_default_depth_stencil_state);
 
         put::dev_ui::new_frame();

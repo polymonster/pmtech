@@ -133,14 +133,14 @@ namespace
         s_render_handles.clear_state = pen::renderer_create_clear_state(cs);
 
         // raster state
-        pen::rasteriser_state_creation_params rcp;
-        pen::memory_zero(&rcp, sizeof(pen::rasteriser_state_creation_params));
+        pen::raster_state_creation_params rcp;
+        pen::memory_zero(&rcp, sizeof(pen::raster_state_creation_params));
         rcp.fill_mode = PEN_FILL_SOLID;
         rcp.cull_mode = PEN_CULL_NONE;
         rcp.depth_bias_clamp = 0.0f;
         rcp.sloped_scale_depth_bias = 0.0f;
 
-        s_render_handles.raster_state = pen::renderer_create_rasterizer_state(rcp);
+        s_render_handles.raster_state = pen::renderer_create_raster_state(rcp);
 
         // buffers
         // create vertex buffer for a quad
@@ -315,7 +315,7 @@ namespace
 
         show_ui();
 
-        pen::renderer_set_rasterizer_state(s_render_handles.raster_state);
+        pen::renderer_set_raster_state(s_render_handles.raster_state);
 
         s_render_handles.vp.x = 0;
         s_render_handles.vp.y = 0;
