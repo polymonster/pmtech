@@ -2152,7 +2152,7 @@ namespace pen
             sb_push(_state.bindings, b);
         }
 
-        void renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
+        void renderer_set_constant_buffer(u32 buffer_index, u32 unit, u32 flags)
         {
             if (buffer_index == 0)
                 return;
@@ -2161,13 +2161,13 @@ namespace pen
             b.descriptor_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
             b.stage = to_vk_stage(flags);
             b.index = buffer_index;
-            b.slot = resource_slot;
+            b.slot = unit;
             b.bind_flags = flags;
 
             _set_binding(b);
         }
 
-        void renderer_set_structured_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
+        void renderer_set_structured_buffer(u32 buffer_index, u32 unit, u32 flags)
         {
         }
 
@@ -2325,7 +2325,7 @@ namespace pen
             CHECK_CALL(vkCreateSampler(_ctx.device, &info, nullptr, &vs));
         }
 
-        void renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 bind_flags)
+        void renderer_set_texture(u32 texture_index, u32 sampler_index, u32 unit, u32 bind_flags)
         {
             if (texture_index == 0)
                 return;
@@ -2333,8 +2333,6 @@ namespace pen
             vulkan_texture& vt = _res_pool.get(texture_index).texture;
 
             // todo.. depth / stencil image view
-            if (resource_slot == 15)
-                return;
 
             pen_binding b;
             b.descriptor_type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -2343,13 +2341,13 @@ namespace pen
                 b.descriptor_type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
             b.index = texture_index;
             b.sampler_index = sampler_index;
-            b.slot = resource_slot + GLSL_TEXTURE_BINDING_OFFSET;
+            b.slot = unit + GLSL_TEXTURE_BINDING_OFFSET;
             b.bind_flags = bind_flags;
 
             _set_binding(b);
         }
 
-        void renderer_create_rasterizer_state(const rasteriser_state_creation_params& rscp, u32 resource_slot)
+        void renderer_create_raster_state(const raster_state_creation_params& rscp, u32 resource_slot)
         {
             _res_pool.insert({}, resource_slot);
             VkPipelineRasterizationStateCreateInfo& res = _res_pool.get(resource_slot).raster;
@@ -2364,7 +2362,7 @@ namespace pen
             res.frontFace = rscp.front_ccw ? VK_FRONT_FACE_COUNTER_CLOCKWISE : VK_FRONT_FACE_CLOCKWISE;
         }
 
-        void renderer_set_rasterizer_state(u32 rasterizer_state_index)
+        void renderer_set_raster_state(u32 rasterizer_state_index)
         {
             _state.raster = rasterizer_state_index;
         }

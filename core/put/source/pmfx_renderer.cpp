@@ -689,7 +689,7 @@ namespace put
             s32       num = j_raster_states.size();
             for (s32 i = 0; i < num; ++i)
             {
-                pen::rasteriser_state_creation_params rcp;
+                pen::raster_state_creation_params rcp;
 
                 pen::json state = j_raster_states[i];
 
@@ -721,7 +721,7 @@ namespace put
                 }
                 else
                 {
-                    rs.handle = pen::renderer_create_rasterizer_state(rcp);
+                    rs.handle = pen::renderer_create_raster_state(rcp);
                 }
 
                 s_render_states.push_back(rs);
@@ -2803,7 +2803,7 @@ namespace put
             // disable state
             pen::renderer_set_depth_stencil_state(get_render_state(k_id_disabled, e_render_state::depth_stencil));
             pen::renderer_set_blend_state(get_render_state(k_id_disabled, e_render_state::blend));
-            pen::renderer_set_rasterizer_state(get_render_state(k_id_disabled, e_render_state::rasterizer));
+            pen::renderer_set_raster_state(get_render_state(k_id_disabled, e_render_state::rasterizer));
 
             // resolve colour
             if (v.view_flags & e_view_flags::resolve)
@@ -2911,7 +2911,7 @@ namespace put
             get_rt_viewport(v.rt_width, v.rt_height, v.rt_ratio, v.viewport, vp);
             pen::renderer_set_depth_stencil_state(v.depth_stencil_state);
             pen::renderer_set_stencil_ref(v.stencil_ref);
-            pen::renderer_set_rasterizer_state(v.raster_state);
+            pen::renderer_set_raster_state(v.raster_state);
             pen::renderer_set_blend_state(v.blend_state);
 
             // we need the literal size not ratio

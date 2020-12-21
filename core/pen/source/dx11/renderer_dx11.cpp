@@ -1673,7 +1673,7 @@ namespace pen
         CHECK_CALL(s_device->CreateSamplerState(&desc, &_res_pool[resource_index].sampler_state));
     }
 
-    void direct::renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 bind_flags)
+    void direct::renderer_set_texture(u32 texture_index, u32 sampler_index, u32 unit, u32 bind_flags)
     {
         static ID3D11SamplerState*        null_sampler = nullptr;
         static ID3D11ShaderResourceView*  null_srv = nullptr;
@@ -1724,26 +1724,26 @@ namespace pen
 
         if (bind_flags & TEXTURE_BIND_PS)
         {
-            s_immediate_context->PSSetSamplers(resource_slot, 1, sampler);
+            s_immediate_context->PSSetSamplers(unit, 1, sampler);
             s_immediate_context->PSSetShaderResources(resource_slot, 1, srv);
         }
 
         if (bind_flags & TEXTURE_BIND_VS)
         {
-            s_immediate_context->VSSetSamplers(resource_slot, 1, sampler);
+            s_immediate_context->VSSetSamplers(unit, 1, sampler);
             s_immediate_context->VSSetShaderResources(resource_slot, 1, srv);
         }
 
         if (bind_flags & TEXTURE_BIND_CS)
         {
-            s_immediate_context->CSSetUnorderedAccessViews(resource_slot, 1, uav, nullptr);
+            s_immediate_context->CSSetUnorderedAccessViews(unit, 1, uav, nullptr);
 
             if (!(*uav))
-                s_immediate_context->CSSetShaderResources(resource_slot, 1, srv);
+                s_immediate_context->CSSetShaderResources(unit, 1, srv);
         }
     }
 
-    void direct::renderer_create_rasterizer_state(const rasteriser_state_creation_params& rscp, u32 resource_slot)
+    void direct::renderer_create_raster_state(const raster_state_creation_params& rscp, u32 resource_slot)
     {
         _res_pool.grow(resource_slot);
 
@@ -1758,7 +1758,7 @@ namespace pen
         CHECK_CALL(s_device->CreateRasterizerState(&rd, &_res_pool[resource_index].raster_state));
     }
 
-    void direct::renderer_set_rasterizer_state(u32 rasterizer_state_index)
+    void direct::renderer_set_raster_state(u32 rasterizer_state_index)
     {
         s_immediate_context->RSSetState(_res_pool[rasterizer_state_index].raster_state);
     }
@@ -1801,25 +1801,25 @@ namespace pen
         s_immediate_context->OMSetBlendState(_res_pool[blend_state_index].blend_state, NULL, 0xffffffff);
     }
 
-    void direct::renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
+    void direct::renderer_set_constant_buffer(u32 buffer_index, u32 unit, u32 flags)
     {
         if (flags & pen::CBUFFER_BIND_PS)
         {
-            s_immediate_context->PSSetConstantBuffers(resource_slot, 1, &_res_pool[buffer_index].generic_buffer.buf);
+            s_immediate_context->PSSetConstantBuffers(unit, 1, &_res_pool[buffer_index].generic_buffer.buf);
         }
 
         if (flags & pen::CBUFFER_BIND_VS)
         {
-            s_immediate_context->VSSetConstantBuffers(resource_slot, 1, &_res_pool[buffer_index].generic_buffer.buf);
+            s_immediate_context->VSSetConstantBuffers(unit, 1, &_res_pool[buffer_index].generic_buffer.buf);
         }
 
         if (flags & pen::CBUFFER_BIND_CS)
         {
-            s_immediate_context->CSSetConstantBuffers(resource_slot, 1, &_res_pool[buffer_index].generic_buffer.buf);
+            s_immediate_context->CSSetConstantBuffers(unit, 1, &_res_pool[buffer_index].generic_buffer.buf);
         }
     }
 
-    void direct::renderer_set_structured_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
+    void direct::renderer_set_structured_buffer(u32 buffer_index, u32 unit, u32 flags)
     {
         static ID3D11Buffer*              null_buffer = nullptr;
         static ID3D11ShaderResourceView*  null_srv = nullptr;
@@ -1841,23 +1841,23 @@ namespace pen
             if (flags & SBUFFER_BIND_WRITE)
             {
                 // rw
-                s_immediate_context->CSSetUnorderedAccessViews(resource_slot, 1, uav, nullptr);
+                s_immediate_context->CSSetUnorderedAccessViews(unit, 1, uav, nullptr);
             }
             else
             {
                 // r
-                s_immediate_context->CSSetShaderResources(resource_slot, 1, srv);
+                s_immediate_context->CSSetShaderResources(unit, 1, srv);
             }
         }
 
         if (flags & pen::SBUFFER_BIND_VS)
         {
-            s_immediate_context->VSSetShaderResources(resource_slot, 1, srv);
+            s_immediate_context->VSSetShaderResources(unit, 1, srv);
         }
 
         if (flags & pen::SBUFFER_BIND_PS)
         {
-            s_immediate_context->PSSetShaderResources(resource_slot, 1, srv);
+            s_immediate_context->PSSetShaderResources(unit, 1, srv);
         }
     }
 

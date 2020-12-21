@@ -2263,14 +2263,14 @@ namespace pen
         _res_pool[resource_slot].sampler_object.depth_sampler = sampler_objects[1];
     }
 
-    void direct::renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 bind_flags)
+    void direct::renderer_set_texture(u32 texture_index, u32 sampler_index, u32 unit, u32 bind_flags)
     {
         if (texture_index == 0)
             return;
 
         resource_allocation& res = _res_pool[texture_index];
 
-        CHECK_CALL(glActiveTexture(GL_TEXTURE0 + resource_slot));
+        CHECK_CALL(glActiveTexture(GL_TEXTURE0 + unit));
 
         u32 max_mip = 0;
         u32 target = _res_pool[texture_index].texture.target;
@@ -2279,15 +2279,15 @@ namespace pen
         // bind image textures for cs rw
         if (bind_flags & pen::TEXTURE_BIND_CS)
         {
-            if (resource_slot == 0)
+            if (unit == 0)
             {
                 glBindTexture(GL_TEXTURE_2D, res.texture.handle);
-                CHECK_CALL(glBindImageTexture(resource_slot, res.texture.handle, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8));
+                CHECK_CALL(glBindImageTexture(unit, res.texture.handle, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8));
             }
             else
             {
                 glBindTexture(GL_TEXTURE_2D, res.texture.handle);
-                CHECK_CALL(glBindImageTexture(resource_slot, res.texture.handle, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8));
+                CHECK_CALL(glBindImageTexture(unit, res.texture.handle, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8));
             }
             return;
         }
@@ -2331,7 +2331,7 @@ namespace pen
         // unbind sampler typically this is for cs texture binds, they dont need a sampler
         if (sampler_index == 0)
         {
-            glBindSampler(resource_slot, 0);
+            glBindSampler(unit, 0);
             return;
         }
 
@@ -2349,7 +2349,7 @@ namespace pen
         }
 #endif
 
-        glBindSampler(resource_slot, sampler_object);
+        glBindSampler(unit, sampler_object);
 
         if (target == GL_TEXTURE_2D_ARRAY)
             CHECK_CALL(glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, 0));
@@ -2358,7 +2358,7 @@ namespace pen
         CHECK_CALL(glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, max_mip));
     }
 
-    void direct::renderer_create_rasterizer_state(const rasteriser_state_creation_params& rscp, u32 resource_slot)
+    void direct::renderer_create_raster_state(const raster_state_creation_params& rscp, u32 resource_slot)
     {
         _res_pool.grow(resource_slot);
 
@@ -2385,7 +2385,7 @@ namespace pen
 #endif
     }
 
-    void direct::renderer_set_rasterizer_state(u32 rasterizer_state_index)
+    void direct::renderer_set_raster_state(u32 rasterizer_state_index)
     {
         s_live_state.raster_state = rasterizer_state_index;
     }
@@ -2464,13 +2464,13 @@ namespace pen
         }
     }
 
-    void direct::renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
+    void direct::renderer_set_constant_buffer(u32 buffer_index, u32 unit, u32 flags)
     {
         resource_allocation& res = _res_pool[buffer_index];
-        CHECK_CALL(glBindBufferBase(GL_UNIFORM_BUFFER, resource_slot, res.handle));
+        CHECK_CALL(glBindBufferBase(GL_UNIFORM_BUFFER, unit, res.handle));
     }
 
-    void direct::renderer_set_structured_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
+    void direct::renderer_set_structured_buffer(u32 buffer_index, u32 unit, u32 flags)
     {
         PEN_ASSERT(0); // stubbed.. use metal on mac or d3d / vulkan on windows
     }

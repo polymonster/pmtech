@@ -1561,14 +1561,14 @@ namespace pen
             }
         }
 
-        void renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
+        void renderer_set_constant_buffer(u32 buffer_index, u32 unit, u32 flags)
         {
-            _set_buffer(buffer_index, resource_slot, flags);
+            _set_buffer(buffer_index, unit, flags);
         }
 
-        void renderer_set_structured_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
+        void renderer_set_structured_buffer(u32 buffer_index, u32 unit, u32 flags)
         {
-            _set_buffer(buffer_index, resource_slot, flags);
+            _set_buffer(buffer_index, unit, flags);
         }
 
         void renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset)
@@ -1773,7 +1773,7 @@ namespace pen
             _res_pool.get(resource_slot).sampler = [_metal_device newSamplerStateWithDescriptor:sd];
         }
 
-        void renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 bind_flags)
+        void renderer_set_texture(u32 texture_index, u32 sampler_index, u32 unit, u32 bind_flags)
         {
             if (texture_index == 0)
                 return;
@@ -1790,15 +1790,15 @@ namespace pen
 
                 if (bind_flags & pen::TEXTURE_BIND_PS)
                 {
-                    [_state.render_encoder setFragmentTexture:tex atIndex:resource_slot];
+                    [_state.render_encoder setFragmentTexture:tex atIndex:unit];
                     [_state.render_encoder setFragmentSamplerState:_res_pool.get(sampler_index).sampler
-                                                           atIndex:resource_slot];
+                                                           atIndex:unit];
                 }
 
                 if (bind_flags & pen::TEXTURE_BIND_VS)
                 {
-                    [_state.render_encoder setVertexTexture:tex atIndex:resource_slot];
-                    [_state.render_encoder setVertexSamplerState:_res_pool.get(sampler_index).sampler atIndex:resource_slot];
+                    [_state.render_encoder setVertexTexture:tex atIndex:unit];
+                    [_state.render_encoder setVertexSamplerState:_res_pool.get(sampler_index).sampler atIndex:unit];
                 }
             }
             else if (bind_flags & pen::TEXTURE_BIND_CS)
@@ -1806,11 +1806,11 @@ namespace pen
                 validate_compute_encoder();
                 auto t = _res_pool.get(texture_index).texture;
                 t.invalidate = true; // will trigger mips to generate if required
-                [_state.compute_encoder setTexture:t.tex atIndex:resource_slot];
+                [_state.compute_encoder setTexture:t.tex atIndex:unit];
             }
         }
 
-        void renderer_create_rasterizer_state(const rasteriser_state_creation_params& rscp, u32 resource_slot)
+        void renderer_create_raster_state(const raster_state_creation_params& rscp, u32 resource_slot)
         {
             _res_pool.insert(resource(), resource_slot);
             metal_raster_state& rs = _res_pool.get(resource_slot).raster_state;
@@ -1821,7 +1821,7 @@ namespace pen
             rs.scissor_enabled = rscp.scissor_enable == 1;
         }
 
-        void renderer_set_rasterizer_state(u32 rasterizer_state_index)
+        void renderer_set_raster_state(u32 rasterizer_state_index)
         {
             _state.raster_state = rasterizer_state_index;
         }

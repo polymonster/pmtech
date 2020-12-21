@@ -750,7 +750,7 @@ namespace put
                 // flip cull mode if we are inside the light volume
                 if (inside_volume)
                 {
-                    pen::renderer_set_rasterizer_state(cull_front);
+                    pen::renderer_set_raster_state(cull_front);
                     pen::renderer_set_depth_stencil_state(depth_disabled);
                 }
 
@@ -762,7 +762,7 @@ namespace put
 
                 if (inside_volume)
                 {
-                    pen::renderer_set_rasterizer_state(view.raster_state);
+                    pen::renderer_set_raster_state(view.raster_state);
                     pen::renderer_set_depth_stencil_state(view.depth_stencil_state);
                 }
             }
