@@ -47,7 +47,7 @@
             address: clamp
         },
         
-		clamp_linear_lod:
+        clamp_linear_lod:
         {
             filter : linear_lod,
             address: clamp
@@ -55,7 +55,7 @@
         
         shadow_compare:
         {
-			filter : linear,
+            filter : linear,
             address: clamp,
             comparison_func: less
         }
@@ -164,12 +164,12 @@
     
     render_targets:
     {       
-    	single_shadow_map:
-    	{
-			size: [2048, 2048],
+        single_shadow_map:
+        {
+            size: [2048, 2048],
             format: d32f
-    	},
-    	         
+        },
+                 
         shadow_map:
         {
             size: [2048, 2048],
@@ -183,17 +183,17 @@
             format: d24s8,
             type: cube_array
         },
-		
-		colour_shadow_map:
+        
+        colour_shadow_map:
         {
-			size: [512, 512],
+            size: [512, 512],
             format: rgba8,
             type: array
         },
-		
-		colour_shadow_map_depth:
+        
+        colour_shadow_map_depth:
         {
-			size: [512, 512],
+            size: [512, 512],
             format: d24s8,
             type: array
         },
@@ -208,32 +208,32 @@
         
         taa_history:
         {
-        	format: rgba8,
-        	size: equal
+            format: rgba8,
+            size: equal
         },
                 
         taa_colour:
         {
-			format: rgba8,
-        	size: equal
+            format: rgba8,
+            size: equal
         },
         
         taa_depth:
         {
-        	format: d24s8,
-        	size: equal
+            format: d24s8,
+            size: equal
         },
         
         velocity_buffer:
         {
-        	format: r32f,
-        	size: equal
+            format: r32f,
+            size: equal
         },
     },
     
     views:
     {
-		main_view_no_clear:
+        main_view_no_clear:
         {
             target             : [main_colour, main_depth],
             colour_write_mask  : 0xf,
@@ -254,25 +254,25 @@
             ],
         },
         
-		main_view(main_view_no_clear):
+        main_view(main_view_no_clear):
         {
             target             : [main_colour, main_depth],
             clear_colour       : [0.0, 0.0, 0.0, 1.0],
             clear_depth        : 1.0
         },
         
-		main_view_basic(main_view):
-    	{
-    		raster_state : default,
-    		clear_colour : [0.0, 0.0, 0.0, 1.0],
-			pmfx_shader  : forward_render,
+        main_view_basic(main_view):
+        {
+            raster_state : default,
+            clear_colour : [0.0, 0.0, 0.0, 1.0],
+            pmfx_shader  : forward_render,
             technique    : simple_lighting,
-	
-			sampler_bindings:
+    
+            sampler_bindings:
             [
                 { texture: single_shadow_map, unit: 7, state: shadow_compare, shader: ps }
             ]
-    	},
+        },
         
         main_view_alpha_blended:
         {
@@ -313,13 +313,13 @@
         
         single_shadow_view(multiple_shadow_views):
         {
-        	target             : [single_shadow_map],
+            target             : [single_shadow_map],
         },
         
-		multiple_colour_shadow_views:
+        multiple_colour_shadow_views:
         {
             target             : [colour_shadow_map, colour_shadow_map_depth],
-            clear_colour	   : [0.0, 1.0, 1.0, 1.0],
+            clear_colour       : [0.0, 1.0, 1.0, 1.0],
             clear_depth        : 1.0,
             colour_write_mask  : 0xf,
             blend_state        : disabled,
@@ -327,7 +327,7 @@
             raster_state       : back_face_cull,
             depth_stencil_state: default,
             scene              : main_scene,
-			pmfx_shader        : forward_render,
+            pmfx_shader        : forward_render,
             technique          : gi,
             scene_views        : ["ecs_render_shadow_maps"],
             render_flags       : ["forward_lit"]
@@ -376,9 +376,9 @@
         
         main_view_temporal_aa(main_view):
         {
-        	target: [taa_colour, taa_depth],
-        	post_process : taa_resolve,
-        	jitter: true
+            target: [taa_colour, taa_depth],
+            post_process : taa_resolve,
+            jitter: true
         },
         
         velocity_buffer:
@@ -391,7 +391,7 @@
             raster_state       : default,
             depth_stencil_state: default,
             scene              : main_scene,
-			pmfx_shader        : forward_render,
+            pmfx_shader        : forward_render,
             technique          : per_pixel_velocity,
             camera             : model_viewer_camera,
             scene_views        : ["ecs_render_scene"],

@@ -1,149 +1,149 @@
 import "../tools/pmbuild_ext/pmbuild_init.jsn"
 {
-	jsn_vars: {
-		pmbuild_dir: "../third_party/pmbuild"
-		pmtech_dir: ".."
-		data_dir: ""
-		bin_dir: ""
-		platform: ""
-	}
-	
+    jsn_vars: {
+        pmbuild_dir: "../third_party/pmbuild"
+        pmtech_dir: ".."
+        data_dir: ""
+        bin_dir: ""
+        platform: ""
+    }
+    
     //
     // cmdline build of libs for pmbuild dependencies
     //
     
     mac-meshopt(base): {
-    	premake: {
-			args: [
-				"gmake"
-				"--renderer=metal"
-				"--platform_dir=osx"
-			]
+        premake: {
+            args: [
+                "gmake"
+                "--renderer=metal"
+                "--platform_dir=osx"
+            ]
         }
         
         shell: {
-        	commands: [
-        		"cd build/osx && make mesh_opt config=release"
-        		"rsync ../third_party/shared_libs/osx/libfmod.dylib bin/osx/"
-        		"install_name_tool -add_rpath @executable_path/. bin/osx/mesh_opt"
-        	]
+            commands: [
+                "cd build/osx && make mesh_opt config=release"
+                "rsync ../third_party/shared_libs/osx/libfmod.dylib bin/osx/"
+                "install_name_tool -add_rpath @executable_path/. bin/osx/mesh_opt"
+            ]
         }
     },
     
     linux(base): {
-    	premake: {
-			args: [
-				"gmake"
-				"--renderer=opengl",
-				"--platform_dir=linux"
-			]
+        premake: {
+            args: [
+                "gmake"
+                "--renderer=opengl",
+                "--platform_dir=linux"
+            ]
         }
         shell: {
-			commands: [
-				"cd build/linux/ && make mesh_opt config=release"
-			]
+            commands: [
+                "cd build/linux/ && make mesh_opt config=release"
+            ]
         }
     }
     
-	win32(base): {
-		premake: {
-			args: [
-				"vs2017"
-				"--renderer=dx11"
-				"--platform_dir=win32"
-			]
+    win32(base): {
+        premake: {
+            args: [
+                "vs2017"
+                "--renderer=dx11"
+                "--platform_dir=win32"
+            ]
         }
         shell: {
-			commands: [
-				"cd build/win32 && msbuild pmtech_tools_win32.sln /p:Configuration=Release"
-			]
-		}
-	}
-	
-	//
+            commands: [
+                "cd build/win32 && msbuild pmtech_tools_win32.sln /p:Configuration=Release"
+            ]
+        }
+    }
+    
+    //
     // tools workspace, pmtech editor, live lib, mesh opt
     //
 
     data(base): 
     {
-    	base_copy: {
-        	type: copy
-        	files: [
-            	["../assets/fonts", "${data_dir}/fonts"]
-            	["../assets/textures/**/*.dds", "${data_dir}/textures"]
-            	["../third_party/shared_libs/${platform}", "${bin_dir}"]
+        base_copy: {
+            type: copy
+            files: [
+                ["../assets/fonts", "${data_dir}/fonts"]
+                ["../assets/textures/**/*.dds", "${data_dir}/textures"]
+                ["../third_party/shared_libs/${platform}", "${bin_dir}"]
             ]
         }
         
         texturec: {
-			args: [
-				"-f %{input_file}"
-				"%{export_args}"
-				"-o %{output_file}"
-			]
-			files: [
-				["../assets/textures", "${data_dir}/textures"]
-        	]
-			excludes: [
-				"export.jsn"
-				"*.txt"
-				"*.DS_Store"
-				"*.dds"
-			]
-			change_ext: ".dds"
-			dependencies: true
+            args: [
+                "-f %{input_file}"
+                "%{export_args}"
+                "-o %{output_file}"
+            ]
+            files: [
+                ["../assets/textures", "${data_dir}/textures"]
+            ]
+            excludes: [
+                "export.jsn"
+                "*.txt"
+                "*.DS_Store"
+                "*.dds"
+            ]
+            change_ext: ".dds"
+            dependencies: true
         }
         
         jsn: {
-			args: [
-				"-i %{input_file} -o %{output_file}"
-				"-I ../assets/configs"
-			]
-			files:[
-				["../assets/configs", "${data_dir}/configs"]
-			]
-			dependencies: true
+            args: [
+                "-i %{input_file} -o %{output_file}"
+                "-I ../assets/configs"
+            ]
+            files:[
+                ["../assets/configs", "${data_dir}/configs"]
+            ]
+            dependencies: true
         }
         
         cr: {
-        	file_list: [
-            	"../core/put/source/ecs/ecs_scene.h",
-            	"../core/put/source/ecs/ecs_resources.h",
-            	"../core/put/source/ecs/ecs_utilities.h",
-            	"../core/put/source/debug_render.h",
-            	"../core/put/source/camera.h",
-            	"../core/put/source/pmfx.h"
-        	],
-        	output: "../core/put/source/ecs/ecs_live.h"
+            file_list: [
+                "../core/put/source/ecs/ecs_scene.h",
+                "../core/put/source/ecs/ecs_resources.h",
+                "../core/put/source/ecs/ecs_utilities.h",
+                "../core/put/source/debug_render.h",
+                "../core/put/source/camera.h",
+                "../core/put/source/pmfx.h"
+            ],
+            output: "../core/put/source/ecs/ecs_live.h"
         }
     }
-	
-	mac-editor(data): 
-	{
-    	jsn_vars: {
-    		data_dir: "bin/osx/data"
-    		bin_dir: "bin/osx"
-    		platform: "osx"
-    	}
-    	
-    	premake: {
-			args: [
-				"xcode4"
-				"--renderer=metal"
-				"--platform_dir=osx"
-			]
+    
+    mac-editor(data): 
+    {
+        jsn_vars: {
+            data_dir: "bin/osx/data"
+            bin_dir: "bin/osx"
+            platform: "osx"
+        }
+        
+        premake: {
+            args: [
+                "xcode4"
+                "--renderer=metal"
+                "--platform_dir=osx"
+            ]
         }
         
         pmfx: {
-			args: [
-				"-shader_platform metal"
-				"-metal_sdk macosx"
-				"-i ../assets/shaders"
-				"-o bin/osx/data/pmfx/metal"
-				"-h shader_structs"
-				"-t temp/shaders"
-				"-source"
-			]
+            args: [
+                "-shader_platform metal"
+                "-metal_sdk macosx"
+                "-i ../assets/shaders"
+                "-o bin/osx/data/pmfx/metal"
+                "-h shader_structs"
+                "-t temp/shaders"
+                "-source"
+            ]
         }
     }
 }

@@ -11,7 +11,7 @@ import post_process.jsn
             type: cube
         },
         
-		chrome_depth:
+        chrome_depth:
         {
             size  : [256,256],
             format: d24s8,
@@ -25,7 +25,7 @@ import post_process.jsn
             type: cube        
         },
         
-		chrome2_depth:
+        chrome2_depth:
         {
             size  : [256,256],
             format: d24s8,
@@ -46,7 +46,7 @@ import post_process.jsn
         sky:
         {
             target             : [main_colour, main_depth],
-			clear_colour       : [0.0, 0.0, 0.0, 1.0],
+            clear_colour       : [0.0, 0.0, 0.0, 1.0],
             clear_depth        : 1.0,
             colour_write_mask  : 0xf,
             blend_state        : disabled,
@@ -55,18 +55,18 @@ import post_process.jsn
             depth_stencil_state: depth_always_no_write,
             scene              : main_scene,
             camera             : model_viewer_camera,
-            pmfx_shader		   : "dynamic_cubemap_sky",
-            technique		   : "default",
+            pmfx_shader           : "dynamic_cubemap_sky",
+            technique           : "default",
             scene_views        : ["ecs_render_sky"]
         },
         
-		sky_chrome1(sky):
+        sky_chrome1(sky):
         {
-        	target : [chrome, chrome_depth],
-        	camera : chrome_camera
+            target : [chrome, chrome_depth],
+            camera : chrome_camera
         },
         
-		chrome1_cubemap_render(demo_main):
+        chrome1_cubemap_render(demo_main):
         {
             target : [chrome, chrome_depth],
             camera : chrome_camera
@@ -74,8 +74,8 @@ import post_process.jsn
         
         sky_chrome2(sky):
         {
-        	target : [chrome2, chrome2_depth],
-        	camera : chrome2_camera
+            target : [chrome2, chrome2_depth],
+            camera : chrome2_camera
         },
         
         chrome2_cubemap_render(demo_main):
@@ -88,12 +88,12 @@ import post_process.jsn
     view_sets: 
     {
         dynamic_cubemap: [
-        	single_shadow_view,
-			sky_chrome1,
+            single_shadow_view,
+            sky_chrome1,
             chrome1_cubemap_render,
             sky_chrome2,
             chrome2_cubemap_render,
-			sky,
+            sky,
             demo_main
         ]
     },

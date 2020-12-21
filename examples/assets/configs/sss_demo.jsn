@@ -28,7 +28,7 @@ import post_process.jsn
             
             sampler_bindings:
             [
-			    { texture: single_shadow_map, unit: 8, state: clamp_linear, shader: ps },
+                { texture: single_shadow_map, unit: 8, state: clamp_linear, shader: ps },
                 { texture: single_shadow_map, unit: 7, state: shadow_compare, shader: ps }
             ],
         }

@@ -1,7 +1,7 @@
 import common.jsn
 import deferred_renderer.jsn
 import post_process.jsn
-{	    
+{        
     render_targets:
     {
         picking:
@@ -33,48 +33,48 @@ import post_process.jsn
         
         volume_gi:
         {
-			size : [256, 256, 256],
+            size : [256, 256, 256],
             format : rgba8,
             gpu_write : true,
-			mips : true
+            mips : true
         }
     },
         
     views:
     {
-    	editor_main(main_view):
-    	{
-    		raster_state : default,
-    		clear_colour : [0.0, 0.0, 0.0, 1.0]
-    	},
-    	
-		editor_main_basic(main_view):
-    	{
-    		raster_state : default,
-    		clear_colour : [0.0, 0.0, 0.0, 1.0],
-			pmfx_shader  : forward_render,
+        editor_main(main_view):
+        {
+            raster_state : default,
+            clear_colour : [0.0, 0.0, 0.0, 1.0]
+        },
+        
+        editor_main_basic(main_view):
+        {
+            raster_state : default,
+            clear_colour : [0.0, 0.0, 0.0, 1.0],
+            pmfx_shader  : forward_render,
             technique    : simple_lighting,
-	
-			sampler_bindings:
+    
+            sampler_bindings:
             [
                 { texture: single_shadow_map, unit: 7, state: shadow_compare, shader: ps }
             ]
-    	},
-		
-		editor_main_gi(main_view_temporal_aa):
-    	{
-    		raster_state : default,
-    		clear_colour : [0.0, 0.0, 0.0, 1.0],
-			
-			sampler_bindings:
+        },
+        
+        editor_main_gi(main_view_temporal_aa):
+        {
+            raster_state : default,
+            clear_colour : [0.0, 0.0, 0.0, 1.0],
+            
+            sampler_bindings:
             [
                 { texture: shadow_map, unit: 15, state: shadow_compare, shader: ps },
                 { texture: area_light_textures, unit: 11, state: clamp_linear, shader: ps },
                 { texture: omni_shadow_map, unit: 10, state: clamp_linear, shader: ps },
-				{ texture: volume_gi, unit: 9, state: clamp_linear, shader: ps },
+                { texture: volume_gi, unit: 9, state: clamp_linear, shader: ps },
             ],
-    	},
-	    	                
+        },
+                            
         editor_view:
         {
             target             : [main_colour, main_depth],
@@ -137,14 +137,14 @@ import post_process.jsn
         
         volume_gi_compute:
         {
-        	type: "compute",
-        	target: [volume_gi],
-        	clear_colour: [0.0, 0.0, 0.0, 0.0],
-			pmfx_shader : "compute",
+            type: "compute",
+            target: [volume_gi],
+            clear_colour: [0.0, 0.0, 0.0, 0.0],
+            pmfx_shader : "compute",
             technique : "volume_gi",
             scene: main_scene,
             scene_views : ["ecs_compute_volume_gi"],
-			generate_mip_maps : true,
+            generate_mip_maps : true,
         }
     },
     
@@ -160,19 +160,19 @@ import post_process.jsn
         ],
         
         editor_basic: [
-        	single_shadow_view,
-			editor_main_basic,
+            single_shadow_view,
+            editor_main_basic,
             editor_view
         ],
         
         editor_gi: [
-        	multiple_shadow_views,
-			multiple_colour_shadow_views,
+            multiple_shadow_views,
+            multiple_colour_shadow_views,
             multiple_area_light_views,
             multiple_omni_shadow_views,
             volume_gi_compute,
-			picking_view,
-			editor_main_gi,
+            picking_view,
+            editor_main_gi,
             editor_view
         ],
         

@@ -1,8 +1,8 @@
 {
     texturec:
-	{
-		"-t": "RGBA8"
-    	"--mips": true
-    	"--max": 1024
-	}
+    {
+        "-t": "RGBA8"
+        "--mips": true
+        "--max": 1024
+    }
 }

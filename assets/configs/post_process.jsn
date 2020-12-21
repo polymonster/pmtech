@@ -99,8 +99,8 @@
         
         unjitter:
         {
-        	offsets: [],
-        	weights: []
+            offsets: [],
+            weights: []
         }
     },
     
@@ -487,7 +487,7 @@
         blit_taa_depth: [
             { 
                 inherit         : blit_depth,
-                technique		: blit_depth_unjittered,
+                technique        : blit_depth_unjittered,
                 target          : [main_depth],
                 camera          : model_viewer_camera,
                 sampler_bindings:
@@ -579,12 +579,12 @@
         ],
         
         taa_resolve: [
-        	{
-        		inherit         : taa_resolve,
+            {
+                inherit         : taa_resolve,
                 target          : [pp_output_full],
                 technique       : taa_resolve,
                 camera          : model_viewer_camera,
-                scene_views		: ["ecs_taa_resolve"],
+                scene_views        : ["ecs_taa_resolve"],
                 
                 sampler_bindings:
                 [
@@ -592,8 +592,8 @@
                     { texture: taa_depth, unit: 1, state: clamp_point, shader: ps },
                     { texture: taa_history, unit: 2, state: clamp_linear, shader: ps },
                 ]
-        	},
-        	{ 
+            },
+            { 
                 inherit         : blit,
                 target          : [taa_history],
                 pp_write_non_aux: true,
@@ -621,7 +621,7 @@
         
         taa_resolve:
         {
-        	chain : [ taa_resolve, blit_taa_depth, blit_post_process ]
+            chain : [ taa_resolve, blit_taa_depth, blit_post_process ]
         }
     }
 }

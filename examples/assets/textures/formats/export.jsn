@@ -1,46 +1,46 @@
 {
-	texturec:
-	{
-		"-t": "RGBA8",
-    	"--mips": true
-    	
-		rules:
-		{
-			texfmt_rgb8:
-			{
-				files: [
-					"texfmt_rgb8.png",
-				]
-				
-				"-t": "RGBA8"
-			}
-			
-			bc1:
-			{
-				files: [
-					"texfmt_bc1.png"
-				]
-				
-				"-t": "BC1"
-			}
-			
-			bc2:
-			{
-				files: [
-					"texfmt_bc2.png"
-				]
-				
-				"-t": "BC2"
-			}
-			
-			bc3:
-			{
-				files: [
-					"texfmt_bc3.png"
-				]
-				
-				"-t": "BC3"
-			}
-		}
-	}
+    texturec:
+    {
+        "-t": "RGBA8",
+        "--mips": true
+        
+        rules:
+        {
+            texfmt_rgb8:
+            {
+                files: [
+                    "texfmt_rgb8.png",
+                ]
+                
+                "-t": "RGBA8"
+            }
+            
+            bc1:
+            {
+                files: [
+                    "texfmt_bc1.png"
+                ]
+                
+                "-t": "BC1"
+            }
+            
+            bc2:
+            {
+                files: [
+                    "texfmt_bc2.png"
+                ]
+                
+                "-t": "BC2"
+            }
+            
+            bc3:
+            {
+                files: [
+                    "texfmt_bc3.png"
+                ]
+                
+                "-t": "BC3"
+            }
+        }
+    }
 }
