@@ -287,9 +287,10 @@ namespace pen
     {
     }
 
-    const c8* os_path_for_resource(const c8* filename)
+    const Str os_path_for_resource(const c8* filename)
     {
-        return filename;
+        Str fn = filename;
+        return fn;
     }
 
     const c8* window_get_title()

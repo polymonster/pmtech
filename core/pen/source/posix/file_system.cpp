@@ -65,8 +65,8 @@ namespace pen
 {
     bool filesystem_file_exists(const c8* filename)
     {
-        const c8* resource_name = os_path_for_resource(filename);
-        FILE*     p_file = fopen(resource_name, "r");
+        const Str resource_name = os_path_for_resource(filename);
+        FILE*     p_file = fopen(resource_name.c_str(), "r");
         fclose(p_file);
         return p_file != nullptr;
     }
@@ -75,11 +75,11 @@ namespace pen
     {
         WRITE_FILE_DEPENDENCIES(filename);
 
-        const c8* resource_name = os_path_for_resource(filename);
+        const Str resource_name = os_path_for_resource(filename);
 
         *p_buffer = NULL;
 
-        FILE* p_file = fopen(resource_name, "rb");
+        FILE* p_file = fopen(resource_name.c_str(), "rb");
 
         if (p_file)
         {

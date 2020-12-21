@@ -39,7 +39,7 @@ namespace pen
     bool             os_update();
     void             os_set_cursor_pos(u32 client_x, u32 client_y);
     void             os_show_cursor(bool show);
-    const c8*        os_path_for_resource(const c8* filename);
+    const Str        os_path_for_resource(const c8* filename);
     const user_info& os_get_user_info();
 
     // music

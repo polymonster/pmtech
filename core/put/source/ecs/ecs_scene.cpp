@@ -2183,7 +2183,7 @@ namespace put
             const c8* wd = pen::os_get_user_info().working_directory;
             Str       project_dir = dev_ui::get_program_preference_filename("project_dir", wd);
 
-            std::ifstream ifs(pen::os_path_for_resource(filename), std::ofstream::binary);
+            std::ifstream ifs(pen::os_path_for_resource(filename).c_str(), std::ofstream::binary);
 
             // header
             scene_header sh;

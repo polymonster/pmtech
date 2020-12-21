@@ -529,9 +529,10 @@ int main(int argc, char* argv[])
 
 namespace pen
 {
-    const c8* os_path_for_resource(const c8* filename)
+    const Str os_path_for_resource(const c8* filename)
     {
-        return filename;
+        Str fn = filename;
+        return fn;
     }
 
     bool os_update()

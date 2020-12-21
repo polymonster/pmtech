@@ -714,9 +714,12 @@ namespace pen
         return true;
     }
 
-    const c8* os_path_for_resource(const c8* filename)
+    const Str os_path_for_resource(const c8* filename)
     {
-        return filename;
+        Str res = s_ctx.pen_user_info.working_directory;
+        res.append("/");
+        res.append(filename);
+        return res;
     }
 
     void os_set_cursor_pos(u32 client_x, u32 client_y)

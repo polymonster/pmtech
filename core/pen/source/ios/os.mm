@@ -243,12 +243,13 @@ namespace pen
         return nullptr;
     }
 
-    const c8* os_path_for_resource(const c8* filename)
+    const Str os_path_for_resource(const c8* filename)
     {
         NSString* ns_filename = [[NSString alloc] initWithUTF8String:filename];
         NSString* test = [[NSBundle mainBundle] pathForResource:ns_filename ofType:nil];
         [ns_filename release];
-        return test.UTF8String;
+        Str res = test.UTF8String;
+        return res;
     }
 
     bool os_update()
