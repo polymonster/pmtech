@@ -39,5 +39,5 @@ Temporary Items
 .apdisk
 build_config_user.json
 test_results/
-**/container.txt
 **.user.jsn
+**.container.txt

@@ -35,6 +35,7 @@ namespace
         pen::pen_creation_params creation_params;
         NSWindow*                window;
         bool                     terminate_app = false;
+        s32                      window_scale = 1;
     };
     os_context s_ctx;
 
@@ -607,6 +608,9 @@ namespace
             [s_ctx.window setAcceptsMouseMovedEvents:YES];
             [s_ctx.window center];
             [s_ctx.window registerForDraggedTypes:[NSArray arrayWithObjects:NSFilenamesPboardType, nil]];
+            
+            s_ctx.window_scale = [s_ctx.window backingScaleFactor];
+            
             _update_window_frame();
 
             // creates an opengl or metal rendering context
@@ -741,8 +745,8 @@ namespace pen
 
     void window_get_size(s32& width, s32& height)
     {
-        width = pen_window.width;
-        height = pen_window.height;
+        width = pen_window.width * s_ctx.window_scale;
+        height = pen_window.height * s_ctx.window_scale;
     }
 
     f32 window_get_aspect()

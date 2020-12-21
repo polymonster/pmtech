@@ -24,6 +24,11 @@ local function setup_osx()
 	}
 	add_pmtech_links()
 	
+	files
+	{
+		(pmtech_dir .. "core/template/osx/Info.plist")
+	}
+	
 	if _ACTION == "xcode4" then
 	install_name_tool = "cd ../../bin/osx && install_name_tool -add_rpath @executable_path/../../.. "
 	configuration "Debug"
