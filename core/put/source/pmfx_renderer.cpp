@@ -2569,6 +2569,13 @@ namespace put
 
             put::add_file_watcher(filename, pmfx_config_build, pmfx_config_hotload);
         }
+        
+        void clear_render_states()
+        {
+            for(s32 i = s_render_states.size()-1; i >= 0; --i)
+                if(s_render_states[i].type != e_render_state::sampler)
+                    s_render_states.erase(s_render_states.begin()+i);
+        }
 
         void release_script_resources()
         {
@@ -2584,14 +2591,13 @@ namespace put
                     case e_render_state::rasterizer:
                         pen::renderer_release_raster_state(rs.handle);
                         break;
-                    case e_render_state::sampler:
-                        pen::renderer_release_sampler(rs.handle);
-                        break;
                     case e_render_state::blend:
                         pen::renderer_release_blend_state(rs.handle);
                         break;
                     case e_render_state::depth_stencil:
                         pen::renderer_release_depth_stencil_state(rs.handle);
+                        break;
+                    default:
                         break;
                 }
             }
@@ -2614,7 +2620,6 @@ namespace put
                 pen::renderer_release_clear_state(v.clear_state);
             }
 
-            s_render_states.clear();
             s_render_targets.clear();
             s_render_target_tcp.clear();
             s_render_target_names.clear();
@@ -2624,6 +2629,8 @@ namespace put
             s_post_process_names.clear();
             s_virtual_rt.clear();
             s_partial_blend_states.clear();
+            
+            clear_render_states();
         }
 
         void shutdown()

@@ -412,8 +412,8 @@ namespace
         NSPoint location = [s_ctx.window mouseLocationOutsideOfEventStream];
         NSRect  adjust_frame = [s_ctx.window contentRectForFrameRect:original_frame];
 
-        x = location.x;
-        y = (int)adjust_frame.size.height - location.y;
+        x = location.x * s_ctx.window_scale;
+        y = ((int)adjust_frame.size.height - location.y) * s_ctx.window_scale;
     }
 
     void handle_modifiers(NSEvent* event)
@@ -611,6 +611,9 @@ namespace
             
             s_ctx.window_scale = [s_ctx.window backingScaleFactor];
             
+            pen_window.width *= s_ctx.window_scale;
+            pen_window.height *= s_ctx.window_scale;
+            
             _update_window_frame();
 
             // creates an opengl or metal rendering context
@@ -750,8 +753,8 @@ namespace pen
 
     void window_get_size(s32& width, s32& height)
     {
-        width = pen_window.width * s_ctx.window_scale;
-        height = pen_window.height * s_ctx.window_scale;
+        width = pen_window.width;
+        height = pen_window.height;
     }
 
     f32 window_get_aspect()
