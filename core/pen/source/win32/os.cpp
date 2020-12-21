@@ -458,7 +458,7 @@ namespace pen
         return pen::input_key(PK_CONTROL) && pen::input_key(PK_Y);
     }
 
-    const c8* os_path_for_resource(const c8* filename)
+    const Str os_path_for_resource(const c8* filename)
     {
         return filename;
     }
