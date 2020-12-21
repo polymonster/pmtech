@@ -1,11 +1,11 @@
 cbuffer per_pass_view : register(b0)
 {
-    float4x4 	vp_matrix;
-    float4x4 	view_matrix;
-    float4x4 	vp_matrix_inverse;
-    float4x4 	view_matrix_inverse;
-    float4 		camera_view_pos; // w = near
-    float4 		camera_view_dir; // w = far
+    float4x4     vp_matrix;
+    float4x4     view_matrix;
+    float4x4     vp_matrix_inverse;
+    float4x4     view_matrix_inverse;
+    float4         camera_view_pos; // w = near
+    float4         camera_view_dir; // w = far
 };
 
 struct vs_input

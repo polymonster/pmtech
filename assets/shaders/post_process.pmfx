@@ -52,7 +52,7 @@ cbuffer taa_cbuffer : register(b3)
 {
     float4x4 frame_inv_view_projection;
     float4x4 prev_view_projection;
-    float4	 jitter;
+    float4     jitter;
 };
 
 // samplers
@@ -539,102 +539,102 @@ ps_output ps_sss_reflectance( vs_output input )
 
 ps_output ps_taa_resolve( vs_output input )
 {
-	ps_output output;
-	
-	// unjittered tc
-	float2 ctc = input.texcoord.xy - (jitter.xy * 0.5);
-	float2 tc = input.texcoord.xy;
-	float  frame_depth = 1.0;
-	
-	float2 samples[9];
-	float2 inv_sm_size = inv_texel_size[0].xy;
-	samples[0] = float2(-1.0, -1.0) * inv_sm_size;
-	samples[1] = float2(1.0, -1.0) * inv_sm_size;
-	samples[2] = float2(-1.0, 1.0) * inv_sm_size;
-	samples[3] = float2(1.0, 1.0) * inv_sm_size;
-			
-	samples[4] = float2(-1.0, 0.0) * inv_sm_size;
-	samples[5] = float2(0.0, -1.0) * inv_sm_size;
-	samples[6] = float2(0.0, 0.0) * inv_sm_size;
-	samples[7] = float2(0.0, 1.0) * inv_sm_size;
-	samples[8] = float2(1.0, 0.0) * inv_sm_size;
+    ps_output output;
+    
+    // unjittered tc
+    float2 ctc = input.texcoord.xy - (jitter.xy * 0.5);
+    float2 tc = input.texcoord.xy;
+    float  frame_depth = 1.0;
+    
+    float2 samples[9];
+    float2 inv_sm_size = inv_texel_size[0].xy;
+    samples[0] = float2(-1.0, -1.0) * inv_sm_size;
+    samples[1] = float2(1.0, -1.0) * inv_sm_size;
+    samples[2] = float2(-1.0, 1.0) * inv_sm_size;
+    samples[3] = float2(1.0, 1.0) * inv_sm_size;
+            
+    samples[4] = float2(-1.0, 0.0) * inv_sm_size;
+    samples[5] = float2(0.0, -1.0) * inv_sm_size;
+    samples[6] = float2(0.0, 0.0) * inv_sm_size;
+    samples[7] = float2(0.0, 1.0) * inv_sm_size;
+    samples[8] = float2(1.0, 0.0) * inv_sm_size;
 
-	// samples neighbourhood to clip history 
-	float2 tc2 = float2(0.0, 0.0);
-	float4 nh_min9 = float4(1.0, 1.0, 1.0, 1.0);
-	float4 nh_max9 = float4(0.0, 0.0, 0.0, 0.0);
-	
-	float4 nh_min5 = float4(1.0, 1.0, 1.0, 1.0);
-	float4 nh_max5 = float4(0.0, 0.0, 0.0, 0.0);
-		
-	for(int i = 0; i < 9; ++i)
-	{
-		float2 tcc = ctc + samples[i];
-		float d = sample_texture(src_texture_1, tcc).r;
-		float4 c = sample_texture(src_texture_0, tcc); 
-				
-		if(i < 5)
-		{
-			nh_min5 = min(nh_min5, c);
-			nh_max5 = max(nh_max5, c);
-		}
-		
-		nh_min9 = min(nh_min9, c);
-		nh_max9 = max(nh_max9, c);
-		
-		if(d < frame_depth)
-		{
-			tc2 = ctc + samples[i];
-			frame_depth = d;
-		}
-	}
-	
-	// basic colour clipping
-	float4 nh_min = lerp(nh_min9, nh_min5, 0.5);
-	float4 nh_max = lerp(nh_max9, nh_max5, 0.5);
+    // samples neighbourhood to clip history 
+    float2 tc2 = float2(0.0, 0.0);
+    float4 nh_min9 = float4(1.0, 1.0, 1.0, 1.0);
+    float4 nh_max9 = float4(0.0, 0.0, 0.0, 0.0);
+    
+    float4 nh_min5 = float4(1.0, 1.0, 1.0, 1.0);
+    float4 nh_max5 = float4(0.0, 0.0, 0.0, 0.0);
+        
+    for(int i = 0; i < 9; ++i)
+    {
+        float2 tcc = ctc + samples[i];
+        float d = sample_texture(src_texture_1, tcc).r;
+        float4 c = sample_texture(src_texture_0, tcc); 
+                
+        if(i < 5)
+        {
+            nh_min5 = min(nh_min5, c);
+            nh_max5 = max(nh_max5, c);
+        }
+        
+        nh_min9 = min(nh_min9, c);
+        nh_max9 = max(nh_max9, c);
+        
+        if(d < frame_depth)
+        {
+            tc2 = ctc + samples[i];
+            frame_depth = d;
+        }
+    }
+    
+    // basic colour clipping
+    float4 nh_min = lerp(nh_min9, nh_min5, 0.5);
+    float4 nh_max = lerp(nh_max9, nh_max5, 0.5);
 
-	// to normalised device coordinates
-	float2 ndc = tc2 * float2(2.0, 2.0) - float2(1.0, 1.0);
-		
-	// unproject depth into world space
-	float4 up = float4(ndc.x, ndc.y, frame_depth, 1.0);
-	float4 wp = mul(up, frame_inv_view_projection);
-	wp /= wp.w;
-	
-	// reproject wp into screen space of the previous frame
-	float4 pp = mul(wp, prev_view_projection);
-	pp /= pp.w;
-		
-	// convert pp to ndc to tex coords
-	float2 ptc = pp.xy * 0.5 + 0.5;
-	
-	// vel
-	float2 vel = ptc.xy - tc2.xy;
-	
-	// final coord to sample
-	float2 ftc = tc + vel;
-		
-	float4 frame_colour = sample_texture(src_texture_0, ctc);
+    // to normalised device coordinates
+    float2 ndc = tc2 * float2(2.0, 2.0) - float2(1.0, 1.0);
+        
+    // unproject depth into world space
+    float4 up = float4(ndc.x, ndc.y, frame_depth, 1.0);
+    float4 wp = mul(up, frame_inv_view_projection);
+    wp /= wp.w;
+    
+    // reproject wp into screen space of the previous frame
+    float4 pp = mul(wp, prev_view_projection);
+    pp /= pp.w;
+        
+    // convert pp to ndc to tex coords
+    float2 ptc = pp.xy * 0.5 + 0.5;
+    
+    // vel
+    float2 vel = ptc.xy - tc2.xy;
+    
+    // final coord to sample
+    float2 ftc = tc + vel;
+        
+    float4 frame_colour = sample_texture(src_texture_0, ctc);
     float4 history_colour = sample_texture(src_texture_2, ftc);
         
-	float alpha = 1.0/16.0;
-	for(int i = 0; i < 2; ++i)
-	if(ftc[i] < 0.0 || ftc[i] > 1.0)
-	{
-		// prev fragment was off screen
-		alpha = 1.0;
-		break;
-	}
-	
-	float vv = saturate(length(vel)*100.0);
-	
-	// resets the taa history
-	if(jitter.z == 1.0)
-		vv = 1.0;
-			
-	float4 blended = lerp(history_colour, frame_colour, alpha);
-	output.colour = lerp(clamp(blended, nh_min, nh_max), frame_colour, vv);
-	
+    float alpha = 1.0/16.0;
+    for(int i = 0; i < 2; ++i)
+    if(ftc[i] < 0.0 || ftc[i] > 1.0)
+    {
+        // prev fragment was off screen
+        alpha = 1.0;
+        break;
+    }
+    
+    float vv = saturate(length(vel)*100.0);
+    
+    // resets the taa history
+    if(jitter.z == 1.0)
+        vv = 1.0;
+            
+    float4 blended = lerp(history_colour, frame_colour, alpha);
+    output.colour = lerp(clamp(blended, nh_min, nh_max), frame_colour, vv);
+    
     return output;
 }
 

@@ -10,6 +10,7 @@
 #include "file_system.h"
 #include "hash.h"
 #include "memory.h"
+#include "os.h"
 #include "pen.h"
 #include "pen_json.h"
 #include "pen_string.h"
@@ -17,7 +18,6 @@
 #include "str/Str.h"
 #include "str_utilities.h"
 #include "timer.h"
-#include "os.h"
 
 #include <fstream>
 #include <vector>

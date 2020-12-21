@@ -2569,12 +2569,12 @@ namespace put
 
             put::add_file_watcher(filename, pmfx_config_build, pmfx_config_hotload);
         }
-        
+
         void clear_render_states()
         {
-            for(s32 i = s_render_states.size()-1; i >= 0; --i)
-                if(s_render_states[i].type != e_render_state::sampler)
-                    s_render_states.erase(s_render_states.begin()+i);
+            for (s32 i = s_render_states.size() - 1; i >= 0; --i)
+                if (s_render_states[i].type != e_render_state::sampler)
+                    s_render_states.erase(s_render_states.begin() + i);
         }
 
         void release_script_resources()
@@ -2629,7 +2629,7 @@ namespace put
             s_post_process_names.clear();
             s_virtual_rt.clear();
             s_partial_blend_states.clear();
-            
+
             clear_render_states();
         }
 

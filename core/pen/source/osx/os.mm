@@ -608,12 +608,12 @@ namespace
             [s_ctx.window setAcceptsMouseMovedEvents:YES];
             [s_ctx.window center];
             [s_ctx.window registerForDraggedTypes:[NSArray arrayWithObjects:NSFilenamesPboardType, nil]];
-            
+
             s_ctx.window_scale = [s_ctx.window backingScaleFactor];
-            
+
             pen_window.width *= s_ctx.window_scale;
             pen_window.height *= s_ctx.window_scale;
-            
+
             _update_window_frame();
 
             // creates an opengl or metal rendering context
@@ -719,9 +719,9 @@ namespace pen
 
     const Str os_path_for_resource(const c8* filename)
     {
-        if(strncmp(filename, s_ctx.pen_user_info.working_directory, strlen(s_ctx.pen_user_info.working_directory)-1) == 0)
+        if (strncmp(filename, s_ctx.pen_user_info.working_directory, strlen(s_ctx.pen_user_info.working_directory) - 1) == 0)
             return filename;
-        
+
         Str res = s_ctx.pen_user_info.working_directory;
         res.append(filename);
         return res;

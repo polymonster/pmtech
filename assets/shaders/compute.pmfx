@@ -1,13 +1,13 @@
 declare_texture_samplers
 {
-	// greyscale
+    // greyscale
     texture_2d_r( input_rgb, 0 );
     texture_2d_w( output_l, 1 );
     
     // gi
     texture_3d_rw( volume_gi, 0 );
     texture_2d_array_r( shadow_map, 1 );
-	texture_2d_array_r( shadow_map_depth, 2 );
+    texture_2d_array_r( shadow_map_depth, 2 );
 };
 
 cbuffer per_pass : register(b0)
@@ -24,44 +24,44 @@ void cs_main_greyscale(uint3 gid : SV_DispatchThreadID)
 
 cbuffer gi_info : register(b1)
 {
-	float4 		scene_size;
-	float4		volume_size;
-	float4		shadow_map_size;
-	float4x4 	inv_mat;
+    float4         scene_size;
+    float4        volume_size;
+    float4        shadow_map_size;
+    float4x4     inv_mat;
 };
 
 void cs_main_volume_gi(uint2 gid : SV_DispatchThreadID)
 {
-	int ism = int(shadow_map_size.z);
-	
-	float4 sm = read_texture_array( shadow_map_depth, gid.xy, ism );
-	float4 col = read_texture_array( shadow_map, gid.xy, ism );
-	
-	// projected coord
-	float3 ndc = float3(gid.x/shadow_map_size.x, 1.0 - (gid.y/shadow_map_size.y), sm.r) * 2.0 - 1.0;
-	float4 p = float4(ndc.xyz, 1.0);
-	
-	float4 up = mul(p, inv_mat); 
-	up /= up.w;
-	
-	// convert world to texture coord
-	float3 ws = scene_size.xyz * 0.5;
-	float3 ts = volume_size.xyz;
-	float3 ns = (up.xyz / ws) * 0.5 + 0.5;
-	uint3 tp = uint3(ns * ts);
+    int ism = int(shadow_map_size.z);
+    
+    float4 sm = read_texture_array( shadow_map_depth, gid.xy, ism );
+    float4 col = read_texture_array( shadow_map, gid.xy, ism );
+    
+    // projected coord
+    float3 ndc = float3(gid.x/shadow_map_size.x, 1.0 - (gid.y/shadow_map_size.y), sm.r) * 2.0 - 1.0;
+    float4 p = float4(ndc.xyz, 1.0);
+    
+    float4 up = mul(p, inv_mat); 
+    up /= up.w;
+    
+    // convert world to texture coord
+    float3 ws = scene_size.xyz * 0.5;
+    float3 ts = volume_size.xyz;
+    float3 ns = (up.xyz / ws) * 0.5 + 0.5;
+    uint3 tp = uint3(ns * ts);
 
-	// skip first texel to avoid bleeding / wraparound
-	for(int i = 0; i < 3; ++i)
-		if(tp[i] == volume_size[i]-1 || tp[i] == 0)
-			return;
-	
-	float4 cur = read_texture(volume_gi, tp);
-	write_texture(volume_gi, cur + col, tp);
+    // skip first texel to avoid bleeding / wraparound
+    for(int i = 0; i < 3; ++i)
+        if(tp[i] == volume_size[i]-1 || tp[i] == 0)
+            return;
+    
+    float4 cur = read_texture(volume_gi, tp);
+    write_texture(volume_gi, cur + col, tp);
 }
 
 void cs_main_clear_volume_gi(uint3 gid : SV_DispatchThreadID)
 {
-	write_texture(volume_gi, float4(0.0, 0.0, 0.0, 0.0), gid);
+    write_texture(volume_gi, float4(0.0, 0.0, 0.0, 0.0), gid);
 }
 pmfx:
 {    
@@ -78,7 +78,7 @@ pmfx:
         "threads": [16, 16, 1]
     },
     
-	"clear_volume_gi":
+    "clear_volume_gi":
     {
         "supported_platforms":
         {
@@ -91,7 +91,7 @@ pmfx:
         "threads": [10, 10, 10]
     },
     
-	"volume_gi":
+    "volume_gi":
     {
         "supported_platforms":
         {

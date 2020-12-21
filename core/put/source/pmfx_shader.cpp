@@ -15,11 +15,11 @@
 #include "file_system.h"
 #include "hash.h"
 #include "memory.h"
+#include "os.h"
 #include "pen.h"
 #include "pen_json.h"
 #include "pen_string.h"
 #include "renderer.h"
-#include "os.h"
 
 using namespace put;
 using namespace pmfx;
@@ -769,7 +769,7 @@ namespace put
 
             return PEN_INVALID_HANDLE;
         }
-        
+
         Str get_pmfx_info_filename(const c8* pmfx_filename)
         {
             Str fn = "data/pmfx/";
@@ -798,7 +798,7 @@ namespace put
 
         bool pmfx_ready(const c8* filename)
         {
-            Str fn = get_pmfx_info_filename(filename);
+            Str       fn = get_pmfx_info_filename(filename);
             pen::json j = pen::json::load_from_file(fn.c_str());
             if (j.is_null())
                 return false;
@@ -943,7 +943,7 @@ namespace put
 
                         u32 dep_ts = 0;
                         Str fn2 = pen::os_path_for_resource(get_pmfx_info_filename(pmfx_set.filename.c_str()).c_str());
-                        
+
                         if (pen::filesystem_getmtime(fn2.c_str(), dep_ts) == PEN_ERR_OK)
                         {
                             u32 input_ts = 0;

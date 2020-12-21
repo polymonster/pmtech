@@ -62,16 +62,16 @@ struct vs_input_multi
 
 struct vs_input_position_only
 {
-	float4 position : POSITION;
-	
-	if:(SKINNED)
+    float4 position : POSITION;
+    
+    if:(SKINNED)
     {
-		float4 normal : TEXCOORD0;
-		float4 texcoord : TEXCOORD1;
-		float4 tangent : TEXCOORD2;
-		float4 bitangent : TEXCOORD3;
-		float4 blend_indices : TEXCOORD4;
-		float4 blend_weights : TEXCOORD5;
+        float4 normal : TEXCOORD0;
+        float4 texcoord : TEXCOORD1;
+        float4 tangent : TEXCOORD2;
+        float4 bitangent : TEXCOORD3;
+        float4 blend_indices : TEXCOORD4;
+        float4 blend_weights : TEXCOORD5;
     }
 };
 
@@ -138,7 +138,7 @@ shader_resources
     texture_2d( specular_texture, 2 );
     
     if:(GI) {
-    	texture_2d( blue_noise, 5 );
+        texture_2d( blue_noise, 5 );
     }
         
     texture_3d( sdf_volume, 14 );
@@ -148,11 +148,11 @@ shader_resources
         texture_cube_array( omni_shadow_texture, 10 );
     }
     texture_2d_array( area_light_textures, 11 );
-	texture_3d( volume_gi, 9 );
-	
-	depth_2d( single_shadowmap_texture, 7 );
-	depth_2d_array( shadowmap_texture, 15 );
-	texture_2d( shadowmap_texture_sss, 8);
+    texture_3d( volume_gi, 9 );
+    
+    depth_2d( single_shadowmap_texture, 7 );
+    depth_2d_array( shadowmap_texture, 15 );
+    texture_2d( shadowmap_texture_sss, 8);
 };
 
 vs_output_zonly vs_main_zonly( vs_input_position_only input, vs_instance_input instance_input )
@@ -273,7 +273,7 @@ vs_output_pre_skin vs_main_pre_skin( vs_input_skinned input )
     
     skin_tbn(t, b, n, input.blend_weights, input.blend_indices);
     
-	output.normal.xyz = n;
+    output.normal.xyz = n;
     output.tangent.xyz = t;
     output.bitangent.xyz = b;
     
@@ -414,16 +414,16 @@ ps_output ps_single_light( vs_output input )
 float hash_12(vec2 p)
 {
     // Two typical hashes...
-	return fract(sin(dot(p, float2(12.9898, 78.233))) * 43758.5453);
+    return fract(sin(dot(p, float2(12.9898, 78.233))) * 43758.5453);
 }
 
 float3 hash_33( float3 p )
 {
-	p = float3(dot(p,float3(127.1,311.7, 74.7)),
-			  dot(p,float3(269.5,183.3,246.1)),
-			  dot(p,float3(113.5,271.9,124.6)));
+    p = float3(dot(p,float3(127.1,311.7, 74.7)),
+              dot(p,float3(269.5,183.3,246.1)),
+              dot(p,float3(113.5,271.9,124.6)));
 
-	return fract(sin(p)*43758.5453123) * 2.0 - 1.0;
+    return fract(sin(p)*43758.5453123) * 2.0 - 1.0;
 }
 
 ps_output ps_forward_lit( vs_output input ) 
@@ -536,7 +536,7 @@ ps_output ps_forward_lit( vs_output input )
             sp.xyz /= sp.w;
             sp.y *= -1.0;
             sp.xy = sp.xy * 0.5 + 0.5;
-			sp.z = remap_depth(sp.z);
+            sp.z = remap_depth(sp.z);
             
             shadow = sample_shadow_array_pcf_9(float(shadow_map_index), sp.xyz);
             
@@ -607,8 +607,8 @@ ps_output ps_forward_lit( vs_output input )
             }
             else:
             {
-            	lit_colour += light_col;
-            	continue;
+                lit_colour += light_col;
+                continue;
             }
         }   
     }
@@ -671,7 +671,7 @@ ps_output ps_forward_lit( vs_output input )
             sp.xyz /= sp.w;
             sp.y *= -1.0;
             sp.xy = sp.xy * 0.5 + 0.5;
-			sp.z = remap_depth(sp.z);
+            sp.z = remap_depth(sp.z);
 
             shadow = sample_shadow_array_pcf_9(float(shadow_map_index), sp.xyz);
 
@@ -683,31 +683,31 @@ ps_output ps_forward_lit( vs_output input )
         
     // area lights
     {
-    	// area lights constant colour
-		float pi = 3.14159265359;
-		int num_area_lights = int(area_light_info.x);
-		for(int i = 0; i < num_area_lights; ++i)
-		{
-			float3 v = -normalize(input.world_pos.xyz - camera_view_pos.xyz);
-			float3 pos = input.world_pos.xyz;
-		
-			float3 points[4];
-			for(int j = 0; j < 4; ++j)
-				points[j] = area_lights[i].corners[j].xyz;
-		
-			// diffuse
-			float diff_sum = area_light_diffuse(points, pos, n, v);
-			float3 diff = area_lights[i].colour.rgb * diff_sum;
-		
-			// specular 
-			float spec_sum = area_light_specular(points, pos, ro_sample.x, n, v);
-			float3 spec = area_lights[i].colour.rgb * spec_sum;
-		
-			float3 light_col = (spec.rgb + diff.rgb) / (2.0 * pi);        
-			lit_colour += light_col;
-		}
+        // area lights constant colour
+        float pi = 3.14159265359;
+        int num_area_lights = int(area_light_info.x);
+        for(int i = 0; i < num_area_lights; ++i)
+        {
+            float3 v = -normalize(input.world_pos.xyz - camera_view_pos.xyz);
+            float3 pos = input.world_pos.xyz;
+        
+            float3 points[4];
+            for(int j = 0; j < 4; ++j)
+                points[j] = area_lights[i].corners[j].xyz;
+        
+            // diffuse
+            float diff_sum = area_light_diffuse(points, pos, n, v);
+            float3 diff = area_lights[i].colour.rgb * diff_sum;
+        
+            // specular 
+            float spec_sum = area_light_specular(points, pos, ro_sample.x, n, v);
+            float3 spec = area_lights[i].colour.rgb * spec_sum;
+        
+            float3 light_col = (spec.rgb + diff.rgb) / (2.0 * pi);        
+            lit_colour += light_col;
+        }
     
-    	// area lights textured
+        // area lights textured
         int ts = num_area_lights;
         int num_area_lights_textured = int(area_light_info.y);
         for(int i = ts; i < ts + num_area_lights_textured; ++i)
@@ -738,105 +738,105 @@ ps_output ps_forward_lit( vs_output input )
             lit_colour += light_col;
         }
     }
-	
-	output.colour.rgb = lit_colour.rgb * albedo.a;    
+    
+    output.colour.rgb = lit_colour.rgb * albedo.a;    
     output.colour.a = albedo.a;
-	
-	// gi volume tracing..
-	if:(GI)
-	{    			
-		// geometry tb for casting rays
-		float3 gn = input.normal.xyz;
-		float3 gt = input.tangent.xyz;
-		float3 gb = input.bitangent.xyz;
-		
-		// scene / volume dimensions
-		float3 dim = gi_scene_size.xyz;	
-		float3 to_uvx = dim * 0.5;
-		
-		// 16 rays on sphere surface
-		int num_rays = 16;
-		float3 rays[16];
-		rays[0] = float3(0.57735, 0.57735, 0.57735);
-		rays[1] = float3(0.57735, -0.57735, -0.57735);
-		rays[2] = float3(-0.57735, 0.57735, -0.57735);
-		rays[3] = float3(-0.57735, -0.57735, 0.57735);
-		rays[4] = float3(-0.903007, -0.182696, -0.388844);
-		rays[5] = float3(-0.903007, 0.182696, 0.388844);
-		rays[6] = float3(0.903007, -0.182696, 0.388844);
-		rays[7] = float3(0.903007, 0.182696, -0.388844);
-		rays[8] = float3(-0.388844, -0.903007, -0.182696);
-		rays[9] = float3(0.388844, -0.903007, 0.182696);
-		rays[10] = float3(0.388844, 0.903007, -0.182696);
-		rays[11] = float3(-0.388844, 0.903007, 0.182696);
-		rays[12] = float3(-0.182696, -0.388844, -0.903007);
-		rays[13] = float3(0.182696, 0.388844, -0.903007);
-		rays[14] = float3(-0.182696, 0.388844, 0.903007);
-		rays[15] = float3(0.182696, -0.388844, 0.903007);
-				
-		float4 gi = float4(0.0, 0.0, 0.0, 0.0);
-		
-		float4 sp = mul(input.world_pos, vp_matrix);
-		sp /= sp.w;
-		sp.x *= (1280/512);
-		sp.y *= (720/512);
-		
-		// trace rays
-		for(int i = 0; i < num_rays; ++i)
-		{			
-			float3 noise = (hash_33(input.world_pos.xyz + user_data.yyy));
-			float3 noise2 = (sample_texture_level(blue_noise, sp.xy + noise.xy, 0.0).rgb * 2.0 - 1.0);
-			
-			// start outside occlusion
-			float3 tex_size = gi_volume_size.xyz;
-			float3 ray = chebyshev_normalize(noise2 + rays[i]);
-			float3 cn = chebyshev_normalize(n);
-			float3 step = (dim*2.0) / tex_size;
-			float3 sp = input.world_pos.xyz + (cn * step);
-			
-			// ensure ray is pointing in normals hemisphere
-			ray *= dot(ray, gn) < 0.0 ? -1.0 : 1.0;
-			
-			// gather gi
-			float4 ray_gi = float4(0.0, 0.0, 0.0, 0.0);
-			
-			// sample each mip map level
-			// first 4 levels make the main contribution, after 4 its hard to notice any difference
-			for(int j = 0; j < 4; ++j)
-			{					
-				// 2 steps per level to cover the distance of 1 texel in mip j+1
-				for(int k = 0; k < 2; ++k)
-				{
-					step = (dim*2.0) / tex_size;
-				
-					float3 uvw = saturate((sp / to_uvx) * 0.5 + 0.5);					
-					float4 g = sample_texture_level( volume_gi, uvw, float(j));
-										
-					float d = length(input.world_pos.xyz - sp);
-					d = smoothstep(0.0, 8.0, d);
-					
-					ray_gi.rgb = ray_gi.rgb + g.rgb * d;
-					ray_gi.a += g.a;
-							
-					sp += ray * step.x;							
-				}
-				tex_size /= 2.0;
-				
-				// break if we reach 1 alpha but accumulate mip 0 for better coverage at contact points
-				if(ray_gi.a >= 1.0 && j > 1)
-					break;
-			}
-			gi += ray_gi;
-		}
-		gi /= float(num_rays);
-		
-		// could multiply gi with albedo but additive gi gives a stronger effect
-		output.colour.rgb = gi.rgb * 2.0 * m_albedo.rgb + lit_colour.rgb;
-	}
-	    
+    
+    // gi volume tracing..
+    if:(GI)
+    {                
+        // geometry tb for casting rays
+        float3 gn = input.normal.xyz;
+        float3 gt = input.tangent.xyz;
+        float3 gb = input.bitangent.xyz;
+        
+        // scene / volume dimensions
+        float3 dim = gi_scene_size.xyz;    
+        float3 to_uvx = dim * 0.5;
+        
+        // 16 rays on sphere surface
+        int num_rays = 16;
+        float3 rays[16];
+        rays[0] = float3(0.57735, 0.57735, 0.57735);
+        rays[1] = float3(0.57735, -0.57735, -0.57735);
+        rays[2] = float3(-0.57735, 0.57735, -0.57735);
+        rays[3] = float3(-0.57735, -0.57735, 0.57735);
+        rays[4] = float3(-0.903007, -0.182696, -0.388844);
+        rays[5] = float3(-0.903007, 0.182696, 0.388844);
+        rays[6] = float3(0.903007, -0.182696, 0.388844);
+        rays[7] = float3(0.903007, 0.182696, -0.388844);
+        rays[8] = float3(-0.388844, -0.903007, -0.182696);
+        rays[9] = float3(0.388844, -0.903007, 0.182696);
+        rays[10] = float3(0.388844, 0.903007, -0.182696);
+        rays[11] = float3(-0.388844, 0.903007, 0.182696);
+        rays[12] = float3(-0.182696, -0.388844, -0.903007);
+        rays[13] = float3(0.182696, 0.388844, -0.903007);
+        rays[14] = float3(-0.182696, 0.388844, 0.903007);
+        rays[15] = float3(0.182696, -0.388844, 0.903007);
+                
+        float4 gi = float4(0.0, 0.0, 0.0, 0.0);
+        
+        float4 sp = mul(input.world_pos, vp_matrix);
+        sp /= sp.w;
+        sp.x *= (1280/512);
+        sp.y *= (720/512);
+        
+        // trace rays
+        for(int i = 0; i < num_rays; ++i)
+        {            
+            float3 noise = (hash_33(input.world_pos.xyz + user_data.yyy));
+            float3 noise2 = (sample_texture_level(blue_noise, sp.xy + noise.xy, 0.0).rgb * 2.0 - 1.0);
+            
+            // start outside occlusion
+            float3 tex_size = gi_volume_size.xyz;
+            float3 ray = chebyshev_normalize(noise2 + rays[i]);
+            float3 cn = chebyshev_normalize(n);
+            float3 step = (dim*2.0) / tex_size;
+            float3 sp = input.world_pos.xyz + (cn * step);
+            
+            // ensure ray is pointing in normals hemisphere
+            ray *= dot(ray, gn) < 0.0 ? -1.0 : 1.0;
+            
+            // gather gi
+            float4 ray_gi = float4(0.0, 0.0, 0.0, 0.0);
+            
+            // sample each mip map level
+            // first 4 levels make the main contribution, after 4 its hard to notice any difference
+            for(int j = 0; j < 4; ++j)
+            {                    
+                // 2 steps per level to cover the distance of 1 texel in mip j+1
+                for(int k = 0; k < 2; ++k)
+                {
+                    step = (dim*2.0) / tex_size;
+                
+                    float3 uvw = saturate((sp / to_uvx) * 0.5 + 0.5);                    
+                    float4 g = sample_texture_level( volume_gi, uvw, float(j));
+                                        
+                    float d = length(input.world_pos.xyz - sp);
+                    d = smoothstep(0.0, 8.0, d);
+                    
+                    ray_gi.rgb = ray_gi.rgb + g.rgb * d;
+                    ray_gi.a += g.a;
+                            
+                    sp += ray * step.x;                            
+                }
+                tex_size /= 2.0;
+                
+                // break if we reach 1 alpha but accumulate mip 0 for better coverage at contact points
+                if(ray_gi.a >= 1.0 && j > 1)
+                    break;
+            }
+            gi += ray_gi;
+        }
+        gi /= float(num_rays);
+        
+        // could multiply gi with albedo but additive gi gives a stronger effect
+        output.colour.rgb = gi.rgb * 2.0 * m_albedo.rgb + lit_colour.rgb;
+    }
+        
     if(albedo.a <= 0.0)
-    	discard;
-    	
+        discard;
+        
     return output;
 }
 
@@ -915,7 +915,7 @@ ps_output ps_single_light_diffuse( vs_output input )
 
 ps_output ps_per_pixel_velocity( vs_output input )
 {
-	ps_output output;
+    ps_output output;
     
     output.colour = float4(1.0, 0.0, 0.0, 0.0);
     
@@ -970,7 +970,7 @@ ps_output ps_simple_lighting( vs_output input )
         albedo.a = 1.0;
     }
     
-	//for directional lights
+    //for directional lights
     float3 lll = float3(0.0, 0.0, 0.0);
     int shadow_map_index = 0;
     _pmfx_loop
@@ -1016,7 +1016,7 @@ ps_output ps_simple_lighting( vs_output input )
             sp.xyz /= sp.w;
             sp.y *= -1.0;
             sp.xy = sp.xy * 0.5 + 0.5;
-			sp.z = remap_depth(sp.z);
+            sp.z = remap_depth(sp.z);
             
             shadow = sample_shadow_pcf_9(sp.xyz);
             
@@ -1032,7 +1032,7 @@ ps_output ps_simple_lighting( vs_output input )
                 sp.xyz /= sp.w;
                 sp.y *= -1.0;
                 sp.xy = sp.xy * 0.5 + 0.5;
-				sp.z = remap_depth(sp.z);
+                sp.z = remap_depth(sp.z);
                 
                 float4 sm = sample_texture_level( shadowmap_texture_sss, sp.xy, 0.0 );
                 d = sm.r;
@@ -1065,7 +1065,7 @@ ps_output ps_simple_lighting( vs_output input )
         }
         
         // double oren nayar with back light
-		lit_colour += oren_nayar( 
+        lit_colour += oren_nayar( 
             lights[i].pos_radius * -1.0, 
             lights[i].colour.rgb * 0.25,
             n,
@@ -1083,7 +1083,7 @@ ps_output ps_simple_lighting( vs_output input )
 
 ps_output ps_lambert( vs_output input )
 {
-	ps_output output;
+    ps_output output;
     
     float4 albedo = sample_texture( diffuse_texture, input.texcoord.xy );
     float3 normal_sample = sample_texture( normal_texture, input.texcoord.xy ).rgb;
@@ -1213,7 +1213,7 @@ pmfx:
     
     simple_lighting:
     {
-		vs: vs_main,
+        vs: vs_main,
         ps: ps_simple_lighting,
         
         permutations:
@@ -1223,7 +1223,7 @@ pmfx:
             SSS: [2, [0,1]]
         },
         
-		constants:
+        constants:
         {
             albedo       : { type: float4, widget: colour, default: [1.0, 1.0, 1.0, 1.0] },
             roughness    : { type: float, widget: slider, min: 0, max: 1, default: 0.5 },
@@ -1278,7 +1278,7 @@ pmfx:
     
     lambert:
     {
-		vs: vs_main,
+        vs: vs_main,
         ps: ps_lambert,
         
         permutations:
@@ -1287,13 +1287,13 @@ pmfx:
             INSTANCED: [30, [0,1]]
         },
         
-		constants:
+        constants:
         {
             albedo : { type: float4, widget: colour, default: [1.0, 1.0, 1.0, 1.0] }
         }
     },
-	
-	gi:
+    
+    gi:
     {
         vs: vs_main,
         ps: ps_single_light_diffuse,
@@ -1303,8 +1303,8 @@ pmfx:
             SKINNED: [31, [0,1]],
             INSTANCED: [30, [0,1]]
         },
-		
-		inherit_constants: [forward_lit]
+        
+        inherit_constants: [forward_lit]
     },
     
     pre_skin:
