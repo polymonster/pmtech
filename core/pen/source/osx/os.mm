@@ -716,8 +716,10 @@ namespace pen
 
     const Str os_path_for_resource(const c8* filename)
     {
+        if(strncmp(filename, s_ctx.pen_user_info.working_directory, strlen(s_ctx.pen_user_info.working_directory)-1) == 0)
+            return filename;
+        
         Str res = s_ctx.pen_user_info.working_directory;
-        res.append("/");
         res.append(filename);
         return res;
     }

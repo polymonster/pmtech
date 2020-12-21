@@ -19,6 +19,7 @@
 #include "pen_json.h"
 #include "pen_string.h"
 #include "renderer.h"
+#include "os.h"
 
 using namespace put;
 using namespace pmfx;
@@ -768,11 +769,15 @@ namespace put
 
             return PEN_INVALID_HANDLE;
         }
-
-        void get_pmfx_info_filename(c8* file_buf, const c8* pmfx_filename)
+        
+        Str get_pmfx_info_filename(const c8* pmfx_filename)
         {
-            pen::string_format(file_buf, 256, "data/pmfx/%s/%s/info.json", pen::renderer_get_shader_platform(),
-                               pmfx_filename);
+            Str fn = "data/pmfx/";
+            fn.append(pen::renderer_get_shader_platform());
+            fn.append("/");
+            fn.append(pmfx_filename);
+            fn.append("/info.json");
+            return fn;
         }
 
         void release_shader(u32 shader)
@@ -793,9 +798,8 @@ namespace put
 
         bool pmfx_ready(const c8* filename)
         {
-            static c8 info_file_buf[256];
-            get_pmfx_info_filename(info_file_buf, filename);
-            pen::json j = pen::json::load_from_file(info_file_buf);
+            Str fn = get_pmfx_info_filename(filename);
+            pen::json j = pen::json::load_from_file(fn.c_str());
             if (j.is_null())
                 return false;
 
@@ -805,8 +809,7 @@ namespace put
         pmfx_shader load_internal(const c8* filename)
         {
             // load info file for description
-            static c8 info_file_buf[256];
-            get_pmfx_info_filename(info_file_buf, filename);
+            Str fn = get_pmfx_info_filename(filename);
 
             // read shader info json
             pmfx_shader new_pmfx;
@@ -814,10 +817,10 @@ namespace put
             new_pmfx.filename = filename;
             new_pmfx.id_filename = PEN_HASH(filename);
 
-            new_pmfx.info = pen::json::load_from_file(info_file_buf);
+            new_pmfx.info = pen::json::load_from_file(fn.c_str());
 
             u32       ts;
-            pen_error err = pen::filesystem_getmtime(info_file_buf, ts);
+            pen_error err = pen::filesystem_getmtime(fn.c_str(), ts);
             if (err == PEN_ERR_OK)
             {
                 new_pmfx.info_timestamp = ts;
@@ -897,8 +900,6 @@ namespace put
         {
             PEN_HOTLOADING_ENABLED;
 
-            static c8 info_file_buf[256];
-
             Str shader_compiler_str = put::get_build_cmd();
             shader_compiler_str.append("-pmfx");
 
@@ -913,10 +914,10 @@ namespace put
 
                 if (pmfx_set.invalidated)
                 {
-                    get_pmfx_info_filename(info_file_buf, pmfx_set.filename.c_str());
+                    Str fn = pen::os_path_for_resource(get_pmfx_info_filename(pmfx_set.filename.c_str()).c_str());
 
                     u32       current_ts;
-                    pen_error err = pen::filesystem_getmtime(info_file_buf, current_ts);
+                    pen_error err = pen::filesystem_getmtime(fn.c_str(), current_ts);
 
                     // wait until info is newer than the current info file,
                     // to know compilation is completed.
@@ -941,8 +942,9 @@ namespace put
                         Str       fn = file["name"].as_str();
 
                         u32 dep_ts = 0;
-                        get_pmfx_info_filename(info_file_buf, pmfx_set.filename.c_str());
-                        if (pen::filesystem_getmtime(info_file_buf, dep_ts) == PEN_ERR_OK)
+                        Str fn2 = pen::os_path_for_resource(get_pmfx_info_filename(pmfx_set.filename.c_str()).c_str());
+                        
+                        if (pen::filesystem_getmtime(fn2.c_str(), dep_ts) == PEN_ERR_OK)
                         {
                             u32 input_ts = 0;
                             if (pen::filesystem_getmtime(fn.c_str(), input_ts) == PEN_ERR_OK)
