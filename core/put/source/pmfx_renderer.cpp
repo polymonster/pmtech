@@ -2527,7 +2527,7 @@ namespace put
         {
             Str build_cmd = get_build_cmd();
 
-            build_cmd.append(" -jsn ");
+            build_cmd.append(" -render_configs ");
 
             PEN_SYSTEM(build_cmd.c_str());
         }

@@ -3,9 +3,10 @@
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
 #include "loader.h"
+#include "dev_ui.h"
+
 #include "console.h"
 #include "data_struct.h"
-#include "dev_ui.h"
 #include "file_system.h"
 #include "hash.h"
 #include "memory.h"
@@ -16,6 +17,7 @@
 #include "str/Str.h"
 #include "str_utilities.h"
 #include "timer.h"
+#include "os.h"
 
 #include <fstream>
 #include <vector>
@@ -684,7 +686,8 @@ namespace put
             if (fw->invalidated)
             {
                 u32 dep_ts;
-                if (pen::filesystem_getmtime(fw->filename.c_str(), dep_ts) == PEN_ERR_OK)
+                Str fn = pen::os_path_for_resource(fw->filename.c_str());
+                if (pen::filesystem_getmtime(fn.c_str(), dep_ts) == PEN_ERR_OK)
                 {
                     if (dep_ts >= fw->rebuild_ts)
                     {
@@ -708,7 +711,8 @@ namespace put
                     s32       num_inputs = outputs.size();
                     u32       current_ts = 0;
 
-                    if (pen::filesystem_getmtime(fw->filename.c_str(), current_ts) == PEN_ERR_OK)
+                    Str fn = pen::os_path_for_resource(fw->filename.c_str());
+                    if (pen::filesystem_getmtime(fn.c_str(), current_ts) == PEN_ERR_OK)
                     {
                         for (s32 j = 0; j < num_inputs; ++j)
                         {
