@@ -151,4 +151,34 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
             ]
         }
     }
+	
+	win32-editor(data): 
+    {
+        jsn_vars: {
+            data_dir: "bin/win32/data"
+            bin_dir: "bin/win32"
+            platform: "win32"
+        }
+        
+        premake: {
+            args: [
+                "%{vs_latest}"
+                "--renderer=dx11"
+                "--platform_dir=win32"
+				"--sdk_version=%{windows_sdk_version}"
+            ]
+        }
+        
+        pmfx: {
+            args: [
+                "-shader_platform hlsl"
+                "-shader_version 5_0"
+                "-i ../assets/shaders"
+                "-o bin/win32/data/pmfx/hlsl"
+                "-h shader_structs"
+                "-t temp/shaders/hlsl"
+                "-source"
+            ]
+        }
+    }
 }

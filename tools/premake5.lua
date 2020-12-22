@@ -29,11 +29,5 @@ project ( project_name )
 
 project "pmtech_editor"
 	configuration { "Debug" }
-	postbuildcommands {
-    	"xcodebuild -scheme live_lib -project live_lib.xcodeproj -configuration Debug -quiet"
-	}
 	configuration { "Release" }
-	postbuildcommands {
-    	"xcodebuild -scheme live_lib -project live_lib.xcodeproj -configuration Release -quiet"
-	}
 	
