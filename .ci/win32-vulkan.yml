@@ -9,5 +9,5 @@ init:
   - VulkanSDK.exe /S
   - rm -f VulkanSDK.exe
 build_script:
-- cmd: "git submodule update --init --recursive\n cd examples\n..\\pmbuild win32 -libs\n..\\pmbuild win32-vulkan\n..\\pmbuild make win32-vulkan all /p:Platform=x64 /p:Configuration=Debug\n..\\pmbuild make win32-vulkan all /p:Platform=x64 /p:Configuration=Release"
+- cmd: "dir C:\\VulkanSDK\n git submodule update --init --recursive\n cd examples\n..\\pmbuild win32 -libs\n..\\pmbuild win32-vulkan\n..\\pmbuild make win32-vulkan all /p:Platform=x64 /p:Configuration=Debug\n..\\pmbuild make win32-vulkan all /p:Platform=x64 /p:Configuration=Release"
 test: off
