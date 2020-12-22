@@ -100,7 +100,8 @@ namespace
         pmfx::init("data/configs/editor_renderer.jsn");
         
         // cr
-        live_lib = cr_plugin_open(ctx, LIVE_LIB);
+        Str ll = pen::os_path_for_resource(LIVE_LIB);
+        live_lib = cr_plugin_open(ctx, ll.c_str());
 
         if(live_lib)
         {

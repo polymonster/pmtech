@@ -8,6 +8,11 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
         platform: ""
     }
     
+    base:
+    {
+    	// 
+    }
+    
     //
     // cmdline build of libs for pmbuild dependencies
     //
