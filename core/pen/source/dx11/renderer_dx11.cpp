@@ -1725,13 +1725,13 @@ namespace pen
         if (bind_flags & TEXTURE_BIND_PS)
         {
             s_immediate_context->PSSetSamplers(unit, 1, sampler);
-            s_immediate_context->PSSetShaderResources(resource_slot, 1, srv);
+            s_immediate_context->PSSetShaderResources(unit, 1, srv);
         }
 
         if (bind_flags & TEXTURE_BIND_VS)
         {
             s_immediate_context->VSSetSamplers(unit, 1, sampler);
-            s_immediate_context->VSSetShaderResources(resource_slot, 1, srv);
+            s_immediate_context->VSSetShaderResources(unit, 1, srv);
         }
 
         if (bind_flags & TEXTURE_BIND_CS)
