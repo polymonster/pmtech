@@ -778,8 +778,8 @@ ps_output ps_forward_lit( vs_output input )
         
         float4 sp = mul(input.world_pos, vp_matrix);
         sp /= sp.w;
-        sp.x *= (1280/512);
-        sp.y *= (720/512);
+        sp.x *= (1280.0/512.0);
+        sp.y *= (720.0/512.0);
         
         // trace rays
         for(int i = 0; i < num_rays; ++i)
