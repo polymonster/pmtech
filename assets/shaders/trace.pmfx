@@ -155,7 +155,7 @@ ps_output ps_octahedron( vs_output input )
     float2 uv = bend_tc(input.texcoord.xy);
     float eps = 0.005;
     
-    float iTime = mod(user_data.y * 3.0, 200.0);
+    float iTime = mod(user_data.y * 0.003, 200.0);
     float2 iResolution = float2(640.0, 480.0);
 
     float3 ro;
@@ -214,7 +214,7 @@ ps_output ps_box( vs_output input )
     float2 uv = bend_tc(input.texcoord.xy);
     float eps = 0.005;
     
-    float iTime = mod(user_data.y * 3.0, 200.0);
+    float iTime = mod(user_data.y * 0.003, 200.0);
     float2 iResolution = float2(640.0, 480.0);
 
     float3 ro;
@@ -272,7 +272,7 @@ ps_output ps_torus( vs_output input )
     float2 uv = bend_tc(input.texcoord.xy);
     float eps = 0.005;
     
-    float iTime = mod(user_data.y * 3.0, 200.0);
+    float iTime = mod(user_data.y * 0.003, 200.0);
     float2 iResolution = float2(640.0, 480.0);
 
     float3 ro;

@@ -4,6 +4,8 @@
 #include "ecs/ecs_resources.h"
 #include "ecs/ecs_cull.h"
 
+#include "imgui/imgui.h"
+
 #define DLL 1
 #include "ecs/ecs_live.h"
 #include "str/Str.cpp"
@@ -17,7 +19,7 @@
 
 #include <stdio.h>
 
-struct live_lib : public live_context
+struct live_lib
 {
     u32                 box_start = 0;
     u32                 box_end;
@@ -25,7 +27,9 @@ struct live_lib : public live_context
     
     void init(live_context* ctx)
     {
-        *(live_context*)this = *ctx;
+        //*(live_context*)this = *ctx;
+        
+        put::ecs::update(1.0/60.0f);
     }
     
     int on_load(live_context* ctx)
@@ -94,6 +98,8 @@ struct live_lib : public live_context
     {
         pentagon_in_axis(vec3d::unit_y(), vec3d::zero(), 0.0f, true);
         pentagon_in_axis(-vec3d::unit_y(), vec3d(0.0, M_PI*0.83333333333f, 0.0), M_PI, true);
+        
+        ImGui::Text("Hello Gurrls");
                         
         return 0;
     }

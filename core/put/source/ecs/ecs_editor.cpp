@@ -3410,7 +3410,7 @@ namespace put
             u32 fill = pmfx::get_render_state(id_default, pmfx::e_render_state::rasterizer);
 
             pen::renderer_set_depth_stencil_state(depth_disabled);
-            pen::renderer_set_rasterizer_state(fill);
+            pen::renderer_set_raster_state(fill);
 
             transform_widget(view);
 

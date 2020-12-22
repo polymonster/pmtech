@@ -77,7 +77,7 @@ void render_raster_states(const scene_view& view)
 
         // set rs
         u32 rs = pmfx::get_render_state(raster_states[i], pmfx::e_render_state::rasterizer);
-        pen::renderer_set_rasterizer_state(rs);
+        pen::renderer_set_raster_state(rs);
 
         pen::renderer_draw_indexed(geom.num_indices, 0, 0, PEN_PT_TRIANGLELIST);
     }

@@ -235,7 +235,7 @@ namespace pen
         sampler_creation_params(){};
     };
 
-    struct rasteriser_state_creation_params
+    struct raster_state_creation_params
     {
         u32 fill_mode = PEN_FILL_SOLID;
         u32 cull_mode = PEN_CULL_BACK;
@@ -248,7 +248,7 @@ namespace pen
         s32 multisample = 0;
         s32 aa_lines = 0;
 
-        rasteriser_state_creation_params(){};
+        raster_state_creation_params(){};
     };
 
     struct viewport
@@ -398,14 +398,14 @@ namespace pen
     void       renderer_set_vertex_buffers(u32* buffer_indices, u32 num_buffers, u32 start_slot, const u32* strides,
                                            const u32* offsets);
     void       renderer_set_index_buffer(u32 buffer_index, u32 format, u32 offset);
-    void       renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 flags);
-    void       renderer_set_structured_buffer(u32 buffer_index, u32 resource_slot, u32 flags);
+    void       renderer_set_constant_buffer(u32 buffer_index, u32 unit, u32 flags);
+    void       renderer_set_structured_buffer(u32 buffer_index, u32 unit, u32 flags);
     void       renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset = 0);
     u32        renderer_create_texture(const texture_creation_params& tcp);
     u32        renderer_create_sampler(const sampler_creation_params& scp);
-    void       renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 bind_flags);
-    u32        renderer_create_rasterizer_state(const rasteriser_state_creation_params& rscp);
-    void       renderer_set_rasterizer_state(u32 rasterizer_state_index);
+    void       renderer_set_texture(u32 texture_index, u32 sampler_index, u32 unit, u32 bind_flags);
+    u32        renderer_create_raster_state(const raster_state_creation_params& rscp);
+    void       renderer_set_raster_state(u32 raster_state_index);
     void       renderer_set_viewport(const viewport& vp);
     void       renderer_set_scissor_rect(const rect& r);
     void       renderer_set_viewport_ratio(const viewport& vp);
@@ -474,18 +474,18 @@ namespace pen
         void renderer_set_vertex_buffers(u32* buffer_indices, u32 num_buffers, u32 start_slot, const u32* strides,
                                          const u32* offsets);
         void renderer_set_index_buffer(u32 buffer_index, u32 format, u32 offset);
-        void renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 flags);
-        void renderer_set_structured_buffer(u32 buffer_index, u32 resource_slot, u32 flags);
+        void renderer_set_constant_buffer(u32 buffer_index, u32 unit, u32 flags);
+        void renderer_set_structured_buffer(u32 buffer_index, u32 unit, u32 flags);
         void renderer_update_buffer(u32 buffer_index, const void* data, u32 data_size, u32 offset);
 
         // textures
         void renderer_create_texture(const texture_creation_params& tcp, u32 resource_slot);
         void renderer_create_sampler(const sampler_creation_params& scp, u32 resource_slot);
-        void renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 bind_flags);
+        void renderer_set_texture(u32 texture_index, u32 sampler_index, u32 unit, u32 bind_flags);
 
         // rasterizer
-        void renderer_create_rasterizer_state(const rasteriser_state_creation_params& rscp, u32 resource_slot);
-        void renderer_set_rasterizer_state(u32 rasterizer_state_index);
+        void renderer_create_raster_state(const raster_state_creation_params& rscp, u32 resource_slot);
+        void renderer_set_raster_state(u32 raster_state_index);
         void renderer_set_viewport(const viewport& vp);
         void renderer_set_scissor_rect(const rect& r);
 

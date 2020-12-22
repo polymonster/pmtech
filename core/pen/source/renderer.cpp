@@ -163,14 +163,14 @@ namespace
     {
         u32 texture_index;
         u32 sampler_index;
-        u32 resource_slot;
+        u32 unit;
         u32 bind_flags;
     };
 
     struct set_buffer_cmd
     {
         u32 buffer_index;
-        u32 resource_slot;
+        u32 unit;
         u32 flags;
     };
 
@@ -221,7 +221,7 @@ namespace
             texture_creation_params          create_texture;
             sampler_creation_params          create_sampler;
             set_texture_cmd                  set_texture;
-            rasteriser_state_creation_params create_raster_state;
+            raster_state_creation_params create_raster_state;
             viewport                         set_viewport;
             rect                             set_rect;
             blend_creation_params            create_blend_state;
@@ -375,15 +375,15 @@ namespace pen
 
             case CMD_SET_TEXTURE:
                 direct::renderer_set_texture(cmd.set_texture.texture_index, cmd.set_texture.sampler_index,
-                                             cmd.set_texture.resource_slot, cmd.set_texture.bind_flags);
+                                             cmd.set_texture.unit, cmd.set_texture.bind_flags);
                 break;
 
             case CMD_CREATE_RASTER_STATE:
-                direct::renderer_create_rasterizer_state(cmd.create_raster_state, cmd.resource_slot);
+                direct::renderer_create_raster_state(cmd.create_raster_state, cmd.resource_slot);
                 break;
 
             case CMD_SET_RASTER_STATE:
-                direct::renderer_set_rasterizer_state(cmd.command_data_index);
+                direct::renderer_set_raster_state(cmd.command_data_index);
                 break;
 
             case CMD_SET_VIEWPORT:
@@ -428,12 +428,12 @@ namespace pen
                 break;
 
             case CMD_SET_CONSTANT_BUFFER:
-                direct::renderer_set_constant_buffer(cmd.set_buffer.buffer_index, cmd.set_buffer.resource_slot,
+                direct::renderer_set_constant_buffer(cmd.set_buffer.buffer_index, cmd.set_buffer.unit,
                                                      cmd.set_buffer.flags);
                 break;
 
             case CMD_SET_STRUCTURED_BUFFER:
-                direct::renderer_set_structured_buffer(cmd.set_buffer.buffer_index, cmd.set_buffer.resource_slot,
+                direct::renderer_set_structured_buffer(cmd.set_buffer.buffer_index, cmd.set_buffer.unit,
                                                        cmd.set_buffer.flags);
                 break;
 
@@ -1254,7 +1254,7 @@ namespace pen
         return resource_slot;
     }
 
-    void renderer_set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 bind_flags)
+    void renderer_set_texture(u32 texture_index, u32 sampler_index, u32 unit, u32 bind_flags)
     {
         renderer_cmd cmd;
 
@@ -1262,19 +1262,19 @@ namespace pen
 
         cmd.set_texture.texture_index = texture_index;
         cmd.set_texture.sampler_index = sampler_index;
-        cmd.set_texture.resource_slot = resource_slot;
+        cmd.set_texture.unit = unit;
         cmd.set_texture.bind_flags = bind_flags;
 
         add_cmd(cmd);
     }
 
-    u32 renderer_create_rasterizer_state(const rasteriser_state_creation_params& rscp)
+    u32 renderer_create_raster_state(const raster_state_creation_params& rscp)
     {
         renderer_cmd cmd;
 
         cmd.command_index = CMD_CREATE_RASTER_STATE;
 
-        memcpy(&cmd.create_raster_state, (void*)&rscp, sizeof(rasteriser_state_creation_params));
+        memcpy(&cmd.create_raster_state, (void*)&rscp, sizeof(raster_state_creation_params));
 
         u32 resource_slot = slot_resources_get_next(&_ctx->renderer_slot_resources);
         cmd.resource_slot = resource_slot;
@@ -1284,7 +1284,7 @@ namespace pen
         return resource_slot;
     }
 
-    void renderer_set_rasterizer_state(u32 rasterizer_state_index)
+    void renderer_set_raster_state(u32 rasterizer_state_index)
     {
         renderer_cmd cmd;
 
@@ -1361,27 +1361,27 @@ namespace pen
         add_cmd(cmd);
     }
 
-    void renderer_set_constant_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
+    void renderer_set_constant_buffer(u32 buffer_index, u32 unit, u32 flags)
     {
         renderer_cmd cmd;
 
         cmd.command_index = CMD_SET_CONSTANT_BUFFER;
 
         cmd.set_buffer.buffer_index = buffer_index;
-        cmd.set_buffer.resource_slot = resource_slot;
+        cmd.set_buffer.unit = unit;
         cmd.set_buffer.flags = flags;
 
         add_cmd(cmd);
     }
 
-    void renderer_set_structured_buffer(u32 buffer_index, u32 resource_slot, u32 flags)
+    void renderer_set_structured_buffer(u32 buffer_index, u32 unit, u32 flags)
     {
         renderer_cmd cmd;
 
         cmd.command_index = CMD_SET_STRUCTURED_BUFFER;
 
         cmd.set_buffer.buffer_index = buffer_index;
-        cmd.set_buffer.resource_slot = resource_slot;
+        cmd.set_buffer.unit = unit;
         cmd.set_buffer.flags = flags;
 
         add_cmd(cmd);

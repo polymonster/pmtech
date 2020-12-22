@@ -76,14 +76,14 @@ namespace
         s_clear_state = pen::renderer_create_clear_state(cs);
 
         // raster state
-        pen::rasteriser_state_creation_params rcp;
-        pen::memory_zero(&rcp, sizeof(rasteriser_state_creation_params));
+        pen::raster_state_creation_params rcp;
+        pen::memory_zero(&rcp, sizeof(raster_state_creation_params));
         rcp.fill_mode = PEN_FILL_SOLID;
         rcp.cull_mode = PEN_CULL_NONE;
         rcp.depth_bias_clamp = 0.0f;
         rcp.sloped_scale_depth_bias = 0.0f;
 
-        s_raster_state = pen::renderer_create_rasterizer_state(rcp);
+        s_raster_state = pen::renderer_create_raster_state(rcp);
 
         // load shaders now requiring dependency on pmfx to make loading simpler.
         s_textured_shader = pmfx::load_shader("textured");
@@ -198,7 +198,7 @@ namespace
         pen::renderer_set_texture(0, 0, 0, pen::TEXTURE_BIND_CS);
         pen::renderer_set_texture(0, 0, 1, pen::TEXTURE_BIND_CS);
 
-        pen::renderer_set_rasterizer_state(s_raster_state);
+        pen::renderer_set_raster_state(s_raster_state);
 
         // bind back buffer and clear
         pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);

@@ -83,7 +83,7 @@ namespace pen
         virtual void create_texture(const texture_creation_params& tcp, u32 resource_slot) = 0;
         virtual void create_sampler(const sampler_creation_params& scp, u32 resource_slot) = 0;
         virtual void set_texture(u32 texture_index, u32 sampler_index, u32 resource_slot, u32 bind_flags) = 0;
-        virtual void create_rasterizer_state(const rasteriser_state_creation_params& rscp, u32 resource_slot) = 0;
+        virtual void create_rasterizer_state(const raster_state_creation_params& rscp, u32 resource_slot) = 0;
         virtual void set_rasterizer_state(u32 rasterizer_state_index) = 0;
         virtual void set_viewport(const viewport& vp) = 0;
         virtual void set_scissor_rect(const rect& r) = 0;

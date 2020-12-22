@@ -198,8 +198,8 @@ namespace
     void create_render_states()
     {
         // raster state
-        rasteriser_state_creation_params rcp;
-        memory_zero(&rcp, sizeof(rasteriser_state_creation_params));
+        raster_state_creation_params rcp;
+        memory_zero(&rcp, sizeof(raster_state_creation_params));
         rcp.fill_mode = PEN_FILL_SOLID;
         rcp.cull_mode = PEN_CULL_NONE;
         rcp.depth_bias_clamp = 0.0f;
@@ -207,7 +207,7 @@ namespace
         rcp.scissor_enable = true;
         rcp.depth_clip_enable = true;
 
-        s_imgui_rs.raster_state = pen::renderer_create_rasterizer_state(rcp);
+        s_imgui_rs.raster_state = pen::renderer_create_raster_state(rcp);
 
         // create a sampler object so we can sample a texture
         pen::sampler_creation_params scp;
@@ -450,7 +450,7 @@ namespace put
 
             pen::renderer_set_viewport(vp);
             pen::renderer_set_scissor_rect({vp.x, vp.y, vp.width, vp.height});
-            pen::renderer_set_rasterizer_state(s_imgui_rs.raster_state);
+            pen::renderer_set_raster_state(s_imgui_rs.raster_state);
             pen::renderer_set_blend_state(s_imgui_rs.blend_state);
             pen::renderer_set_depth_stencil_state(s_imgui_rs.depth_stencil_state);
 

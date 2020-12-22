@@ -20,15 +20,14 @@ create_app_example("mesh_opt", script_path())
 create_app_example("pmtech_editor", script_path())
 
 -- dll to hot reload
-create_binary("live_lib", "live_lib", script_path(), "SharedLib" )
+create_dll("live_lib", "live_lib", script_path())
+
+project ( project_name )
+	setup_product( "live_lib" )
+	kind ( "SharedLib" )
+	language "C++"
 
 project "pmtech_editor"
 	configuration { "Debug" }
-	postbuildcommands {
-    	"xcodebuild -scheme live_lib -project live_lib.xcodeproj -configuration Debug -quiet"
-	}
 	configuration { "Release" }
-	postbuildcommands {
-    	"xcodebuild -scheme live_lib -project live_lib.xcodeproj -configuration Release -quiet"
-	}
 	

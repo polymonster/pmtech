@@ -228,6 +228,58 @@ function setup_modules()
 	setup_fmod()
 end
 
+function create_dll(project_name, source_directory, root_directory)
+	s_project_name = project_name
+	project ( project_name )
+		setup_product( project_name )
+		kind ( binary_type )
+		language "C++"
+	
+		includedirs
+		{
+			-- platform
+			pmtech_dir .. "core/pen/include",
+			pmtech_dir .. "core/pen/include/common", 
+			pmtech_dir .. "core/pen/include/" .. platform_dir,
+		
+			--utility			
+			pmtech_dir .. "core/put/source/",
+		
+			-- third party			
+			pmtech_dir .. "third_party/",
+	
+			-- local
+			"include/",
+		}
+	
+		files 
+		{ 
+			(root_directory .. "code/" .. source_directory .. "/**.cpp"),
+			(root_directory .. "code/" .. source_directory .. "/**.c"),
+			(root_directory .. "code/" .. source_directory .. "/**.h"),
+			(root_directory .. "code/" .. source_directory .. "/**.m"),
+			(root_directory .. "code/" .. source_directory .. "/**.mm")
+		}
+	
+		setup_env()
+
+		location (root_directory .. "/build/" .. platform_dir)
+		targetdir (root_directory .. "/bin/" .. platform_dir)
+		debugdir (root_directory .. "/bin/" .. platform_dir)
+					
+		configuration "Release"
+			defines { "NDEBUG" }
+			entrypoint "WinMainCRTStartup"
+			optimize "Speed"
+			targetname (project_name)
+	
+		configuration "Debug"
+			defines { "DEBUG" }
+			entrypoint "WinMainCRTStartup"
+			symbols "On"
+			targetname (project_name .. "_d")
+end
+
 function create_binary(project_name, source_directory, root_directory, binary_type)
 	s_project_name = project_name
 	project ( project_name )

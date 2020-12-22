@@ -73,14 +73,14 @@ namespace
         s_clear_state = pen::renderer_create_clear_state(cs);
 
         // create raster state
-        pen::rasteriser_state_creation_params rcp;
-        pen::memory_zero(&rcp, sizeof(rasteriser_state_creation_params));
+        pen::raster_state_creation_params rcp;
+        pen::memory_zero(&rcp, sizeof(raster_state_creation_params));
         rcp.fill_mode = PEN_FILL_SOLID;
         rcp.cull_mode = PEN_CULL_NONE;
         rcp.depth_bias_clamp = 0.0f;
         rcp.sloped_scale_depth_bias = 0.0f;
 
-        s_raster_state = pen::renderer_create_rasterizer_state(rcp);
+        s_raster_state = pen::renderer_create_raster_state(rcp);
 
         // create shaders
         pen::shader_load_params vs_slp;
@@ -183,7 +183,7 @@ namespace
         pen::viewport vp = {0.0f, 0.0f, PEN_BACK_BUFFER_RATIO, 1.0f, 0.0f, 1.0f};
 
         pen::renderer_set_viewport(vp);
-        pen::renderer_set_rasterizer_state(s_raster_state);
+        pen::renderer_set_raster_state(s_raster_state);
         pen::renderer_set_scissor_rect(rect{vp.x, vp.y, vp.width, vp.height});
         pen::renderer_clear(s_clear_state);
 
