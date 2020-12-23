@@ -587,6 +587,7 @@ namespace put
             s_program_prefs_filename = pen::window_get_title();
             s_program_prefs_filename.append("_prefs.jsn");
 
+            
             s_program_preferences = pen::json::load_from_file(s_program_prefs_filename.c_str());
         }
 
@@ -596,7 +597,8 @@ namespace put
             {
                 s_save_program_prefs = false;
 
-                std::ofstream ofs(s_program_prefs_filename.c_str());
+                Str fn = pen::os_path_for_resource(s_program_prefs_filename.c_str());
+                std::ofstream ofs(fn.c_str());
 
                 ofs << s_program_preferences.dumps().c_str();
 
