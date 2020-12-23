@@ -943,6 +943,368 @@ namespace put
             create_position_only_buffers(p_geometry, v, num_verts, indices, num_indices);
             add_geometry_resource(p_geometry);
         }
+        
+        void create_primitive_resource(Str name, vertex_model* vertices, u16* indices, u32 nv, u32 ni)
+        {
+            // extents from verts
+            vec3f min_extents = vec3f::flt_max();
+            vec3f max_extents = -vec3f::flt_max();
+            
+            for(u32 i = 0; i < nv; i++)
+            {
+                min_extents = min_union(vertices[i].pos.xyz, min_extents);
+                max_extents = max_union(vertices[i].pos.xyz, max_extents);
+            }
+            
+            geometry_resource* p_geometry = new geometry_resource;
+            
+            // vb
+            pen::buffer_creation_params bcp;
+            bcp.usage_flags = PEN_USAGE_DEFAULT;
+            bcp.bind_flags = PEN_BIND_VERTEX_BUFFER;
+            bcp.cpu_access_flags = 0;
+            bcp.buffer_size = sizeof(vertex_model) * nv;
+            bcp.data = (void*)&vertices[0];
+
+            pmm_renderable& r = p_geometry->renderable[e_pmm_renderable::full_vertex_buffer];
+            r.vertex_buffer = pen::renderer_create_buffer(bcp);
+
+            // ib
+            bcp.usage_flags = PEN_USAGE_DEFAULT;
+            bcp.bind_flags = PEN_BIND_INDEX_BUFFER;
+            bcp.cpu_access_flags = 0;
+            bcp.buffer_size = 2 * ni;
+            bcp.data = (void*)indices;
+
+            r.index_buffer = pen::renderer_create_buffer(bcp);
+
+            r.num_indices = ni;
+            r.num_vertices = nv;
+            r.vertex_size = sizeof(vertex_model);
+            r.index_type = PEN_FORMAT_R16_UINT;
+
+            // info
+            p_geometry->min_extents = min_extents;
+            p_geometry->max_extents = max_extents;
+            
+            p_geometry->geometry_name = name;
+            p_geometry->hash = PEN_HASH(name.c_str());
+            p_geometry->file_hash = PEN_HASH("primitive");
+            p_geometry->filename = "primitive";
+            p_geometry->p_skin = nullptr;
+
+            create_cpu_buffers(p_geometry, vertices, nv, indices, ni);
+            create_position_only_buffers(p_geometry, vertices, nv, indices, ni);
+            add_geometry_resource(p_geometry);
+        }
+        
+        void create_primitive_resource_faceted(Str name, vertex_model* vertices, u32 nv)
+        {
+            u16* indices = nullptr;
+            
+            for(u32 i = 0; i < nv; i++)
+            {
+                sb_push(indices, i);
+            }
+            
+            create_primitive_resource(name, vertices, indices, nv, nv);
+            
+            sb_free(indices);
+        }
+        
+        void basis_from_axis(const vec3d axis, vec3d& right, vec3d& up, vec3d& at)
+        {
+            right = cross(axis, vec3d::unit_y());
+            
+            if (mag(right) < 0.1)
+                right = cross(axis, vec3d::unit_z());
+            
+            if (mag(right) < 0.1)
+                right = cross(axis, vec3d::unit_x());
+                
+            normalise(right);
+            up = normalised(cross(axis, right));
+            right = normalised(cross(axis, up));
+            at = cross(right, up);
+        }
+        
+        void create_terahedron_primitive()
+        {
+            vec3d axis = vec3d::unit_y();
+            vec3d pos = vec3d(0.0, -M_INV_PHI, 0.0);
+            
+            vertex_model* vertices = nullptr;
+            
+            vec3d right, up, at;
+            basis_from_axis(axis, right, up, at);
+                
+            vec3d tip = pos - at * sqrt(2.0); // sqrt 2 is pythagoras constant
+            
+            vec3d base_p[3];
+            
+            f64 angle_step = (M_PI*2.0) / 3.0;
+            f64 a = 0.0f;
+            for(u32 i = 0; i < 4; ++i)
+            {
+                f64 x = sin(a);
+                f64 y = cos(a);
+                            
+                vec3d p = pos + right * x + up * y;
+                
+                a += angle_step;
+                f64 x2 = sin(a);
+                f64 y2 = cos(a);
+                
+                vec3d np = pos + right * x2 + up * y2;
+                vec3d tp = tip;
+                
+                // bottom face
+                if(i == 3)
+                {
+                    p = base_p[0];
+                    np = base_p[2];
+                    tp = base_p[1];
+                }
+                else
+                {
+                    base_p[i] = p;
+                }
+                
+                vec3f n = maths::get_normal((vec3f)p, (vec3f)np, (vec3f)tp);
+                vec3f b = (vec3f)normalised(p - np);
+                vec3f t = cross(n, b);
+                
+                vertex_model v[3];
+                
+                v[0].pos.xyz = (vec3f)np;
+                v[1].pos.xyz = (vec3f)p;
+                v[2].pos.xyz = (vec3f)tp;
+
+                for(u32 j = 0; j < 3; ++j)
+                {
+                    v[j].pos.w = 1.0;
+                    v[j].normal = vec4f(n, 1.0f);
+                    v[j].bitangent = vec4f(b, 1.0f);
+                    v[j].tangent = vec4f(t, 1.0f);
+                    
+                    sb_push(vertices, v[j]);
+                }
+            }
+            
+            create_primitive_resource_faceted("tetrahedron", vertices, sb_count(vertices));
+            
+            sb_free(vertices);
+        }
+        
+        void create_octahedron_primitive()
+        {
+            vertex_model* vertices = nullptr;
+            
+            vec3f corner[] = {
+                vec3f(-1.0, 0.0, -1.0),
+                vec3f(-1.0, 0.0, 1.0),
+                vec3f(1.0, 0.0, 1.0),
+                vec3f(1.0, 0.0, -1.0)
+            };
+            
+            f32 pc = sqrt(2.0);
+            vec3f tip = vec3f(0.0f, pc, 0.0f);
+            vec3f dip = vec3f(0.0f, -pc, 0.0f);
+            
+            for(u32 i = 0; i < 4; ++i)
+            {
+                u32 n = (i + 1) % 4;
+                
+                vec3f y[] = {
+                    tip,
+                    dip
+                };
+                
+                // 2 tris per edg
+                for(u32 j = 0; j < 2; ++j)
+                {
+                    vertex_model v[3];
+                    v[0].pos.xyz = corner[i];
+                    v[1].pos.xyz = corner[n];
+                    v[2].pos.xyz = y[j];
+                    
+                    if(j == 0)
+                    {
+                        std::swap(v[0], v[2]);
+                    }
+                    
+                    vec3f n = maths::get_normal(v[0].pos.xyz, v[2].pos.xyz, v[1].pos.xyz);
+                    vec3f b = normalised(v[0].pos.xyz - v[1].pos.xyz);
+                    vec3f t = cross(n, b);
+                    
+                    for(u32 k = 0; k < 3; ++k)
+                    {
+                        v[k].pos.w = 1.0f;
+                        v[k].normal = vec4f(n, 1.0f);
+                        v[k].tangent = vec4f(t, 1.0f);
+                        v[k].bitangent = vec4f(b, 1.0f);
+                        
+                        sb_push(vertices, v[k]);
+                    }
+                }
+            }
+            
+            create_primitive_resource_faceted("octahedron", vertices, sb_count(vertices));
+            
+            sb_free(vertices);
+        }
+        
+        void dodecahedron_face_in_axis(const vec3d axis, const vec3d pos, f64 start_angle, bool recurse, vertex_model*& verts)
+        {
+            vec3d right, up, at;
+            basis_from_axis(axis, right, up, at);
+            
+            f64 half_gr = 1.61803398875l/2.0;
+                
+            f64 internal_angle = 0.309017 * 1.5;
+            f64 angle_step = M_PI / 2.5;
+            f64 a = start_angle;
+            for(u32 i = 0; i < 5; ++i)
+            {
+                f64 x = sin(a) * M_INV_PHI;
+                f64 y = cos(a) * M_INV_PHI;
+                
+                vec3d p = pos + right * x + up * y;
+                
+                a += angle_step;
+                f64 x2 = sin(a) * M_INV_PHI;
+                f64 y2 = cos(a) * M_INV_PHI;
+                
+                vec3d np = pos + right * x2 + up * y2;
+                
+                // tri per edge
+                vertex_model v[3];
+                v[0].pos.xyz = p;
+                v[1].pos.xyz = np;
+                v[2].pos.xyz = pos;
+                
+                vec3f n = maths::get_normal(v[0].pos.xyz, v[2].pos.xyz, v[1].pos.xyz);
+                vec3f b = normalised(v[0].pos.xyz - v[1].pos.xyz);
+                vec3f t = cross(n, b);
+                
+                for(u32 j = 0; j < 3; ++j)
+                {
+                    v[j].pos.w = 1.0f;
+                    v[j].normal = vec4f(n, 1.0f);
+                    v[j].tangent = vec4f(t, 1.0f);
+                    v[j].bitangent = vec4f(b, 1.0f);
+                    
+                    sb_push(verts, v[j]);
+                }
+                            
+                vec3d ev = normalised(np - p);
+                vec3d cp = normalised(cross(ev, axis));
+
+                vec3d mid = p + (np - p) * 0.5;
+                
+                f64 rx = sin((M_PI*2.0)+internal_angle) * M_INV_PHI;
+                f64 ry = cos((M_PI*2.0)+internal_angle) * M_INV_PHI;
+                vec3d xp = mid + cp * rx + axis * ry;
+                
+                vec3d xv = normalised(xp - mid);
+
+                if(recurse)
+                {
+                    vec3d next_axis = normalised(cross(xv, ev));
+                    dodecahedron_face_in_axis(next_axis, mid + xv * half_gr * M_INV_PHI, M_PI + start_angle, false, verts);
+                }
+            }
+        }
+        
+        void create_dodecahedron_primitive()
+        {
+            vec3f axis = vec3f::unit_y();
+            
+            vertex_model* verts = nullptr;
+            
+            f32 h = M_PI * 0.83333333333f * 0.5f * M_INV_PHI;
+            dodecahedron_face_in_axis((vec3d)axis, vec3d(0.0, -h, 0.0), 0.0f, true, verts);
+            dodecahedron_face_in_axis((vec3d)-axis, vec3d(0.0, h, 0.0), M_PI, true, verts);
+            
+            create_primitive_resource_faceted("dodecahedron", verts, sb_count(verts));
+        }
+        
+        void hemi_icosohedron(const vec3d axis, const vec3d pos, f64 start_angle, vertex_model*& verts)
+        {
+            vec3d right, up, at;
+            basis_from_axis(axis, right, up, at);
+            
+            vec3d tip = pos - at * M_INV_PHI;
+            vec3d dip = pos + at * 0.5 * 2.0;
+            
+            f64 angle_step = M_PI / 2.5;
+            f64 a = start_angle;
+            for(u32 i = 0; i < 5; ++i)
+            {
+                f64 x = sin(a);
+                f64 y = cos(a);
+                
+                vec3d p = pos + right * x + up * y;
+                
+                a += angle_step;
+                f64 x2 = sin(a);
+                f64 y2 = cos(a);
+                
+                vec3d np = pos + right * x2 + up * y2;
+                
+                // 2 triangles
+                vertex_model v[3];
+                v[0].pos.xyz = p;
+                v[1].pos.xyz = tip;
+                v[2].pos.xyz = np;
+                
+                vec3f n = maths::get_normal(v[0].pos.xyz, v[2].pos.xyz, v[1].pos.xyz);
+                vec3f b = normalised(v[0].pos.xyz - v[1].pos.xyz);
+                vec3f t = cross(n, b);
+                
+                for(u32 j = 0; j < 3; ++j)
+                {
+                    v[j].pos.w = 1.0f;
+                    v[j].normal = vec4f(n, 1.0f);
+                    v[j].tangent = vec4f(t, 1.0f);
+                    v[j].bitangent = vec4f(b, 1.0f);
+                    
+                    sb_push(verts, v[j]);
+                }
+                
+                vec3d side_dip = dip + cross(normalized(p-np), at);
+                
+                v[0].pos.xyz = p;
+                v[1].pos.xyz = np;
+                v[2].pos.xyz = side_dip;
+                
+                n = maths::get_normal(v[0].pos.xyz, v[2].pos.xyz, v[1].pos.xyz);
+                b = normalised(v[0].pos.xyz - v[1].pos.xyz);
+                t = cross(n, b);
+                
+                for(u32 j = 0; j < 3; ++j)
+                {
+                    v[j].pos.w = 1.0f;
+                    v[j].normal = vec4f(n, 1.0f);
+                    v[j].tangent = vec4f(t, 1.0f);
+                    v[j].bitangent = vec4f(b, 1.0f);
+                    
+                    sb_push(verts, v[j]);
+                }
+            }
+        }
+        
+        void create_icosahedron_primitive()
+        {
+            vec3f axis = vec3f::unit_y();
+            
+            vertex_model* verts = nullptr;
+            
+            hemi_icosohedron((vec3d)axis, (vec3d)(axis * 0.5f), 0.0, verts);
+            hemi_icosohedron((vec3d)-axis, (vec3d)(-axis * 0.5f), M_PI, verts);
+            
+            create_primitive_resource_faceted("icosahedron", verts, sb_count(verts));
+        }
 
         void create_geometry_primitives()
         {
@@ -976,6 +1338,12 @@ namespace put
             create_cone_primitive("physics_cone", 0.5f, -0.5f);
             create_quad();
             create_fulscreen_quad();
+            
+            // ext primitives
+            create_terahedron_primitive();
+            create_octahedron_primitive();
+            create_dodecahedron_primitive();
+            create_icosahedron_primitive();
         }
     } // namespace ecs
 } // namespace put
