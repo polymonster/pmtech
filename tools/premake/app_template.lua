@@ -64,6 +64,10 @@ local function setup_win32()
         {
             "$(VK_SDK_PATH)/Lib"
         }
+        includedirs
+        {
+            "$(VK_SDK_PATH)/Include"
+        }
         links
         {
             "vulkan-1.lib"
