@@ -33,6 +33,7 @@ if __name__ == "__main__":
             cmd_str += "-s --preload-file " + sd + " "
         for df in accepted_data_file_list:
             cmd_str += "-s --preload-file " + df + " "
+        print(file)
         output = open(os.path.basename(file), "w")
         output.write(cmd_str)
         output.close()

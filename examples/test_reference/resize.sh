@@ -1,0 +1,1 @@
+for f in *.jpg; do ffmpeg -i "$f" -vf scale=640:360 "thumbs/${f%%.jpg}.jpg"; done
