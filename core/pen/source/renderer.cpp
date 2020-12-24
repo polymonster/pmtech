@@ -773,7 +773,7 @@ namespace pen
         Str root_dir = "../../test_results";
         root_dir = str_sanitize_filepath(root_dir);
 
-        Str output_dir = "";
+        Str output_dir = os_path_for_resource("");
         output_dir.appendf("../../test_results/%s/", renderer_name.c_str());
         output_dir = str_sanitize_filepath(output_dir);
 

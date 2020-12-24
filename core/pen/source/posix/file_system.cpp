@@ -46,6 +46,7 @@ namespace
         Str fn = "";
         fn.append(pen::window_get_title());
         fn.append("_data.txt");
+        fn = pen::os_path_for_resource(fn.c_str());
         static bool s_first = true;
         if (s_first)
         {

@@ -1305,7 +1305,79 @@ namespace put
             
             create_primitive_resource_faceted("icosahedron", verts, sb_count(verts));
         }
-
+        
+        void create_torus_primitive(f32 radius)
+        {
+            vertex_model* verts = nullptr;
+            
+            static const f32 k_segments = 64.0f;
+            f64 angle_step = (M_PI*2.0)/k_segments;
+            f64 aa = 0.0f;
+            for(u32 i = 0; i < k_segments; ++i)
+            {
+                f64 x = sin(aa);
+                f64 y = cos(aa);
+                
+                aa += angle_step;
+                f64 x2 = sin(aa);
+                f64 y2 = cos(aa);
+                
+                f64 x3 = sin(aa + angle_step);
+                f64 y3 = cos(aa + angle_step);
+                
+                vec3f p = vec3f(x, 0.0, y);
+                vec3f np = vec3f(x2, 0.0, y2);
+                vec3f nnp = vec3f(x3, 0.0, y3);
+                
+                vec3f at = normalized(np - p);
+                vec3f up = vec3f::unit_y();
+                vec3f right = cross(up, at);
+                
+                vec3f nat = normalized(nnp - np);
+                vec3f nright = cross(up, nat);
+                
+                f64 ab = 0.0f;
+                for(u32 j = 0; j < 64; ++j)
+                {
+                    f32 vx = sin(ab) * radius;
+                    f32 vy = cos(ab) * radius;
+                    
+                    vec3f vv = p + vx * up + vy * right;
+                    
+                    ab += angle_step;
+                    
+                    f32 vx2 = sin(ab) * radius;
+                    f32 vy2 = cos(ab) * radius;
+                    
+                    vec3f vv2 = p + vx2 * up + vy2 * right;
+                    vec3f vv3 = np + vx * up + vy * nright;
+                    vec3f vv4 = np + vx2 * up + vy2 * nright;
+                    
+                    // 2 triangles
+                    vertex_model v[6];
+                    v[0].pos.xyz = vv;
+                    v[2].pos.xyz = vv2;
+                    v[1].pos.xyz = vv3;
+                    
+                    v[3].pos.xyz = vv3;
+                    v[4].pos.xyz = vv4;
+                    v[5].pos.xyz = vv2;
+                    
+                    for(u32 k = 0; k < 6; ++k)
+                    {
+                        v[k].pos.w = 1.0;
+                        v[k].normal.xyz = normalized(vx * up + vy * right);
+                        v[k].tangent.xyz = right;
+                        v[k].bitangent.xyz = up;
+                        
+                        sb_push(verts, v[k]);
+                    }
+                }
+            }
+            
+            create_primitive_resource_faceted("torus", verts, sb_count(verts));
+        }
+        
         void create_geometry_primitives()
         {
             // default material
@@ -1344,6 +1416,7 @@ namespace put
             create_octahedron_primitive();
             create_dodecahedron_primitive();
             create_icosahedron_primitive();
+            create_torus_primitive(0.5f);
         }
     } // namespace ecs
 } // namespace put

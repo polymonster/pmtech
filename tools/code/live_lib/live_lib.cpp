@@ -30,24 +30,71 @@ struct live_lib
     {
         scene = ctx->scene;
         
-        // ecs::clear_scene(scene);
-        
+        ecs::clear_scene(scene);
+                
+        // primitive resources
         material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
-        geometry_resource* tetrahedron = get_geometry_resource(PEN_HASH("tetrahedron"));
-        geometry_resource* box = get_geometry_resource(PEN_HASH("cube"));
-        geometry_resource* octahedron = get_geometry_resource(PEN_HASH("octahedron"));
-        geometry_resource* dodecahedron = get_geometry_resource(PEN_HASH("dodecahedron"));
-        geometry_resource* icosahedron = get_geometry_resource(PEN_HASH("icosahedron"));
     
-        const c8*          primitive_names[] = {"tetrahedron", "box", "octahedron", "dodecahedron", "icosahedron"};
-        geometry_resource* primitive_resources[] = {tetrahedron, box, octahedron, dodecahedron, icosahedron};
+        const c8* primitive_names[] = {
+            "tetrahedron",
+            "cube",
+            "octahedron",
+            "dodecahedron",
+            "icosahedron",
+            "sphere",
+            "cone",
+            "capsule",
+            "cylinder",
+            "torus"
+        };
         
+        geometry_resource** primitives = nullptr;
+        
+        for(u32 i = 0; i < PEN_ARRAY_SIZE(primitive_names); ++i)
+        {
+            sb_push(primitives, get_geometry_resource(PEN_HASH(primitive_names[i])));
+        }
+        
+        // add lights
+        u32 light = get_new_entity(scene);
+        scene->names[light] = "front_light";
+        scene->id_name[light] = PEN_HASH("front_light");
+        scene->lights[light].colour = vec3f::one();
+        scene->lights[light].direction = vec3f::one();
+        scene->lights[light].type = e_light_type::dir;
+        scene->lights[light].flags = e_light_flags::shadow_map;
+        scene->transforms[light].translation = vec3f::zero();
+        scene->transforms[light].rotation = quat();
+        scene->transforms[light].scale = vec3f::one();
+        scene->entities[light] |= e_cmp::light;
+        scene->entities[light] |= e_cmp::transform;
+        
+        // add primitve instances
         vec3f pos[] = {
+            vec3f::unit_x() * - 6.0f,
             vec3f::unit_x() * - 3.0f,
-            vec3f::zero(),
+            vec3f::unit_x() * 0.0f,
             vec3f::unit_x() * 3.0f,
             vec3f::unit_x() * 6.0f,
-            vec3f::unit_x() * 9.0f,
+            
+            vec3f::unit_x() * - 6.0f + vec3f::unit_z() * 3.0f,
+            vec3f::unit_x() * - 3.0f + vec3f::unit_z() * 3.0f,
+            vec3f::unit_x() * 0.0f + vec3f::unit_z() * 3.0f,
+            vec3f::unit_x() * 3.0f + vec3f::unit_z() * 3.0f,
+            vec3f::unit_x() * 6.0f + vec3f::unit_z() * 3.0f,
+        };
+        
+        vec4f col[] = {
+            vec4f::orange(),
+            vec4f::yellow(),
+            vec4f::green(),
+            vec4f::cyan(),
+            vec4f::magenta(),
+            vec4f::white(),
+            vec4f::red(),
+            vec4f::blue(),
+            vec4f::magenta(),
+            vec4f::cyan()
         };
 
         for (s32 p = 0; p < PEN_ARRAY_SIZE(primitive_names); ++p)
@@ -57,12 +104,15 @@ struct live_lib
             scene->names[new_prim].appendf("%i", new_prim);
             scene->transforms[new_prim].rotation = quat();
             scene->transforms[new_prim].scale = vec3f::one();
-            scene->transforms[new_prim].translation = pos[p];
+            scene->transforms[new_prim].translation = pos[p] + vec3f::unit_y() * 2.0f;
             scene->entities[new_prim] |= e_cmp::transform;
             scene->parents[new_prim] = new_prim;
-            instantiate_geometry(primitive_resources[p], scene, new_prim);
+            instantiate_geometry(primitives[p], scene, new_prim);
             instantiate_material(default_material, scene, new_prim);
             instantiate_model_cbuffer(scene, new_prim);
+            
+            forward_render::forward_lit* mat = (forward_render::forward_lit*)&scene->material_data[new_prim].data[0];
+            mat->m_albedo = col[p];
         }
     }
     
@@ -304,9 +354,67 @@ struct live_lib
             dbg::add_triangle(vertices[i].pos.xyz, vertices[i+1].pos.xyz, vertices[i+2].pos.xyz);
         }
     }
+    
+    void create_torus_primitive(f32 radius)
+    {
+        f64 angle_step = (M_PI*2.0)/64.0;
+        f64 aa = 0.0f;
+        for(u32 i = 0; i < 64; ++i)
+        {
+            f64 x = sin(aa);
+            f64 y = cos(aa);
+            
+            aa += angle_step;
+            f64 x2 = sin(aa);
+            f64 y2 = cos(aa);
+            
+            f64 x3 = sin(aa + angle_step);
+            f64 y3 = cos(aa + angle_step);
+            
+            vec3f p = vec3f(x, 0.0, y);
+            vec3f np = vec3f(x2, 0.0, y2);
+            vec3f nnp = vec3f(x3, 0.0, y3);
+            
+            vec3f at = normalized(np - p);
+            vec3f up = vec3f::unit_y();
+            vec3f right = cross(up, at);
+            
+            vec3f nat = normalized(nnp - np);
+            vec3f nright = cross(up, nat);
+            
+            f64 ab = 0.0f;
+            for(u32 j = 0; j < 64; ++j)
+            {
+                f32 vx = sin(ab) * radius;
+                f32 vy = cos(ab) * radius;
+                
+                vec3f vv = p + vx * up + vy * right;
+                
+                ab += angle_step;
+                
+                f32 vx2 = sin(ab) * radius;
+                f32 vy2 = cos(ab) * radius;
+                
+                vec3f vv2 = p + vx2 * up + vy2 * right;
+                
+                add_line(vv, vv2);
+                
+                vec3f vv3 = np + vx * up + vy * nright;
+                vec3f vv4 = np + vx2 * up + vy2 * nright;
+                
+                //add_line(vv, vv2);
+                
+                //add_line(vv, vv3, vec4f::yellow());
+                
+                add_line(vv, vv3, vec4f::yellow());
+            }
+        }
+    }
         
     int on_update(f32 dt)
     {
+        // create_torus_primitive(0.5);
+        
         //terahedron(vec3d::unit_y(), vec3d(-5.0f, -M_INV_PHI, 0.0f));
         //octahedron();
         
