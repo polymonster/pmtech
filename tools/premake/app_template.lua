@@ -264,7 +264,7 @@ function create_dll(project_name, source_directory, root_directory)
 			(root_directory .. "code/" .. source_directory .. "/**.m"),
 			(root_directory .. "code/" .. source_directory .. "/**.mm")
 		}
-	
+			
 		setup_env()
 
 		location (root_directory .. "/build/" .. platform_dir)
@@ -273,13 +273,11 @@ function create_dll(project_name, source_directory, root_directory)
 					
 		configuration "Release"
 			defines { "NDEBUG" }
-			entrypoint "WinMainCRTStartup"
 			optimize "Speed"
 			targetname (project_name)
 	
 		configuration "Debug"
 			defines { "DEBUG" }
-			entrypoint "WinMainCRTStartup"
 			symbols "On"
 			targetname (project_name .. "_d")
 end
