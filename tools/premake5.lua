@@ -65,6 +65,7 @@ if platform == "win32" then
 		}
 	configuration {}
 else
+	configuration {}
 	linkoptions
 	{
 		"-undefined dynamic_lookup"
