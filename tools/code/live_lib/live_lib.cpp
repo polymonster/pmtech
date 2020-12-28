@@ -32,6 +32,8 @@ struct live_lib
         
         ecs::clear_scene(scene);
                 
+        return;
+        
         // primitive resources
         material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
     
@@ -116,14 +118,96 @@ struct live_lib
         }
     }
     
+    struct edge
+    {
+        vec3f start;
+        vec3f end;
+    };
+    edge* s_edges = nullptr;
+    
+    void extrude(u32 edge, vec3f dir)
+    {
+        struct edge ne;
+        ne.start = s_edges[edge].start + dir;
+        ne.end = s_edges[edge].end + dir;
+        
+        sb_push(s_edges, ne);
+    }
+    
     int on_load(live_context* ctx)
     {
         init(ctx);
         
+        if(s_edges)
+        {
+            sb_free(s_edges);
+            s_edges = nullptr;
+        }
+        
+        edge e;
+        e.start = vec3f(0.5f);
+        e.end = vec3f(0.5f) + vec3f::unit_x() * 5.0f;
+        sb_push(s_edges, e);
+        
+        extrude(0, vec3f::unit_y() * 10.0f);
+        extrude(1, vec3f::unit_y() * 10.0f);
+        extrude(2, vec3f::unit_z() * 10.0f);
+        extrude(3, vec3f::unit_x() * 10.0f);
+        
+        return 0;
+    }
+            
+    int on_update(f32 dt)
+    {
+        u32 ec = sb_count(s_edges);
+        for(u32 i = 0; i < ec; ++i)
+        {
+            add_line(s_edges[i].start, s_edges[i].end, vec4f::magenta());
+        }
+                        
         return 0;
     }
     
-    void basis_from_axis(const vec3d axis, vec3d& right, vec3d& up, vec3d& at)
+    int on_unload()
+    {
+        return 0;
+    }
+};
+
+CR_EXPORT int cr_main(struct cr_plugin *ctx, enum cr_op operation)
+{
+    live_context* live_ctx = (live_context*)ctx->userdata;
+    static live_lib ll;
+    
+    switch (operation)
+    {
+        case CR_LOAD:
+            return ll.on_load(live_ctx);
+        case CR_UNLOAD:
+            return ll.on_unload();
+        case CR_CLOSE:
+            return 0;
+        default:
+            break;
+    }
+    
+    return ll.on_update(live_ctx->dt);
+}
+
+namespace pen
+{
+    pen_creation_params pen_entry(int argc, char** argv)
+    {
+        return {};
+    }
+    
+    void* user_entry(void* params)
+    {
+        return nullptr;
+    }
+}
+
+  void basis_from_axis(const vec3d axis, vec3d& right, vec3d& up, vec3d& at)
     {
         right = cross(axis, vec3d::unit_y());
         
@@ -410,57 +494,5 @@ struct live_lib
             }
         }
     }
-        
-    int on_update(f32 dt)
-    {
-        // create_torus_primitive(0.5);
-        
-        //terahedron(vec3d::unit_y(), vec3d(-5.0f, -M_INV_PHI, 0.0f));
-        //octahedron();
-        
-        //icosahedron(vec3f::unit_y(), vec3f(-1.0f, 0.0f, 0.0f));
-        //dodecahedron(vec3f::unit_y(), vec3f(1.0f, 0.0f, 0.0f));
-                        
-        return 0;
-    }
-    
-    int on_unload()
-    {
-        return 0;
-    }
-};
-
-CR_EXPORT int cr_main(struct cr_plugin *ctx, enum cr_op operation)
-{
-    live_context* live_ctx = (live_context*)ctx->userdata;
-    static live_lib ll;
-    
-    switch (operation)
-    {
-        case CR_LOAD:
-            return ll.on_load(live_ctx);
-        case CR_UNLOAD:
-            return ll.on_unload();
-        case CR_CLOSE:
-            return 0;
-        default:
-            break;
-    }
-    
-    return ll.on_update(live_ctx->dt);
-}
-
-namespace pen
-{
-    pen_creation_params pen_entry(int argc, char** argv)
-    {
-        return {};
-    }
-    
-    void* user_entry(void* params)
-    {
-        return nullptr;
-    }
-}
 
 

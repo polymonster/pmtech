@@ -77,6 +77,15 @@
             		display += Math.floor(pct*100.0) + "%"
             	}
             }
+			var isSafari = navigator.vendor && navigator.vendor.indexOf('Apple') > -1 &&
+               navigator.userAgent &&
+               navigator.userAgent.indexOf('CriOS') == -1 &&
+               navigator.userAgent.indexOf('FxiOS') == -1;
+               
+			if(isSafari)
+			{
+				display = "Safari is not yet supported by pmtech because it requires WebGL 2.0. Supported browsers are Chrome, Edge and Firefox."
+			}
             document.getElementById("title-text").innerHTML = display
         },
         monitorRunDependencies: function(left) {
