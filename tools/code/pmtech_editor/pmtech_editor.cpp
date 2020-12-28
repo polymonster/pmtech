@@ -22,10 +22,18 @@
 
 #include "maths/vec.h"
 
+#if PEN_PLATFORM_WIN32
+#if NDEBUG
+#define LIVE_LIB "live_lib.dll"
+#else
+#define LIVE_LIB "live_lib_d.dll"
+#endif
+#else
 #if NDEBUG
 #define LIVE_LIB "liblive_lib.dylib"
 #else
 #define LIVE_LIB "liblive_lib_d.dylib"
+#endif
 #endif
 
 #define CR_HOST // required in the host only and before including cr.h
