@@ -31,23 +31,18 @@ struct live_lib
         scene = ctx->scene;
         
         ecs::clear_scene(scene);
-                
-        return;
         
         // primitive resources
         material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
+        
+        test_mesh();
+        test_mesh2();
+        test_mesh3();
     
         const c8* primitive_names[] = {
-            "tetrahedron",
-            "cube",
-            "octahedron",
-            "dodecahedron",
-            "icosahedron",
-            "sphere",
-            "cone",
-            "capsule",
-            "cylinder",
-            "torus"
+            "subway",
+            "lamp_post",
+            "building"
         };
         
         geometry_resource** primitives = nullptr;
@@ -64,7 +59,7 @@ struct live_lib
         scene->lights[light].colour = vec3f::one();
         scene->lights[light].direction = vec3f::one();
         scene->lights[light].type = e_light_type::dir;
-        scene->lights[light].flags = e_light_flags::shadow_map;
+        //scene->lights[light].flags = e_light_flags::shadow_map;
         scene->transforms[light].translation = vec3f::zero();
         scene->transforms[light].rotation = quat();
         scene->transforms[light].scale = vec3f::one();
@@ -139,33 +134,7 @@ struct live_lib
         sb_push(strip, ne);
     }
     
-    void get_strip_bb(edge* strip, vec3f& min, vec3f& max)
-    {
-        vec3f right = normalised(strip[0].end - strip[0].start);
-        vec3f at = cross(right, vec3f::unit_y());
-        
-        mat4 mr;
-        mr = mat::create_axis_swap(right, vec3f::unit_y(), at);
-        
-        u32 ec = sb_count(strip);
-        for(u32 i = 0; i < ec; ++i)
-        {
-            vec3f v = mr.transform_vector(strip[i].end);
-            vec3f v2 = mr.transform_vector(strip[i].start);
-            
-            min = min_union(min, v);
-            max = max_union(max, v);
-            
-            min = min_union(min, v2);
-            max = max_union(max, v2);
-        }
-        
-        mat4 inv = mat::inverse4x4(mr);
-        min = inv.transform_vector(min);
-        max = inv.transform_vector(max);
-    }
-    
-    vec3f get_rot_origin(edge* strip, mat4 mr, vec3f cp)
+    vec3f get_rot_origin(edge* strip, mat4 mr, vec3f rr)
     {
         mr = strip[0].mat;
         
@@ -191,66 +160,108 @@ struct live_lib
             max = max_union(max, v2);
         }
         
-        vec3f rot_origin = vec3f(max.x, cp.z > 0.0 ? min.y : max.y, cp.y > 0 ? max.z : min.z);
-        rot_origin = mr.transform_vector(rot_origin);
+        vec3f corners[] = {
+            min,
+            {min.x, min.y, max.z},
+            {min.x, max.y, max.z},
+            {min.x, max.y, min.z},
+            {max.x, min.y, min.z},
+            {max.x, min.y, max.z},
+            max,
+            {max.x, max.y, min.z},
+        };
         
-        //add_point(rot_origin, 2.0f, vec4f::yellow());
+        vec3f mid = mr.transform_vector(min + (max - min) * 0.5f);
+        vec3f vdir = mid + rr;
         
-        add_point(mr.transform_vector(min), 2.0f, vec4f::green());
-        add_point(mr.transform_vector(max), 2.0f, vec4f::orange());
-        
-        add_coord_space(mr, 3.0f);
-        
-        return rot_origin;
+        // find closest corner to the new direction
+        vec3f cc;
+        f32 cd = FLT_MAX;
+        for(u32 i = 4; i < 8; ++i)
+        {
+            vec3f tc = mr.transform_vector(corners[i]);
+            f32 d = dist(tc, vdir);
+            if(d < cd)
+            {
+                cd = d;
+                cc = tc;
+            }
+        }
+
+        return cc;
     }
     
-    edge* bend(edge* strip, edge**& strips, vec3f v)
+    edge* bend(edge**& strips, f32 length, vec2f v, bool flag = false)
     {
+        edge* strip = strips[sb_count(strips)-1];
+        
         edge* ee = nullptr;
         edge* ej = nullptr;
                         
         vec3f right = normalised(strip[0].end - strip[0].start);
-        f32 length = mag(v);
-                
-        mat4 mb = mat::create_rotation(vec3f::unit_y(), v.z);
-        mb *= mat::create_rotation(vec3f::unit_z(), v.y);
-        vec3f new_right = mb.transform_vector(right);
+        vec3f va = normalised(strip[0].start - strip[1].start);
+        vec3f vu = cross(va, right);
         
-        vec3f cp = cross(new_right, right);
-        vec3f rot_origin = get_rot_origin(strip, mb, cp);
+        mat4 mb = mat::create_rotation(vu, v.y);
+        mb *= mat::create_rotation(va, v.x);
+                
+        vec3f new_right = mb.transform_vector(right) * sgn(length);
+                
+        vec3f rot_origin = get_rot_origin(strip, mb, new_right);
         
         mat4 mr;
         mr = mat::create_translation(rot_origin);
         mr *= mb;
         mr *= mat::create_translation(-rot_origin);
         
+        vec3f* prev_pos = nullptr;
+        
         u32 ec = sb_count(strip);
         for(u32 i = 0; i < ec; ++i)
         {
             auto e = strip[i];
             
-            if(length > 0.0f)
-            {
-                e.start = e.end;
-                e.end += right * 5.0f;
-                e.mat = mb;
-                
-                e.start = mr.transform_vector(e.start);
-                e.end = mr.transform_vector(e.end);
-                
-                sb_push(ee, e);
-                
-                auto join = strip[i];
-                join.start = strip[i].end;
-                join.end = e.start;
-                
-                sb_push(ej, join);
-            }
+            e.start = e.end;
+            e.end += right * length;
+            e.mat = mb;
+            
+            e.start = mr.transform_vector(e.start);
+            e.end = mr.transform_vector(e.end);
+            
+            sb_push(ee, e);
+            sb_push(prev_pos, strip[i].end);
         }
         
+        u32 res = 16;
+        for(u32 j = 1; j < res+1; ++j)
+        {
+            u32 ec = sb_count(strip);
+            for(u32 i = 0; i < ec; ++i)
+            {
+                mat4 mj;
+                mj = mat::create_translation(rot_origin);
+                
+                mat4 mb2 = mat::create_rotation(vu, (v.y/(f32)res) * j);
+                mb2 *= mat::create_rotation(va, (v.x/(f32)res) * j);
+                
+                mj *= mb2;
+                mj *= mat::create_translation(-rot_origin);
+                                
+                vec3f ip = mj.transform_vector(strip[i].end);
+                
+                auto e = strip[i];
+                e.start = prev_pos[i];
+                e.end = ip;
+                sb_push(ej, e);
+                
+                prev_pos[i] = ip;
+            }
+            
+            sb_push(strips, ej);
+            ej = nullptr;
+        }
+    
         sb_push(strips, ee);
-        sb_push(strips, ej);
-        
         return ej;
     }
     
@@ -260,8 +271,74 @@ struct live_lib
                 
         return 0;
     }
-            
-    int on_update(f32 dt)
+    
+    void mesh_from_strips(Str name, edge** strips, bool flip = false)
+    {
+        vertex_model* verts = nullptr;
+        
+        u32 num_strips = sb_count(strips);
+        for(u32 s = 0; s < num_strips; ++s)
+        {
+            u32 ec = sb_count(strips[s]);
+            for(u32 i = 0; i < ec; ++i)
+            {
+                auto& e1 = strips[s][i];
+                
+                if(i < ec-1)
+                {
+                    auto& e2 = strips[s][i+1];
+                                        
+                    vec3f vv[] = {
+                        e1.end,
+                        e1.start,
+                        e2.start,
+                        e2.start,
+                        e2.end,
+                        e1.end
+                    };
+                                        
+                    vec3f t = normalised(e1.end - e1.start);
+                    if(mag2(e1.end - e1.start) < 0.0001)
+                    {
+                        t = normalised(e2.end - e2.start);
+                    }
+                    
+                    vec3f b = normalised(e2.start - e1.start);
+                    if(mag2(e2.start - e1.start) < 0.0001)
+                    {
+                        b = normalised(e2.end - e1.end);
+                    }
+
+                    vec3f n = cross(t, b);
+                    
+                    if(!flip)
+                    {
+                        std::swap(vv[0], vv[1]);
+                        std::swap(vv[3], vv[4]);
+                        
+                        n *= -1.0f;
+                        t *= -1.0f;
+                        b *= -1.0f;
+                    }
+                    
+                    for(u32 k = 0; k < 6; ++k)
+                    {
+                        vertex_model v;
+                        v.pos = vec4f(vv[k], 1.0f);
+                        v.normal = vec4f(n, 0.0f);
+                        v.tangent = vec4f(t, 0.0f);
+                        v.bitangent = vec4f(b, 0.0f);
+                    
+                        sb_push(verts, v);
+                    }
+                }
+            }
+        }
+        
+        create_primitive_resource_faceted(name, verts, sb_count(verts));
+    }
+    
+    void test_mesh()
     {
         if(s_edge_strips)
         {
@@ -287,45 +364,87 @@ struct live_lib
         extrude(s_edge_strips[0], vec3f::unit_y() * -2.0f);
         extrude(s_edge_strips[0], vec3f::unit_z() * -5.0f);
         
-        if(0)
-        {
-            bend(s_edge_strips[0], s_edge_strips, vec3f(0.0, 0.0, -M_PI/4.0f));
-            bend(s_edge_strips[1], s_edge_strips, vec3f(0.0, 0.0, -M_PI/4.0f));
-            bend(s_edge_strips[3], s_edge_strips, vec3f(0.0, 0.0, -M_PI/4.0f));
-            bend(s_edge_strips[5], s_edge_strips, vec3f(0.0, 0.0, -M_PI/4.0f));
-            bend(s_edge_strips[7], s_edge_strips, vec3f(0.0, 0.0, -M_PI/4.0f));
-            bend(s_edge_strips[9], s_edge_strips, vec3f(0.0, 0.0, -M_PI/4.0f));
-        }
-        else if (0)
-        {
-            bend(s_edge_strips[0], s_edge_strips, vec3f(0.0, 0.0, M_PI/4.0f));
-            bend(s_edge_strips[1], s_edge_strips, vec3f(0.0, 0.0, M_PI/4.0f));
-            bend(s_edge_strips[3], s_edge_strips, vec3f(0.0, 0.0, M_PI/4.0f));
-            bend(s_edge_strips[5], s_edge_strips, vec3f(0.0, 0.0, M_PI/4.0f));
-            bend(s_edge_strips[7], s_edge_strips, vec3f(0.0, 0.0, M_PI/4.0f));
-            bend(s_edge_strips[9], s_edge_strips, vec3f(0.0, 0.0, M_PI/4.0f));
-        }
-        else if (0)
-        {
-            bend(s_edge_strips[0], s_edge_strips, vec3f(0.0, -M_PI/4.0, 0.0f));
-            bend(s_edge_strips[1], s_edge_strips, vec3f(0.0, -M_PI/4.0, 0.0f));
-            bend(s_edge_strips[3], s_edge_strips, vec3f(0.0, -M_PI/4.0, 0.0f));
-            bend(s_edge_strips[5], s_edge_strips, vec3f(0.0, -M_PI/4.0, 0.0f));
-            bend(s_edge_strips[7], s_edge_strips, vec3f(0.0, -M_PI/4.0, 0.0f));
-            bend(s_edge_strips[9], s_edge_strips, vec3f(0.0, -M_PI/4.0, 0.0f));
-        }
-        else
-        {
-            bend(s_edge_strips[0], s_edge_strips, vec3f(0.0, -M_PI/8.0, -M_PI/8.0));
-            bend(s_edge_strips[1], s_edge_strips, vec3f(0.0, -M_PI/8.0, -M_PI/8.0));
-            bend(s_edge_strips[3], s_edge_strips, vec3f(0.0, -M_PI/8.0, -M_PI/8.0));
-            bend(s_edge_strips[5], s_edge_strips, vec3f(0.0, -M_PI/8.0, -M_PI/8.0));
-            bend(s_edge_strips[7], s_edge_strips, vec3f(0.0, -M_PI/8.0, -M_PI/8.0));
-            bend(s_edge_strips[9], s_edge_strips, vec3f(0.0, -M_PI/8.0, -M_PI/8.0));
-            
-            bend(s_edge_strips[11], s_edge_strips, vec3f(0.0, 0.0, 0.0001));
-        }
+        // ...
+        
+        static const f32 theta = -M_PI/8.0;
+        
+        bend(s_edge_strips, 10.0f, vec2f(theta, 0.0));
+        bend(s_edge_strips, 10.0f, vec2f(-theta, 0.0));
+        bend(s_edge_strips, 10.0f, vec2f(0.0f, theta*4.0f));
+        bend(s_edge_strips, 10.0f, vec2f(0.0f, theta*4.0f));
+        bend(s_edge_strips, 30.0f, vec2f(theta, 0.0f));
+        bend(s_edge_strips, 30.0f, vec2f(-theta, 0.0f));
+        
+        bend(s_edge_strips, 30.0f, vec2f(0.0f, theta));
+        bend(s_edge_strips, 30.0f, vec2f(-theta, 0.0f));
+        bend(s_edge_strips, 30.0f, vec2f(-theta, 0.0f));
+        
+        mesh_from_strips("subway", s_edge_strips, true);
 
+    }
+    
+    void test_mesh2()
+    {
+        if(s_edge_strips)
+        {
+            sb_free(s_edge_strips);
+            s_edge_strips = nullptr;
+        }
+        
+        sb_push(s_edge_strips, nullptr);
+        
+        edge e;
+        e.start = vec3f(0.5f);
+        e.end = vec3f(0.5f) + vec3f::unit_y();
+        e.mat = mat4::create_identity();
+        sb_push(s_edge_strips[0], e);
+
+        extrude(s_edge_strips[0], vec3f::unit_x() * 0.5f);
+        extrude(s_edge_strips[0], vec3f::unit_z() * -0.5f);
+        extrude(s_edge_strips[0], vec3f::unit_x() * -0.5f);
+        extrude(s_edge_strips[0], vec3f::unit_z() * 0.5f);
+        
+        static const f32 theta = -M_PI/8.0;
+        
+        bend(s_edge_strips, 20.0f, vec2f(0.0, 0.0));
+        bend(s_edge_strips, 10.0f, vec2f(-theta*4.0f, 0.0));
+        
+        mesh_from_strips("lamp_post", s_edge_strips);
+    }
+    
+    void test_mesh3()
+    {
+        if(s_edge_strips)
+        {
+            sb_free(s_edge_strips);
+            s_edge_strips = nullptr;
+        }
+        
+        sb_push(s_edge_strips, nullptr);
+        
+        edge e;
+        e.start = vec3f(0.0f, 20.0f, -25.0f);
+        e.end = e.start - vec3f::unit_x() * 20.0f;
+        e.mat = mat4::create_identity();
+        sb_push(s_edge_strips[0], e);
+
+        extrude(s_edge_strips[0], vec3f::unit_y() * 5.0f);
+        extrude(s_edge_strips[0], vec3f::unit_z() * -2.0f);
+        extrude(s_edge_strips[0], vec3f::unit_y() * 20.0f);
+        extrude(s_edge_strips[0], vec3f::unit_z() * 2.0f);
+        extrude(s_edge_strips[0], vec3f::unit_y() * 2.0f);
+        extrude(s_edge_strips[0], vec3f::unit_z() * -2.0f);
+        
+        static const f32 theta = -M_PI/2.0;
+        
+        bend(s_edge_strips, 20.0f, vec2f(-theta, 0.0));
+        bend(s_edge_strips, 20.0f, vec2f(-theta, 0.0));
+        bend(s_edge_strips, 20.0f, vec2f(-theta, 0.0));
+        bend(s_edge_strips, 20.0f, vec2f(-theta, 0.0));
+        
+        mesh_from_strips("building", s_edge_strips);
+        
+        /*
         u32 num_strips = sb_count(s_edge_strips);
         for(u32 s = 0; s < num_strips; ++s)
         {
@@ -333,8 +452,6 @@ struct live_lib
             for(u32 i = 0; i < ec; ++i)
             {
                 auto& e1 = s_edge_strips[s][i];
-                    
-                add_line(e1.start, e1.end, vec4f::magenta());
                 
                 if(i < ec-1)
                 {
@@ -345,6 +462,15 @@ struct live_lib
                 }
             }
         }
+        */
+    }
+    
+    int on_update(f32 dt)
+    {
+        //test_mesh();
+        //test_mesh2();
+        
+        //test_mesh3();
         
         return 0;
     }

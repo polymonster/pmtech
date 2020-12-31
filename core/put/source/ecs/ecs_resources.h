@@ -298,6 +298,8 @@ namespace put
         void bake_material_handles();
 
         void create_geometry_primitives();
+        void create_primitive_resource_faceted(Str name, vertex_model* vertices, u32 nv);
+        void create_primitive_resource(Str name, vertex_model* vertices, u16* indices, u32 nv, u32 ni);
 
         void add_geometry_resource(geometry_resource* gr);
         void add_material_resource(material_resource* mr);

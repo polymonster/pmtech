@@ -771,6 +771,12 @@ namespace put
 
         void add_geometry_resource(geometry_resource* gr)
         {
+            for (auto*& g : s_geometry_resources)
+                if (gr->hash == g->hash)
+                {
+                    g = gr;
+                }
+                    
             s_geometry_resources.push_back(gr);
         }
 
