@@ -19,18 +19,132 @@
 
 #include <stdio.h>
 
+#define JC_VORONOI_IMPLEMENTATION
+#include "jc_voronoi/jc_voronoi.h"
+
+namespace
+{
+    void draw_edges(const jcv_diagram* diagram);
+    void draw_cells(const jcv_diagram* diagram);
+    
+    struct voronoi_map
+    {
+        jcv_diagram  diagram;
+        u32          num_points;
+        vec3f*       points = nullptr;
+        jcv_point*   vpoints = nullptr;;
+    };
+    
+    vec3f jcv_to_vec(const jcv_point& p)
+    {
+        // could transform in plane
+        return vec3f(p.x, 0.0f, p.y);
+    }
+    
+    voronoi_map* voronoi_map_generate()
+    {
+        voronoi_map* voronoi = new voronoi_map();
+        
+        // generates random points
+        srand(0);
+        voronoi->num_points = 100;
+        for(u32 i = 0; i < voronoi->num_points; ++i)
+        {
+            // 3d point for rendering
+            vec3f p = vec3f((rand()%200)-100, 0.0f, (rand()%200)-100);
+            sb_push(voronoi->points, p);
+            
+            // 2d point for the diagram
+            jcv_point vp;
+            vp.x = p.x;
+            vp.y = p.z;
+            sb_push(voronoi->vpoints, vp);
+        }
+        
+        memset(&voronoi->diagram, 0, sizeof(jcv_diagram));
+        jcv_diagram_generate(voronoi->num_points, voronoi->vpoints, 0, 0, &voronoi->diagram);
+        
+        return voronoi;
+    }
+    
+    void voronoi_map_draw_edges(const voronoi_map* voronoi)
+    {
+        const jcv_edge* edge = jcv_diagram_get_edges( &voronoi->diagram );
+        u32 count = 0;
+        u32 bb = 43;
+        while( edge )
+        {
+            if(count < bb)
+                add_line(vec3f(edge->pos[0].x, 0.0f, edge->pos[0].y), vec3f(edge->pos[1].x, 0.0f, edge->pos[1].y));
+            
+            edge = jcv_diagram_get_next_edge(edge);
+            
+            ++count;
+        }
+    }
+
+    void voronoi_map_draw_points(const voronoi_map* voronoi)
+    {
+        for(u32 i = 0; i < voronoi->num_points; ++i)
+        {
+            add_point(voronoi->points[i], 1.0f, vec4f::yellow());
+        }
+    }
+
+    void voronoi_map_draw_cells(const voronoi_map* voronoi)
+    {
+        // If you want to draw triangles, or relax the diagram,
+        // you can iterate over the sites and get all edges easily
+        const jcv_site* sites = jcv_diagram_get_sites( &voronoi->diagram );
+        
+        u32 s = 8;
+        
+        for( int i = 0; i < voronoi->diagram.numsites; ++i )
+        {
+            if(i != s)
+                continue;
+                
+            const jcv_site* site = &sites[i];
+
+            const jcv_graphedge* e = site->edges;
+            
+            u32 cc = 0;
+            while( e )
+            {
+                vec3f p1 = jcv_to_vec(site->p);
+                vec3f p2 = jcv_to_vec(e->pos[0]);
+                vec3f p3 = jcv_to_vec(e->pos[1]);
+                e = e->next;
+                
+                //add_triangle(p1, p2, p3);
+                
+                if(cc < 5)
+                    add_line(p2, p3);
+                //break;
+                
+                ++cc;
+            }
+        }
+    }
+}
+
 struct live_lib
 {
     u32                 box_start = 0;
     u32                 box_end;
     camera              cull_cam;
     ecs_scene*          scene;
+    voronoi_map*        voronoi;
     
     void init(live_context* ctx)
     {
         scene = ctx->scene;
         
         ecs::clear_scene(scene);
+        
+        voronoi = voronoi_map_generate();
+        
+        return;
         
         // primitive resources
         material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
@@ -60,6 +174,18 @@ struct live_lib
         scene->lights[light].direction = vec3f::one();
         scene->lights[light].type = e_light_type::dir;
         //scene->lights[light].flags = e_light_flags::shadow_map;
+        scene->transforms[light].translation = vec3f::zero();
+        scene->transforms[light].rotation = quat();
+        scene->transforms[light].scale = vec3f::one();
+        scene->entities[light] |= e_cmp::light;
+        scene->entities[light] |= e_cmp::transform;
+        
+        light = get_new_entity(scene);
+        scene->names[light] = "front_light";
+        scene->id_name[light] = PEN_HASH("front_light");
+        scene->lights[light].colour = vec3f::one();
+        scene->lights[light].direction = vec3f(-1.0f, 0.0f, 1.0f);
+        scene->lights[light].type = e_light_type::dir;
         scene->transforms[light].translation = vec3f::zero();
         scene->transforms[light].rotation = quat();
         scene->transforms[light].scale = vec3f::one();
@@ -191,7 +317,7 @@ struct live_lib
         return cc;
     }
     
-    edge* bend(edge**& strips, f32 length, vec2f v, bool flag = false)
+    edge* bend(edge**& strips, f32 length, vec2f v)
     {
         edge* strip = strips[sb_count(strips)-1];
         
@@ -378,9 +504,25 @@ struct live_lib
         bend(s_edge_strips, 30.0f, vec2f(0.0f, theta));
         bend(s_edge_strips, 30.0f, vec2f(-theta, 0.0f));
         bend(s_edge_strips, 30.0f, vec2f(-theta, 0.0f));
+        bend(s_edge_strips, 30.0f, vec2f(theta*2.0f, 0.0f));
+        bend(s_edge_strips, 30.0f, vec2f(0.0f, theta*4.0f));
+        
+        bend(s_edge_strips, 30.0f, vec2f(theta, 0.0f));
+        bend(s_edge_strips, 30.0f, vec2f(theta, 0.0f));
+        bend(s_edge_strips, 30.0f, vec2f(theta, 0.0f));
+        bend(s_edge_strips, 30.0f, vec2f(theta, 0.0f));
+        
+        bend(s_edge_strips, 30.0f, vec2f(0.0, theta));
+        bend(s_edge_strips, 30.0f, vec2f(0.0, theta));
+        bend(s_edge_strips, 30.0f, vec2f(0.0, theta));
+        bend(s_edge_strips, 30.0f, vec2f(0.0, theta));
+        
+        for(u32 j = 0; j < 64; ++j)
+        {
+            bend(s_edge_strips, 5.0f, vec2f(theta));
+        }
         
         mesh_from_strips("subway", s_edge_strips, true);
-
     }
     
     void test_mesh2()
@@ -465,12 +607,159 @@ struct live_lib
         */
     }
     
+    void draw_edge_strip_triangles(edge** edge_strips)
+    {
+        u32 num_strips = sb_count(edge_strips);
+        for(u32 s = 0; s < num_strips; ++s)
+        {
+            u32 ec = sb_count(edge_strips[s]);
+            for(u32 i = 0; i < ec; ++i)
+            {
+                auto& e1 = edge_strips[s][i];
+                
+                if(i < ec-1)
+                {
+                    auto& e2 = edge_strips[s][i+1];
+                    
+                    add_triangle(e1.start, e1.end, e2.start);
+                    add_triangle(e2.start, e2.end, e1.end);
+                }
+            }
+        }
+    }
+    
+        void voronoi_map_draw_cells(const voronoi_map* voronoi)
+    {
+        // If you want to draw triangles, or relax the diagram,
+        // you can iterate over the sites and get all edges easily
+        const jcv_site* sites = jcv_diagram_get_sites( &voronoi->diagram );
+        
+        u32 s = 8;
+        
+        for( int i = 0; i < voronoi->diagram.numsites; ++i )
+        {
+            if(i != s)
+                continue;
+                
+            const jcv_site* site = &sites[i];
+
+            const jcv_graphedge* e = site->edges;
+            
+            u32 cc = 0;
+            while( e )
+            {
+                vec3f p1 = jcv_to_vec(site->p);
+                vec3f p2 = jcv_to_vec(e->pos[0]);
+                vec3f p3 = jcv_to_vec(e->pos[1]);
+                e = e->next;
+                
+                //add_triangle(p1, p2, p3);
+                
+                if(cc < 5)
+                    add_line(p2, p3);
+                //break;
+                
+                ++cc;
+            }
+        }
+    }
+    
+    void test_road(const voronoi_map* voronoi, u32 cell)
+    {
+        edge** edge_strips = nullptr;
+        sb_push(edge_strips, nullptr);
+        
+        // build from cell
+        const jcv_site* sites = jcv_diagram_get_sites( &voronoi->diagram );
+        const jcv_site* site = &sites[cell];
+        const jcv_graphedge* jvce = site->edges;
+                
+        vec3f* edge_points = nullptr;
+        while( jvce )
+        {
+            vec3f p2 = jcv_to_vec(jvce->pos[1]);
+            jvce = jvce->next;
+            
+            sb_push(edge_points, p2);
+        }
+        u32 nep = sb_count(edge_points);
+        
+        edge e;
+        e.start = edge_points[nep-1];
+        e.end = e.start + vec3f::unit_x();
+        e.mat = mat4::create_identity();
+        sb_push(edge_strips[0], e);
+
+        extrude(edge_strips[0], vec3f::unit_z() * -5.0f);
+        extrude(edge_strips[0], vec3f::unit_y());
+        extrude(edge_strips[0], vec3f::unit_z() * -1.0f);
+        extrude(edge_strips[0], vec3f::unit_z() * -2.5f);
+        
+        vec3f prev_vl = vec3f::unit_x();
+        f32 yaw = M_PI/2.0f;
+        
+        for(s32 i = nep-1; i >= 0; i--)
+        {
+            s32 n = i-1 < 0 ? nep-1 : i-1;
+            
+            vec3f p2 = edge_points[i];
+            vec3f p3 = edge_points[n];
+            
+            vec3f vl = normalised(vec3f(p3-p2));
+            
+            yaw = dot(vl, prev_vl);
+            
+            add_line(p2, p3, vec4f::yellow());
+            
+            bend(edge_strips, mag(p3-p2), vec2f(0.0, yaw));
+            
+            prev_vl = vl;
+        }
+        
+        /*
+        u32 cc = 0;
+        while( jvce )
+        {
+            vec3f p2 = jcv_to_vec(jvce->pos[1]);
+            vec3f p3 = jcv_to_vec(jvce->pos[0]);
+            jvce = jvce->next;
+            
+            vec3f vl = normalised(vec3f(p3-p2));
+            
+            vec3f vd = vl - prev_vl;
+            
+            yaw += dot(vl, prev_vl);
+                        
+            add_line(p2, p3);
+            
+            bend(edge_strips, mag(p3-p2), vec2f(0.0, yaw));
+            
+            cc++;
+            if(cc > 1)
+                break;
+            
+            prev_vl = vl;
+        }
+        */
+
+        draw_edge_strip_triangles(edge_strips);
+                
+        u32 ns = sb_count(edge_strips);
+        for(u32 s = 0; s < ns; ++s)
+        {
+            sb_free(edge_strips[s]);
+        }
+        
+        sb_free(edge_strips);
+    }
+    
     int on_update(f32 dt)
     {
-        //test_mesh();
-        //test_mesh2();
+        //voronoi_map_draw_points(voronoi);
+        //voronoi_map_draw_cells(voronoi);
         
-        //test_mesh3();
+        for(u32 i = 0; i < 1; ++i)
+            test_road(voronoi, i);
         
         return 0;
     }

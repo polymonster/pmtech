@@ -944,7 +944,7 @@ namespace put
             add_geometry_resource(p_geometry);
         }
         
-        void create_primitive_resource(Str name, vertex_model* vertices, u16* indices, u32 nv, u32 ni)
+        void create_primitive_resource(Str name, vertex_model* vertices, u8* indices, u32 nv, u32 ni)
         {
             // extents from verts
             vec3f min_extents = vec3f::flt_max();
@@ -970,10 +970,12 @@ namespace put
             r.vertex_buffer = pen::renderer_create_buffer(bcp);
 
             // ib
+            u32 stride = nv < 65536 ? 2 : 4;
+            
             bcp.usage_flags = PEN_USAGE_DEFAULT;
             bcp.bind_flags = PEN_BIND_INDEX_BUFFER;
             bcp.cpu_access_flags = 0;
-            bcp.buffer_size = 2 * ni;
+            bcp.buffer_size = stride * ni;
             bcp.data = (void*)indices;
 
             r.index_buffer = pen::renderer_create_buffer(bcp);
@@ -981,7 +983,7 @@ namespace put
             r.num_indices = ni;
             r.num_vertices = nv;
             r.vertex_size = sizeof(vertex_model);
-            r.index_type = PEN_FORMAT_R16_UINT;
+            r.index_type = nv < 65536 ? PEN_FORMAT_R16_UINT : PEN_FORMAT_R32_UINT;
 
             // info
             p_geometry->min_extents = min_extents;
@@ -993,23 +995,39 @@ namespace put
             p_geometry->filename = "primitive";
             p_geometry->p_skin = nullptr;
 
-            create_cpu_buffers(p_geometry, vertices, nv, indices, ni);
-            create_position_only_buffers(p_geometry, vertices, nv, indices, ni);
+            create_cpu_buffers(p_geometry, vertices, nv, (u16*)indices, ni);
+            create_position_only_buffers(p_geometry, vertices, nv, (u16*)indices, ni);
             add_geometry_resource(p_geometry);
         }
         
         void create_primitive_resource_faceted(Str name, vertex_model* vertices, u32 nv)
         {
-            u16* indices = nullptr;
-            
-            for(u32 i = 0; i < nv; i++)
+            if(nv < 65536)
             {
-                sb_push(indices, i);
+                u16* indices = nullptr;
+            
+                for(u32 i = 0; i < nv; i++)
+                {
+                    sb_push(indices, i);
+                }
+                
+                create_primitive_resource(name, vertices, (u8*)indices, nv, nv);
+            
+                sb_free(indices);
             }
-            
-            create_primitive_resource(name, vertices, indices, nv, nv);
-            
-            sb_free(indices);
+            else
+            {
+                u32* indices = nullptr;
+                
+                for(u32 i = 0; i < nv; i++)
+                {
+                    sb_push(indices, i);
+                }
+                
+                create_primitive_resource(name, vertices, (u8*)indices, nv, nv);
+                            
+                sb_free(indices);
+            }
         }
         
         void basis_from_axis(const vec3d axis, vec3d& right, vec3d& up, vec3d& at)
