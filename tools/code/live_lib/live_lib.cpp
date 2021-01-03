@@ -144,8 +144,6 @@ struct live_lib
         
         voronoi = voronoi_map_generate();
         
-        return;
-        
         // primitive resources
         material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
         
@@ -219,7 +217,29 @@ struct live_lib
             vec4f::magenta(),
             vec4f::cyan()
         };
+        
+        for(u32 i = 0; i < 70; ++i)
+        {
+            test_road(voronoi, i);
+            
+            Str f;
+            f.appendf("cell_%i", i);
+            auto geom = get_geometry_resource(PEN_HASH(f.c_str()));
+            
+            u32 new_prim = get_new_entity(scene);
+            scene->names[new_prim] = f;
+            scene->names[new_prim].appendf("%i", new_prim);
+            scene->transforms[new_prim].rotation = quat();
+            scene->transforms[new_prim].scale = vec3f::one();
+            scene->transforms[new_prim].translation = vec3f::zero();
+            scene->entities[new_prim] |= e_cmp::transform;
+            scene->parents[new_prim] = new_prim;
+            instantiate_geometry(geom, scene, new_prim);
+            instantiate_material(default_material, scene, new_prim);
+            instantiate_model_cbuffer(scene, new_prim);
+        }
 
+        /*
         for (s32 p = 0; p < PEN_ARRAY_SIZE(primitive_names); ++p)
         {
             u32 new_prim = get_new_entity(scene);
@@ -237,6 +257,7 @@ struct live_lib
             forward_render::forward_lit* mat = (forward_render::forward_lit*)&scene->material_data[new_prim].data[0];
             mat->m_albedo = col[p];
         }
+        */
     }
     
     struct edge
@@ -317,6 +338,17 @@ struct live_lib
         return cc;
     }
     
+    void rotate_strip(edge*& strip, const mat4& rot)
+    {
+        u32 ec = sb_count(strip);
+        for(u32 i = 0; i < ec; ++i)
+        {
+            auto& e = strip[i];
+            e.start = rot.transform_vector(e.start);
+            e.end = rot.transform_vector(e.end);
+        }
+    }
+    
     edge* bend(edge**& strips, f32 length, vec2f v)
     {
         edge* strip = strips[sb_count(strips)-1];
@@ -325,7 +357,7 @@ struct live_lib
         edge* ej = nullptr;
                         
         vec3f right = normalised(strip[0].end - strip[0].start);
-        vec3f va = normalised(strip[0].start - strip[1].start);
+        vec3f va = normalised(strip[1].start - strip[0].start);
         vec3f vu = cross(va, right);
         
         mat4 mb = mat::create_rotation(vu, v.y);
@@ -628,7 +660,7 @@ struct live_lib
         }
     }
     
-        void voronoi_map_draw_cells(const voronoi_map* voronoi)
+    void voronoi_map_draw_cells(const voronoi_map* voronoi)
     {
         // If you want to draw triangles, or relax the diagram,
         // you can iterate over the sites and get all edges easily
@@ -679,70 +711,131 @@ struct live_lib
         {
             vec3f p2 = jcv_to_vec(jvce->pos[1]);
             jvce = jvce->next;
-            
+
             sb_push(edge_points, p2);
         }
         u32 nep = sb_count(edge_points);
         
-        edge e;
-        e.start = edge_points[nep-1];
-        e.end = e.start + vec3f::unit_x();
-        e.mat = mat4::create_identity();
-        sb_push(edge_strips[0], e);
-
-        extrude(edge_strips[0], vec3f::unit_z() * -5.0f);
-        extrude(edge_strips[0], vec3f::unit_y());
-        extrude(edge_strips[0], vec3f::unit_z() * -1.0f);
-        extrude(edge_strips[0], vec3f::unit_z() * -2.5f);
+        vec3f* inset_edge_points = nullptr;
         
-        vec3f prev_vl = vec3f::unit_x();
-        f32 yaw = M_PI/2.0f;
+        vec3f prev_line[2];
+        vec3f first_line[2];
+        vec3f prev_perp;
+        
+        f32 inset = 1.0f;
         
         for(s32 i = nep-1; i >= 0; i--)
         {
             s32 n = i-1 < 0 ? nep-1 : i-1;
             
-            vec3f p2 = edge_points[i];
-            vec3f p3 = edge_points[n];
+            vec3f p1 = edge_points[i];
+            vec3f p2 = edge_points[n];
+            
+            vec3f vl = normalised(vec3f(p2-p1));
+            
+            vec3f perp = cross(vl, vec3f::unit_y());
+            
+            perp *= inset;
+            
+            add_line(p1, p2, vec4f::yellow());
+            
+            if(i < nep-1)
+            {
+                vec3f ip;
+                maths::line_vs_line(p1 - perp, p2 - perp, prev_line[0], prev_line[1], ip);
+                sb_push(inset_edge_points, ip);
+                
+                if(i == 0)
+                {
+                    maths::line_vs_line(p1 - perp, p2 - perp, first_line[0], first_line[1], ip);
+                    sb_push(inset_edge_points, ip);
+                }
+            }
+            else if(i == nep-1)
+            {
+                first_line[0] = p1 - perp;
+                first_line[1] = p2 - perp;
+            }
+            
+            prev_line[0] = p1 - perp;
+            prev_line[1] = p2 - perp;
+            prev_perp = perp;
+        }
+        
+        // weld points that are less than inset apart
+        for(s32 i = 0; i < nep; i++)
+        {
+            for(s32 j = i + 1; j < nep; j++)
+            {
+                vec3f v = inset_edge_points[i] - inset_edge_points[j];
+                if(mag2(v))
+                {
+                    if(mag(v) < inset)
+                    {
+                        inset_edge_points[j] = inset_edge_points[i];
+                    }
+                }
+            }
+        }
+        
+        // strip out dead edges
+        vec3f* inset_edge_points2 = nullptr;
+        for(s32 i = 0; i < nep; i++)
+        {
+            s32 n = (i+1)%nep;
+            
+            vec3f p2 = inset_edge_points[i];
+            vec3f p3 = inset_edge_points[n];
+            
+            if(mag2(p3-p2))
+            {
+                sb_push(inset_edge_points2, p2);
+            }
+        }
+        
+        inset_edge_points = inset_edge_points2;
+        
+        vec3f right = normalised(inset_edge_points[1] - inset_edge_points[0]);
+        vec3f up = vec3f::unit_y();
+        vec3f at = normalised(cross(right, up));
+                
+        edge e;
+        e.start = inset_edge_points[0];
+        e.end = inset_edge_points[1];
+        e.mat = mat4::create_identity();
+        
+        sb_push(edge_strips[0], e);
+        extrude(edge_strips[0], at * 0.5f);
+        extrude(edge_strips[0], vec3f::unit_y() * -0.5f);
+        extrude(edge_strips[0], at * 0.5f);
+                
+        vec3f prev_vl = right;
+        
+        nep = sb_count(inset_edge_points);
+        for(s32 i = 1; i < nep; i++)
+        {
+            s32 n = (i+1)%nep;
+            
+            vec3f p2 = inset_edge_points[i];
+            vec3f p3 = inset_edge_points[n];
+            
+            add_line(p2, p3, vec4f::blue());
             
             vec3f vl = normalised(vec3f(p3-p2));
             
-            yaw = dot(vl, prev_vl);
-            
-            add_line(p2, p3, vec4f::yellow());
+            f32 yaw = acos(dot(vl, prev_vl));
             
             bend(edge_strips, mag(p3-p2), vec2f(0.0, yaw));
             
             prev_vl = vl;
         }
         
-        /*
-        u32 cc = 0;
-        while( jvce )
-        {
-            vec3f p2 = jcv_to_vec(jvce->pos[1]);
-            vec3f p3 = jcv_to_vec(jvce->pos[0]);
-            jvce = jvce->next;
-            
-            vec3f vl = normalised(vec3f(p3-p2));
-            
-            vec3f vd = vl - prev_vl;
-            
-            yaw += dot(vl, prev_vl);
-                        
-            add_line(p2, p3);
-            
-            bend(edge_strips, mag(p3-p2), vec2f(0.0, yaw));
-            
-            cc++;
-            if(cc > 1)
-                break;
-            
-            prev_vl = vl;
-        }
-        */
-
-        draw_edge_strip_triangles(edge_strips);
+        //draw_edge_strip_triangles(edge_strips);
+        
+        Str f;
+        f.appendf("cell_%i", cell);
+        
+        mesh_from_strips(f.c_str(), edge_strips);
                 
         u32 ns = sb_count(edge_strips);
         for(u32 s = 0; s < ns; ++s)
@@ -751,16 +844,11 @@ struct live_lib
         }
         
         sb_free(edge_strips);
+        sb_free(edge_points);
     }
     
     int on_update(f32 dt)
     {
-        //voronoi_map_draw_points(voronoi);
-        //voronoi_map_draw_cells(voronoi);
-        
-        for(u32 i = 0; i < 1; ++i)
-            test_road(voronoi, i);
-        
         return 0;
     }
     
