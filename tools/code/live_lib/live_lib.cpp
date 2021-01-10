@@ -141,8 +141,8 @@ struct live_lib
         scene = ctx->scene;
         
         ecs::clear_scene(scene);
-        
         voronoi = voronoi_map_generate();
+        return;
         
         // primitive resources
         material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
@@ -696,6 +696,39 @@ struct live_lib
         }
     }
     
+    void subdivide_hull(const vec3f& start_pos, const vec3f& axis, const vec3f& right, vec3f* inset_edge_points)
+    {
+        u32 nep = sb_count(inset_edge_points);
+        u32 sub = 50;
+        f32 spacing = 5.0f;
+        for(u32 s = 0; s < sub; ++s)
+        {
+            vec3f p = start_pos + right * (f32)s * spacing;
+            vec3f ray = p - axis * 10000.0f;
+            p += axis * 10000.0f;
+            
+            vec3f* ips = nullptr;
+            for(s32 i = 0; i < nep; i++)
+            {
+                s32 n = (i+1)%nep;
+                
+                vec3f p2 = inset_edge_points[i];
+                vec3f p3 = inset_edge_points[n];
+                
+                vec3f ip;
+                if(maths::line_vs_line(p, ray, p2, p3, ip))
+                {
+                    sb_push(ips, ip);
+                }
+            }
+            
+            if(sb_count(ips) == 2)
+                add_line(ips[0], ips[1], vec4f::magenta());
+                
+            //add_line(p, ray, vec4f::green());
+        }
+    }
+    
     void test_road(const voronoi_map* voronoi, u32 cell)
     {
         edge** edge_strips = nullptr;
@@ -724,6 +757,8 @@ struct live_lib
         
         f32 inset = 1.0f;
         
+        // inset edges
+        vec3f* inset_overlapped = nullptr;
         for(s32 i = nep-1; i >= 0; i--)
         {
             s32 n = i-1 < 0 ? nep-1 : i-1;
@@ -731,38 +766,45 @@ struct live_lib
             vec3f p1 = edge_points[i];
             vec3f p2 = edge_points[n];
             
+            add_line(p1, p2, vec4f::yellow());
+            
             vec3f vl = normalised(vec3f(p2-p1));
             
             vec3f perp = cross(vl, vec3f::unit_y());
             
             perp *= inset;
             
-            add_line(p1, p2, vec4f::yellow());
+            vec3f inset_edge0 = p1 - perp;
+            vec3f inset_edge1 = p2 - perp;
             
-            if(i < nep-1)
+            if(mag(inset_edge1 - inset_edge0) > 0.1)
             {
-                vec3f ip;
-                maths::line_vs_line(p1 - perp, p2 - perp, prev_line[0], prev_line[1], ip);
+                sb_push(inset_overlapped, inset_edge0);
+                sb_push(inset_overlapped, inset_edge1);
+            }
+        }
+        
+        // inset points with intersections
+        u32 no = sb_count(inset_overlapped);
+        for(s32 i = 0; i < no; i+=2)
+        {
+            s32 n = (i + 2) % no;
+            
+            vec3f p0 = inset_overlapped[i];
+            vec3f p1 = inset_overlapped[i+1];
+            
+            vec3f pn0 = inset_overlapped[n];
+            vec3f pn1 = inset_overlapped[n+1];
+
+            vec3f ip;
+            if(maths::line_vs_line(p0, p1, pn0, pn1, ip))
+            {
                 sb_push(inset_edge_points, ip);
-                
-                if(i == 0)
-                {
-                    maths::line_vs_line(p1 - perp, p2 - perp, first_line[0], first_line[1], ip);
-                    sb_push(inset_edge_points, ip);
-                }
             }
-            else if(i == nep-1)
-            {
-                first_line[0] = p1 - perp;
-                first_line[1] = p2 - perp;
-            }
-            
-            prev_line[0] = p1 - perp;
-            prev_line[1] = p2 - perp;
-            prev_perp = perp;
         }
         
         // weld points that are less than inset apart
+        nep = sb_count(inset_edge_points);
         for(s32 i = 0; i < nep; i++)
         {
             for(s32 j = i + 1; j < nep; j++)
@@ -810,9 +852,11 @@ struct live_lib
         extrude(edge_strips[0], at * 0.5f);
                 
         vec3f prev_vl = right;
-        
+                
         nep = sb_count(inset_edge_points);
-        for(s32 i = 1; i < nep; i++)
+        
+        vec3f bl = vec3f::flt_max();
+        for(s32 i = 0; i < nep; i++)
         {
             s32 n = (i+1)%nep;
             
@@ -820,6 +864,13 @@ struct live_lib
             vec3f p3 = inset_edge_points[n];
             
             add_line(p2, p3, vec4f::blue());
+            
+            bl.x = std::min<f32>(p2.x, bl.x);
+            bl.z = std::min<f32>(p2.z, bl.z);
+            bl.y = std::min<f32>(p2.y, bl.y);
+            
+            if(i == 0)
+                continue;
             
             vec3f vl = normalised(vec3f(p3-p2));
             
@@ -830,12 +881,16 @@ struct live_lib
             prev_vl = vl;
         }
         
-        //draw_edge_strip_triangles(edge_strips);
+        // subdivide cell
+        subdivide_hull(e.start, right, -at, inset_edge_points);
+        subdivide_hull(e.start - right * 50.0f, at, right, inset_edge_points);
+                
+        // draw_edge_strip_triangles(edge_strips);
         
         Str f;
         f.appendf("cell_%i", cell);
         
-        mesh_from_strips(f.c_str(), edge_strips);
+        // mesh_from_strips(f.c_str(), edge_strips);
                 
         u32 ns = sb_count(edge_strips);
         for(u32 s = 0; s < ns; ++s)
@@ -849,6 +904,17 @@ struct live_lib
     
     int on_update(f32 dt)
     {
+        u32 test_single = -1;
+        if(test_single != -1)
+        {
+            test_road(voronoi, test_single);
+        }
+        else
+        {
+            for(u32 i = 0; i < voronoi->diagram.numsites; ++i)
+                test_road(voronoi, i);
+        }
+
         return 0;
     }
     
