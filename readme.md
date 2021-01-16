@@ -24,7 +24,7 @@ Check out the live [WebGL/WebAssembly samples](https://www.polymonster.co.uk/web
 - Visit the [wiki](https://github.com/polymonster/pmtech/wiki) for more information. 
 
 **Usage**  
-- Take a look at the getting started [Building](https://github.com/polymonster/pmtech/wiki/Building) instructions.  
+- Take a look at the [Building](https://github.com/polymonster/pmtech/wiki/Building) instructions to get started.  
 - All features in pmtech are demonstarted and unit tested through [examples](https://github.com/polymonster/pmtech/wiki/Examples). 
 
 **Media**  
