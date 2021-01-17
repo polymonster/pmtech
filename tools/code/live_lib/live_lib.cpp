@@ -729,6 +729,25 @@ struct live_lib
         }
     }
     
+    bool ppich(vec3f* hull, size_t ncp, const vec3f& up, const vec3f& p0)
+    {
+        for(size_t i = 0; i < ncp; ++i)
+        {
+            size_t i2 = (i+1)%ncp;
+            
+            vec3f p1 = hull[i];
+            vec3f p2 = hull[i2];
+            
+            vec3f v1 = p2 - p1;
+            vec3f v2 = p0 - p1;
+            
+            if(dot(cross(v2,v1), up) > 0.0f)
+                return false;
+        }
+        
+        return true;
+    }
+    
     void test_road(const voronoi_map* voronoi, u32 cell)
     {
         edge** edge_strips = nullptr;
@@ -882,9 +901,129 @@ struct live_lib
         }
         
         // subdivide cell
-        subdivide_hull(e.start, right, -at, inset_edge_points);
-        subdivide_hull(e.start - right * 50.0f, at, right, inset_edge_points);
+        
+        vec3f side_start = e.start - right * 1000.0f;
+        vec3f side_end = e.start + right * 1000.0f;
+
+        // get extents in right axis
+        
+        f32 mind = FLT_MAX;
+        f32 maxd = -FLT_MAX;
+        vec3f mincp;
+        vec3f maxcp;
+        
+        for(s32 i = 0; i < nep; i++)
+        {
+            f32 d  = maths::distance_on_line(side_start, side_end, inset_edge_points[i]);
+            if(d > maxd)
+            {
+                maxd = d;
+                maxcp = maths::closest_point_on_ray(side_start, normalised(side_end - side_start), inset_edge_points[i]);
+            }
+            
+            if(d < mind)
+            {
+                mind = d;
+                mincp = maths::closest_point_on_ray(side_start, normalised(side_end - side_start), inset_edge_points[i]);
+            }
+        }
+        
+        vec3f axis_start[2];
+        vec3f axis_end[2];
+        
+        axis_start[0] = mincp;
+        axis_end[0] = maxcp;
+        
+        // get extents in at axis
+        
+        vec3f side_perp_start = mincp - at * 1000.0f;
+        vec3f side_perp_end = mincp + at * 1000.0f;
+        
+        axis_start[1] = mincp;
+        
+        maxd = -FLT_MAX;
+        mind = FLT_MAX;
+        for(s32 i = 0; i < nep; i++)
+        {
+            f32 d  = maths::distance_on_line(side_perp_start, side_perp_end, inset_edge_points[i]);
+            if(d < mind)
+            {
+                mind = d;
+                mincp = maths::closest_point_on_ray(side_perp_start, normalised(side_perp_end - side_perp_start), inset_edge_points[i]);
+            }
+        }
+        
+        axis_end[1] = mincp;
+        
+        // subdivide as grid
+        
+        f32 axis_lengths[2] = {
+            mag(axis_end[0] - axis_start[0]),
+            mag(axis_end[1] - axis_start[1]),
+        };
+        
+        vec3f vaxis[2] = {
+            normalised(axis_end[0] - axis_start[0]),
+            normalised(axis_end[1] - axis_start[1]),
+        };
+        
+        f32 subdiv_size = 4.0f;
+        
+        u32 x = axis_lengths[0] / subdiv_size;
+        u32 y = axis_lengths[1] / subdiv_size;
+        
+        f32 half_size = subdiv_size * 0.5f;
+        
+        for(u32 i = 0; i < x+1; ++i)
+        {
+            for(u32 j = 0; j < y+1; ++j)
+            {
+                f32 xt = (f32)i * subdiv_size;
+                f32 yt = (f32)j * subdiv_size;
                 
+                vec3f py = axis_start[1] + vaxis[1] * (yt + half_size);
+                vec3f px = py + vaxis[0] * (xt + half_size);
+                
+                vec3f corners[4] = {
+                    px - vaxis[0] * half_size - vaxis[1] * half_size,
+                    px - vaxis[0] * half_size + vaxis[1] * half_size,
+                    px + vaxis[0] * half_size + vaxis[1] * half_size,
+                    px + vaxis[0] * half_size - vaxis[1] * half_size,
+                };
+                
+                for(u32 c = 0; c < 4; ++c)
+                {
+                    if(ppich(inset_edge_points, sb_count(inset_edge_points), up, corners[c]))
+                    {
+                        u32 d = (c + 1) % 4;
+                        //add_point(corners[c], 1.0f);
+                        
+                        if(ppich(inset_edge_points, sb_count(inset_edge_points), up, corners[d]))
+                        {
+                            add_line(corners[c], corners[d]);
+                        }
+                        else
+                        {
+                            // intersect with hull
+                            for(s32 i = 0; i < nep; i++)
+                            {
+                                s32 n = (i + 1) % nep;
+                                
+                                vec3f p0 = inset_edge_points[i];
+                                vec3f p1 = inset_edge_points[n];
+
+                                vec3f ip;
+                                if(maths::line_vs_line(p0, p1, corners[c], corners[d], ip))
+                                {
+                                    add_line(corners[c], ip);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
         // draw_edge_strip_triangles(edge_strips);
         
         Str f;
@@ -904,7 +1043,7 @@ struct live_lib
     
     int on_update(f32 dt)
     {
-        u32 test_single = -1;
+        u32 test_single = -1; //56;
         if(test_single != -1)
         {
             test_road(voronoi, test_single);
