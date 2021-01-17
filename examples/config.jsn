@@ -402,6 +402,13 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
             ]
             change_ext: ""
         }
+
+        launch: {
+            cmd: "./%{target_path}"
+            files: [
+                "bin/linux"
+            ]
+        }
     }
 
     linux-vulkan(linux): 

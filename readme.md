@@ -16,15 +16,15 @@ Check out the live [WebGL/WebAssembly samples](https://www.polymonster.co.uk/web
 - Multithreaded: Async render, physics, audio and entity component system.  
 - Low-level abstractions: Input, gamepad, timers, threads, window, os, file system, etc. 
 - [Live-reloading](https://www.youtube.com/watch?v=dSLwP4D8Fd4): Dynamically reload c++, shaders and render pipleines.
-- [Ecs](https://github.com/polymonster/pmtech/wiki/Ecs): Entity component system and root motion animation system.
+- [Ecs](https://github.com/polymonster/pmtech/tree/master/core/put/source/ecs): Entity component system and root motion animation system.
 - [Pmfx](https://github.com/polymonster/pmtech/wiki/Pmfx): Scriptable renderer, shader, compute and post-processing system.
-- Tools: Graphical editor, mesh optimiser, volume texture / sdf generator.
-- [Build Pipeline](https://github.com/polymonster/pmtech/wiki/Build-Pipeline): project generation, compilation, asset building and packaging. 
+- [Tools](https://github.com/polymonster/pmtech/wiki/Building): Graphical editor, mesh optimiser, volume texture / sdf generator.
+- [Build Pipeline](https://github.com/polymonster/pmtech/wiki/Building): project generation, compilation, asset building and packaging. 
 - [Examples](https://github.com/polymonster/pmtech/wiki/Examples): 40+ samples and unit tests.
 - Visit the [wiki](https://github.com/polymonster/pmtech/wiki) for more information. 
 
 **Usage**  
-- Take a look at the getting started [instructions](https://github.com/polymonster/pmtech/wiki/Building-Examples). 
+- Take a look at the [Building](https://github.com/polymonster/pmtech/wiki/Building) instructions to get started.  
 - All features in pmtech are demonstarted and unit tested through [examples](https://github.com/polymonster/pmtech/wiki/Examples). 
 
 **Media**  
