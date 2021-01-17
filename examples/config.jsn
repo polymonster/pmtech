@@ -9,6 +9,10 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
         pmtech_dir: ".."
     }
     
+    post_build_order: [
+    	pmbuild_config
+    ]
+    
     base:
     {
         jsn_vars: {
@@ -106,12 +110,12 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
         
         pmfx: {
             args: [
-                "-shader_platform metal",
-                "-metal_sdk macosx",
-                "-i assets/shaders ../assets/shaders",
-                "-o bin/osx/data/pmfx/metal",
-                "-h shader_structs",
-                "-t temp/shaders",
+                "-shader_platform metal"
+                "-metal_sdk macosx"
+                "-i assets/shaders ../assets/shaders"
+                "-o bin/osx/data/pmfx/metal"
+                "-h shader_structs"
+                "-t temp/shaders"
                 "-source"
             ]
         }
@@ -133,7 +137,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
         }
         
         launch: {
-            cmd: "%{target_path}/Contents/MacOS/%{target_name}",
+            cmd: "%{target_path}/Contents/MacOS/%{target_name}"
             files: [
                 "bin/osx/**/*.app"
             ]
