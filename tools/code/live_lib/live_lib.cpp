@@ -748,6 +748,69 @@ struct live_lib
         return true;
     }
     
+    void convex_hull_from_points(vec3f*& hull, vec3f* points, size_t num_points)
+    {
+        vec3f* to_sort = nullptr;
+        for (u32 i = 0; i < num_points; ++i)
+        {
+            u32 count = sb_count(to_sort);
+            bool dupe = false;
+            for (u32 j = 0; j < count; ++j)
+            {
+                if(almost_equal(to_sort[j], points[i], 0.0001f))
+                    dupe = true;
+            }
+            
+            if(!dupe)
+                sb_push(to_sort, points[i]);
+        }
+
+        //find right most
+        num_points = sb_count(to_sort);
+        vec3f cur = to_sort[0];
+        size_t curi = 0;
+        for (size_t i = 1; i < num_points; ++i)
+        {
+            if(to_sort[i].x > cur.x)
+                if(to_sort[i].z > cur.z)
+                {
+                    cur = to_sort[i];
+                    curi = i;
+                }
+        }
+        
+        // wind
+        sb_push(hull, cur);
+        for(;;)
+        {
+            size_t rm = (curi+1)%num_points;
+            vec3f x1 = to_sort[rm];
+            for (size_t i = 0; i < num_points; ++i)
+            {
+                if(i == curi)
+                    continue;
+                
+                vec3f x2 = to_sort[i];
+                vec3f v1 = x1 - cur;
+                vec3f v2 = x2 - cur;
+                vec3f cp = cross(v2, v1);
+                if (cp.y > 0.0f)
+                {
+                    x1 = to_sort[i];
+                    rm = i;
+                }
+            }
+            if(almost_equal(x1, hull[0], 0.0001f))
+                break;
+            
+            cur = x1;
+            curi = rm;
+            sb_push(hull, x1);
+        }
+        
+        sb_free(to_sort);
+    }
+    
     void test_road(const voronoi_map* voronoi, u32 cell)
     {
         edge** edge_strips = nullptr;
@@ -882,7 +945,7 @@ struct live_lib
             vec3f p2 = inset_edge_points[i];
             vec3f p3 = inset_edge_points[n];
             
-            add_line(p2, p3, vec4f::blue());
+            //add_line(p2, p3, vec4f::blue());
             
             bl.x = std::min<f32>(p2.x, bl.x);
             bl.z = std::min<f32>(p2.z, bl.z);
@@ -905,6 +968,8 @@ struct live_lib
         vec3f side_start = e.start - right * 1000.0f;
         vec3f side_end = e.start + right * 1000.0f;
 
+        //inset_edge_points = edge_points;
+        
         // get extents in right axis
         
         f32 mind = FLT_MAX;
@@ -972,7 +1037,9 @@ struct live_lib
         u32 x = axis_lengths[0] / subdiv_size;
         u32 y = axis_lengths[1] / subdiv_size;
         
-        f32 half_size = subdiv_size * 0.5f;
+        f32 half_size = (subdiv_size * 0.5f) - inset * 0.5f;
+        
+        bool valid = false;
         
         for(u32 i = 0; i < x+1; ++i)
         {
@@ -986,39 +1053,72 @@ struct live_lib
                 
                 vec3f corners[4] = {
                     px - vaxis[0] * half_size - vaxis[1] * half_size,
-                    px - vaxis[0] * half_size + vaxis[1] * half_size,
-                    px + vaxis[0] * half_size + vaxis[1] * half_size,
                     px + vaxis[0] * half_size - vaxis[1] * half_size,
+                    px + vaxis[0] * half_size + vaxis[1] * half_size,
+                    px - vaxis[0] * half_size + vaxis[1] * half_size,
                 };
+                
+                //if(valid)
+                    //continue;
+                    
+                vec3f* sub_hull_points = nullptr;
                 
                 for(u32 c = 0; c < 4; ++c)
                 {
+                    u32 d = (c + 1) % 4;
+                    
+                    bool inside = false;
                     if(ppich(inset_edge_points, sb_count(inset_edge_points), up, corners[c]))
                     {
-                        u32 d = (c + 1) % 4;
-                        //add_point(corners[c], 1.0f);
+                        valid = true;
+                        inside = true;
+                        add_point(corners[c], 0.1f);
+                        sb_push(sub_hull_points, corners[c]);
+                    }
+                    else if(ppich(inset_edge_points, sb_count(inset_edge_points), up, corners[d]))
+                    {
+                        valid = true;
+                        inside = true;
+                        add_point(corners[d], 0.1f);
+                        sb_push(sub_hull_points, corners[d]);
+                    }
+                    
+                    // intersect with hull
+                    for(s32 i = 0; i < nep; i++)
+                    {
+                        s32 n = (i + 1) % nep;
                         
-                        if(ppich(inset_edge_points, sb_count(inset_edge_points), up, corners[d]))
-                        {
-                            add_line(corners[c], corners[d]);
-                        }
-                        else
-                        {
-                            // intersect with hull
-                            for(s32 i = 0; i < nep; i++)
-                            {
-                                s32 n = (i + 1) % nep;
-                                
-                                vec3f p0 = inset_edge_points[i];
-                                vec3f p1 = inset_edge_points[n];
+                        vec3f p0 = inset_edge_points[i];
+                        vec3f p1 = inset_edge_points[n];
+                        
+                        //add_line(corners[c], corners[d], vec4f::red());
 
-                                vec3f ip;
-                                if(maths::line_vs_line(p0, p1, corners[c], corners[d], ip))
-                                {
-                                    add_line(corners[c], ip);
-                                }
-                            }
+                        vec3f ip;
+                        if(maths::line_vs_line(p0, p1, corners[c], corners[d], ip))
+                        {
+                            add_point(ip, 0.1f);
+                            sb_push(sub_hull_points, ip);
                         }
+                        
+                        if(ppich(corners, 4, up, p0))
+                        {
+                            sb_push(sub_hull_points, p0);
+                        }
+                    }
+                }
+                
+                u32 sp = sb_count(sub_hull_points);
+                if(sp > 0)
+                {
+                    vec3f* sub_hull = nullptr;
+                    convex_hull_from_points(sub_hull, sub_hull_points, sp);
+                    
+                    u32 nsh = sb_count(sub_hull);
+                    for(u32 cp = 0; cp < nsh; ++cp)
+                    {
+                        u32 n = (cp+1) % nsh;
+                        add_line(sub_hull[cp], sub_hull[n]);
+                        add_point(sub_hull[cp], 0.1f, vec4f::green());
                     }
                 }
             }
