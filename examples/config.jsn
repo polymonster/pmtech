@@ -11,6 +11,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
     
     post_build_order: [
         pmbuild_config
+        vscode
     ]
     
     base:
@@ -398,6 +399,13 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
                 "cd ../third_party && ../pmbuild bullet-linux"
                 "cd ../third_party && ../pmbuild make bullet-linux all config=release"
                 "cd ../third_party && ../pmbuild make bullet-linux all config=debug"
+            ]
+        }
+
+        shared_libs: {
+            type: copy
+            files: [
+                ["../third_party/fmod/lib/linux", "bin/linux"]
             ]
         }
         
