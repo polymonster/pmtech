@@ -10,7 +10,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
     
     base:
     {
-    	// 
+        // 
     }
     
     //
@@ -151,8 +151,8 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
             ]
         }
     }
-	
-	win32-editor(data): 
+    
+    win32-editor(data): 
     {
         jsn_vars: {
             data_dir: "bin/win32/data"
@@ -165,7 +165,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
                 "%{vs_latest}"
                 "--renderer=dx11"
                 "--platform_dir=win32"
-				"--sdk_version=%{windows_sdk_version}"
+                "--sdk_version=%{windows_sdk_version}"
             ]
         }
         

@@ -10,7 +10,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
     }
     
     post_build_order: [
-    	pmbuild_config
+        pmbuild_config
     ]
     
     base:
@@ -144,26 +144,26 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
         }
         
         vscode: {
-        	files: [
-        		"build/osx/*.xcodeproj"
-        	]
-        	folders: [
-        		"."
-        		".."
-        	]
-        	configurations:[
-        		{
-        			name: "debug"
-        			make: "../pmbuild make mac %{target_name} -configuration Debug"
-        			launch: "bin/osx/%{target_name}_d.app/Contents/MacOS/%{target_name}_d"
-        		}
-        		{
-					name: "release"
-        			make: "../pmbuild make mac %{target_name} -configuration Release"
-        			launch: "bin/osx/%{target_name}.app/Contents/MacOS/%{target_name}"
-        		}
-        	]
-        	change_ext: ""
+            files: [
+                "build/osx/*.xcodeproj"
+            ]
+            folders: [
+                "."
+                ".."
+            ]
+            configurations:[
+                {
+                    name: "debug"
+                    make: "../pmbuild make mac %{target_name} -configuration Debug"
+                    launch: "bin/osx/%{target_name}_d.app/Contents/MacOS/%{target_name}_d"
+                }
+                {
+                    name: "release"
+                    make: "../pmbuild make mac %{target_name} -configuration Release"
+                    launch: "bin/osx/%{target_name}.app/Contents/MacOS/%{target_name}"
+                }
+            ]
+            change_ext: ""
         }
         
         libs: {
@@ -438,28 +438,28 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
         }
 
         vscode: {
-        	files: [
-        		"build/linux/*.make"
-        	]
-        	folders: [
-        		"."
-        		".."
-        	]
-        	configurations:[
-        		{
-        			name: "debug"
-        			make: "../pmbuild make linux %{target_name} config=debug"
-        			launch: "bin/linux/%{target_name}_d"
-        		}
-        		{
-					name: "release"
-        			make: "../pmbuild make linux %{target_name} config=release"
-        			launch: "bin/linux/%{target_name}"
-        		}
-        	]
+            files: [
+                "build/linux/*.make"
+            ]
+            folders: [
+                "."
+                ".."
+            ]
+            configurations:[
+                {
+                    name: "debug"
+                    make: "../pmbuild make linux %{target_name} config=debug"
+                    launch: "bin/linux/%{target_name}_d"
+                }
+                {
+                    name: "release"
+                    make: "../pmbuild make linux %{target_name} config=release"
+                    launch: "bin/linux/%{target_name}"
+                }
+            ]
             cwd: "bin/linux"
             debugger: "gdb"
-        	change_ext: ""
+            change_ext: ""
         }
     }
 
