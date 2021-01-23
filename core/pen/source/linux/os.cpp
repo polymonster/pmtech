@@ -89,7 +89,7 @@ namespace
         return 0;
     }
 
-    int pen_run_windowed()
+    int pen_run_windowed(int argc, char** argv)
     {
         Visual*              visual;
         int                  depth;
@@ -218,6 +218,14 @@ namespace
             glXSwapIntervalEXT(_display, _window, 1);
 
         s_windowed = true;
+
+        if(argc > 1)
+        {
+            if(strcmp(argv[1],"-test") == 0)
+            {
+                pen::renderer_test_enable();
+            }
+        }
 
         // inits renderer and loops in wait for jobs, calling os update
         renderer_init(nullptr, true, s_creation_params.max_renderer_commands);
@@ -519,7 +527,7 @@ int main(int argc, char* argv[])
 
     if (pc.flags & e_pen_create_flags::renderer)
     {
-        pen_run_windowed();
+        pen_run_windowed(argc, argv);
     }
     else
     {
