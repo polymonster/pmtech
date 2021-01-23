@@ -143,6 +143,29 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
             ]
         }
         
+        vscode: {
+        	files: [
+        		"build/osx/*.xcodeproj"
+        	]
+        	folders: [
+        		"."
+        		".."
+        	]
+        	configurations:[
+        		{
+        			name: "debug"
+        			make: "../pmbuild make mac %{target_name} -configuration Debug"
+        			launch: "bin/osx/%{target_name}_d.app/Contents/MacOS/%{target_name}_d"
+        		}
+        		{
+					name: "release"
+        			make: "../pmbuild make mac %{target_name} -configuration Release"
+        			launch: "bin/osx/%{target_name}.app/Contents/MacOS/%{target_name}"
+        		}
+        	]
+        	change_ext: ""
+        }
+        
         libs: {
             type: shell
             explicit: true
