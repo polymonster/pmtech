@@ -436,6 +436,31 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
                 "bin/linux"
             ]
         }
+
+        vscode: {
+        	files: [
+        		"build/linux/*.make"
+        	]
+        	folders: [
+        		"."
+        		".."
+        	]
+        	configurations:[
+        		{
+        			name: "debug"
+        			make: "../pmbuild make linux %{target_name} config=debug"
+        			launch: "bin/linux/%{target_name}_d"
+        		}
+        		{
+					name: "release"
+        			make: "../pmbuild make linux %{target_name} config=release"
+        			launch: "bin/linux/%{target_name}"
+        		}
+        	]
+            cwd: "bin/linux"
+            debugger: "gdb"
+        	change_ext: ""
+        }
     }
 
     linux-vulkan(linux): 
