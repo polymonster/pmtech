@@ -264,6 +264,31 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
                 "bin/win32/*.exe"
             ]
         }
+		
+		vscode: {
+            files: [
+                "build/win32/*.vcxproj"
+            ]
+            folders: [
+                "."
+                ".."
+            ]
+            configurations:[
+                {
+                    name: "debug"
+                    make: "../pmbuild make win32 %{target_name} /p:Configuration=Debug /p:Platform=x64"
+                    launch: "bin/win32/%{target_name}_d.exe"
+                }
+                {
+                    name: "release"
+                    make: "../pmbuild make win32 %{target_name} /p:Configuration=Release /p:Platform=x64"
+                    launch: "bin/win32/%{target_name}.exe"
+                }
+            ]
+            cwd: "bin/win32"
+            debugger: "vscode"
+            change_ext: ""
+        }
     }
     
     win32-vulkan(win32): 
