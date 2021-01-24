@@ -61,6 +61,7 @@ namespace pen
         p.window_sample_count = 8;
         p.user_thread_function = editor_setup;
         p.flags = pen::e_pen_create_flags::renderer;
+        p.max_renderer_commands = 1 << 20;
         return p;
     }
 } // namespace pen

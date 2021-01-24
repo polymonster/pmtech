@@ -142,14 +142,13 @@ struct live_lib
         
         ecs::clear_scene(scene);
         voronoi = voronoi_map_generate();
-        return;
         
         // primitive resources
         material_resource* default_material = get_material_resource(PEN_HASH("default_material"));
         
-        test_mesh();
-        test_mesh2();
-        test_mesh3();
+        //test_mesh();
+        //test_mesh2();
+        //test_mesh3();
     
         const c8* primitive_names[] = {
             "subway",
@@ -218,46 +217,13 @@ struct live_lib
             vec4f::cyan()
         };
         
-        for(u32 i = 0; i < 70; ++i)
+        for(u32 i = 0; i < voronoi->diagram.numsites; ++i)
         {
-            test_road(voronoi, i);
-            
-            Str f;
-            f.appendf("cell_%i", i);
-            auto geom = get_geometry_resource(PEN_HASH(f.c_str()));
-            
-            u32 new_prim = get_new_entity(scene);
-            scene->names[new_prim] = f;
-            scene->names[new_prim].appendf("%i", new_prim);
-            scene->transforms[new_prim].rotation = quat();
-            scene->transforms[new_prim].scale = vec3f::one();
-            scene->transforms[new_prim].translation = vec3f::zero();
-            scene->entities[new_prim] |= e_cmp::transform;
-            scene->parents[new_prim] = new_prim;
-            instantiate_geometry(geom, scene, new_prim);
-            instantiate_material(default_material, scene, new_prim);
-            instantiate_model_cbuffer(scene, new_prim);
+            if(i >= 69)
+                continue;
+                
+            test_road(voronoi, i, true);
         }
-
-        /*
-        for (s32 p = 0; p < PEN_ARRAY_SIZE(primitive_names); ++p)
-        {
-            u32 new_prim = get_new_entity(scene);
-            scene->names[new_prim] = primitive_names[p];
-            scene->names[new_prim].appendf("%i", new_prim);
-            scene->transforms[new_prim].rotation = quat();
-            scene->transforms[new_prim].scale = vec3f::one();
-            scene->transforms[new_prim].translation = pos[p] + vec3f::unit_y() * 2.0f;
-            scene->entities[new_prim] |= e_cmp::transform;
-            scene->parents[new_prim] = new_prim;
-            instantiate_geometry(primitives[p], scene, new_prim);
-            instantiate_material(default_material, scene, new_prim);
-            instantiate_model_cbuffer(scene, new_prim);
-            
-            forward_render::forward_lit* mat = (forward_render::forward_lit*)&scene->material_data[new_prim].data[0];
-            mat->m_albedo = col[p];
-        }
-        */
     }
     
     struct edge
@@ -493,6 +459,48 @@ struct live_lib
             }
         }
         
+        // cap
+        vec3f* inner_loop = nullptr;
+        for(u32 s = 0; s < num_strips; ++s)
+        {
+            sb_push(inner_loop, strips[s][0].end);
+        }
+        
+        u32 nl = sb_count(inner_loop);
+        vec3f* cap_hull = nullptr;
+        convex_hull_from_points(cap_hull, inner_loop, nl);
+        
+        u32 cl = sb_count(cap_hull);
+        vec3f mid = get_convex_hull_centre(cap_hull, cl);
+        for(u32 s = 0; s < cl; ++s)
+        {
+            u32 next = (s + 1) % cl;
+            
+            // one tri per hull side
+            vec3f vv[3] = {
+                cap_hull[s],
+                mid,
+                cap_hull[next]
+            };
+            
+            vec3f t = vec3f::unit_x();
+            vec3f b = vec3f::unit_z();
+            vec3f n = vec3f::unit_y();
+            
+            for(u32 k = 0; k < 3; ++k)
+            {
+                vertex_model v;
+                v.pos = vec4f(vv[k], 1.0f);
+                v.normal = vec4f(n, 0.0f);
+                v.tangent = vec4f(t, 0.0f);
+                v.bitangent = vec4f(b, 0.0f);
+            
+                sb_push(verts, v);
+            }
+            
+            //add_line(cap_hull[s], cap_hull[t], vec4f::magenta());
+        }
+        
         create_primitive_resource_faceted(name, verts, sb_count(verts));
     }
     
@@ -653,10 +661,28 @@ struct live_lib
                 {
                     auto& e2 = edge_strips[s][i+1];
                     
-                    add_triangle(e1.start, e1.end, e2.start);
-                    add_triangle(e2.start, e2.end, e1.end);
+                    //add_triangle(e1.start, e1.end, e2.start);
+                    //add_triangle(e2.start, e2.end, e1.end);
                 }
             }
+        }
+        
+        // cap
+        vec3f* inner_loop = nullptr;
+        for(u32 s = 0; s < num_strips; ++s)
+        {
+            sb_push(inner_loop, edge_strips[s][0].end);
+        }
+        
+        u32 nl = sb_count(inner_loop);
+        vec3f* cap_hull = nullptr;
+        convex_hull_from_points(cap_hull, inner_loop, nl);
+        
+        u32 cl = sb_count(cap_hull);
+        for(u32 s = 0; s < cl; ++s)
+        {
+            u32 t = (s + 1) % cl;
+            add_line(cap_hull[s], cap_hull[t], vec4f::magenta());
         }
     }
     
@@ -729,7 +755,19 @@ struct live_lib
         }
     }
     
-    bool ppich(vec3f* hull, size_t ncp, const vec3f& up, const vec3f& p0)
+    vec3f get_convex_hull_centre(vec3f* hull, u32 count)
+    {
+        vec3f mid = vec3f::zero();
+        for(u32 i = 0; i < count; ++i)
+        {
+            mid += hull[i];
+        }
+        
+        mid /= (f32)count;
+        return mid;
+    }
+    
+    bool point_inside_convex_hull(vec3f* hull, size_t ncp, const vec3f& up, const vec3f& p0)
     {
         for(size_t i = 0; i < ncp; ++i)
         {
@@ -811,11 +849,59 @@ struct live_lib
         sb_free(to_sort);
     }
     
-    void test_road(const voronoi_map* voronoi, u32 cell)
+    void curb(edge**& edge_strips, vec3f* hull_points)
     {
-        edge** edge_strips = nullptr;
-        sb_push(edge_strips, nullptr);
+        vec3f right = normalised(hull_points[1] - hull_points[0]);
+        vec3f up = vec3f::unit_y();
+        vec3f at = normalised(cross(right, up));
         
+        f32 height = ((f32)(rand()%RAND_MAX) / (f32)RAND_MAX) * 5.0f;
+        vec3f ystart = vec3f(0.0f, height, 0.0f);
+                
+        edge e;
+        e.start = hull_points[0] + ystart;
+        e.end = hull_points[1] + ystart;
+        e.mat = mat4::create_identity();
+        
+        f32 scale = 0.1f;
+        
+        sb_push(edge_strips[0], e);
+        extrude(edge_strips[0], at * scale * 2.0f);
+        extrude(edge_strips[0], vec3f::unit_y() * -scale * 10.0f * height);
+        extrude(edge_strips[0], at * scale * 3.0f);
+                
+        vec3f prev_vl = right;
+                
+        u32 nep = sb_count(hull_points);
+        
+        vec3f bl = vec3f::flt_max();
+        for(s32 i = 0; i < nep+1; i++)
+        {
+            s32 n = (i+1)%nep;
+            s32 ii = (i)%nep;
+            
+            vec3f p2 = hull_points[ii];
+            vec3f p3 = hull_points[n];
+                        
+            bl.x = std::min<f32>(p2.x, bl.x);
+            bl.z = std::min<f32>(p2.z, bl.z);
+            bl.y = std::min<f32>(p2.y, bl.y);
+            
+            if(i == 0)
+                continue;
+            
+            vec3f vl = normalised(vec3f(p3-p2));
+            
+            f32 yaw = acos(dot(vl, prev_vl));
+            
+            bend(edge_strips, mag(p3-p2), vec2f(0.0, yaw));
+            
+            prev_vl = vl;
+        }
+    }
+    
+    void test_road(const voronoi_map* voronoi, u32 cell, bool mesh)
+    {
         // build from cell
         const jcv_site* sites = jcv_diagram_get_sites( &voronoi->diagram );
         const jcv_site* site = &sites[cell];
@@ -928,47 +1014,12 @@ struct live_lib
         e.end = inset_edge_points[1];
         e.mat = mat4::create_identity();
         
-        sb_push(edge_strips[0], e);
-        extrude(edge_strips[0], at * 0.5f);
-        extrude(edge_strips[0], vec3f::unit_y() * -0.5f);
-        extrude(edge_strips[0], at * 0.5f);
-                
-        vec3f prev_vl = right;
-                
         nep = sb_count(inset_edge_points);
-        
-        vec3f bl = vec3f::flt_max();
-        for(s32 i = 0; i < nep; i++)
-        {
-            s32 n = (i+1)%nep;
-            
-            vec3f p2 = inset_edge_points[i];
-            vec3f p3 = inset_edge_points[n];
-            
-            //add_line(p2, p3, vec4f::blue());
-            
-            bl.x = std::min<f32>(p2.x, bl.x);
-            bl.z = std::min<f32>(p2.z, bl.z);
-            bl.y = std::min<f32>(p2.y, bl.y);
-            
-            if(i == 0)
-                continue;
-            
-            vec3f vl = normalised(vec3f(p3-p2));
-            
-            f32 yaw = acos(dot(vl, prev_vl));
-            
-            bend(edge_strips, mag(p3-p2), vec2f(0.0, yaw));
-            
-            prev_vl = vl;
-        }
         
         // subdivide cell
         
         vec3f side_start = e.start - right * 1000.0f;
         vec3f side_end = e.start + right * 1000.0f;
-
-        //inset_edge_points = edge_points;
         
         // get extents in right axis
         
@@ -1040,6 +1091,7 @@ struct live_lib
         f32 half_size = (subdiv_size * 0.5f) - inset * 0.5f;
         
         bool valid = false;
+        u32 count = 0;
         
         for(u32 i = 0; i < x+1; ++i)
         {
@@ -1058,9 +1110,6 @@ struct live_lib
                     px - vaxis[0] * half_size + vaxis[1] * half_size,
                 };
                 
-                //if(valid)
-                    //continue;
-                    
                 vec3f* sub_hull_points = nullptr;
                 
                 for(u32 c = 0; c < 4; ++c)
@@ -1068,18 +1117,18 @@ struct live_lib
                     u32 d = (c + 1) % 4;
                     
                     bool inside = false;
-                    if(ppich(inset_edge_points, sb_count(inset_edge_points), up, corners[c]))
+                    if(point_inside_convex_hull(inset_edge_points, sb_count(inset_edge_points), up, corners[c]))
                     {
                         valid = true;
                         inside = true;
-                        add_point(corners[c], 0.1f);
+                        //add_point(corners[c], 0.1f);
                         sb_push(sub_hull_points, corners[c]);
                     }
-                    else if(ppich(inset_edge_points, sb_count(inset_edge_points), up, corners[d]))
+                    else if(point_inside_convex_hull(inset_edge_points, sb_count(inset_edge_points), up, corners[d]))
                     {
                         valid = true;
                         inside = true;
-                        add_point(corners[d], 0.1f);
+                        //add_point(corners[d], 0.1f);
                         sb_push(sub_hull_points, corners[d]);
                     }
                     
@@ -1090,17 +1139,15 @@ struct live_lib
                         
                         vec3f p0 = inset_edge_points[i];
                         vec3f p1 = inset_edge_points[n];
-                        
-                        //add_line(corners[c], corners[d], vec4f::red());
 
                         vec3f ip;
                         if(maths::line_vs_line(p0, p1, corners[c], corners[d], ip))
                         {
-                            add_point(ip, 0.1f);
+                            //add_point(ip, 0.1f);
                             sb_push(sub_hull_points, ip);
                         }
                         
-                        if(ppich(corners, 4, up, p0))
+                        if(point_inside_convex_hull(corners, 4, up, p0))
                         {
                             sb_push(sub_hull_points, p0);
                         }
@@ -1113,45 +1160,73 @@ struct live_lib
                     vec3f* sub_hull = nullptr;
                     convex_hull_from_points(sub_hull, sub_hull_points, sp);
                     
-                    u32 nsh = sb_count(sub_hull);
-                    for(u32 cp = 0; cp < nsh; ++cp)
+                    if(sb_count(sub_hull) < 3)
                     {
-                        u32 n = (cp+1) % nsh;
-                        add_line(sub_hull[cp], sub_hull[n]);
-                        add_point(sub_hull[cp], 0.1f, vec4f::green());
+                        continue;
                     }
+                    
+                    {
+                        edge** edge_strips = nullptr;
+                        sb_push(edge_strips, nullptr);
+        
+                        curb(edge_strips, sub_hull);
+                        draw_edge_strip_triangles(edge_strips);
+                        
+                        if(mesh)
+                        {
+                            pen::renderer_new_frame();
+                            
+                            Str f;
+                            f.appendf("cell_%i_%i", cell, count);
+                            mesh_from_strips(f.c_str(), edge_strips);
+                            
+                            auto default_material = get_material_resource(PEN_HASH("default_material"));
+                            auto geom = get_geometry_resource(PEN_HASH(f.c_str()));
+                            u32 new_prim = get_new_entity(scene);
+                            scene->names[new_prim] = f;
+                            scene->names[new_prim].appendf("%i", new_prim);
+                            scene->transforms[new_prim].rotation = quat();
+                            scene->transforms[new_prim].scale = vec3f::one();
+                            scene->transforms[new_prim].translation = vec3f::zero();
+                            scene->entities[new_prim] |= e_cmp::transform;
+                            scene->parents[new_prim] = new_prim;
+                            instantiate_geometry(geom, scene, new_prim);
+                            instantiate_material(default_material, scene, new_prim);
+                            instantiate_model_cbuffer(scene, new_prim);
+                            
+                            thread_sleep_ms(16);
+                        }
+
+                        u32 ns = sb_count(edge_strips);
+                        for(u32 s = 0; s < ns; ++s)
+                        {
+                            sb_free(edge_strips[s]);
+                        }
+                        
+                        sb_free(edge_strips);
+                    }
+                    
+                    count++;
                 }
             }
         }
-        
-        // draw_edge_strip_triangles(edge_strips);
-        
-        Str f;
-        f.appendf("cell_%i", cell);
-        
-        // mesh_from_strips(f.c_str(), edge_strips);
-                
-        u32 ns = sb_count(edge_strips);
-        for(u32 s = 0; s < ns; ++s)
-        {
-            sb_free(edge_strips[s]);
-        }
-        
-        sb_free(edge_strips);
+
         sb_free(edge_points);
     }
     
     int on_update(f32 dt)
     {
-        u32 test_single = -1; //56;
+        return 0;
+        
+        u32 test_single = 56;
         if(test_single != -1)
         {
-            test_road(voronoi, test_single);
+            test_road(voronoi, test_single, false);
         }
         else
         {
             for(u32 i = 0; i < voronoi->diagram.numsites; ++i)
-                test_road(voronoi, i);
+                test_road(voronoi, i, false);
         }
 
         return 0;
