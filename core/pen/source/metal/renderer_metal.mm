@@ -378,10 +378,11 @@ namespace // pen consts -> metal consts
                 return MTLPixelFormatR8Unorm;
             case PEN_TEX_FORMAT_D32_FLOAT:
                 return MTLPixelFormatDepth32Float;
-                break;
             case PEN_TEX_FORMAT_D32_FLOAT_S8_UINT:
                 return MTLPixelFormatDepth32Float_Stencil8;
-                break;
+            case PEN_TEX_FORMAT_D24_UNORM_S8_UINT:
+                // ios devices and some macs do not support d24s8, so we use d32s8 for compatibility
+                return MTLPixelFormatDepth32Float_Stencil8;
 #ifndef PEN_PLATFORM_IOS
             case PEN_TEX_FORMAT_BC1_UNORM:
                 return MTLPixelFormatBC1_RGBA;
@@ -393,13 +394,6 @@ namespace // pen consts -> metal consts
                 return MTLPixelFormatBC4_RUnorm;
             case PEN_TEX_FORMAT_BC5_UNORM:
                 return MTLPixelFormatBC5_RGUnorm;
-            case PEN_TEX_FORMAT_D24_UNORM_S8_UINT:
-                return MTLPixelFormatDepth24Unorm_Stencil8;
-                break;
-#else
-            case PEN_TEX_FORMAT_D24_UNORM_S8_UINT:
-                return MTLPixelFormatDepth32Float_Stencil8;
-                break;
 #endif
         }
 
