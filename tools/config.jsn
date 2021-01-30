@@ -109,18 +109,6 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
             ]
             dependencies: true
         }
-        
-        cr: {
-            file_list: [
-                "../core/put/source/ecs/ecs_scene.h",
-                "../core/put/source/ecs/ecs_resources.h",
-                "../core/put/source/ecs/ecs_utilities.h",
-                "../core/put/source/debug_render.h",
-                "../core/put/source/camera.h",
-                "../core/put/source/pmfx.h"
-            ],
-            output: "../core/put/source/ecs/ecs_live.h"
-        }
     }
     
     mac-editor(data): 
