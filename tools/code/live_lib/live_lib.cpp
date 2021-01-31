@@ -28,7 +28,7 @@ using namespace dbg;
 using namespace ecs;
 
 bool g_mesh = true;
-bool g_debug = false;
+bool g_debug = true;
 
 namespace
 {
@@ -123,12 +123,9 @@ namespace
                 vec3f p2 = jcv_to_vec(e->pos[0]);
                 vec3f p3 = jcv_to_vec(e->pos[1]);
                 e = e->next;
-                
-                //add_triangle(p1, p2, p3);
-                
+                                
                 if(cc < 5)
                     add_line(p2, p3);
-                //break;
                 
                 ++cc;
             }
@@ -840,14 +837,14 @@ struct live_lib
         }
         num_points = sb_count(to_sort);
 
-
         //find right most
         num_points = sb_count(to_sort);
         vec3f cur = to_sort[0];
         size_t curi = 0;
         for (size_t i = 1; i < num_points; ++i)
         {
-            if(to_sort[i].x >= cur.x)
+            if(to_sort[i].z >= cur.z)
+                //if (to_sort[i].x >= cur.x)
                 {
                     cur = to_sort[i];
                     curi = i;
@@ -922,11 +919,6 @@ struct live_lib
         }
         num_points = sb_count(to_sort);
 
-        // find colinear points
-        for (u32 i = 0; i < num_points; ++i)
-        {
-        }
-
         //find right most
         num_points = sb_count(to_sort);
         vec3f  cur = to_sort[0];
@@ -934,14 +926,14 @@ struct live_lib
         for (size_t i = 1; i < num_points; ++i)
         {
             if (to_sort[i].x >= cur.x)
-                //if (to_sort[i].z >= cur.z)
+            {
+                if (to_sort[i].z >= cur.z)
                 {
                     cur = to_sort[i];
                     curi = i;
                 }
+            }
         }
-
-        add_point(cur, 0.1f, vec4f::green());
 
         // wind
         sb_push(hull, cur);
@@ -989,7 +981,7 @@ struct live_lib
         sb_free(to_sort);
     }
 
-    void draw_convex_hull(vec3f* points, size_t num_points, vec4f col = vec4f::white())
+    void draw_convex_hull(const vec3f* points, size_t num_points, vec4f col = vec4f::white())
     {
         for (u32 i = 0; i < num_points; ++i)
         {
@@ -997,6 +989,18 @@ struct live_lib
             add_line(points[i], points[n], col);
             add_point(points[i], 0.1f, col/(f32)i);
         }
+    }
+
+    f32 convex_hull_distance(const vec3f* hull, u32 num_points, const vec3f& p)
+    {
+        f32 cd = FLT_MAX;
+        for (u32 i = 0; i < num_points; ++i)
+        {
+            u32 n = (i+1) % num_points;
+            f32 d = maths::point_segment_distance(hull[i], hull[n], p);
+            cd = std::min<f32>(d, cd);
+        }
+        return cd;
     }
     
     void curb(edge**& edge_strips, vec3f* hull_points)
@@ -1006,7 +1010,7 @@ struct live_lib
         vec3f at = normalised(cross(right, up));
         
         f32 height = ((f32)(rand()%RAND_MAX) / (f32)RAND_MAX) * 5.0f;
-        //height = 1.0f;
+        height = 1.0f;
         vec3f ystart = vec3f(0.0f, height, 0.0f);
                 
         edge e;
@@ -1081,6 +1085,7 @@ struct live_lib
         f32 inset = 1.0f;
         
         // inset edges
+        vec3f* outer_hull = nullptr;
         vec3f* inset_overlapped = nullptr;
         for(s32 i = nep-1; i >= 0; i--)
         {
@@ -1100,43 +1105,52 @@ struct live_lib
             vec3f inset_edge0 = p1 - perp;
             vec3f inset_edge1 = p2 - perp;
             
-            if (mag(inset_edge1 - inset_edge0) > inset * 0.5f)
-            {
-                sb_push(inset_overlapped, inset_edge0);
-                sb_push(inset_overlapped, inset_edge1);
-            }
+            sb_push(inset_overlapped, inset_edge0);
+            sb_push(inset_overlapped, inset_edge1);
+            sb_push(outer_hull, p1);
         }
-
-        // draw_convex_hull(inset_overlapped, sb_count(inset_overlapped));
         
-        // inset points with intersections
+        vec3f* intersection_points = nullptr;
         u32 no = sb_count(inset_overlapped);
-        for(s32 i = 0; i < no; i+=2)
+        for (u32 i = 0; i < no; i+=2)
         {
-            s32 n = (i + 2) % no;
-            
-            vec3f p0 = inset_overlapped[i];
-            vec3f p1 = inset_overlapped[i+1];
-
-            vec3f pn0 = inset_overlapped[n];
-            vec3f pn1 = inset_overlapped[n+1];
-
-            vec3f v0 = normalised(pn1 - pn0);
-            pn1 += v0;
-
-            //if (i == 2)
-            if (0)
+            for (u32 j = 0; j < no; j += 2)
             {
-                add_line(p0, p1, vec4f::blue());
-                add_line(pn0, pn1, vec4f::red());
-            }
+                if (i == j)
+                    continue;
 
-            vec3f ip;
-            if(maths::line_vs_line(p0, p1, pn0, pn1, ip))
-            {
-                sb_push(inset_edge_points, ip);
+                vec3f p0 = inset_overlapped[i];
+                vec3f p1 = inset_overlapped[i + 1];
+
+                vec3f pn0 = inset_overlapped[j];
+                vec3f pn1 = inset_overlapped[j + 1];
+
+                if (mag(p1 - p0) < inset)
+                    continue;
+
+                if (mag(pn1 - pn0) < inset)
+                    continue;
+
+                // extend slightly
+                vec3f xt = normalised(pn1 - pn0);
+                pn0 -= xt * inset;
+                pn1 += xt * inset;
+
+                vec3f ip;
+                if (maths::line_vs_line(p0, p1, pn0, pn1, ip))
+                {
+                    {
+                        sb_push(intersection_points, ip);
+                        add_point(ip, 0.1f, vec4f::magenta());
+                    }
+                }
             }
         }
+
+        if (!intersection_points)
+            return;
+
+        convex_hull_from_points(inset_edge_points, intersection_points, sb_count(intersection_points));
 
         // weld points that are less than inset apart
         nep = sb_count(inset_edge_points);
@@ -1294,8 +1308,11 @@ struct live_lib
 
                 for (u32 jj = 0; jj < 4; ++jj)
                 {
-                    sb_push(junction_pos, junctions[jj]);
-                    add_point(junctions[jj], 0.1f, vec4f::cyan());
+                    if (point_inside_convex_hull(outer_hull, sb_count(outer_hull), up, junctions[jj]))
+                    {
+                        sb_push(junction_pos, junctions[jj]);
+                        add_point(junctions[jj], 0.1f, vec4f::cyan());
+                    }
                 }
                 
                 vec3f* sub_hull_points = nullptr;
@@ -1326,8 +1343,6 @@ struct live_lib
                         
                         vec3f p0 = inset_edge_points[i];
                         vec3f p1 = inset_edge_points[n];
-
-                        //add_line(p0, p1, vec4f::blue());
 
                         vec3f ip;
                         if(maths::line_vs_line(p0, p1, corners[c], corners[d], ip))
@@ -1376,7 +1391,7 @@ struct live_lib
         for (u32 i = 0; i < num_invalid; ++i)
         {
             vec3f vc = get_convex_hull_centre(invalid_sub_hulls[i], sb_count(invalid_sub_hulls[i]));
-            //draw_convex_hull(invalid_sub_hulls[i], sb_count(invalid_sub_hulls[i]), vec4f::red());
+            draw_convex_hull(invalid_sub_hulls[i], sb_count(invalid_sub_hulls[i]), vec4f::red());
 
             vec2i igx = invalid_grid_index[i];
 
@@ -1410,7 +1425,19 @@ struct live_lib
         {
             vec3f* joined_hull = nullptr;
             convex_hull_from_points(joined_hull, valid_sub_hulls[i], sb_count(valid_sub_hulls[i]));
-            draw_convex_hull(joined_hull, sb_count(joined_hull), vec4f::orange());
+            
+            /*
+            if (i == 15)
+            {
+                sb_free(joined_hull);
+                joined_hull = nullptr;
+
+                convex_hull_from_points2(joined_hull, valid_sub_hulls[i], sb_count(valid_sub_hulls[i]));
+
+                draw_convex_hull(joined_hull, sb_count(joined_hull), vec4f::orange());
+            }
+            */
+                
 
             {
                 edge** edge_strips = nullptr;
@@ -1446,10 +1473,8 @@ struct live_lib
                     }
                 }
 
-                if (i == 1)
-                {
-                    // draw_edge_strip_triangles(edge_strips);
-                }
+                draw_edge_strip_triangles(edge_strips);
+
 
                 if (mesh)
                 {
@@ -1473,7 +1498,7 @@ struct live_lib
                     instantiate_material(default_material, scene, new_prim);
                     instantiate_model_cbuffer(scene, new_prim);
 
-                    pen::thread_sleep_ms(16);
+                    pen::thread_sleep_ms(1);
                 }
 
                 u32 ns = sb_count(edge_strips);
@@ -1488,6 +1513,7 @@ struct live_lib
             sb_free(joined_hull);
         }
 
+        sb_free(outer_hull);
         sb_free(edge_points);
     }
     
@@ -1496,7 +1522,7 @@ struct live_lib
         if (!g_debug)
             return 0;
 
-        static s32 test_single = 22;
+        static s32 test_single = 3;
         ImGui::InputInt("Test Single", (s32*)&test_single);
         
         if(test_single != -1)
