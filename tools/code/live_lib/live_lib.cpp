@@ -224,11 +224,8 @@ struct live_lib
         
         for(u32 i = 0; i < voronoi->diagram.numsites; ++i)
         {
-            //continue;
+            // continue;
 
-            //if(i >= 13)
-                //continue;
-                
             test_road(voronoi, i, true);
             PEN_LOG("generated %i", i);
         }
@@ -680,6 +677,7 @@ struct live_lib
         }
         
         // cap
+        /*
         vec3f* inner_loop = nullptr;
         for(u32 s = 0; s < num_strips; ++s)
         {
@@ -696,6 +694,7 @@ struct live_lib
             u32 t = (s + 1) % cl;
             add_line(cap_hull[s], cap_hull[t], vec4f::magenta());
         }
+        */
     }
     
     void voronoi_map_draw_cells(const voronoi_map* voronoi)
@@ -816,18 +815,22 @@ struct live_lib
     void convex_hull_from_points(vec3f*& hull, vec3f* points, size_t num_points)
     {
         vec3f* to_sort = nullptr;
+        bool*  visited = nullptr;
         for (u32 i = 0; i < num_points; ++i)
         {
             u32 count = sb_count(to_sort);
             bool dupe = false;
             for (u32 j = 0; j < count; ++j)
             {
-                if(almost_equal(to_sort[j], points[i], 0.01f))
+                if(almost_equal(to_sort[j], points[i], 0.001f))
                     dupe = true;
             }
             
-            if(!dupe)
+            if (!dupe)
+            {
                 sb_push(to_sort, points[i]);
+                sb_push(visited, false);
+            }
         }
 
         //find right most
@@ -836,8 +839,8 @@ struct live_lib
         size_t curi = 0;
         for (size_t i = 1; i < num_points; ++i)
         {
-            if(to_sort[i].x > cur.x)
-                if(to_sort[i].z > cur.z)
+            if(to_sort[i].x >= cur.x)
+                if(to_sort[i].z >= cur.z)
                 {
                     cur = to_sort[i];
                     curi = i;
@@ -855,6 +858,9 @@ struct live_lib
             {
                 if(i == curi)
                     continue;
+
+                if (visited[i])
+                    continue;
                 
                 vec3f x2 = to_sort[i];
                 vec3f v1 = x1 - cur;
@@ -866,20 +872,107 @@ struct live_lib
                     rm = i;
                 }
             }
-            f32 diff = mag(x1 - hull[0]);
-            PEN_LOG("diff %f: iter %i", diff, iters);
+
+            f32 diff = mag2(x1 - hull[0]);
             if(almost_equal(x1, hull[0], 0.01f))
                 break;
             
             cur = x1;
             curi = rm;
+            visited[rm] = true;
+            sb_push(hull, x1);
+            ++iters;
+
+            // saftey break, but we shouldnt hit this
+            if (iters > num_points)
+                break;
+        }
+        
+        sb_free(to_sort);
+    }
+
+    void convex_hull_from_points2(vec3f*& hull, vec3f* points, size_t num_points)
+    {
+        vec3f* to_sort = nullptr;
+        bool*  visited = nullptr;
+        for (u32 i = 0; i < num_points; ++i)
+        {
+            u32  count = sb_count(to_sort);
+            bool dupe = false;
+            for (u32 j = 0; j < count; ++j)
+            {
+                if (almost_equal(to_sort[j], points[i], 0.01f))
+                    dupe = true;
+            }
+
+            if (!dupe)
+            {
+                sb_push(to_sort, points[i]);
+                sb_push(visited, false);
+            }
+        }
+
+        //find right most
+        num_points = sb_count(to_sort);
+        vec3f  cur = to_sort[0];
+        size_t curi = 0;
+        for (size_t i = 1; i < num_points; ++i)
+        {
+            if (to_sort[i].x > cur.x)
+            {
+                cur = to_sort[i];
+                curi = i;
+            }
+        }
+
+        // wind
+        sb_push(hull, cur);
+        //add_point(cur, 0.2f, vec4f::cyan());
+        add_point(to_sort[0], 0.2f, vec4f::yellow());
+        u32 iters = 0;
+        for (;;)
+        {
+            size_t rm = (curi + 1) % num_points;
+            vec3f  x1 = to_sort[rm];
+            for (size_t i = 0; i < num_points; ++i)
+            {
+                if (i == curi)
+                    continue;
+
+                if (visited[i])
+                    continue;
+
+                vec3f x2 = to_sort[i];
+                vec3f v1 = x1 - cur;
+                vec3f v2 = x2 - cur;
+                vec3f cp = cross(v2, v1);
+                if (cp.y >= 0.0f)
+                {
+                    x1 = to_sort[i];
+                    rm = i;
+                }
+            }
+            f32 diff = mag2(x1 - hull[0]);
+            PEN_LOG("diff %f: iter %i", diff, iters);
+            if (almost_equal(x1, hull[0], 0.01f))
+                break;
+
+            cur = x1;
+            curi = rm;
+            visited[rm] = true;
+
+            if (iters == 2)
+            {
+                add_point(x1, 0.2f, vec4f::green());
+            }
+
             sb_push(hull, x1);
             ++iters;
 
             if (iters > num_points)
                 break;
         }
-        
+
         sb_free(to_sort);
     }
 
@@ -889,6 +982,7 @@ struct live_lib
         {
             u32 n = (i + 1) % num_points;
             add_line(points[i], points[n], col);
+            add_point(points[i], 0.1f, col/(f32)i);
         }
     }
     
@@ -926,7 +1020,7 @@ struct live_lib
             
             vec3f p2 = hull_points[ii];
             vec3f p3 = hull_points[n];
-                        
+     
             bl.x = std::min<f32>(p2.x, bl.x);
             bl.z = std::min<f32>(p2.z, bl.z);
             bl.y = std::min<f32>(p2.y, bl.y);
@@ -937,9 +1031,13 @@ struct live_lib
             vec3f vl = normalised(vec3f(p3-p2));
             
             f32 yaw = acos(dot(vl, prev_vl));
-            
+            if (std::isnan(yaw))
+            {
+                yaw = 0.0f;
+            }
+      
             bend(edge_strips, mag(p3-p2), vec2f(0.0, yaw));
-            
+                        
             prev_vl = vl;
         }
     }
@@ -989,7 +1087,6 @@ struct live_lib
             vec3f inset_edge0 = p1 - perp;
             vec3f inset_edge1 = p2 - perp;
             
-            if(mag(inset_edge1 - inset_edge0) > 0.1)
             {
                 sb_push(inset_overlapped, inset_edge0);
                 sb_push(inset_overlapped, inset_edge1);
@@ -1004,17 +1101,28 @@ struct live_lib
             
             vec3f p0 = inset_overlapped[i];
             vec3f p1 = inset_overlapped[i+1];
-            
+
             vec3f pn0 = inset_overlapped[n];
             vec3f pn1 = inset_overlapped[n+1];
+
+            vec3f v0 = normalised(pn1 - pn0);
+            pn1 += v0;
 
             vec3f ip;
             if(maths::line_vs_line(p0, p1, pn0, pn1, ip))
             {
                 sb_push(inset_edge_points, ip);
             }
+
+            /*
+            else
+            {
+                ip = maths::closest_point_on_line(p0, p1, pn1);
+                sb_push(inset_edge_points, ip);
+            }
+            */
         }
-        
+
         // weld points that are less than inset apart
         nep = sb_count(inset_edge_points);
         for(s32 i = 0; i < nep; i++)
@@ -1105,7 +1213,6 @@ struct live_lib
         mind = FLT_MAX;
         for(s32 i = 0; i < nep; i++)
         {
-            add_point(inset_edge_points[i], 0.1f, vec4f::blue());
             f32 d  = maths::distance_on_line(side_perp_start, side_perp_end, inset_edge_points[i]);
             if(d < mind)
             {
@@ -1117,7 +1224,6 @@ struct live_lib
         axis_end[1] = mincp;
         
         // subdivide as grid
-        
         f32 axis_lengths[2] = {
             mag(axis_end[0] - axis_start[0]),
             mag(axis_end[1] - axis_start[1]),
@@ -1190,7 +1296,7 @@ struct live_lib
                         vec3f p0 = inset_edge_points[i];
                         vec3f p1 = inset_edge_points[n];
 
-                        add_line(p0, p1, vec4f::blue());
+                        //add_line(p0, p1, vec4f::blue());
 
                         vec3f ip;
                         if(maths::line_vs_line(p0, p1, corners[c], corners[d], ip))
@@ -1228,33 +1334,6 @@ struct live_lib
                         sb_push(valid_sub_hulls, sub_hull);
                         sb_push(valid_grid_index, vec2i(i, j));
                     }
-
-
-                    //draw_convex_hull(sub_hull, sb_count(sub_hull), vec4f::green());
-
-                    /*
-                    vec3f* outer_sub_hull = nullptr;
-                    u32    nsh = sb_count(sub_hull);
-                    f32    rad = -FLT_MAX;
-                    for (u32 o = 0; o < nsh; ++o)
-                    {
-                        u32 next = (o+1)%nsh;
-                        u32 next_next = (next + 1) % nsh;
-
-                        vec3f p0 = sub_hull[o];
-                        vec3f p1 = sub_hull[next];
-                        vec3f p2 = sub_hull[next_next];
-
-                        vec3f perp0 = normalised(p1 - p0);
-                        vec3f perp1 = normalised(p2 - p1);
-
-                        vec3f cornerPerp = perp0 + perp1;
-
-                        //add_line(p0, p0 - cornerPerp * inset * 0.5f, vec4f::green());
-                        //add_point(p0 - cornerPerp * inset * 0.5f, 0.1f, vec4f::magenta());
-                    }
-                    */
-                    
                     count++;
                 }
             }
@@ -1266,17 +1345,18 @@ struct live_lib
         for (u32 i = 0; i < num_invalid; ++i)
         {
             vec3f vc = get_convex_hull_centre(invalid_sub_hulls[i], sb_count(invalid_sub_hulls[i]));
-            draw_convex_hull(invalid_sub_hulls[i], sb_count(invalid_sub_hulls[i]), vec4f::red());
+            //draw_convex_hull(invalid_sub_hulls[i], sb_count(invalid_sub_hulls[i]), vec4f::red());
 
             vec2i igx = invalid_grid_index[i];
 
             // find closest hull to join with
             f32 cd = FLT_MAX;
-            u32 cj = 0;
+            u32 cj = -1;
             for (u32 j = 0; j < num_valid; ++j)
             {
                 vec2i vgx = valid_grid_index[j];
-                if (igx.x != vgx.x && igx.y != vgx.y)
+
+                if (abs(igx.x - vgx.x) + abs(igx.y - vgx.y) > 1)
                     continue;
 
                 vec3f ic = get_convex_hull_centre(valid_sub_hulls[j], sb_count(valid_sub_hulls[j]));
@@ -1289,8 +1369,9 @@ struct live_lib
                 }
             }
 
-            for (u32 p = 0; p < sb_count(invalid_sub_hulls[i]); ++p)
-                sb_push(valid_sub_hulls[cj], invalid_sub_hulls[i][p]);
+            if (cj != -1)
+                for (u32 p = 0; p < sb_count(invalid_sub_hulls[i]); ++p)
+                    sb_push(valid_sub_hulls[cj], invalid_sub_hulls[i][p]);
 
         }
 
@@ -1304,8 +1385,12 @@ struct live_lib
                 edge** edge_strips = nullptr;
                 sb_push(edge_strips, nullptr);
 
-                curb(edge_strips, joined_hull);
-                draw_edge_strip_triangles(edge_strips);
+                //if (i == 0)
+                {
+                    curb(edge_strips, joined_hull);
+                    //draw_edge_strip_triangles(edge_strips);
+                }
+
 
                 if (mesh)
                 {
@@ -1349,7 +1434,7 @@ struct live_lib
     
     int on_update(f32 dt)
     {
-        static s32 test_single = 0;
+        static s32 test_single = 23;
         ImGui::InputInt("Test Single", (s32*)&test_single);
         
         if(test_single != -1)
