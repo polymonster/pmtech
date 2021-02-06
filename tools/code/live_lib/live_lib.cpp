@@ -1082,7 +1082,8 @@ struct live_lib
         vec3f first_line[2];
         vec3f prev_perp;
         
-        f32 inset = 1.0f;
+        f32 inset = 0.5f;
+        f32 major_inset = 0.75f;
         
         // inset edges
         vec3f* outer_hull = nullptr;
@@ -1100,7 +1101,7 @@ struct live_lib
             
             vec3f perp = cross(vl, vec3f::unit_y());
             
-            perp *= inset;
+            perp *= major_inset;
             
             vec3f inset_edge0 = p1 - perp;
             vec3f inset_edge1 = p2 - perp;
@@ -1125,10 +1126,10 @@ struct live_lib
                 vec3f pn0 = inset_overlapped[j];
                 vec3f pn1 = inset_overlapped[j + 1];
 
-                if (mag(p1 - p0) < inset)
+                if (mag(p1 - p0) < major_inset)
                     continue;
 
-                if (mag(pn1 - pn0) < inset)
+                if (mag(pn1 - pn0) < major_inset)
                     continue;
 
                 // extend slightly
@@ -1268,8 +1269,8 @@ struct live_lib
         u32 x = axis_lengths[0] / subdiv_size;
         u32 y = axis_lengths[1] / subdiv_size;
         
-        f32 half_size = (subdiv_size * 0.5f) - inset * 0.5f;
-        f32 size = half_size + inset * 0.5f;
+        f32 half_size = (subdiv_size * 0.5f) - inset;
+        f32 size = half_size + inset;
 
         bool valid = false;
         u32 count = 0;
@@ -1308,7 +1309,7 @@ struct live_lib
 
                 for (u32 jj = 0; jj < 4; ++jj)
                 {
-                    if (point_inside_convex_hull(outer_hull, sb_count(outer_hull), up, junctions[jj]))
+                    if (point_inside_convex_hull(inset_edge_points, sb_count(inset_edge_points), up, junctions[jj]))
                     {
                         sb_push(junction_pos, junctions[jj]);
                         add_point(junctions[jj], 0.1f, vec4f::cyan());
@@ -1459,12 +1460,12 @@ struct live_lib
                             u32 nj = sb_count(junction_pos);
                             for (u32 j = 0; j < nj; ++j)
                             {
-                                if (mag2(e1.start - junction_pos[j]) < (inset*0.5*inset*0.5))
+                                if (mag2(e1.start - junction_pos[j]) < (inset*inset))
                                 {
                                     e1.start = junction_pos[j];
                                 }
 
-                                if (mag2(e1.end - junction_pos[j]) < (inset * 0.5 * inset * 0.5))
+                                if (mag2(e1.end - junction_pos[j]) < (inset * inset))
                                 {
                                     e1.end = junction_pos[j];
                                 }
