@@ -533,6 +533,8 @@ int main(int argc, char* argv[])
     {
         pen_run_console_app();
     }
+
+    return s_error_code;
 }
 
 namespace pen
@@ -611,8 +613,6 @@ namespace pen
 
     void window_set_frame(const window_frame& f)
     {
-        _window_frame = f;
-        _invalidate_window_frame = true;
     }
 
     void os_set_cursor_pos(u32 client_x, u32 client_y)
