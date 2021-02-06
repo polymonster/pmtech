@@ -1183,6 +1183,8 @@ struct live_lib
             {
                 sb_push(inset_edge_points2, p2);
             }
+
+            add_line(p2, p3, vec4f::blue());
         }
         
         inset_edge_points = inset_edge_points2;

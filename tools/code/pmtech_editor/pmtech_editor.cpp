@@ -28,15 +28,22 @@
 #else
 #define LIVE_LIB "live_lib_d.dll"
 #endif
-#else
+#elif PEN_PLATFORM_OSX
 #if NDEBUG
 #define LIVE_LIB "liblive_lib.dylib"
 #else
 #define LIVE_LIB "liblive_lib_d.dylib"
 #endif
+#elif PEN_PLATFORM_LINUX
+#if NDEBUG
+#define LIVE_LIB "liblive_lib.so"
+#else
+#define LIVE_LIB "liblive_lib_d.so"
+#endif
 #endif
 
 #define CR_HOST // required in the host only and before including cr.h
+#define CR_DEBUG
 #include "cr/cr.h"
 #include "ecs/ecs_live.h"
 

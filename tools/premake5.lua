@@ -64,11 +64,18 @@ if platform == "win32" then
 			"pmtech_editor.lib"
 		}
 	configuration {}
-else
+elseif platform == "osx" then
 	configuration {}
 	linkoptions
 	{
-		"-undefined dynamic_lookup"
+	    "-undefined dynamic_lookup"
+	}
+elseif platform == "linux" then
+	configuration {}
+	linkoptions
+	{
+	    "-fPIC",
+		"-export-dynamic"
 	}
 end
 
