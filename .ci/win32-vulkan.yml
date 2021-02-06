@@ -8,6 +8,7 @@ init:
   - curl -L --silent --show-error --output VulkanSDK.exe "https://sdk.lunarg.com/sdk/download/1.2.135.0/windows/VulkanSDK-1.2.135.0-Installer.exe"
   - VulkanSDK.exe /S
   - rm -f VulkanSDK.exe
+  - echo %VK_SDK_PATH%
 build_script:
-- cmd: "dir C:\\VulkanSDK\\1.2.135.0\necho $VK_SDK_PATH\ngit submodule update --init --recursive\n cd examples\n..\\pmbuild win32 -libs\n..\\pmbuild win32-vulkan\n..\\pmbuild make win32-vulkan all /p:Platform=x64 /p:Configuration=Debug\n..\\pmbuild make win32-vulkan all /p:Platform=x64 /p:Configuration=Release"
+- cmd: "dir C:\\VulkanSDK\\1.2.135.0\ngit submodule update --init --recursive\n cd examples\n..\\pmbuild win32 -libs\n..\\pmbuild win32-vulkan\n..\\pmbuild make win32-vulkan all /p:Platform=x64 /p:Configuration=Debug\n..\\pmbuild make win32-vulkan all /p:Platform=x64 /p:Configuration=Release"
 test: off
