@@ -1,8 +1,20 @@
 #define MATHS_PRINT_TESTS 1
 #include "../example_common.h"
+#include "maths/util.h"
 
 using namespace put;
 using namespace ecs;
+
+#define EASING_FUNC(NAME) \
+{ \
+    f32 t = 0.0f; \
+    for(u32 i = 0; i < 32; ++i) \
+    { \
+        points[i] = NAME(t); \
+        t += 1.0f / 32.0f; \
+    } \
+    ImGui::PlotLines(#NAME, points, 32); \
+}
 
 namespace pen
 {
@@ -1139,13 +1151,137 @@ void maths_test_ui(ecs_scene* scene)
         _test_stack_depth = -1;
 
     initialise = false;
+    
+    if(ImGui::CollapsingHeader("Curves"))
+    {
+        static f32 points[32];
+                
+        EASING_FUNC(smooth_start2);
+        EASING_FUNC(smooth_start3);
+        EASING_FUNC(smooth_start4);
+        EASING_FUNC(smooth_start5);
+        
+        EASING_FUNC(smooth_stop2);
+        EASING_FUNC(smooth_stop3);
+        EASING_FUNC(smooth_stop4);
+        EASING_FUNC(smooth_stop5);
+        
+        ImGui::Separator();
+        ImGui::PushID("parabola");
+        {
+            static f32 k = 1.0f;
 
+            f32 t = 0.0f;
+            for(u32 i = 0; i < 32; ++i)
+            {
+                points[i] = parabola(t, k);
+                t += 1.0f / 32.0f;
+            }
+            ImGui::PlotLines("parabola", points, 32);
+            
+            ImGui::SliderFloat("k", &k, 0.0, 10.0f);
+        }
+        ImGui::PopID();
+        
+        ImGui::Separator();
+        ImGui::PushID("exp_step");
+        {
+            static f32 k = 1.0f;
+            static f32 n = 1.0f;
+
+            f32 t = 0.0f;
+            for(u32 i = 0; i < 32; ++i)
+            {
+                points[i] = exp_step(t, k, n);
+                t += 1.0f / 32.0f;
+            }
+            ImGui::PlotLines("exp_step", points, 32);
+            
+            ImGui::SliderFloat("k", &k, 0.0, 10.0f);
+            ImGui::SliderFloat("n", &n, 0.0, 10.0f);
+        }
+        ImGui::PopID();
+        
+        ImGui::Separator();
+        ImGui::PushID("impulse");
+        {
+            static f32 k = 1.0f;
+
+            f32 t = 0.0f;
+            for(u32 i = 0; i < 32; ++i)
+            {
+                points[i] = impulse(k, t);
+                t += 1.0f / 32.0f;
+            }
+            ImGui::PlotLines("impulse", points, 32);
+            
+            ImGui::SliderFloat("k", &k, 0.0, 10.0f);
+        }
+        ImGui::PopID();
+        
+        ImGui::Separator();
+        ImGui::PushID("cubic_pulse");
+        {
+            static f32 c = 1.0f;
+            static f32 w = 1.0f;
+
+            f32 t = 0.0f;
+            for(u32 i = 0; i < 32; ++i)
+            {
+                points[i] = cubic_pulse(c, w, t);
+                t += 1.0f / 32.0f;
+            }
+            ImGui::PlotLines("cubic_pulse", points, 32);
+            
+            ImGui::SliderFloat("c", &c, 0.0, 1.0f);
+            ImGui::SliderFloat("w", &w, 0.0, 1.0f);
+        }
+        ImGui::PopID();
+        
+        ImGui::Separator();
+        ImGui::PushID("exp_sustained_impulse");
+        {
+            static f32 f = 1.0f;
+            static f32 k = 1.0f;
+
+            f32 t = 0.0f;
+            for(u32 i = 0; i < 32; ++i)
+            {
+                points[i] = exp_sustained_impulse(t, f, k);
+                t += 1.0f / 32.0f;
+            }
+            ImGui::PlotLines("exp_sustained_impulse", points, 32);
+            
+            ImGui::SliderFloat("f", &f, 0.0, 1.0f);
+            ImGui::SliderFloat("k", &k, 0.0, 10.0f);
+        }
+        ImGui::PopID();
+    }
+    
+    if(ImGui::CollapsingHeader("Colours"))
+    {
+        static u32 rgba = 0xff00ffff;
+        
+        static vec4f col = vec4f::magenta();
+        ImGui::InputFloat4("vec4f", &col.v[0]);
+        rgba = maths::vec4f_to_rgba8(col);
+        ImGui::Separator();
+        
+        ImGui::PushStyleColor(ImGuiCol_Button, rgba);
+        ImGui::Button("vec4f_to_rgba");
+        ImGui::PopStyleColor();
+        
+        vec4f result = maths::rgba8_to_vec4f(rgba);
+        ImGui::InputFloat4("rgba8_to_vec4f", &result.v[0]);
+    }
+    
     if (ImGui::CollapsingHeader("Controls"))
     {
         ImGui::Text("Alt / Option + Left Mouse Drag To Rotate");
         ImGui::Text("Cmd / Ctrl + Left Mouse Drag To Pan");
         ImGui::Text("Mouse Wheel / Scroll To Zoom");
     }
+    
     ImGui::End();
 }
 

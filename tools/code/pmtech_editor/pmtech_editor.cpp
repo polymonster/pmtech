@@ -65,7 +65,7 @@ namespace pen
         p.window_width = 1280;
         p.window_height = 720;
         p.window_title = "pmtech_editor";
-        p.window_sample_count = 8;
+        p.window_sample_count = 4;
         p.user_thread_function = editor_setup;
         p.flags = pen::e_pen_create_flags::renderer;
         p.max_renderer_commands = 1 << 20;
