@@ -101,8 +101,6 @@ namespace
 
     void voronoi_map_draw_cells(const voronoi_map* voronoi)
     {
-        // If you want to draw triangles, or relax the diagram,
-        // you can iterate over the sites and get all edges easily
         const jcv_site* sites = jcv_diagram_get_sites( &voronoi->diagram );
         
         u32 s = 8;
@@ -800,6 +798,24 @@ struct live_lib
         return true;
     }
 
+    vec3f closest_point_on_convex_hull(vec3f* hull, size_t ncp, vec3f p)
+    {
+        f32 cd = FLT_MAX;
+        vec3f cp = vec3f::zero();
+        for(u32 i = 0; i < ncp; ++i)
+        {
+            u32 n = (i+1)%ncp;
+            vec3f lp = maths::closest_point_on_line(hull[i], hull[n], p);
+            f32 d = mag2(p-lp);
+            if(d < cd)
+            {
+                cp = lp;
+                cd = d;
+            }
+        }
+        return cp;
+    }
+
     f32 convex_hull_area(vec3f* points, size_t num_points)
     {
         f32 sum = 0.0f;
@@ -1075,7 +1091,7 @@ struct live_lib
             sb_push(edge_points, p2);
         }
         u32 nep = sb_count(edge_points);
-        
+
         vec3f* inset_edge_points = nullptr;
         
         vec3f prev_line[2];
@@ -1184,7 +1200,7 @@ struct live_lib
                 sb_push(inset_edge_points2, p2);
             }
 
-            add_line(p2, p3, vec4f::blue());
+            //add_line(p2, p3, vec4f::blue());
         }
         
         inset_edge_points = inset_edge_points2;
@@ -1394,7 +1410,7 @@ struct live_lib
         for (u32 i = 0; i < num_invalid; ++i)
         {
             vec3f vc = get_convex_hull_centre(invalid_sub_hulls[i], sb_count(invalid_sub_hulls[i]));
-            draw_convex_hull(invalid_sub_hulls[i], sb_count(invalid_sub_hulls[i]), vec4f::red());
+            //draw_convex_hull(invalid_sub_hulls[i], sb_count(invalid_sub_hulls[i]), vec4f::red());
 
             vec2i igx = invalid_grid_index[i];
 
@@ -1421,26 +1437,43 @@ struct live_lib
             if (cj != -1)
                 for (u32 p = 0; p < sb_count(invalid_sub_hulls[i]); ++p)
                     sb_push(valid_sub_hulls[cj], invalid_sub_hulls[i][p]);
-
         }
+
+        f32 rad2 = (inset*inset)*4.0f;
 
         for (u32 i = 0; i < num_valid; ++i)
         {
             vec3f* joined_hull = nullptr;
             convex_hull_from_points(joined_hull, valid_sub_hulls[i], sb_count(valid_sub_hulls[i]));
-            
-            /*
-            if (i == 15)
+
+            // extra junctions
+            u32 njh = sb_count(joined_hull);
+            for(u32 j = 0; j < njh; ++j)
             {
-                sb_free(joined_hull);
-                joined_hull = nullptr;
+                u32 n = (j+1)%njh;
+                u32 p = (j-1)%njh;
 
-                convex_hull_from_points2(joined_hull, valid_sub_hulls[i], sb_count(valid_sub_hulls[i]));
+                vec3f v = normalised(joined_hull[n] - joined_hull[j]);
+                vec3f vp = normalised(joined_hull[j] - joined_hull[p]);
 
-                draw_convex_hull(joined_hull, sb_count(joined_hull), vec4f::orange());
+                vec3f perp1 = normalised(cross(up, v));
+                vec3f perp2 = normalised(cross(up, vp));
+
+                vec3f jp0 = joined_hull[j] - perp1 * inset;
+                vec3f jp1 = joined_hull[n] - perp1 * inset;
+                jp0 += normalised(jp0-jp1) * 10.0f;
+
+                vec3f jp2 = joined_hull[j] - perp2 * inset;
+                vec3f jp3 = joined_hull[p] - perp2 * inset;
+                jp2 += normalised(jp2-jp3) * 10.0f;
+
+                vec3f jvp; 
+                if(maths::line_vs_line(jp0, jp1, jp2, jp3, jvp))
+                {
+                    add_point(jvp, 0.1f, vec4f::blue());
+                    sb_push(junction_pos, jvp);
+                }
             }
-            */
-                
 
             {
                 edge** edge_strips = nullptr;
@@ -1457,27 +1490,42 @@ struct live_lib
                     {
                         auto& e1 = edge_strips[s][i];
 
+                        // road edge stip
                         if (i == ec - 1)
                         {
                             u32 nj = sb_count(junction_pos);
+                            f32 cd = FLT_MAX;
+                            u32 cj = 0;
                             for (u32 j = 0; j < nj; ++j)
                             {
-                                if (mag2(e1.start - junction_pos[j]) < (inset*inset))
+                                f32 d = mag2(e1.start - junction_pos[j]);
+                                if(d < cd)
                                 {
-                                    e1.start = junction_pos[j];
-                                }
-
-                                if (mag2(e1.end - junction_pos[j]) < (inset * inset))
-                                {
-                                    e1.end = junction_pos[j];
+                                    cd = d; cj = j;
                                 }
                             }
+
+                            if(cd < rad2)
+                                e1.start = junction_pos[cj];
+
+                            cd = FLT_MAX;
+                            cj = 0;
+                            for (u32 j = 0; j < nj; ++j)
+                            {
+                                f32 d = mag2(e1.end - junction_pos[j]);
+                                if(d < cd)
+                                {
+                                    cd = d; cj = j;
+                                }
+                            }
+
+                            if(cd < rad2)
+                                e1.end = junction_pos[cj];
                         }
                     }
                 }
 
                 draw_edge_strip_triangles(edge_strips);
-
 
                 if (mesh)
                 {
@@ -1522,8 +1570,6 @@ struct live_lib
     
     int on_update(f32 dt)
     {
-        //prims();
-
         if (!g_debug)
             return 0;
 
