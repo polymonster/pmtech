@@ -1505,8 +1505,8 @@ struct live_lib
                                 }
                             }
 
-                            if(cd < rad2)
-                                e1.start = junction_pos[cj];
+                            //if(cd < rad2)
+                                //e1.start = junction_pos[cj];
 
                             cd = FLT_MAX;
                             cj = 0;
@@ -1519,8 +1519,8 @@ struct live_lib
                                 }
                             }
 
-                            if(cd < rad2)
-                                e1.end = junction_pos[cj];
+                            //if(cd < rad2)
+                                //e1.end = junction_pos[cj];
                         }
                     }
                 }
