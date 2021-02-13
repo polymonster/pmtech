@@ -56,6 +56,11 @@ local function setup_linux()
 		"fmod",
 		"dl"
 	}
+
+	linkoptions {
+		'-Wl,-rpath=\\$$ORIGIN',
+		"-export-dynamic"
+	}
 end
 
 local function setup_win32()

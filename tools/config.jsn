@@ -169,4 +169,73 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
             ]
         }
     }
+
+    linux-editor(data): 
+    {
+        jsn_vars: {
+            data_dir: "bin/linux/data"
+            bin_dir: "bin/linux"
+            platform: "linux"
+        }
+        
+        premake: {
+            args: [
+                "gmake"
+                "--renderer=opengl"
+                "--platform_dir=linux"
+            ]
+        }
+        
+        pmfx: {
+            args: [
+                "-shader_platform glsl"
+                "-shader_version 450"
+                "-i ../assets/shaders"
+                "-o bin/linux/data/pmfx/glsl"
+                "-h shader_structs"
+                "-t temp/shaders"
+                "-source"
+            ]
+        }
+
+        make: {
+            toolchain: "make",
+            files: [
+                "build/linux/*.make"
+            ]
+            change_ext: ""
+        }
+
+        launch: {
+            cmd: "./%{target_path}"
+            files: [
+                "bin/linux"
+            ]
+        }
+
+        vscode: {
+            files: [
+                "build/linux/*.make"
+            ]
+            folders: [
+                "."
+                ".."
+            ]
+            configurations:[
+                {
+                    name: "debug"
+                    make: "../pmbuild make linux-editor %{target_name} config=debug"
+                    launch: "bin/linux/%{target_name}_d"
+                }
+                {
+                    name: "release"
+                    make: "../pmbuild make linux-editor %{target_name} config=release"
+                    launch: "bin/linux/%{target_name}"
+                }
+            ]
+            cwd: "bin/linux"
+            debugger: "gdb"
+            change_ext: ""
+        }
+    }
 }

@@ -28,15 +28,22 @@
 #else
 #define LIVE_LIB "live_lib_d.dll"
 #endif
-#else
+#elif PEN_PLATFORM_OSX
 #if NDEBUG
 #define LIVE_LIB "liblive_lib.dylib"
 #else
 #define LIVE_LIB "liblive_lib_d.dylib"
 #endif
+#elif PEN_PLATFORM_LINUX
+#if NDEBUG
+#define LIVE_LIB "liblive_lib.so"
+#else
+#define LIVE_LIB "liblive_lib_d.so"
+#endif
 #endif
 
 #define CR_HOST // required in the host only and before including cr.h
+#define CR_DEBUG
 #include "cr/cr.h"
 #include "ecs/ecs_live.h"
 
@@ -58,7 +65,7 @@ namespace pen
         p.window_width = 1280;
         p.window_height = 720;
         p.window_title = "pmtech_editor";
-        p.window_sample_count = 8;
+        p.window_sample_count = 4;
         p.user_thread_function = editor_setup;
         p.flags = pen::e_pen_create_flags::renderer;
         p.max_renderer_commands = 1 << 20;
