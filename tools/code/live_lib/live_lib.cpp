@@ -1264,10 +1264,9 @@ struct live_lib
                     vec3f* sub_hull = nullptr;
                     convex_hull_from_points(sub_hull, sub_hull_points, sp);
 
+                    // must be at least a tri
                     if(sb_count(sub_hull) < 3)
-                    {
                         continue;
-                    }
 
                     f32 area = convex_hull_area(sub_hull, sb_count(sub_hull));
                     if (area < net.params.inset)
@@ -1287,6 +1286,38 @@ struct live_lib
         }
 
         net.valid_sub_hulls = valid_sub_hulls;
+    }
+
+    void find_junctions(road_network& net)
+    {
+        // intersection point result
+        vec3f ip;
+
+        u32 num_hulls = sb_count(net.valid_sub_hulls);
+        for(u32 h = 0; h < num_hulls; ++h)
+        {
+            u32 num_points = sb_count(net.valid_sub_hulls[h]);
+            for(u32 i = 0; i < num_points; ++i)
+            {
+                // get perp of edge
+                auto& loop = net.valid_sub_hulls[h];
+                u32 n = (i+1)%num_points;
+                vec3f ve = normalised(loop[n] - loop[i]);
+                vec3f perp = cross(ve, vec3f::unit_y());
+
+                // intersect perps with the outer hull
+                vec3f junction_perps[] = {
+                    loop[i], loop[i] + perp,
+                    loop[n], loop[n] + perp,
+                };
+
+                for(u32 j = 0; j < 4; j+=2)
+                    if(line_vs_convex_hull(junction_perps[j], junction_perps[j+1], net.outer_hull, sb_count(net.outer_hull), ip))
+                    {
+                        add_line(junction_perps[j], ip, vec4f::green());
+                    }
+            }
+        }
     }
 
     road_network generate_road_network(const voronoi_map* voronoi, u32 cell, const road_network_params& params)
@@ -1387,9 +1418,10 @@ struct live_lib
         convex_hull_from_points(net.inset_hull, intersection_points, sb_count(intersection_points));
         net.inset_hull = convex_hull_tidy(net.inset_hull, sb_count(net.inset_hull), inset);
 
+        // subdidive and build roads
         get_hull_subdivision_extents(net);
-
         subdivide_as_grid(net);
+        find_junctions(net);
 
         return net;
     }
@@ -1982,13 +2014,19 @@ struct live_lib
         sb_free(edge_points);
     }
 
+    #define if_dbg_checkbox(name, def) static bool name = def; ImGui::Checkbox(#name, &name); if(name)
+
     void debug_render_road_network(const road_network& net)
     {
-        draw_convex_hull(net.outer_hull, sb_count(net.outer_hull), vec4f::yellow());
-        draw_convex_hull(net.inset_hull, sb_count(net.inset_hull), vec4f::orange());
+        if_dbg_checkbox(outer_hull, true)
+            draw_convex_hull(net.outer_hull, sb_count(net.outer_hull), vec4f::yellow());
+        
+        if_dbg_checkbox(inner_hull, true)
+            draw_convex_hull(net.inset_hull, sb_count(net.inset_hull), vec4f::orange());
 
-        for(u32 i = 0; i < 2; ++i)
-            add_line(net.extent_axis_points[i].p1, net.extent_axis_points[i].p2, vec4f::red());
+        if_dbg_checkbox(extent_axis, false)
+            for(u32 i = 0; i < 2; ++i)
+                add_line(net.extent_axis_points[i].p1, net.extent_axis_points[i].p2, vec4f::red());
 
         u32 num_sub_hulls = sb_count(net.valid_sub_hulls);
         for(u32 i = 0; i < num_sub_hulls; ++i)
@@ -2015,6 +2053,12 @@ struct live_lib
             rp.subdiv_size = 4.0f;
 
             road_network net = generate_road_network(voronoi, 4, rp);
+            debug_render_road_network(net);
+
+            net = generate_road_network(voronoi, 3, rp);
+            debug_render_road_network(net);
+
+            net = generate_road_network(voronoi, 2, rp);
             debug_render_road_network(net);
 
         }
