@@ -219,17 +219,6 @@ struct live_lib
             vec4f::magenta(),
             vec4f::cyan()
         };
-
-        if (!g_mesh)
-        {
-            return;
-        }
-        
-        for(u32 i = 0; i < voronoi->diagram.numsites; ++i)
-        {
-            test_road(voronoi, i, true);
-            PEN_LOG("generated %i", i);
-        }
     }
     
     struct edge
@@ -398,6 +387,7 @@ struct live_lib
     int on_load(live_context* ctx)
     {
         init(ctx);
+        generate();
                 
         return 0;
     }
@@ -631,26 +621,6 @@ struct live_lib
         bend(s_edge_strips, 20.0f, vec2f(-theta, 0.0));
         
         mesh_from_strips("building", s_edge_strips);
-        
-        /*
-        u32 num_strips = sb_count(s_edge_strips);
-        for(u32 s = 0; s < num_strips; ++s)
-        {
-            u32 ec = sb_count(s_edge_strips[s]);
-            for(u32 i = 0; i < ec; ++i)
-            {
-                auto& e1 = s_edge_strips[s][i];
-                
-                if(i < ec-1)
-                {
-                    auto& e2 = s_edge_strips[s][i+1];
-                    
-                    add_triangle(e1.start, e1.end, e2.start);
-                    add_triangle(e2.start, e2.end, e1.end);
-                }
-            }
-        }
-        */
     }
     
     void draw_edge_strip_triangles(edge** edge_strips)
@@ -1033,7 +1003,6 @@ struct live_lib
         sb_push(edge_strips[0], e);
         extrude(edge_strips[0], at * scale * 2.0f);
         extrude(edge_strips[0], vec3f::unit_y() * -scale * 10.0f * height);
-        extrude(edge_strips[0], at * scale * 3.0f);
                 
         vec3f prev_vl = right;
                 
@@ -1081,6 +1050,14 @@ struct live_lib
         f32 subdiv_size = 0.4f;
     };
 
+    struct road_section
+    {
+        segment entry;
+        segment exit;
+        vec3f   dir;
+        u32*    destinations = nullptr;
+    };
+
     struct road_network
     {
         road_network_params params = {};
@@ -1093,6 +1070,8 @@ struct live_lib
         vec3f               right = vec3f::zero();
         vec3f               at = vec3f::zero();
         vec3f**             valid_sub_hulls = nullptr;
+        road_section*       outer_road_sections = nullptr;
+        road_section*       inner_road_sections = nullptr;
     };
 
     void get_hull_subdivision_extents(road_network& net)
@@ -1285,13 +1264,59 @@ struct live_lib
             }
         }
 
-        net.valid_sub_hulls = valid_sub_hulls;
+        // join small hulls to neighbours
+        u32 num_invalid = sb_count(invalid_sub_hulls);
+        u32 num_valid = sb_count(valid_sub_hulls);
+        for (u32 i = 0; i < num_invalid; ++i)
+        {
+            vec3f vc = get_convex_hull_centre(invalid_sub_hulls[i], sb_count(invalid_sub_hulls[i]));
+            //draw_convex_hull(invalid_sub_hulls[i], sb_count(invalid_sub_hulls[i]), vec4f::red());
+
+            vec2i igx = invalid_grid_index[i];
+
+            // find closest hull to join with
+            f32 cd = FLT_MAX;
+            u32 cj = -1;
+            for (u32 j = 0; j < num_valid; ++j)
+            {
+                vec2i vgx = valid_grid_index[j];
+
+                if (abs(igx.x - vgx.x) + abs(igx.y - vgx.y) > 1)
+                    continue;
+
+                vec3f ic = get_convex_hull_centre(valid_sub_hulls[j], sb_count(valid_sub_hulls[j]));
+                f32 d = mag2(vc - ic);
+
+                if (d < cd)
+                {
+                    cd = d;
+                    cj = j;
+                }
+            }
+
+            if (cj != -1)
+                for (u32 p = 0; p < sb_count(invalid_sub_hulls[i]); ++p)
+                    sb_push(valid_sub_hulls[cj], invalid_sub_hulls[i][p]);
+        }
+
+        // 
+        vec3f** output_sub_hulls = nullptr;
+        for(u32 i = 0; i < num_valid; ++i)
+        {
+            vec3f* combined_hull = nullptr;
+            convex_hull_from_points(combined_hull, valid_sub_hulls[i], sb_count(valid_sub_hulls[i]));
+            sb_push(output_sub_hulls, combined_hull);
+        }
+
+        net.valid_sub_hulls = output_sub_hulls;
     }
 
     void find_junctions(road_network& net)
     {
         // intersection point result
         vec3f ip;
+
+        road_section* road_sections = nullptr;
 
         u32 num_hulls = sb_count(net.valid_sub_hulls);
         for(u32 h = 0; h < num_hulls; ++h)
@@ -1307,17 +1332,235 @@ struct live_lib
 
                 // intersect perps with the outer hull
                 vec3f junction_perps[] = {
-                    loop[i], loop[i] + perp,
-                    loop[n], loop[n] + perp,
+                    loop[i] + perp * 0.2f, loop[i] + perp,
+                    loop[n] + perp * 0.2f, loop[n] + perp,
                 };
 
-                for(u32 j = 0; j < 4; j+=2)
+                vec3f ips[2] = {
+                    junction_perps[1],
+                    junction_perps[3]
+                };
+
+                bool outer_road = false;
+                for(u32 j = 0; j < 4; j +=2)
+                {
                     if(line_vs_convex_hull(junction_perps[j], junction_perps[j+1], net.outer_hull, sb_count(net.outer_hull), ip))
                     {
-                        add_line(junction_perps[j], ip, vec4f::green());
+                        outer_road = true;
+                        ips[j/2] = ip;
                     }
+                }
+
+                if(outer_road)
+                {
+                    road_section section;
+                    section.entry = {junction_perps[0], ips[0]};
+                    section.exit = {junction_perps[2], ips[1]};
+                    section.dir = ve;
+                    sb_push(road_sections, section);
+                }
+                else
+                {
+                    // intersect perps with the outer hull
+                    vec3f internal_junction_perps[] = {
+                        loop[i] + perp * 0.2f, loop[i] + perp * net.params.inset,
+                        loop[n] + perp * 0.2f, loop[n] + perp * net.params.inset,
+                    };
+
+                    road_section section;
+                    section.entry.p1 = internal_junction_perps[0];
+                    section.entry.p2 = internal_junction_perps[1];
+                    section.exit.p1 = internal_junction_perps[2];
+                    section.exit.p2 = internal_junction_perps[3];
+                    section.dir = ve;
+
+                    sb_push(road_sections, section);
+                }
             }
         }
+
+        // connect
+        u32 num_inner_sections = sb_count(road_sections);
+        for(u32 i = 0; i < num_inner_sections; ++i)
+        {
+            vec3f vray = road_sections[i].dir;
+            vec3f ray_pos = road_sections[i].exit.p1 + (road_sections[i].exit.p2 - road_sections[i].exit.p1) * 0.5f;
+
+            f32 cd = FLT_MAX;
+            s32 cj = -1;
+            vec3f cip = vec3f::zero();
+
+            for(u32 j = 0; j < num_inner_sections; ++j)
+            {
+                if(i != j)
+                {
+                    if(maths::line_vs_line(ray_pos, ray_pos + vray * 100.0f, road_sections[j].entry.p1, road_sections[j].entry.p2, ip))
+                    {
+                        f32 d = mag2(ip - ray_pos);
+                        if(d < cd)
+                        {
+                            cj = j;
+                            cd = d;
+                            cip = ip;
+                        }
+                    }                    
+                }
+            }
+
+            if(cj != -1 && 0)
+            {
+                road_sections[i].entry.p1 = 
+                road_sections[i].entry.p2 =
+                road_sections[i].exit.p1 = 
+                road_sections[i].exit.p2 = vec3f::zero();
+            }
+
+            if(cj >= 0)
+            {
+                sb_push(road_sections[i].destinations, cj);
+            }
+            
+            // check intersection with inset hull
+            u32 num_inset_hull_points = sb_count(net.inset_hull);
+            for(u32 j = 0; j < num_inset_hull_points; ++j)
+            {
+                u32 n = (j+1)%num_inset_hull_points;
+
+                vec3f& p1 = road_sections[i].entry.p1;
+                vec3f& p2 = road_sections[i].exit.p1;
+
+                // TODO: function
+                if(maths::line_vs_line(
+                    p1, p2, net.inset_hull[j], net.inset_hull[n], ip))
+                {
+                    f32 d1 = mag2(road_sections[i].entry.p1 - ip);
+                    f32 d2 = mag2(road_sections[i].exit.p1 - ip);
+
+                    if(d1 < d2)
+                    {
+                        road_sections[i].entry.p1 = ip;
+                    }
+                    else
+                    {
+                        road_sections[i].exit.p1 = ip;
+                    }
+                }
+
+                vec3f& pp1 = road_sections[i].entry.p2;
+                vec3f& pp2 = road_sections[i].exit.p2;
+
+                if(maths::line_vs_line(
+                    pp1, pp2, net.inset_hull[j], net.inset_hull[n], ip))
+                {
+                    f32 d1 = mag2(road_sections[i].entry.p2 - ip);
+                    f32 d2 = mag2(road_sections[i].exit.p2 - ip);
+
+                    if(d1 < d2)
+                    {
+                        road_sections[i].entry.p2 = ip;
+                    }
+                    else
+                    {
+                        road_sections[i].exit.p2 = ip;
+                    }
+                }
+            }
+        }
+
+        net.inner_road_sections = road_sections;
+    }
+
+    void generate_curb_mesh(const road_network& net, ecs_scene* scene, u32 cell)
+    {
+        u32 num_hulls = sb_count(net.valid_sub_hulls);
+        for(u32 i = 0; i < num_hulls; ++i)
+        {
+            edge** edge_strips = nullptr;
+            sb_push(edge_strips, nullptr);
+
+            curb(edge_strips, net.valid_sub_hulls[i]);
+
+            pen::renderer_new_frame();
+
+            Str f;
+            f.appendf("cell_%i_%i", cell, i);
+            mesh_from_strips(f.c_str(), edge_strips);
+
+            auto default_material = get_material_resource(PEN_HASH("default_material"));
+            auto geom = get_geometry_resource(PEN_HASH(f.c_str()));
+            u32  new_prim = get_new_entity(scene);
+            scene->names[new_prim] = f;
+            scene->names[new_prim].appendf("%i", new_prim);
+            scene->transforms[new_prim].rotation = quat();
+            scene->transforms[new_prim].scale = vec3f::one();
+            scene->transforms[new_prim].translation = vec3f::zero();
+            scene->entities[new_prim] |= e_cmp::transform;
+            scene->parents[new_prim] = new_prim;
+            instantiate_geometry(geom, scene, new_prim);
+            instantiate_material(default_material, scene, new_prim);
+            instantiate_model_cbuffer(scene, new_prim);
+
+            pen::thread_sleep_ms(1);
+        }
+    }
+
+    void generate_road_mesh(const road_network& net, ecs_scene* scene, u32 cell)
+    {
+        vertex_model* verts = nullptr;
+
+        const road_section* road_sections[] = {
+            net.inner_road_sections,
+            net.outer_road_sections
+        };
+
+        for(u32 type = 0; type < 2; ++type)
+        {
+            u32 num_sections = sb_count(road_sections[type]);
+            for(u32 i = 0; i < num_sections; ++i)
+            {
+                const auto& section = road_sections[type][i];
+
+                vertex_model v[6];
+                v[0].pos.xyz = section.entry.p1;
+                v[1].pos.xyz = section.exit.p1;
+                v[2].pos.xyz = section.entry.p2;
+
+                v[3].pos.xyz = section.entry.p2;
+                v[4].pos.xyz = section.exit.p1;
+                v[5].pos.xyz = section.exit.p2;
+
+                for(u32 vi = 0; vi < 6; ++vi)
+                {
+                    v[vi].pos.w = 1.0f;
+                    v[vi].normal = vec4f::unit_y();
+                    v[vi].tangent = vec4f::unit_x();
+                    v[vi].bitangent = vec4f::unit_z();
+
+                    sb_push(verts, v[vi]);
+                }
+            }
+        }
+
+        Str f;
+        f.appendf("road_%i", cell);
+        create_primitive_resource_faceted(f, verts, sb_count(verts));
+
+        auto default_material = get_material_resource(PEN_HASH("default_material"));
+        auto geom = get_geometry_resource(PEN_HASH(f.c_str()));
+        u32  new_prim = get_new_entity(scene);
+        scene->names[new_prim] = f;
+        scene->names[new_prim].appendf("%i", new_prim);
+        scene->transforms[new_prim].rotation = quat();
+        scene->transforms[new_prim].scale = vec3f::one();
+        scene->transforms[new_prim].translation = vec3f::zero();
+        scene->entities[new_prim] |= e_cmp::transform;
+        scene->parents[new_prim] = new_prim;
+        instantiate_geometry(geom, scene, new_prim);
+        instantiate_material(default_material, scene, new_prim);
+        instantiate_model_cbuffer(scene, new_prim);
+
+        pen::thread_sleep_ms(1);
+        
     }
 
     road_network generate_road_network(const voronoi_map* voronoi, u32 cell, const road_network_params& params)
@@ -1423,598 +1666,59 @@ struct live_lib
         subdivide_as_grid(net);
         find_junctions(net);
 
+        generate_curb_mesh(net, scene, cell);
+        generate_road_mesh(net, scene, cell);
+
         return net;
     }
 
-    void test_road(const voronoi_map* voronoi, u32 cell, bool mesh)
+    #define if_dbg_checkbox(name, def) static bool name = def; ImGui::Checkbox(#name, &name); if(name)
+
+    void debug_render_road_section(const road_section& section, const road_section* sections)
     {
-        // build from cell
-        const jcv_site* sites = jcv_diagram_get_sites( &voronoi->diagram );
-        const jcv_site* site = &sites[cell];
-        const jcv_graphedge* jvce = site->edges;
-                
-        vec3f* edge_points = nullptr;
-        while( jvce )
-        {
-            vec3f p2 = jcv_to_vec(jvce->pos[1]);
-            jvce = jvce->next;
+        vec3f* points = nullptr;
+        sb_push(points, section.exit.p1);
+        sb_push(points, section.exit.p2);
+        sb_push(points, section.entry.p1);
+        sb_push(points, section.entry.p2);
 
-            sb_push(edge_points, p2);
-        }
-        u32 nep = sb_count(edge_points);
+        vec3f* vsection = nullptr;
+        convex_hull_from_points(vsection, points, sb_count(points));
+        //draw_convex_hull(vsection, sb_count(vsection));
 
-        vec3f* inset_edge_points = nullptr;
-        vec3f* cell_perps = nullptr;
-        
-        vec3f prev_line[2];
-        vec3f first_line[2];
-        vec3f prev_perp;
-        
-        f32 inset = 0.5f;
-        f32 major_inset = 0.75f;
-        
-        // inset edges
-        vec3f* outer_hull = nullptr;
-        vec3f* inset_overlapped = nullptr;
-        for(s32 i = nep-1; i >= 0; i--)
-        {
-            s32 n = i-1 < 0 ? nep-1 : i-1;
-            
-            vec3f p1 = edge_points[i];
-            vec3f p2 = edge_points[n];
-            
-            add_line(p1, p2, vec4f::yellow());
-            
-            vec3f vl = normalised(vec3f(p2-p1));
-            
-            vec3f perp = cross(vl, vec3f::unit_y());
-            
-            perp *= major_inset;
-            
-            vec3f inset_edge0 = p1 - perp;
-            vec3f inset_edge1 = p2 - perp;
-            
-            sb_push(inset_overlapped, inset_edge0);
-            sb_push(inset_overlapped, inset_edge1);
-            sb_push(outer_hull, p1);
+        sb_free(vsection);
+        sb_free(points);
 
-            sb_push(cell_perps, cross(vl, vec3f::unit_y()));
-        }
-        
-        vec3f* intersection_points = nullptr;
-        u32 no = sb_count(inset_overlapped);
-        for (u32 i = 0; i < no; i+=2)
+        add_line(section.exit.p1, section.exit.p2, vec4f::red());
+
+        if(section.destinations)
         {
-            for (u32 j = 0; j < no; j += 2)
+            u32 num_destinations = sb_count(section.destinations);
+            for(u32 i = 0; i < num_destinations; ++i)
             {
-                if (i == j)
-                    continue;
+                auto dest = sections[section.destinations[i]];
+                vec3f start = section.exit.p1 + ((section.exit.p2 - section.exit.p1) * 0.5f);
+                vec3f end = dest.entry.p1 + ((dest.entry.p2 - dest.entry.p1) * 0.5f);
 
-                vec3f p0 = inset_overlapped[i];
-                vec3f p1 = inset_overlapped[i + 1];
-
-                vec3f pn0 = inset_overlapped[j];
-                vec3f pn1 = inset_overlapped[j + 1];
-
-                if (mag(p1 - p0) < major_inset)
-                    continue;
-
-                if (mag(pn1 - pn0) < major_inset)
-                    continue;
-
-                // extend slightly
-                vec3f xt = normalised(pn1 - pn0);
-                pn0 -= xt * inset;
-                pn1 += xt * inset;
-
-                vec3f ip;
-                if (maths::line_vs_line(p0, p1, pn0, pn1, ip))
-                {
-                    sb_push(intersection_points, ip);
-                }
+                add_line(start, end, vec4f::blue());
             }
         }
-
-        if (!intersection_points)
-            return;
-
-        convex_hull_from_points(inset_edge_points, intersection_points, sb_count(intersection_points));
-
-        // weld points that are less than inset apart
-        nep = sb_count(inset_edge_points);
-        for(s32 i = 0; i < nep; i++)
-        {
-            for(s32 j = i + 1; j < nep; j++)
-            {
-                vec3f v = inset_edge_points[i] - inset_edge_points[j];
-                if(mag2(v))
-                {
-                    if(mag(v) < inset)
-                    {
-                        inset_edge_points[j] = inset_edge_points[i];
-                    }
-                }
-            }
-        }
-        
-        // strip out dead edges
-        vec3f* inset_edge_points2 = nullptr;
-        for(s32 i = 0; i < nep; i++)
-        {
-            s32 n = (i+1)%nep;
-            
-            vec3f p2 = inset_edge_points[i];
-            vec3f p3 = inset_edge_points[n];
-            
-            if(mag2(p3-p2))
-            {
-                sb_push(inset_edge_points2, p2);
-            }
-        }
-        
-        inset_edge_points = inset_edge_points2;
-        
-        vec3f right = normalised(inset_edge_points[1] - inset_edge_points[0]);
-        vec3f up = vec3f::unit_y();
-        vec3f at = normalised(cross(right, up));
-                
-        edge e;
-        e.start = inset_edge_points[0];
-        e.end = inset_edge_points[1];
-        e.mat = mat4::create_identity();
-        
-        nep = sb_count(inset_edge_points);
-        
-        // subdivide cell
-        
-        vec3f side_start = e.start - right * 1000.0f;
-        vec3f side_end = e.start + right * 1000.0f;
-        
-        // get extents in right axis
-        
-        f32 mind = FLT_MAX;
-        f32 maxd = -FLT_MAX;
-        vec3f mincp;
-        vec3f maxcp;
-        
-        for(s32 i = 0; i < nep; i++)
-        {
-            f32 d  = maths::distance_on_line(side_start, side_end, inset_edge_points[i]);
-            if(d > maxd)
-            {
-                maxd = d;
-                maxcp = maths::closest_point_on_ray(side_start, normalised(side_end - side_start), inset_edge_points[i]);
-            }
-            
-            if(d < mind)
-            {
-                mind = d;
-                mincp = maths::closest_point_on_ray(side_start, normalised(side_end - side_start), inset_edge_points[i]);
-            }
-        }
-        
-        vec3f axis_start[2];
-        vec3f axis_end[2];
-        
-        axis_start[0] = mincp;
-        axis_end[0] = maxcp;
-        
-        // get extents in at axis
-        
-        vec3f side_perp_start = mincp - at * 1000.0f;
-        vec3f side_perp_end = mincp + at * 1000.0f;
-        
-        axis_start[1] = mincp;
-        
-        maxd = -FLT_MAX;
-        mind = FLT_MAX;
-        for(s32 i = 0; i < nep; i++)
-        {
-            f32 d  = maths::distance_on_line(side_perp_start, side_perp_end, inset_edge_points[i]);
-            if(d < mind)
-            {
-                mind = d;
-                mincp = maths::closest_point_on_ray(side_perp_start, normalised(side_perp_end - side_perp_start), inset_edge_points[i]);
-            }
-        }
-        
-        axis_end[1] = mincp;
-        
-        // subdivide as grid
-        f32 axis_lengths[2] = {
-            mag(axis_end[0] - axis_start[0]),
-            mag(axis_end[1] - axis_start[1]),
-        };
-        
-        vec3f vaxis[2] = {
-            normalised(axis_end[0] - axis_start[0]),
-            normalised(axis_end[1] - axis_start[1]),
-        };
-        
-        f32 subdiv_size = 4.0f;
-        
-        u32 x = axis_lengths[0] / subdiv_size;
-        u32 y = axis_lengths[1] / subdiv_size;
-        
-        f32 half_size = (subdiv_size * 0.5f) - inset;
-        f32 size = half_size + inset;
-
-        bool valid = false;
-        u32 count = 0;
-
-        vec3f** valid_sub_hulls = nullptr;
-        vec3f** invalid_sub_hulls = nullptr;
-
-        vec2i* valid_grid_index = nullptr;
-        vec2i* invalid_grid_index = nullptr;
-
-        vec3f* junction_pos = nullptr;
-        
-        for(u32 i = 0; i < x+1; ++i)
-        {
-            for(u32 j = 0; j < y+1; ++j)
-            {
-                f32 xt = (f32)i * subdiv_size;
-                f32 yt = (f32)j * subdiv_size;
-                
-                vec3f py = axis_start[1] + vaxis[1] * (yt + half_size);
-                vec3f px = py + vaxis[0] * (xt + half_size);
-                
-                vec3f corners[4] = {
-                    px - vaxis[0] * half_size - vaxis[1] * half_size,
-                    px + vaxis[0] * half_size - vaxis[1] * half_size,
-                    px + vaxis[0] * half_size + vaxis[1] * half_size,
-                    px - vaxis[0] * half_size + vaxis[1] * half_size,
-                };
-
-                vec3f junctions[4] = {
-                    px - vaxis[0] * size - vaxis[1] * size,
-                    px + vaxis[0] * size - vaxis[1] * size,
-                    px + vaxis[0] * size + vaxis[1] * size,
-                    px - vaxis[0] * size + vaxis[1] * size,
-                };
-
-                for (u32 jj = 0; jj < 4; ++jj)
-                {
-                    if (point_inside_convex_hull(inset_edge_points, sb_count(inset_edge_points), up, junctions[jj]))
-                    {
-                        sb_push(junction_pos, junctions[jj]);
-                        //add_point(junctions[jj], 0.1f, vec4f::cyan());
-                    }
-                }
-                
-                vec3f* sub_hull_points = nullptr;
-                
-                for(u32 c = 0; c < 4; ++c)
-                {
-                    u32 d = (c + 1) % 4;
-                    
-                    bool inside = false;
-
-                    if(point_inside_convex_hull(inset_edge_points, sb_count(inset_edge_points), up, corners[c]))
-                    {
-                        valid = true;
-                        inside = true;
-                        sb_push(sub_hull_points, corners[c]);
-                    }
-                    else if(point_inside_convex_hull(inset_edge_points, sb_count(inset_edge_points), up, corners[d]))
-                    {
-                        valid = true;
-                        inside = true;
-                        sb_push(sub_hull_points, corners[d]);
-                    }
-                    
-                    // intersect with hull
-                    for(s32 i = 0; i < nep; i++)
-                    {
-                        s32 n = (i + 1) % nep;
-                        
-                        vec3f p0 = inset_edge_points[i];
-                        vec3f p1 = inset_edge_points[n];
-
-                        vec3f ip;
-                        if(maths::line_vs_line(p0, p1, corners[c], corners[d], ip))
-                        {
-                            sb_push(sub_hull_points, ip);
-                        }
-                        
-                        if(point_inside_convex_hull(corners, 4, up, p0))
-                        {
-                            sb_push(sub_hull_points, p0);
-                        }
-                    }
-                }
-                
-                u32 sp = sb_count(sub_hull_points);
-                if(sp > 0)
-                {                    
-                    vec3f* sub_hull = nullptr;
-                    convex_hull_from_points(sub_hull, sub_hull_points, sp);
-
-                    if(sb_count(sub_hull) < 3)
-                    {
-                        continue;
-                    }
-
-                    f32 area = convex_hull_area(sub_hull, sb_count(sub_hull));
-                    if (area < inset)
-                    {
-                        sb_push(invalid_sub_hulls, sub_hull);
-                        sb_push(invalid_grid_index, vec2i(i, j));
-                        continue;
-                    }
-                    else
-                    {
-                        sb_push(valid_sub_hulls, sub_hull);
-                        sb_push(valid_grid_index, vec2i(i, j));
-                    }
-                    count++;
-                }
-            }
-        }
-
-        // join small hulls to neighbours
-        u32 num_invalid = sb_count(invalid_sub_hulls);
-        u32 num_valid = sb_count(valid_sub_hulls);
-        for (u32 i = 0; i < num_invalid; ++i)
-        {
-            vec3f vc = get_convex_hull_centre(invalid_sub_hulls[i], sb_count(invalid_sub_hulls[i]));
-            //draw_convex_hull(invalid_sub_hulls[i], sb_count(invalid_sub_hulls[i]), vec4f::red());
-
-            vec2i igx = invalid_grid_index[i];
-
-            // find closest hull to join with
-            f32 cd = FLT_MAX;
-            u32 cj = -1;
-            for (u32 j = 0; j < num_valid; ++j)
-            {
-                vec2i vgx = valid_grid_index[j];
-
-                if (abs(igx.x - vgx.x) + abs(igx.y - vgx.y) > 1)
-                    continue;
-
-                vec3f ic = get_convex_hull_centre(valid_sub_hulls[j], sb_count(valid_sub_hulls[j]));
-                f32 d = mag2(vc - ic);
-
-                if (d < cd)
-                {
-                    cd = d;
-                    cj = j;
-                }
-            }
-
-            if (cj != -1)
-                for (u32 p = 0; p < sb_count(invalid_sub_hulls[i]); ++p)
-                    sb_push(valid_sub_hulls[cj], invalid_sub_hulls[i][p]);
-        }
-
-        f32 rad2 = (inset*inset)*4.0f;
-
-        // pavements / blocks
-        vec3f** sub_hull_connect_loops = nullptr;
-        for (u32 i = 0; i < num_valid; ++i)
-        {
-            vec3f* joined_hull = nullptr;
-            convex_hull_from_points(joined_hull, valid_sub_hulls[i], sb_count(valid_sub_hulls[i]));
-
-            {
-                edge** edge_strips = nullptr;
-                sb_push(edge_strips, nullptr);
-
-                curb(edge_strips, joined_hull);
-
-                // traffic junctions
-                vec3f* sub_hull_loop = nullptr;
-                u32 num_strips = sb_count(edge_strips);
-                for(u32 s = 0; s < num_strips; ++s)
-                {
-                    u32 ec = sb_count(edge_strips[s]);
-                    auto& e1 = edge_strips[s][ec-2];
-                    sb_push(sub_hull_loop, e1.start);
-                }
-
-                sb_push(sub_hull_connect_loops, sub_hull_loop);
-
-                draw_edge_strip_triangles(edge_strips);
-
-                if (mesh)
-                {
-                    pen::renderer_new_frame();
-
-                    Str f;
-                    f.appendf("cell_%i_%i", cell, count);
-                    mesh_from_strips(f.c_str(), edge_strips);
-
-                    auto default_material = get_material_resource(PEN_HASH("default_material"));
-                    auto geom = get_geometry_resource(PEN_HASH(f.c_str()));
-                    u32  new_prim = get_new_entity(scene);
-                    scene->names[new_prim] = f;
-                    scene->names[new_prim].appendf("%i", new_prim);
-                    scene->transforms[new_prim].rotation = quat();
-                    scene->transforms[new_prim].scale = vec3f::one();
-                    scene->transforms[new_prim].translation = vec3f::zero();
-                    scene->entities[new_prim] |= e_cmp::transform;
-                    scene->parents[new_prim] = new_prim;
-                    instantiate_geometry(geom, scene, new_prim);
-                    instantiate_material(default_material, scene, new_prim);
-                    instantiate_model_cbuffer(scene, new_prim);
-
-                    pen::thread_sleep_ms(1);
-                }
-
-                u32 ns = sb_count(edge_strips);
-                for (u32 s = 0; s < ns; ++s)
-                {
-                    sb_free(edge_strips[s]);
-                }
-
-                sb_free(edge_strips);
-            }
-            
-            sb_free(joined_hull);
-        }
-
-        // find junctions
-        struct segment
-        {
-            vec3f p1, p2;
-        };
-
-        segment* junction_segments = nullptr;
-
-        u32 sc = sb_count(sub_hull_connect_loops);
-        for(u32 i = 0; i < sc; ++i)
-        {
-            //draw_convex_hull(sub_hull_connect_loops[i], sb_count(sub_hull_connect_loops[i]));
-            auto& loop = sub_hull_connect_loops[i];
-
-            u32 num_sides = sb_count(loop);
-            for(u32 k = 0; k < num_sides; ++k)
-            {
-                u32 knext = (k+1)%num_sides;
-
-                vec3f ve = normalised(loop[knext] - loop[k]);
-                vec3f out = cross(ve, vec3f::unit_y());
-
-                f32 dpa = abs(dot(out, at));
-                f32 dpr = abs(dot(out, right));
-                if(dpa < 0.001f || dpr < 0.001f)
-                {
-                    for(u32 j = 0; j < sc; ++j)
-                    {
-                        if(i != j)
-                        {
-                            u32 scl = sb_count(sub_hull_connect_loops[j]);
-                            vec3f ip;
-
-                            if(line_vs_convex_hull(loop[k], loop[k] + out, sub_hull_connect_loops[j], scl, ip))
-                            {
-                                segment seg = {loop[k], ip};
-                                sb_push(junction_segments, seg);
-                            }
-
-                            if(line_vs_convex_hull(loop[knext], loop[knext] + out, sub_hull_connect_loops[j], scl, ip))
-                            {
-                                segment seg = {loop[knext], ip};
-                                sb_push(junction_segments, seg);
-                            }
-                        }
-                    }
-                }
-
-                // also check against outer hull
-                vec3f ip;
-                if(line_vs_convex_hull_ex(loop[k], loop[k] + out, edge_points, sb_count(edge_points), ip))
-                {
-                    segment seg = {loop[k], ip};
-                    sb_push(junction_segments, seg);
-                }
-
-                if(line_vs_convex_hull_ex(loop[knext], loop[knext] + out, edge_points, sb_count(edge_points), ip))
-                {
-                    segment seg = {loop[knext], ip};
-                    sb_push(junction_segments, seg);
-                }
-            }
-        }
-
-        static s32 debug_single = 102;
-        ImGui::InputInt("Single Junction", &debug_single);
-
-        // for each junction find where they connect to
-        u32 nj = sb_count(junction_segments);
-        for(u32 i = 0; i < nj; ++i)
-        {
-            if(i != -1 && i != debug_single)
-                continue;
-
-            vec3f vj = normalised(junction_segments[i].p2 - junction_segments[i].p1);
-            vec3f vr = cross(vj, vec3f::unit_y());
-            vec3f mid = junction_segments[i].p1 + (junction_segments[i].p2 - junction_segments[i].p1) * 0.5f;
-
-            f32 dirs[] = {
-                1.0f,
-                -1.0f
-            };
-
-            for(auto& dir : dirs)
-            {
-                f32 cd = FLT_MAX;
-                u32 ci = -1;
-                vec3f cp = vec3f::flt_max();
-                for(u32 j = 0; j < nj; ++j)
-                {
-                    if(j == i)
-                        continue;
-
-                    auto& seg = junction_segments[j];
-                    vec3f ip;
-
-                    seg.p1.y = 0.0f;
-                    seg.p2.y = 0.0f;
-                    mid.y = 0.0f;
-                    vr.y = 0.0f;
-                    vec3f end = mid + vr * 1000.0f * dir;
-                    end.y = 0.0f;
-
-                    if(maths::line_vs_line(seg.p1, seg.p2, mid, end, ip))
-                    {
-                        f32 d = dist(mid, ip);
-                        if(d < cd && d > 0.1f)
-                        {
-                            cd = d;
-                            ci = j;
-                            cp = ip;
-                        }
-                    }
-                }
-
-                if(ci != -1)
-                {
-                    auto& seg1 = junction_segments[ci];
-                    auto& seg2 = junction_segments[i];
-
-                    add_line(seg1.p1, seg1.p2, vec4f::blue());
-                    add_line(seg2.p1, seg2.p2, vec4f::magenta());
-                }
-                else
-                {
-                    auto& seg1 = junction_segments[i];
-                    add_line(seg1.p1, seg1.p2, vec4f::red());
-
-                    vec3f top = seg1.p1;
-                    vec3f end = top + vr * 1000.0f * dir;
-                    vec3f ip1;
-                    if(line_vs_convex_hull(top, end, edge_points, sb_count(edge_points), ip1))
-                    {   
-                        //add_point(ip, 0.1f, vec4f::green());
-                    }
-
-                    vec3f bottom = seg1.p2;
-                    end = bottom + vr * 1000.0f * dir;
-                    vec3f ip2;
-                    if(line_vs_convex_hull(bottom, end, edge_points, sb_count(edge_points), ip2))
-                    {   
-                        //add_point(ip, 0.1f, vec4f::green());
-                    }
-
-                    add_line(ip1, ip2, vec4f::magenta());
-                }
-            }
-        }
-
-        for(u32 i = 0; i < sc; ++i)
-        {
-            sb_free(sub_hull_connect_loops[i]);
-        }
-
-        sb_free(sub_hull_connect_loops);
-        sb_free(inset_overlapped);
-        sb_free(outer_hull);
-        sb_free(edge_points);
     }
 
-    #define if_dbg_checkbox(name, def) static bool name = def; ImGui::Checkbox(#name, &name); if(name)
+    void debug_render_road_sections(const road_network& net)
+    {
+        u32 num_outer_sections = sb_count(net.outer_road_sections);
+        for(u32 i = 0; i < num_outer_sections; ++i)
+        {
+            debug_render_road_section(net.outer_road_sections[i], net.outer_road_sections);
+        }
+
+        u32 num_inner_sections = sb_count(net.inner_road_sections);
+        for(u32 i = 0; i < num_inner_sections; ++i)
+        {
+            debug_render_road_section(net.inner_road_sections[i], net.inner_road_sections);
+        }
+    }
 
     void debug_render_road_network(const road_network& net)
     {
@@ -2028,9 +1732,23 @@ struct live_lib
             for(u32 i = 0; i < 2; ++i)
                 add_line(net.extent_axis_points[i].p1, net.extent_axis_points[i].p2, vec4f::red());
 
-        u32 num_sub_hulls = sb_count(net.valid_sub_hulls);
-        for(u32 i = 0; i < num_sub_hulls; ++i)
-            draw_convex_hull(net.valid_sub_hulls[i], sb_count(net.valid_sub_hulls[i]), vec4f::magenta());
+        debug_render_road_sections(net);
+    }
+
+    road_network* nets;
+    void generate()
+    {
+        road_network_params rp;
+        rp.inset = 0.5f;
+        rp.major_inset = 0.75f;
+        rp.subdiv_size = 4.0f;
+
+        for(u32 i = 0; i < voronoi->diagram.numsites; ++i)
+        {
+            road_network net = generate_road_network(voronoi, i, rp);
+            sb_push(nets, net);
+            PEN_LOG("generated %i", i);
+        }
     }
     
     int on_update(f32 dt)
@@ -2043,29 +1761,13 @@ struct live_lib
         
         if(test_single != -1)
         {
-            //test_road(voronoi, 4, false);
-            //test_road(voronoi, 3, false);
-            //test_road(voronoi, 2, false);
-
-            road_network_params rp;
-            rp.inset = 0.5f;
-            rp.major_inset = 0.75f;
-            rp.subdiv_size = 4.0f;
-
-            road_network net = generate_road_network(voronoi, 4, rp);
-            debug_render_road_network(net);
-
-            net = generate_road_network(voronoi, 3, rp);
-            debug_render_road_network(net);
-
-            net = generate_road_network(voronoi, 2, rp);
-            debug_render_road_network(net);
-
+            debug_render_road_network(nets[test_single]);
         }
         else
         {
-            for(u32 i = 0; i < voronoi->diagram.numsites; ++i)
-                test_road(voronoi, i, false);
+            u32 num_nets = sb_count(nets);
+            for(u32 i = 0; i < num_nets; ++i)
+                debug_render_road_network(nets[i]);
         }
 
         return 0;
@@ -2085,6 +1787,7 @@ CR_EXPORT int cr_main(struct cr_plugin *ctx, enum cr_op operation)
     switch (operation)
     {
         case CR_LOAD:
+
             return ll.on_load(live_ctx);
         case CR_UNLOAD:
             return ll.on_unload();
