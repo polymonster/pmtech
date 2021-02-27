@@ -19,6 +19,8 @@
 #include "../../shader_structs/forward_render.h"
 
 #include <stdio.h>
+#include <set>
+#include <vector>
 
 #define JC_VORONOI_IMPLEMENTATION
 #include "jc_voronoi/jc_voronoi.h"
@@ -1052,26 +1054,35 @@ struct live_lib
 
     struct road_section
     {
-        segment entry;
-        segment exit;
-        vec3f   dir;
-        u32*    destinations = nullptr;
+        segment         entry;
+        segment         exit;
+        segment         connector;
+        segment         entry_connector;
+        vec3f           dir;
+        u32*            destinations = nullptr;
+    };
+
+    struct junction
+    {
+        std::set<u32> exits;
+        std::set<u32> entries;
     };
 
     struct road_network
     {
-        road_network_params params = {};
-        vec3f*              outer_hull = nullptr;
-        vec3f*              inset_hull = nullptr;
-        segment             extent_axis_points[2] = {};
-        f32                 extent_axis_length[2] = {};
-        vec3f               extent_axis[2] = {};
-        vec3f               up = vec3f::zero();
-        vec3f               right = vec3f::zero();
-        vec3f               at = vec3f::zero();
-        vec3f**             valid_sub_hulls = nullptr;
-        road_section*       outer_road_sections = nullptr;
-        road_section*       inner_road_sections = nullptr;
+        road_network_params             params = {};
+        vec3f*                          outer_hull = nullptr;
+        vec3f*                          inset_hull = nullptr;
+        segment                         extent_axis_points[2] = {};
+        f32                             extent_axis_length[2] = {};
+        vec3f                           extent_axis[2] = {};
+        vec3f                           up = vec3f::zero();
+        vec3f                           right = vec3f::zero();
+        vec3f                           at = vec3f::zero();
+        vec3f**                         valid_sub_hulls = nullptr;
+        road_section*                   outer_road_sections = nullptr;
+        road_section*                   inner_road_sections = nullptr;
+        std::vector<junction>           junctions;
     };
 
     void get_hull_subdivision_extents(road_network& net)
@@ -1316,8 +1327,8 @@ struct live_lib
         // intersection point result
         vec3f ip;
 
+        // find road sections
         road_section* road_sections = nullptr;
-
         u32 num_hulls = sb_count(net.valid_sub_hulls);
         for(u32 h = 0; h < num_hulls; ++h)
         {
@@ -1342,6 +1353,7 @@ struct live_lib
                 };
 
                 bool outer_road = false;
+                vec3f outer_perp;
                 for(u32 j = 0; j < 4; j +=2)
                 {
                     if(line_vs_convex_hull(junction_perps[j], junction_perps[j+1], net.outer_hull, sb_count(net.outer_hull), ip))
@@ -1379,7 +1391,10 @@ struct live_lib
             }
         }
 
-        // connect
+        // set of road section idices which other roads have connected into
+        std::set<u32> enters;
+
+        // connect road sections
         u32 num_inner_sections = sb_count(road_sections);
         for(u32 i = 0; i < num_inner_sections; ++i)
         {
@@ -1407,19 +1422,6 @@ struct live_lib
                 }
             }
 
-            if(cj != -1 && 0)
-            {
-                road_sections[i].entry.p1 = 
-                road_sections[i].entry.p2 =
-                road_sections[i].exit.p1 = 
-                road_sections[i].exit.p2 = vec3f::zero();
-            }
-
-            if(cj >= 0)
-            {
-                sb_push(road_sections[i].destinations, cj);
-            }
-            
             // check intersection with inset hull
             u32 num_inset_hull_points = sb_count(net.inset_hull);
             for(u32 j = 0; j < num_inset_hull_points; ++j)
@@ -1465,6 +1467,124 @@ struct live_lib
                     }
                 }
             }
+
+            vec3f p1 = road_sections[i].exit.p1 + (road_sections[i].exit.p2 - road_sections[i].exit.p1) * 0.5f;
+
+            if(cj >= 0)
+            {
+                vec3f p2 = road_sections[cj].entry.p1 + (road_sections[cj].entry.p2 - road_sections[cj].entry.p1) * 0.5f;
+
+                road_sections[i].connector.p1 = p1;
+                road_sections[i].connector.p2 = p2;
+
+                road_sections[cj].entry_connector.p1 = p1;
+                road_sections[cj].entry_connector.p2 = p2;
+
+                enters.insert(cj);
+                sb_push(road_sections[i].destinations, cj);
+            }
+            else
+            {
+                // intersect with hull
+                road_sections[i].connector.p1 = p1;
+
+                vec3f ip;
+                if(line_vs_convex_hull(p1, p1 + road_sections[i].dir * 100.0f, net.outer_hull, sb_count(net.outer_hull), ip))
+                {
+                    road_sections[i].connector.p2 = ip;
+                }
+            }
+        }
+
+        // find sections which have no incomming connections, and extend a tail
+        for(u32 i = 0; i < num_inner_sections; ++i)
+        {
+            if(enters.find(i) != enters.end())
+                continue;
+
+            // check tail
+            vec3f tail = road_sections[i].entry.p1 + (road_sections[i].entry.p2 - road_sections[i].entry.p1) * 0.5f;
+
+            road_sections[i].entry_connector.p1 = tail;
+            road_sections[i].entry_connector.p2 = tail;
+
+            if(line_vs_convex_hull(tail, tail - road_sections[i].dir * 100.0f, net.outer_hull, sb_count(net.outer_hull), ip))
+            {
+                bool valid = true;
+                for(u32 j = 0; j < num_inner_sections; ++j)
+                {
+                    vec3f ip2;
+                    if(maths::line_vs_line(tail, ip, road_sections[j].exit.p1, road_sections[j].exit.p2, ip2))
+                    {
+                        road_sections[i].entry_connector.p2 = ip2;
+                        valid = false;
+                        break;
+                    }
+                }
+
+                if(valid)
+                {
+                    road_sections[i].entry_connector.p2 = ip;
+                }
+            }
+        }
+
+        // for each section find destinations
+        for(u32 i = 0; i < num_inner_sections; ++i)
+        {
+            auto& out = road_sections[i].connector;
+            for(u32 j = 0; j < num_inner_sections; ++j)
+            {
+                auto& in = road_sections[j].entry_connector;
+
+                vec3f ip;
+                if(maths::line_vs_line(out.p1, out.p2, in.p1, in.p2, ip))
+                {
+                    sb_push(road_sections[i].destinations, j);
+                }
+            }
+        }
+
+        // build junctions finally
+        for(u32 i = 0; i < num_inner_sections; ++i)
+        {
+            std::set<u32> entries;
+            std::set<u32> exits;
+
+            exits.insert(i);
+
+            u32 num_destinations = sb_count(road_sections[i].destinations);
+            for(u32 d = 0; d < num_destinations; ++d)
+            {
+                entries.insert(road_sections[i].destinations[d]);
+            }
+
+            for(u32 j = 0; j < num_inner_sections; ++j)
+            {
+                if(i == j)
+                    continue;
+
+                auto& in1 = road_sections[i].connector;
+                auto& in2 = road_sections[j].connector;
+
+                vec3f ip;
+                if(maths::line_vs_line(in1.p1, in1.p2, in2.p1, in2.p2, ip))
+                {
+                    exits.insert(j);
+
+                    u32 num_destinations = sb_count(road_sections[j].destinations);
+                    for(u32 d = 0; d < num_destinations; ++d)
+                    {
+                        entries.insert(road_sections[j].destinations[d]);
+                    }
+                }
+            }
+
+            junction jj;
+            jj.entries = entries;
+            jj.exits = exits;
+
+            net.junctions.push_back(jj);
         }
 
         net.inner_road_sections = road_sections;
@@ -1676,43 +1796,26 @@ struct live_lib
 
     void debug_render_road_section(const road_section& section, const road_section* sections)
     {
-        vec3f* points = nullptr;
-        sb_push(points, section.exit.p1);
-        sb_push(points, section.exit.p2);
-        sb_push(points, section.entry.p1);
-        sb_push(points, section.entry.p2);
-
-        vec3f* vsection = nullptr;
-        convex_hull_from_points(vsection, points, sb_count(points));
-        //draw_convex_hull(vsection, sb_count(vsection));
-
-        sb_free(vsection);
-        sb_free(points);
-
         add_line(section.exit.p1, section.exit.p2, vec4f::red());
+        add_line(section.entry.p1, section.entry.p2, vec4f::green());
+        add_line(section.connector.p1, section.connector.p2, vec4f::blue());
+        add_line(section.entry_connector.p1, section.entry_connector.p2, vec4f::magenta());
 
-        if(section.destinations)
+        add_point(section.exit.p1, 0.1f, vec4f::magenta());
+        add_point(section.exit.p2, 0.1f, vec4f::magenta());
+
+        u32 num_destinations = sb_count(section.destinations);
+        for(u32 i = 0; i < num_destinations; ++i)
         {
-            u32 num_destinations = sb_count(section.destinations);
-            for(u32 i = 0; i < num_destinations; ++i)
-            {
-                auto dest = sections[section.destinations[i]];
-                vec3f start = section.exit.p1 + ((section.exit.p2 - section.exit.p1) * 0.5f);
-                vec3f end = dest.entry.p1 + ((dest.entry.p2 - dest.entry.p1) * 0.5f);
+            auto& dest = sections[section.destinations[i]];
 
-                add_line(start, end, vec4f::blue());
-            }
+            add_point(dest.entry.p1, 0.1f, vec4f::cyan());
+            add_point(dest.entry.p2, 0.1f, vec4f::cyan());
         }
     }
 
     void debug_render_road_sections(const road_network& net)
     {
-        u32 num_outer_sections = sb_count(net.outer_road_sections);
-        for(u32 i = 0; i < num_outer_sections; ++i)
-        {
-            debug_render_road_section(net.outer_road_sections[i], net.outer_road_sections);
-        }
-
         u32 num_inner_sections = sb_count(net.inner_road_sections);
         for(u32 i = 0; i < num_inner_sections; ++i)
         {
@@ -1732,7 +1835,40 @@ struct live_lib
             for(u32 i = 0; i < 2; ++i)
                 add_line(net.extent_axis_points[i].p1, net.extent_axis_points[i].p2, vec4f::red());
 
-        debug_render_road_sections(net);
+        //debug_render_road_sections(net);
+        static s32 dbg_idx = 4;
+        ImGui::InputInt("junction", &dbg_idx);
+
+        vec3f* points = nullptr;
+
+        for(auto& e : net.junctions[dbg_idx].entries)
+        {
+            auto& seg = net.inner_road_sections[e];
+            add_point(seg.entry.p1, 0.1f, vec4f::cyan());
+            add_point(seg.entry.p2, 0.1f, vec4f::cyan());
+
+            sb_push(points, seg.entry.p1);
+            sb_push(points, seg.entry.p2);
+            
+            //debug_render_road_section(net.inner_road_sections[e], net.inner_road_sections);
+        }
+
+        for(auto& e : net.junctions[dbg_idx].exits)
+        {
+            auto& seg = net.inner_road_sections[e];
+            add_point(seg.exit.p1, 0.1f, vec4f::blue());
+            add_point(seg.exit.p2, 0.1f, vec4f::blue());
+
+            sb_push(points, seg.exit.p1);
+            sb_push(points, seg.exit.p2);
+
+            //debug_render_road_section(net.inner_road_sections[e], net.inner_road_sections);
+        }
+
+        vec3f* hull = nullptr;
+        convex_hull_from_points(hull, points, sb_count(points));
+        draw_convex_hull(hull, sb_count(hull));
+
     }
 
     road_network* nets;
