@@ -46,8 +46,6 @@ create_app_example( "rasterizer_state", script_path() )
 create_app_example( "geometry_primitives", script_path() )
 create_app_example( "cubemap", script_path() )
 create_app_example( "volume_texture", script_path() )
-create_app_example( "play_sound", script_path() )
-create_app_example( "audio_player", script_path() )
 create_app_example( "shader_toy", script_path() )
 create_app_example( "render_target_mip_maps", script_path() )
 create_app_example( "msaa_resolve", script_path() )
@@ -74,4 +72,10 @@ create_app_example( "stencil_shadows", script_path() )
 create_app_example( "compute_demo", script_path() ) -- hide
 create_app_example( "global_illumination", script_path() )
 create_app_example( "game", script_path() ) -- hide
+
+-- currently web audio is not implemented
+if platform ~= "web" then
+	create_app_example( "play_sound", script_path() )
+	create_app_example( "audio_player", script_path() )
+end
 
