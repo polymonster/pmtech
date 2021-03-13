@@ -58,7 +58,8 @@ local function setup_linux()
 	}
 
 	linkoptions {
-		'-Wl,-rpath=\\$$ORIGIN' 
+		'-Wl,-rpath=\\$$ORIGIN',
+		"-export-dynamic"
 	}
 end
 
