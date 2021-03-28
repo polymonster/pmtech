@@ -1,0 +1,13 @@
+{
+    texturec:
+    {
+        "--array": true
+    }
+    
+    container:
+    {
+        files: [
+			"*.png"
+        ]
+    }
+}

@@ -48,6 +48,7 @@ namespace
 
     job_thread_params* s_job_params = nullptr;
     job*               s_thread_info = nullptr;
+    u32                s_blend_state;
     u32                s_clear_state = 0;
     u32                s_raster_state = 0;
     u32                s_texture_array_shader = 0;
@@ -88,11 +89,30 @@ namespace
 
         s_raster_state = pen::renderer_create_raster_state(rcp);
 
+        // blend state
+        pen::render_target_blend rtb;
+        rtb.blend_enable = 1;
+        rtb.blend_op = PEN_BLEND_OP_ADD;
+        rtb.blend_op_alpha = PEN_BLEND_OP_ADD;
+        rtb.dest_blend = PEN_BLEND_INV_SRC_ALPHA;
+        rtb.src_blend = PEN_BLEND_SRC_ALPHA;
+        rtb.dest_blend_alpha = PEN_BLEND_INV_SRC_ALPHA;
+        rtb.src_blend_alpha = PEN_BLEND_SRC_ALPHA;
+        rtb.render_target_write_mask = 0x0F;
+
+        pen::blend_creation_params blend_params;
+        blend_params.alpha_to_coverage_enable = 0;
+        blend_params.independent_blend_enable = 0;
+        blend_params.render_targets = &rtb;
+        blend_params.num_render_targets = 1;
+
+        s_blend_state = pen::renderer_create_blend_state(blend_params);
+
         // load shaders now requiring dependency on pmfx to make loading simpler.
         s_texture_array_shader = pmfx::load_shader("texture_array");
 
         // load texture array
-        s_texture_array = put::load_texture("data/textures/zombie.dds");
+        s_texture_array = put::load_texture("data/textures/bear.dds");
 
         // get frame / slice count from texture info
         texture_info ti;
@@ -145,12 +165,10 @@ namespace
         pen::sampler_creation_params scp;
         pen::memory_zero(&scp, sizeof(pen::sampler_creation_params));
         scp.filter = PEN_FILTER_MIN_MAG_MIP_LINEAR;
-        scp.address_u = PEN_TEXTURE_ADDRESS_CLAMP;
-        scp.address_v = PEN_TEXTURE_ADDRESS_CLAMP;
-        scp.address_w = PEN_TEXTURE_ADDRESS_CLAMP;
-        scp.comparison_func = PEN_COMPARISON_ALWAYS;
-        scp.min_lod = 0.0f;
-        scp.max_lod = 4.0f;
+        scp.address_u = PEN_TEXTURE_ADDRESS_WRAP;
+        scp.address_v = PEN_TEXTURE_ADDRESS_WRAP;
+        scp.address_w = PEN_TEXTURE_ADDRESS_WRAP;
+        scp.comparison_func = PEN_COMPARISON_DISABLED;
 
         s_linear_sampler = pen::renderer_create_sampler(scp);
 
@@ -194,7 +212,7 @@ namespace
         ft += pen::timer_elapsed_ms(t);
         pen::timer_start(t);
 
-        f32 ms_frame = 100.0f;
+        f32 ms_frame = 40.0f;
         if (ft > ms_frame)
         {
             s_time[0] += 1.0f;
@@ -206,10 +224,6 @@ namespace
 
         pen::renderer_new_frame();
 
-        pen::renderer_set_raster_state(s_raster_state);
-
-        pen::renderer_update_buffer(s_cbuffer, (void*)&s_time[0], sizeof(s_time));
-
         // bind back buffer and clear
         pen::viewport vp = {0.0f, 0.0f, PEN_BACK_BUFFER_RATIO, 1.0f, 0.0f, 1.0f};
         pen::renderer_set_viewport(vp);
@@ -217,6 +231,11 @@ namespace
 
         pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
         pen::renderer_clear(s_clear_state);
+        pen::renderer_set_raster_state(s_raster_state);
+        pen::renderer_set_blend_state(s_blend_state);
+        pen::renderer_set_raster_state(s_raster_state);
+
+        pen::renderer_update_buffer(s_cbuffer, (void*)&s_time[0], sizeof(s_time));
 
         // draw quad
         {
