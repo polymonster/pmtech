@@ -534,6 +534,7 @@ ps_output ps_sss_reflectance( vs_output input )
     }
     
     output.colour.rgb = col;
+    output.colour.a = 1.0;
     return output;
 }
 

@@ -833,9 +833,9 @@ ps_output ps_forward_lit( vs_output input )
         // could multiply gi with albedo but additive gi gives a stronger effect
         output.colour.rgb = gi.rgb * 2.0 * m_albedo.rgb + lit_colour.rgb;
     }
-        
+    
     if(albedo.a <= 0.0)
-        discard;
+       discard;
         
     return output;
 }
@@ -1077,6 +1077,7 @@ ps_output ps_simple_lighting( vs_output input )
     }
     
     output.colour.rgb = lit_colour;
+    output.colour.a = albedo.a;
     
     return output;
 }
