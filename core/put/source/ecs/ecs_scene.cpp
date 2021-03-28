@@ -1691,7 +1691,7 @@ namespace put
                 if (l.flags & e_light_flags::shadow_map)
                     num_shadow_maps++;
 
-                if (l.type == e_light_flags::omni_shadow_map)
+                if (l.flags & e_light_flags::omni_shadow_map)
                     num_omni_shadow_maps++;
             }
 
