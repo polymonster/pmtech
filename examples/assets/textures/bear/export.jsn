@@ -2,6 +2,7 @@
     texturec:
     {
         "--array": true
+        "--max": 512
     }
     
     container:
