@@ -246,8 +246,11 @@ namespace
 
     void create_sdl_surface()
     {
-        SDL_Init(SDL_INIT_VIDEO);
-
+        if(SDL_Init(SDL_INIT_VIDEO) != 0)
+        {
+        	set_title("error");
+        }
+        
         if (s_ctx.pcp.window_sample_count > 1)
         {
             SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
@@ -260,7 +263,7 @@ namespace
     void init()
     {
         set_title(s_ctx.pcp.window_title);
-
+        
         create_sdl_surface();
         SDL_EnableUNICODE(1);
         timer_system_intialise();

@@ -77,15 +77,15 @@
             		display += Math.floor(pct*100.0) + "%"
             	}
             }
-			var isSafari = navigator.vendor && navigator.vendor.indexOf('Apple') > -1 &&
-               navigator.userAgent &&
-               navigator.userAgent.indexOf('CriOS') == -1 &&
-               navigator.userAgent.indexOf('FxiOS') == -1;
-               
-			if(isSafari)
+            
+			try { gl = canvas.getContext("webgl2"); }
+    		catch (x) { gl = null; }
+    		
+    		if(!gl)
 			{
-				display = "Safari is not yet supported by pmtech because it requires WebGL 2.0. Supported browsers are Chrome, Edge and Firefox."
+				display = "This browser is not supported by pmtech because it requires WebGL 2.0. Supported browsers are Chrome, Edge and Firefox, Safari is supported but the experimental feature 'WebGL 2.0' must be enabled in the developer settings"
 			}
+			
             document.getElementById("title-text").innerHTML = display
         },
         monitorRunDependencies: function(left) {
