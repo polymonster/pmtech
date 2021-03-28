@@ -53,14 +53,16 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
     win32(base): {
         premake: {
             args: [
-                "vs2017"
+                "vs2019"
                 "--renderer=dx11"
                 "--platform_dir=win32"
+				"--sdk_version=%{windows_sdk_version}"
             ]
         }
-        shell: {
-            commands: [
-                "cd build/win32 && msbuild pmtech_tools_win32.sln /p:Configuration=Release"
+        make: {
+            toolchain: "msbuild"
+            files: [
+                "build/win32/*.vcxproj"
             ]
         }
     }
