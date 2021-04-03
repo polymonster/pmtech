@@ -1528,7 +1528,7 @@ namespace pen
 
         u32 resource_index = resource_slot;
 
-        D3D_SRV_DIMENSION view_dimension = D3D10_SRV_DIMENSION_TEXTURE2D;
+        D3D_SRV_DIMENSION view_dimension = to_d3d11_srv_dimension(tcp.collection_type, tcp.sample_count > 1);
 
         u32 num_slices = 1;
         u32 num_arrays = tcp.num_arrays;
@@ -1620,10 +1620,17 @@ namespace pen
 
         // create shader resource view
         D3D11_SHADER_RESOURCE_VIEW_DESC resource_view_desc;
+        ZeroMemory(&resource_view_desc, sizeof(resource_view_desc));
         resource_view_desc.Format = to_d3d11_texture_format(tcp.format);
         resource_view_desc.ViewDimension = view_dimension;
         resource_view_desc.Texture2D.MipLevels = -1;
         resource_view_desc.Texture2D.MostDetailedMip = 0;
+
+        if (tcp.collection_type == TEXTURE_COLLECTION_ARRAY)
+        {
+            resource_view_desc.Texture2DArray.ArraySize = tcp.num_arrays;
+            resource_view_desc.Texture2DArray.FirstArraySlice = 0;
+        }
 
         CHECK_CALL(s_device->CreateShaderResourceView(tex_res->texture, &resource_view_desc, &tex_res->srv));
 
