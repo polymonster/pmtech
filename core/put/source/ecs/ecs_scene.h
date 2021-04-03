@@ -535,6 +535,7 @@ namespace put
 
         void update(f32 dt);
         void update_scene(ecs_scene* scene, f32 dt);
+        void reset(ecs_scene* scene);
 
         void render_scene_view(const scene_view& view);
         void render_light_volumes(const scene_view& view);

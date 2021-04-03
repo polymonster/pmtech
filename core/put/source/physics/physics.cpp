@@ -166,9 +166,15 @@ namespace physics
             case e_cmd::add_central_impulse:
                 add_central_impulse(cmd.set_v3);
                 break;
+    
+            case e_cmd::add_force:
+                add_force(cmd.set_v3_v3);
+                break;
+
             case e_cmd::contact_test:
                 contact_test_internal(cmd.contact_test);
                 break;
+
             case e_cmd::step:
                 physics_update(cmd.dt);
                 break;
@@ -237,6 +243,17 @@ namespace physics
         pc.command_index = cmd;
         memcpy(&pc.set_v3.data, &v3, sizeof(vec3f));
         pc.set_v3.object_index = entity_index;
+
+        add_cmd(pc);
+    }
+
+    void set_v3_v3(const u32& entity_index, const vec3f& v3a, const vec3f& v3b, u32 cmd)
+    {
+        physics_cmd pc;
+        pc.command_index = cmd;
+        pc.set_v3_v3.a = v3a;
+        pc.set_v3_v3.b = v3b;
+        pc.set_v3_v3.object_index = entity_index;
 
         add_cmd(pc);
     }

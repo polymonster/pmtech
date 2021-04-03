@@ -175,5 +175,6 @@ namespace physics
 
     void add_central_force(const set_v3_params& cmd);
     void add_central_impulse(const set_v3_params& cmd);
+    void add_force(const set_v3_v3_params& cmd);
 
 } // namespace physics

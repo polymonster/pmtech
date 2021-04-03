@@ -1280,6 +1280,33 @@ namespace put
             return &s_scenes;
         }
 
+        void reset(ecs_scene* scene)
+        {
+            // reset physics positions
+            for (s32 i = 0; i < scene->num_entities; ++i)
+            {
+                if (scene->entities[i] & e_cmp::physics)
+                {
+                    if (scene->physics_data[i].type != e_physics_type::rigid_body)
+                        continue;
+
+                    vec3f t = scene->physics_data[i].rigid_body.position;
+                    quat  q = scene->physics_data[i].rigid_body.rotation;
+
+                    physics::set_transform(scene->physics_handles[i], t, q);
+
+                    scene->transforms[i].translation = t;
+                    scene->transforms[i].rotation = q;
+
+                    scene->entities[i] |= e_cmp::transform;
+
+                    // reset velocity
+                    physics::set_v3(scene->physics_handles[i], vec3f::zero(), physics::e_cmd::set_linear_velocity);
+                    physics::set_v3(scene->physics_handles[i], vec3f::zero(), physics::e_cmd::set_angular_velocity);
+                }
+            }
+        }
+
         void update_scene(ecs_scene* scene, f32 dt)
         {
             // static anim time to pass into draw calls etc..

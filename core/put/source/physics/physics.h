@@ -47,6 +47,7 @@ namespace physics
             add_constraint,
             add_central_force,
             add_central_impulse,
+            add_force,
             contact_test,
             step
         };
@@ -333,6 +334,13 @@ namespace physics
         u32*               children_handles;
     };
 
+    struct set_v3_v3_params
+    {
+        vec3f a;
+        vec3f b;
+        u32   object_index;
+    };
+
     struct physics_cmd
     {
         u32 command_index;
@@ -341,6 +349,7 @@ namespace physics
         union {
             add_box_params             add_box;
             set_v3_params              set_v3;
+            set_v3_v3_params           set_v3_v3;
             set_transform_params       set_transform;
             set_float_params           set_float;
             rigid_body_params          add_rb;
@@ -392,6 +401,7 @@ namespace physics
 
     void step(f32 dt);
     void set_v3(const u32& entity_index, const vec3f& v3, u32 cmd);
+    void set_v3_v3(const u32& entity_index, const vec3f& v3a, const vec3f& v3b, u32 cmd);
     void set_float(const u32& entity_index, const f32& fval, u32 cmd);
     void set_transform(const u32& entity_index, const vec3f& position, const quat& quaternion);
     void set_multi_v3(const u32& entity_index, const u32& link_index, const vec3f& v3_data, const u32& cmd);

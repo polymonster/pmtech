@@ -550,16 +550,34 @@ namespace physics
     {
         btVector3 bt_v3;
         memcpy(&bt_v3, &cmd.data, sizeof(vec3f));
-        s_entities.get(cmd.object_index).rb.rigid_body->applyCentralForce(bt_v3);
-        s_entities.get(cmd.object_index).rb.rigid_body->activate(ACTIVE_TAG);
+        auto rb = s_entities.get(cmd.object_index).rb.rigid_body;
+        rb->setCollisionFlags(rb->getCollisionFlags() & ~btCollisionObject::CF_KINEMATIC_OBJECT);
+        rb->applyCentralForce(bt_v3);
+        rb->activate(ACTIVE_TAG);
     }
 
     void add_central_impulse(const set_v3_params& cmd)
     {
         btVector3 bt_v3;
         memcpy(&bt_v3, &cmd.data, sizeof(vec3f));
-        s_entities.get(cmd.object_index).rb.rigid_body->applyCentralImpulse(bt_v3);
-        s_entities.get(cmd.object_index).rb.rigid_body->activate(ACTIVE_TAG);
+        auto rb = s_entities.get(cmd.object_index).rb.rigid_body;
+        rb->setCollisionFlags(rb->getCollisionFlags() & ~btCollisionObject::CF_KINEMATIC_OBJECT);
+        rb->applyCentralImpulse(bt_v3);
+        rb->activate(ACTIVE_TAG);
+    }
+
+    void add_force(const set_v3_v3_params& cmd)
+    {
+        btVector3 bt_v3_a;
+        memcpy(&bt_v3_a, &cmd.a, sizeof(vec3f));
+
+        btVector3 bt_v3_b;
+        memcpy(&bt_v3_b, &cmd.b, sizeof(vec3f));
+
+        auto rb = s_entities.get(cmd.object_index).rb.rigid_body;
+        rb->setCollisionFlags(rb->getCollisionFlags() & ~btCollisionObject::CF_KINEMATIC_OBJECT);
+        rb->applyForce(bt_v3_a, bt_v3_b);
+        rb->activate(ACTIVE_TAG);
     }
 
     void set_linear_velocity_internal(const set_v3_params& cmd)
