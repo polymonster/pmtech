@@ -30,14 +30,14 @@ local function setup_osx()
 	}
 	
 	if _ACTION == "xcode4" then
-	install_name_tool = "cd ../../bin/osx && install_name_tool -add_rpath @executable_path/../../.. || true"
+	install_name_tool = "cd ../../bin/osx && install_name_tool -add_rpath @executable_path/../../.. "
 	configuration "Debug"
 		postbuildcommands {
-			install_name_tool .. s_project_name .. "_d.app/Contents/MacOS/" .. s_project_name .. "_d"
+			install_name_tool .. s_project_name .. "_d.app/Contents/MacOS/" .. s_project_name .. "_d" .. " || true"
 		}
 	configuration "Release"
 		postbuildcommands {
-			install_name_tool .. s_project_name .. ".app/Contents/MacOS/" .. s_project_name
+			install_name_tool .. s_project_name .. ".app/Contents/MacOS/" .. s_project_name .. " || true"
 		}
 	configuration {}
 	end
