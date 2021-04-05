@@ -29,6 +29,7 @@ local function setup_osx()
 		(pmtech_dir .. "core/template/osx/Info.plist")
 	}
 	
+	--[[
 	if _ACTION == "xcode4" then
 	install_name_tool = "cd ../../bin/osx && install_name_tool -add_rpath @executable_path/../../.. "
 	configuration "Debug"
@@ -41,6 +42,7 @@ local function setup_osx()
 		}
 	configuration {}
 	end
+	--]]
 end
 
 local function setup_linux()
