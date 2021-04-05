@@ -65,38 +65,38 @@ namespace put
         }
         typedef e_ui_shader::ui_shader_t ui_shader;
 
-        bool       init();
-        void       shutdown();
-        void       render();
-        void       update();
-        void       new_frame();
-        io_capture want_capture();
-        void       set_shader(ui_shader shader, u32 cbuffer);
-        void       util_init();
-        void       enable(bool enabled);
+        bool        init();
+        void        shutdown();
+        void        render();
+        void        update();
+        void        new_frame();
+        io_capture  want_capture();
+        void        set_shader(ui_shader shader, u32 cbuffer);
+        void        util_init();
+        void        enable(bool enabled);
 
         // console
-        bool is_console_open();
-        void show_console(bool val);
-        void log(const c8* fmt, ...);
-        void log_level(u32 level, const c8* fmt, ...);
-        void console();
+        bool        is_console_open();
+        void        show_console(bool val);
+        void        log(const c8* fmt, ...);
+        void        log_level(u32 level, const c8* fmt, ...);
+        void        console();
 
         // imgui extensions
-        bool      state_button(const c8* text, bool state_active);
-        void      set_tooltip(const c8* fmt, ...);
-        const c8* file_browser(bool& dialog_open, file_browser_flags flags, s32 num_filetypes = 0, ...);
-        void      show_platform_info();
-        void      image_ex(u32 handle, vec2f size, ui_shader shader);
+        bool        state_button(const c8* text, bool state_active);
+        void        set_tooltip(const c8* fmt, ...);
+        const c8*   file_browser(bool& dialog_open, file_browser_flags flags, s32 num_filetypes = 0, ...);
+        void        show_platform_info();
+        void        image_ex(u32 handle, vec2f size, ui_shader shader);
 
         // generic program preferences
-        void      set_program_preference(const c8* name, f32 val);
-        void      set_program_preference(const c8* name, s32 val);
-        void      set_program_preference(const c8* name, bool val);
-        void      set_program_preference(const c8* name, Str val);
-        pen::json get_program_preference(const c8* name);
-        Str       get_program_preference_filename(const c8* name, const c8* default_value = nullptr);
-        void      set_program_preference_filename(const c8* name, Str val);
+        void        set_program_preference(const c8* name, f32 val);
+        void        set_program_preference(const c8* name, s32 val);
+        void        set_program_preference(const c8* name, bool val);
+        void        set_program_preference(const c8* name, Str val);
+        pen::json   get_program_preference(const c8* name);
+        Str         get_program_preference_filename(const c8* name, const c8* default_value = nullptr);
+        void        set_program_preference_filename(const c8* name, Str val);
     } // namespace dev_ui
 } // namespace put
 
