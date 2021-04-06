@@ -1252,7 +1252,8 @@ namespace put
                     *input_end = 0;
                     if (InputBuf[0])
                         ExecCommand(InputBuf);
-                    strcpy(InputBuf, "");
+
+                    strncpy(InputBuf, "", 256);
                 }
 
                 // Demonstrate keeping auto focus on the input box

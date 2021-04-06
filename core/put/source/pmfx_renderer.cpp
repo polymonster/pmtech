@@ -3112,7 +3112,7 @@ namespace put
             if (rt.samples > 1)
             {
                 ImGui::Text("Msaa Samples: %i", rt.samples);
-                image_size += byte_size * w * h;
+                image_size += byte_size * (u32)w * (u32)h;
             }
 
             ImGui::Text("Size: %f (mb)", (f32)image_size / 1024.0f / 1024.0f);
