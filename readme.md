@@ -28,6 +28,8 @@ Check out the live [WebGL/WebAssembly samples](https://www.polymonster.co.uk/web
 - All features in pmtech are demonstarted and unit tested through [examples](https://github.com/polymonster/pmtech/wiki/Examples). 
 
 **Media**  
+[<img src="https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/dr_scientist.gif" width="1280" />](https://github.com/polymonster/dr_scientist)
+<sup>Dr. Scientist. - an example game with root motion character control and physics</sup>
 [<img src="https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/gi_demo.gif" width="1280" />](https://github.com/polymonster/pmtech/blob/master/examples/code/global_illumincation/global_illumincation.cpp)
 <sup>Global Illumination + Temporal Anti-Aliasing.</sup>
 [<img src="https://github.com/polymonster/polymonster.github.io/raw/master/assets/gifs/area-lights.gif" width="1280" />](https://github.com/polymonster/pmtech/blob/master/examples/code/area_lights/area_lights.cpp)
