@@ -907,7 +907,7 @@ namespace put
             u32* culled_entities = nullptr;
             filter_entities_scalar(scene, &filtered_entities);
             frustum_cull_aabb_scalar(scene, view.camera, filtered_entities, &culled_entities);
-
+            
             // track to prevent redundant state changes.
             u32 cur_shader = -1;
             u32 cur_technique = -1;
@@ -915,7 +915,7 @@ namespace put
             u32 cur_vb = -1;
             u32 cur_ib = -1;
             u32 vc = sb_count(culled_entities);
-
+            
             // render
             for (u32 i = 0; i < vc; ++i)
             {
@@ -954,27 +954,12 @@ namespace put
                     cur_ib = -1;
                 }
 
-                // update skin
-                if (scene->entities[n] & e_cmp::skinned && !(scene->entities[n] & e_cmp::sub_geometry))
+                // bind skinning
+                if (scene->entities[n] & e_cmp::skinned)
                 {
-                    static mat4 bb[85];
-                    if (p_geom->p_skin->bone_cbuffer == PEN_INVALID_HANDLE)
-                    {
-                        pen::buffer_creation_params bcp;
-                        bcp.usage_flags = PEN_USAGE_DYNAMIC;
-                        bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
-                        bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-                        bcp.buffer_size = sizeof(mat4) * 85;
-                        bcp.data = nullptr;
-
-                        p_geom->p_skin->bone_cbuffer = pen::renderer_create_buffer(bcp);
-                    }
-
-                    s32 joints_offset = scene->anim_controller_v2[n].joints_offset;
-                    for (s32 i = 0; i < p_geom->p_skin->num_joints; ++i)
-                        bb[i] = scene->world_matrices[joints_offset + i] * p_geom->p_skin->joint_bind_matrices[i];
-
-                    pen::renderer_update_buffer(p_geom->p_skin->bone_cbuffer, bb, sizeof(bb));
+                    //if(p_geom->p_skin->bone_cbuffer == PEN_INVALID_HANDLE)
+                        //continue;
+                        
                     pen::renderer_set_constant_buffer(p_geom->p_skin->bone_cbuffer, 2, pen::CBUFFER_BIND_VS);
                 }
 
@@ -1258,7 +1243,7 @@ namespace put
 
         void update(f32 dt)
         {
-            //PEN_PERF_SCOPE_PRINT(ecs_update);Oe
+            //PEN_PERF_SCOPE_PRINT(ecs_update);
 
             // allow run time switching between dynamic and fixed timestep
             static f32 fft = 1.0f / 60.0f;
@@ -1814,6 +1799,43 @@ namespace put
                     // render point list
                     pen::renderer_draw(pre_skin.num_verts, 0, PEN_PT_POINTLIST);
                     pen::renderer_set_stream_out_target(0);
+                }
+            }
+            
+            // update skinning buffers
+            for (size_t n = 0; n < scene->num_entities; ++n)
+            {
+                if (scene->entities[n] & e_cmp::skinned)
+                {
+                    // sub geom share bones with parent
+                    if(scene->entities[n] & e_cmp::sub_geometry)
+                    {
+                        u32 p = scene->parents[n];
+                        cmp_geometry* p_geom = &scene->geometries[n];
+                        cmp_geometry* p_parent_geom = &scene->geometries[p];
+                        p_geom->p_skin->bone_cbuffer = p_parent_geom->p_skin->bone_cbuffer;
+                        continue;
+                    }
+                    
+                    static mat4 bb[85];
+                    cmp_geometry* p_geom = &scene->geometries[n];
+                    if (p_geom->p_skin->bone_cbuffer == PEN_INVALID_HANDLE)
+                    {
+                        pen::buffer_creation_params bcp;
+                        bcp.usage_flags = PEN_USAGE_DYNAMIC;
+                        bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+                        bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+                        bcp.buffer_size = sizeof(mat4) * 85;
+                        bcp.data = nullptr;
+
+                        p_geom->p_skin->bone_cbuffer = pen::renderer_create_buffer(bcp);
+                    }
+
+                    s32 joints_offset = scene->anim_controller_v2[n].joints_offset;
+                    for (s32 i = 0; i < p_geom->p_skin->num_joints; ++i)
+                        bb[i] = scene->world_matrices[joints_offset + i] * p_geom->p_skin->joint_bind_matrices[i];
+
+                    pen::renderer_update_buffer(p_geom->p_skin->bone_cbuffer, bb, sizeof(bb));
                 }
             }
 
