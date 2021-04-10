@@ -155,6 +155,9 @@ namespace put
 
             if (is_valid(scene->cbuffer[node_index]))
                 pen::renderer_release_buffer(scene->cbuffer[node_index]);
+                
+            if (is_valid_non_null(scene->bone_cbuffer[node_index]))
+                pen::renderer_release_buffer(scene->cbuffer[node_index]);
 
             // zero
             zero_entity_components(scene, node_index);
@@ -957,10 +960,7 @@ namespace put
                 // bind skinning
                 if (scene->entities[n] & e_cmp::skinned)
                 {
-                    //if(p_geom->p_skin->bone_cbuffer == PEN_INVALID_HANDLE)
-                        //continue;
-                        
-                    pen::renderer_set_constant_buffer(p_geom->p_skin->bone_cbuffer, 2, pen::CBUFFER_BIND_VS);
+                    pen::renderer_set_constant_buffer(scene->bone_cbuffer[n], 2, pen::CBUFFER_BIND_VS);
                 }
 
                 // set material cbs
@@ -1805,21 +1805,22 @@ namespace put
             // update skinning buffers
             for (size_t n = 0; n < scene->num_entities; ++n)
             {
+                if (scene->entities[n] & e_cmp::pre_skinned)
+                    continue;
+                    
                 if (scene->entities[n] & e_cmp::skinned)
                 {
                     // sub geom share bones with parent
                     if(scene->entities[n] & e_cmp::sub_geometry)
                     {
                         u32 p = scene->parents[n];
-                        cmp_geometry* p_geom = &scene->geometries[n];
-                        cmp_geometry* p_parent_geom = &scene->geometries[p];
-                        p_geom->p_skin->bone_cbuffer = p_parent_geom->p_skin->bone_cbuffer;
+                        scene->bone_cbuffer[n] = scene->bone_cbuffer[p];
                         continue;
                     }
                     
                     static mat4 bb[85];
                     cmp_geometry* p_geom = &scene->geometries[n];
-                    if (p_geom->p_skin->bone_cbuffer == PEN_INVALID_HANDLE)
+                    if (!scene->bone_cbuffer[n])
                     {
                         pen::buffer_creation_params bcp;
                         bcp.usage_flags = PEN_USAGE_DYNAMIC;
@@ -1828,14 +1829,14 @@ namespace put
                         bcp.buffer_size = sizeof(mat4) * 85;
                         bcp.data = nullptr;
 
-                        p_geom->p_skin->bone_cbuffer = pen::renderer_create_buffer(bcp);
+                        scene->bone_cbuffer[n] = pen::renderer_create_buffer(bcp);
                     }
 
                     s32 joints_offset = scene->anim_controller_v2[n].joints_offset;
                     for (s32 i = 0; i < p_geom->p_skin->num_joints; ++i)
                         bb[i] = scene->world_matrices[joints_offset + i] * p_geom->p_skin->joint_bind_matrices[i];
 
-                    pen::renderer_update_buffer(p_geom->p_skin->bone_cbuffer, bb, sizeof(bb));
+                    pen::renderer_update_buffer(scene->bone_cbuffer[n], bb, sizeof(bb));
                 }
             }
 
