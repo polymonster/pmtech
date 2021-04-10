@@ -5,12 +5,19 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
         pmtech_dir: ".."
         data_dir: ""
         bin_dir: ""
+        build_dir: ""
         platform: ""
     }
     
     base:
     {
         // 
+        clean: {
+        	directories: [
+        		"${bin_dir}"
+        		"${build_dir}"
+        	]
+        }
     }
     
     //
@@ -118,6 +125,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
         jsn_vars: {
             data_dir: "bin/osx/data"
             bin_dir: "bin/osx"
+            build_dir: "build/osx"
             platform: "osx"
         }
         
@@ -147,6 +155,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
         jsn_vars: {
             data_dir: "bin/win32/data"
             bin_dir: "bin/win32"
+            build_dir: "build/win32"
             platform: "win32"
         }
         
@@ -177,6 +186,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
         jsn_vars: {
             data_dir: "bin/linux/data"
             bin_dir: "bin/linux"
+            build_dir: "build/linux"
             platform: "linux"
         }
         

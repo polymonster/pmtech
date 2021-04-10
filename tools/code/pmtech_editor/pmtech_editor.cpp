@@ -22,6 +22,8 @@
 
 #include "maths/vec.h"
 
+// default live_lib linking, supply LIVE_LIB in project preprocessor to use a different dll
+#ifndef LIVE_LIB
 #if PEN_PLATFORM_WIN32
 #if NDEBUG
 #define LIVE_LIB "live_lib.dll"
@@ -41,8 +43,9 @@
 #define LIVE_LIB "liblive_lib_d.so"
 #endif
 #endif
+#endif
 
-#define CR_HOST // required in the host only and before including cr.h
+#define CR_HOST
 #define CR_DEBUG
 #include "cr/cr.h"
 #include "ecs/ecs_live.h"
@@ -89,6 +92,20 @@ namespace
     cr_plugin               ctx;
     live_context*           lc = nullptr;
     
+    void setup_live_lib()
+    {
+        // cr
+        Str ll = pen::os_path_for_resource(LIVE_LIB);
+        live_lib = cr_plugin_open(ctx, ll.c_str());
+
+        if(live_lib)
+        {
+            lc = new live_context();
+            lc->scene = main_scene;
+            lc->main_camera = &main_camera;
+        }
+    }
+    
     void* editor_setup(void* params)
     {
         // unpack the params passed to the thread and signal to the engine it ok to proceed
@@ -99,9 +116,7 @@ namespace
         pen::jobs_create_job(physics::physics_thread_main, 1024 * 10, nullptr, pen::e_thread_start_flags::detached);
 
         // create the main scene and camera
-        ecs::ecs_scene* main_scene = put::ecs::create_scene("main_scene");
-
-        camera main_camera;
+        main_scene = put::ecs::create_scene("main_scene");
         camera_create_perspective(&main_camera, 60.0f, put::k_use_window_aspect, 0.1f, 1000.0f);
 
         // init systems
@@ -115,15 +130,8 @@ namespace
         pmfx::register_camera(&main_camera, "model_viewer_camera");
         pmfx::init("data/configs/editor_renderer.jsn");
         
-        // cr
-        Str ll = pen::os_path_for_resource(LIVE_LIB);
-        live_lib = cr_plugin_open(ctx, ll.c_str());
-
-        if(live_lib)
-        {
-            lc = new live_context();
-            lc->scene = main_scene;
-        }
+        // live liv may override pmfx::init
+        setup_live_lib();
 
         frame_timer = pen::timer_create();
         pen::timer_start(frame_timer);
@@ -156,24 +164,29 @@ namespace
         // signal to the engine the thread has finished
         pen::semaphore_post(s_thread_info->p_sem_terminated, 1);
     }
-
-    loop_t editor_update()
+    
+    void update_live_lib()
     {
-        pen::renderer_new_frame();
-
-        dt = pen::timer_elapsed_ms(frame_timer)/1000.0f;
-        pen::timer_start(frame_timer);
-
-        put::dev_ui::new_frame();
-
-        ecs::update(dt);
-        
         if(live_lib)
         {
             lc->dt = dt;
             ctx.userdata = (void*)lc;
             cr_plugin_update(ctx);
+            lc->load_index++;
         }
+    }
+
+    loop_t editor_update()
+    {
+        dt = pen::timer_elapsed_ms(frame_timer)/1000.0f;
+        pen::timer_start(frame_timer);
+
+        pen::renderer_new_frame();
+        put::dev_ui::new_frame();
+        
+        update_live_lib();
+        
+        ecs::update(dt);
 
         pmfx::render();
 

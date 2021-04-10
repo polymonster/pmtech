@@ -244,6 +244,7 @@ function create_dll(project_name, source_directory, root_directory)
 		kind ( binary_type )
 		language "C++"
 	
+		print(pmtech_dir)
 		includedirs
 		{
 			-- platform
@@ -362,4 +363,77 @@ end
 
 function create_app_example( project_name, root_directory )
 	create_app( project_name, project_name, root_directory )
+end
+
+function setup_live_lib( project_name ) 
+	if platform == "win32" then
+		configuration {}
+		dependson
+		{
+			"pmtech"
+		}
+		libdirs
+		{
+			"bin/win32"
+		}
+		configuration {"Debug"}
+			links
+			{
+				"pmtech_d.lib"
+			}
+		configuration {"Release"}
+			links
+			{
+				"pmtech.lib"
+			}
+		configuration {}
+	elseif platform == "osx" then
+		configuration {}
+		linkoptions
+		{
+			"-undefined dynamic_lookup"
+		}
+	elseif platform == "linux" then
+		configuration {}
+		linkoptions
+		{
+			"-fPIC",
+			"-export-dynamic"
+		}
+	end
+
+	project ( project_name )
+		setup_product( project_name )
+		kind ( "SharedLib" )
+		language "C++"
+	
+	project "pmtech_editor"
+		configuration { "Debug" }
+			if platform == "osx" then
+				defines {
+					('LIVE_LIB="\\\"lib' .. project_name .. '_d.dylib\\\""')
+				}
+			elseif platform == "win32" then
+				defines {
+					('LIVE_LIB="\\\"' .. project_name .. '_d.dll\\\""')
+				}
+			elseif platform == "linux" then
+				defines {
+					('LIVE_LIB="\\\"lib' .. project_name .. '_d.so\\\""')
+				}	
+			end
+		configuration { "Release" }
+			if platform == "osx" then
+				defines {
+					('LIVE_LIB="\\\"lib' .. project_name .. '.dylb\\\""')
+				}
+			elseif platform == "win2" then
+				defines {
+					('LIVE_LIB="\\\"' .. project_name .. '.dll\\\""')
+				}
+			elseif platform == "linux" then
+				defines {
+					('LIVE_LIB="\\\"lib' .. project_name .. '.so\\\""')
+				}	
+			end
 end
