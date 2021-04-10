@@ -156,8 +156,10 @@ namespace put
             if (is_valid(scene->cbuffer[node_index]))
                 pen::renderer_release_buffer(scene->cbuffer[node_index]);
                 
-            if (is_valid_non_null(scene->bone_cbuffer[node_index]))
-                pen::renderer_release_buffer(scene->cbuffer[node_index]);
+            // delete skinng buffers, sub_geomtry share their parents
+            if(!(scene->bone_cbuffer[node_index] & e_cmp::sub_geometry))
+                if (is_valid_non_null(scene->bone_cbuffer[node_index]))
+                    pen::renderer_release_buffer(scene->cbuffer[node_index]);
 
             // zero
             zero_entity_components(scene, node_index);
