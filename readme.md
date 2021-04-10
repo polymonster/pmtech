@@ -21,7 +21,7 @@ Check out the live [WebGL/WebAssembly samples](https://www.polymonster.co.uk/web
 - [Tools](https://github.com/polymonster/pmtech/wiki/Building): Graphical editor, mesh optimiser, volume texture / sdf generator.
 - [Build Pipeline](https://github.com/polymonster/pmtech/wiki/Building): project generation, compilation, asset building and packaging. 
 - [Examples](https://github.com/polymonster/pmtech/wiki/Examples): 40+ samples and unit tests.
-- [Example Game](https://github.com/polymonster/dr_scientist) Dr. Scientist is a demo game using pmtech.
+- [Example Game](https://github.com/polymonster/dr_scientist): Dr. Scientist is a demo game using pmtech.
 - Visit the [wiki](https://github.com/polymonster/pmtech/wiki) for more information. 
 
 **Usage**  
