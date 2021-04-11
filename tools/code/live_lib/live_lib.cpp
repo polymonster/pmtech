@@ -2309,7 +2309,6 @@ CR_EXPORT int cr_main(struct cr_plugin *ctx, enum cr_op operation)
     switch (operation)
     {
         case CR_LOAD:
-
             return ll.on_load(live_ctx);
         case CR_UNLOAD:
             return ll.on_unload();
