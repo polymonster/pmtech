@@ -31,12 +31,26 @@ namespace put
     {
         static std::vector<ecs_scene_instance> s_scenes;
 
-        void register_ecs_extentsions(ecs_scene* scene, const ecs_extension& ext)
+        void register_ecs_extension(ecs_scene* scene, const ecs_extension& ext)
         {
             sb_push(scene->extensions, ext);
             scene->num_components += ext.num_components;
 
             resize_scene_buffers(scene);
+        }
+        
+        //
+        void update_ecs_extension_functions(ecs_scene* scene, hash_id id, const ecs_extension_functions& funcs)
+        {
+            u32 ne = sb_count(scene->extensions);
+            for(u32 e = 0; e < ne; ++e)
+            {
+                if(id == scene->extensions[e].id_name)
+                {
+                    scene->extensions[e].funcs = funcs;
+                    return;
+                }
+            }
         }
 
         void unregister_ecs_extensions(ecs_scene* scene)
@@ -44,7 +58,7 @@ namespace put
             // todo must make func
             u32 num_ext = sb_count(scene->extensions);
             for (u32 e = 0; e < num_ext; ++e)
-                scene->extensions[e].shutdown(scene->extensions[e]);
+                scene->extensions[e].funcs.shutdown(scene->extensions[e]);
 
             sb_free(scene->extensions);
         }
@@ -52,6 +66,19 @@ namespace put
         void register_ecs_controller(ecs_scene* scene, const ecs_controller& controller)
         {
             sb_push(scene->controllers, controller);
+        }
+        
+        void update_ecs_controller_functions(ecs_scene* scene, hash_id id, const ecs_controller_functions& funcs)
+        {
+            u32 nc = sb_count(scene->controllers);
+            for(u32 c = 0; c < nc; ++c)
+            {
+                if(id == scene->controllers[c].id_name)
+                {
+                    scene->controllers[c].funcs = funcs;
+                    return;
+                }
+            }
         }
 
         void initialise_free_list(ecs_scene* scene)
@@ -1304,8 +1331,8 @@ namespace put
 
             // pre update controllers
             for (u32 c = 0; c < num_controllers; ++c)
-                if (scene->controllers[c].update_func)
-                    scene->controllers[c].update_func(scene->controllers[c], scene, dt);
+                if (scene->controllers[c].funcs.update_func)
+                    scene->controllers[c].funcs.update_func(scene->controllers[c], scene, dt);
 
             if (scene->flags & e_scene_flags::pause_update)
             {
@@ -1319,8 +1346,8 @@ namespace put
 
             // extension component update
             for (u32 e = 0; e < num_extensions; ++e)
-                if (scene->extensions[e].update_func)
-                    scene->extensions[e].update_func(scene->extensions[e], scene, dt);
+                if (scene->extensions[e].funcs.update_func)
+                    scene->extensions[e].funcs.update_func(scene->extensions[e], scene, dt);
 
             static pen::timer* timer = pen::timer_create();
             pen::timer_start(timer);
@@ -1901,8 +1928,8 @@ namespace put
 
             // controllers post update
             for (u32 c = 0; c < num_controllers; ++c)
-                if (scene->controllers[c].post_update_func)
-                    scene->controllers[c].post_update_func(scene->controllers[c], scene, dt);
+                if (scene->controllers[c].funcs.post_update_func)
+                    scene->controllers[c].funcs.post_update_func(scene->controllers[c], scene, dt);
 
             f64 elapsed = pen::timer_elapsed_ms(timer);
             PEN_UNUSED(elapsed);
@@ -2007,7 +2034,7 @@ namespace put
             // create sub scene with same components
             u32 num_ext = sb_count(scene->extensions);
             for (u32 e = 0; e < num_ext; ++e)
-                scene->extensions[e].ext_func(&sub_scene);
+                scene->extensions[e].funcs.ext_func(&sub_scene);
 
             resize_scene_buffers(&sub_scene, num);
 
@@ -2154,8 +2181,8 @@ namespace put
             // call extensions specific save
             u32 num_extensions = sb_count(scene->extensions);
             for (u32 i = 0; i < num_extensions; ++i)
-                if (scene->extensions[i].save_func)
-                    scene->extensions[i].save_func(scene->extensions[i], scene);
+                if (scene->extensions[i].funcs.save_func)
+                    scene->extensions[i].funcs.save_func(scene->extensions[i], scene);
 
             ofs.close();
 
@@ -2587,8 +2614,8 @@ namespace put
 
             // read extensions
             for (u32 i = 0; i < sh.num_extensions; ++i)
-                if (scene->extensions[i].load_func)
-                    scene->extensions[i].load_func(scene->extensions[i], scene);
+                if (scene->extensions[i].funcs.load_func)
+                    scene->extensions[i].funcs.load_func(scene->extensions[i], scene);
 
             bake_material_handles();
 

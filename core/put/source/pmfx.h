@@ -76,12 +76,13 @@ namespace put
         ecs::ecs_scene* scene = nullptr;
     };
 
+    typedef void (*svr_render_function)(const scene_view&);
     struct scene_view_renderer
     {
         Str     name;
         hash_id id_name = 0;
 
-        void (*render_function)(const scene_view&) = nullptr;
+        svr_render_function render_function = nullptr;
     };
 
     struct technique_constant_data
@@ -300,6 +301,7 @@ namespace put
         void register_scene(ecs::ecs_scene* scene, const char* name);
         void register_camera(camera* cam, const char* name);
         void register_scene_view_renderer(const scene_view_renderer& svr);
+        void update_scene_view_renderer_function(hash_id id, svr_render_function render_func);
 
         void resize_render_target(hash_id target, u32 width, u32 height, const c8* format = nullptr);
         void resize_render_target(hash_id target, const rt_resize_params& params);

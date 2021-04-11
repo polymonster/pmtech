@@ -413,31 +413,41 @@ namespace put
             void* operator[](size_t index);
         };
 
+        struct ecs_extension;
+        struct ecs_extension_functions
+        {
+            void* (*ext_func)(ecs_scene*) = nullptr;  // must implement.. registers ext with scene
+            void (*shutdown)(ecs_extension&) = nullptr; // must implement.. frees mem
+            void (*browser_func)(ecs_extension&, ecs_scene*) = nullptr; // component editor ui
+            void (*load_func)(ecs_extension&, ecs_scene*) = nullptr; // fix up any loaded resources and read lookup strings
+            void (*save_func)(ecs_extension&, ecs_scene*) = nullptr; // fix down any save info.. write lookup strings etc
+            void (*update_func)(ecs_extension&, ecs_scene*, f32) = nullptr; // update with dt passed each frame
+        };
+        
         struct ecs_extension
         {
-            Str                name;
-            hash_id            id_name = 0;
-            void*              context;
-            generic_cmp_array* components;
-            u32                num_components;
-
-            void* (*ext_func)(ecs_scene*) = nullptr;                    // must implement.. registers ext with scene
-            void (*shutdown)(ecs_extension&) = nullptr;                 // must implement.. frees mem
-            void (*browser_func)(ecs_extension&, ecs_scene*) = nullptr; // component editor ui
-            void (*load_func)(ecs_extension&, ecs_scene*) = nullptr;    // fix up any loaded resources and read lookup strings
-            void (*save_func)(ecs_extension&, ecs_scene*) = nullptr;    // fix down any save info.. write lookup strings etc
-            void (*update_func)(ecs_extension&, ecs_scene*, f32) = nullptr; // update with dt
+            Str                     name;
+            hash_id                 id_name = 0;
+            void*                   context;
+            generic_cmp_array*      components;
+            u32                     num_components;
+            ecs_extension_functions funcs;
         };
 
+        struct ecs_controller;
+        struct ecs_controller_functions
+        {
+            void (*update_func)(ecs_controller&, ecs_scene* scene, f32 dt) = nullptr; // called at the start of each update
+            void (*post_update_func)(ecs_controller&, ecs_scene* scene, f32 dt) = nullptr; // at the end of each update
+        };
+        
         struct ecs_controller
         {
-            Str          name;
-            hash_id      id_name = 0;
-            put::camera* camera = nullptr;
-            void*        context = nullptr;
-
-            void (*update_func)(ecs_controller&, ecs_scene* scene, f32 dt) = nullptr;
-            void (*post_update_func)(ecs_controller&, ecs_scene* scene, f32 dt) = nullptr;
+            Str                      name;
+            hash_id                  id_name = 0;
+            put::camera*             camera = nullptr;
+            void*                    context = nullptr;
+            ecs_controller_functions funcs;
         };
 
         struct ecs_scene
@@ -557,10 +567,14 @@ namespace put
 
         void initialise_free_list(ecs_scene* scene);
 
-        void register_ecs_extentsions(ecs_scene* scene, const ecs_extension& ext);
+        void register_ecs_extension(ecs_scene* scene, const ecs_extension& ext);
         void unregister_ecs_extensions(ecs_scene* scene);
 
         void register_ecs_controller(ecs_scene* scene, const ecs_controller& controller);
+        
+        // replaces function poitners for hot reload, will register new svr/controller if it doesnt exist
+        void update_ecs_controller_functions(ecs_scene* scene, hash_id id, const ecs_controller_functions& funcs);
+        void update_ecs_extension_functions(ecs_scene* scene, hash_id id, const ecs_extension_functions& funcs);
 
         // separate implementations to make clang always inline
         template <typename T>

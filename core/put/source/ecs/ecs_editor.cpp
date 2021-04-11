@@ -273,7 +273,7 @@ namespace put
             controller.name = "editor_controller";
             controller.id_name = PEN_HASH(controller.name);
             controller.context = nullptr; // becomes editor
-            controller.update_func = &editor_update;
+            controller.funcs.update_func = &editor_update;
             controller.camera = cam;
 
             ecs::register_ecs_controller(scene, controller);
@@ -2562,7 +2562,7 @@ namespace put
                 // for extensions do thier ui
                 u32 num_ext = sb_count(scene->extensions);
                 for (u32 e = 0; e < num_ext; ++e)
-                    scene->extensions[e].browser_func(scene->extensions[e], scene);
+                    scene->extensions[e].funcs.browser_func(scene->extensions[e], scene);
 
                 if (sb_count(scene->selection_list) == 1)
                     store_node_state(scene, scene->selection_list[0], e_editor_actions::redo);

@@ -386,6 +386,18 @@ namespace put
         {
             s_scene_view_renderers.push_back(svr);
         }
+        
+        void update_scene_view_renderer_function(hash_id id, svr_render_function render_func)
+        {
+            for(auto& s : s_scene_view_renderers)
+            {
+                if(id == s.id_name)
+                {
+                    s.render_function = render_func;
+                    return;
+                }
+            }
+        }
 
         void register_scene(ecs::ecs_scene* scene, const char* name)
         {

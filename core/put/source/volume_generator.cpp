@@ -1518,7 +1518,7 @@ namespace put
             s_main_scene = scene;
             ecs::ecs_controller ec;
             ec.camera = &s_volume_raster_ortho;
-            ec.update_func = &volume_rasteriser_update;
+            ec.funcs.update_func = &volume_rasteriser_update;
             ec.name = "volume_rasteriser_camera";
             ec.id_name = PEN_HASH(ec.name.c_str());
             ecs::register_ecs_controller(scene, ec);
