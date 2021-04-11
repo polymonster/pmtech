@@ -39,6 +39,20 @@ namespace put
             resize_scene_buffers(scene);
         }
         
+        ecs_extension* get_ecs_extension(ecs_scene* scene, hash_id id)
+        {
+            u32 ne = sb_count(scene->extensions);
+            for(u32 e = 0; e < ne; ++e)
+            {
+                if(id == scene->extensions[e].id_name)
+                {
+                    return &scene->extensions[e];
+                }
+            }
+            
+            return nullptr;
+        }
+        
         //
         void update_ecs_extension_functions(ecs_scene* scene, hash_id id, const ecs_extension_functions& funcs)
         {

@@ -567,10 +567,10 @@ namespace put
 
         void initialise_free_list(ecs_scene* scene);
 
-        void register_ecs_extension(ecs_scene* scene, const ecs_extension& ext);
-        void unregister_ecs_extensions(ecs_scene* scene);
-
-        void register_ecs_controller(ecs_scene* scene, const ecs_controller& controller);
+        void            register_ecs_extension(ecs_scene* scene, const ecs_extension& ext);
+        void            unregister_ecs_extensions(ecs_scene* scene);
+        ecs_extension*  get_ecs_extension(ecs_scene* scene, hash_id id);
+        void            register_ecs_controller(ecs_scene* scene, const ecs_controller& controller);
         
         // replaces function poitners for hot reload, will register new svr/controller if it doesnt exist
         void update_ecs_controller_functions(ecs_scene* scene, hash_id id, const ecs_controller_functions& funcs);
