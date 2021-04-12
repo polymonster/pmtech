@@ -370,7 +370,7 @@ function setup_live_lib( project_name )
 		configuration {}
 		dependson
 		{
-			"pmtech"
+			"pmtech_editor"
 		}
 		libdirs
 		{
@@ -379,12 +379,12 @@ function setup_live_lib( project_name )
 		configuration {"Debug"}
 			links
 			{
-				"pmtech_d.lib"
+				"pmtech_editor_d.lib"
 			}
 		configuration {"Release"}
 			links
 			{
-				"pmtech.lib"
+				"pmtech_editor.lib"
 			}
 		configuration {}
 	elseif platform == "osx" then

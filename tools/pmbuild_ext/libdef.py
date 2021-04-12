@@ -44,9 +44,23 @@ def should_keep_microsoft_symbol(symbol):
     # Variables with 'g_' prefix (globals)
     if re.search('g_', symbol):
         return symbol + " DATA"
-
+        
+    namespaces = [
+        "pen",
+        "put",
+        "Str",
+        "ImGui",
+        "physics"
+    ]
+    
     # We are intrested only in our functionality, not standard libraries
-    if not re.search('pen', symbol) and not re.search('put', symbol):
+    valid = False
+    for n in namespaces:
+        if re.search(n, symbol):
+            valid = True
+            break
+    
+    if not valid:
         return None
 
     # mangleVariableEncoding => public static or global member

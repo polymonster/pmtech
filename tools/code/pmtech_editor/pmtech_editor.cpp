@@ -96,6 +96,9 @@ namespace
     {
         // cr
         Str ll = pen::os_path_for_resource(LIVE_LIB);
+        ll = pen::str_replace_string(ll, "\"", "");
+        ll = pen::str_replace_string(ll, "\"", "");
+
         live_lib = cr_plugin_open(ctx, ll.c_str());
 
         if(live_lib)
