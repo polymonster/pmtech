@@ -41,6 +41,7 @@ namespace put
         void editor_update(ecs_controller&, ecs_scene* scene, f32 dt);
         void editor_enable(bool enable);
         void editor_enable_camera(bool enable);
+        void editor_lock_edits(u32 flags);
         void editor_set_transform_mode(transform_mode mode);
 
         void scene_browser_ui(ecs_scene* scene, bool* open);

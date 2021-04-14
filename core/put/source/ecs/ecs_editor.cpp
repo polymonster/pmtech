@@ -117,6 +117,7 @@ namespace
     typedef pen::stack<editor_action> action_stack;
 
     // to move into scene editor context
+    u32                   s_editor_lock_flags = 0;
     u32                   s_select_flags = 0;
     picking_info          s_picking_info;
     model_view_controller s_model_view_controller;
@@ -136,15 +137,24 @@ namespace put
         {
             s_transform_mode = mode;
         }
+        
+        bool can_edit(u32 flags)
+        {
+            if(dev_ui::want_capture() & flags)
+                return false;
+                
+            if(s_editor_lock_flags & flags)
+                return false;
+                
+            return true;
+        }
 
         bool shortcut_key(u32 key)
         {
-            u32 flags = dev_ui::want_capture();
-
-            if (flags & dev_ui::e_io_capture::keyboard)
+            if (!can_edit(dev_ui::e_io_capture::keyboard))
                 return false;
 
-            if (flags & dev_ui::e_io_capture::text)
+            if (!can_edit(dev_ui::e_io_capture::text))
                 return false;
 
             return pen::input_key(key);
@@ -161,7 +171,7 @@ namespace put
                 s_model_view_controller.invalidated = false;
             }
 
-            bool has_focus = dev_ui::want_capture() == dev_ui::e_io_capture::none;
+            bool has_focus = can_edit(dev_ui::e_io_capture::mouse | dev_ui::e_io_capture::keyboard);
 
             switch (s_model_view_controller.mode)
             {
@@ -490,7 +500,7 @@ namespace put
             static u32 picking_state = e_picking_state::ready;
             static u32 picking_result = (-1);
 
-            if (dev_ui::want_capture() & dev_ui::e_io_capture::mouse)
+            if (!can_edit(dev_ui::e_io_capture::mouse))
                 return;
 
             if (picking_state == e_picking_state::single)
@@ -1084,6 +1094,11 @@ namespace put
         void editor_enable_camera(bool enable)
         {
             s_editor_enable_camera = enable;
+        }
+        
+        void editor_lock_edits(u32 flags)
+        {
+            s_editor_lock_flags = flags;
         }
 
         void update_editor_scene(ecs_controller& ecsc, ecs_scene* scene, f32 dt)
