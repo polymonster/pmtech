@@ -1016,6 +1016,9 @@ namespace put
 
         void context_menu_ui(ecs_scene* scene)
         {
+            if(!can_edit(dev_ui::e_io_capture::mouse))
+                return;
+                
             static ImGuiID cm_id = ImGui::GetID("right click context menu");
 
             if (pen::input_mouse(1))
@@ -2102,8 +2105,26 @@ namespace put
 
             return iv;
         }
-
+        
         void scene_anim_ui(ecs_scene* scene)
+        {
+            if (sb_count(scene->selection_list) != 1)
+                return;
+
+            u32 selected_index = scene->selection_list[0];
+            
+            if (scene->geometries[selected_index].p_skin)
+            {
+                if (ImGui::CollapsingHeader("Animations"))
+                {
+                    auto& controller = scene->anim_controller_v2[selected_index];
+                    
+                    //ImGui::Checkbox("Apply Root Motion", &controller.apply_root_motion);
+                }
+            }
+        }
+
+        void scene_anim_ui_v1(ecs_scene* scene)
         {
 #if 0
             if (sb_count(scene->selection_list) != 1)

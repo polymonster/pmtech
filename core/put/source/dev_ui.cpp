@@ -587,7 +587,6 @@ namespace put
             s_program_prefs_filename = pen::window_get_title();
             s_program_prefs_filename.append("_prefs.jsn");
 
-            
             s_program_preferences = pen::json::load_from_file(s_program_prefs_filename.c_str());
         }
 
