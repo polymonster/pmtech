@@ -300,6 +300,8 @@ namespace put
         struct cmp_anim_controller_v2
         {
             anim_instance* anim_instances = nullptr;
+            anim_handle*   anim_instance_handles = nullptr;
+            hash_id*       anim_instance_ids = nullptr;
             u32*           joint_indices = nullptr; // indices into the scene hierarchy
             u8*            joint_flags = nullptr;
             anim_blend     blend;

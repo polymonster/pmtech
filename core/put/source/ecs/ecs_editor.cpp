@@ -2118,8 +2118,12 @@ namespace put
                 if (ImGui::CollapsingHeader("Animations"))
                 {
                     auto& controller = scene->anim_controller_v2[selected_index];
-                    
-                    //ImGui::Checkbox("Apply Root Motion", &controller.apply_root_motion);
+                    u32 num_anims = sb_count(controller.anim_instances);
+                    for(u32 i = 0; i < num_anims; ++i)
+                    {
+                        auto res = get_animation_resource(controller.anim_instance_handles[i]);
+                        ImGui::Text("%s", res->name.c_str());
+                    }
                 }
             }
         }

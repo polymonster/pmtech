@@ -702,6 +702,9 @@ namespace put
 
             u32 anim_index = sb_count(controller.anim_instances);
             sb_push(controller.anim_instances, anim_instance);
+            
+            sb_push(controller.anim_instance_handles, anim_handle);
+            sb_push(controller.anim_instance_ids, anim->id_name);
 
             // todo validate
             scene->entities[node_index] |= e_cmp::anim_controller;
