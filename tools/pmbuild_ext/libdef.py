@@ -16,8 +16,18 @@ import argparse
 # Windows, waiting for the entire output to be ready can take a significant
 # amount of time.
 def dumpbin_get_symbols(lib):
-    dumpbin_exe = 'c:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\VC\\Tools\\MSVC\\14.27.29110\\bin\\Hostx64\\x64\\dumpbin.exe'
-    dumpbin_exe = 'C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.28.29333\\bin\\Hostx64\\x64\\dumpbin.exe'
+
+    # total hack adding paths
+    dumps = [
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Professional\\VC\\Tools\\MSVC\\14.16.27023\\bin\\Hostx64\\x64\dumpbin.exe",
+        'C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.28.29333\\bin\\Hostx64\\x64\\dumpbin.exe'
+    ]
+    
+    dumpbin_exe = ""
+    for d in dumps:
+        if os.path.isfile(d):
+            dumpbin_exe = d
+            break
 
     if not os.path.isfile(dumpbin_exe):
         print("error: dumpbin utility not found, please reconfigure path\n Path: " + dumpbin_exe)
