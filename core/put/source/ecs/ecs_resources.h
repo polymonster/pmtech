@@ -254,7 +254,7 @@ namespace put
             vec4f uv12;
             vec4f tangent;
             vec4f bitangent;
-            vec4i blend_indices;
+            vec4f blend_indices;
             vec4f blend_weights;
 
             vertex_model_skinned(){};

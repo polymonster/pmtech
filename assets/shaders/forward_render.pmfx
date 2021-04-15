@@ -313,7 +313,7 @@ vs_output vs_main( vs_input_multi input, vs_instance_input instance_input )
         
     if:(SKINNED)
     {
-        float4 sp = skin_pos(input.position, input.blend_weights, input.blend_indices);
+        float4 sp = skin_pos(input.position, input.blend_weights,  input.blend_indices);
     
         output.tangent = input.tangent.xyz;
         output.bitangent = input.bitangent.xyz;
@@ -444,8 +444,8 @@ ps_output ps_forward_lit( vs_output input )
         normal_sample );
         
     albedo *= input.colour;
-    float4 metalness = float4(1.0, 1.0, 1.0, 1.0);
-    //metalness = lerp(metalness, albedo, 0.7);
+	
+    float4 metalness = float4(0.0, 0.0, 0.0, 1.0);
     
     float3 lit_colour = float3( 0.0, 0.0, 0.0 );
         
@@ -510,7 +510,7 @@ ps_output ps_forward_lit( vs_output input )
             n,
             input.world_pos.xyz,
             camera_view_pos.xyz,
-            1.0 - roughness,
+            roughness,
             albedo.rgb
         );
         
@@ -574,8 +574,8 @@ ps_output ps_forward_lit( vs_output input )
             input.world_pos.xyz,
             camera_view_pos.xyz,
             roughness,
-            albedo.rgb
-        );     
+            albedo.rgb 
+        );
             
         float a = point_light_attenuation_cutoff( lights[i].pos_radius, input.world_pos.xyz );    
         light_col *= a;
@@ -833,7 +833,7 @@ ps_output ps_forward_lit( vs_output input )
         // could multiply gi with albedo but additive gi gives a stronger effect
         output.colour.rgb = gi.rgb * 2.0 * m_albedo.rgb + lit_colour.rgb;
     }
-    
+    	
     if(albedo.a <= 0.0)
        discard;
         

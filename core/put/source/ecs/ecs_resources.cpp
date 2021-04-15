@@ -1101,8 +1101,29 @@ namespace put
             {
                 cmp_anim_controller_v2& controller = scene->anim_controller_v2[node_index];
 
+                //std::vector<s32> joint_indices;
+                //build_heirarchy_node_list(scene, node_index, joint_indices);
+
+                controller.joints_offset = -1;
+                for (u32 i = node_index; i < scene->soa_size; ++i)
+                {
+                    if(scene->entities[i] & e_cmp::bone)
+                    {
+                        if (controller.joints_offset == -1)
+                        {
+                            controller.joints_offset = i;
+                        }
+
+                        sb_push(controller.joint_indices, i);
+                    }
+
+                    if (!(scene->entities[i] & e_cmp::bone) && controller.joints_offset != -1)
+                        break;
+                }
+
+                /*
                 std::vector<s32> joint_indices;
-                build_heirarchy_node_list(scene, node_index, joint_indices);
+                build_heirarchy_node_list(scene, first_bone, joint_indices);
 
                 controller.joints_offset = -1;
                 for (s32 jj = 0; jj < joint_indices.size(); ++jj)
@@ -1117,6 +1138,7 @@ namespace put
                         sb_push(controller.joint_indices, jnode);
                     }
                 }
+                */
 
                 scene->entities[node_index] |= e_cmp::anim_controller;
             }

@@ -2118,6 +2118,8 @@ namespace put
                 if (ImGui::CollapsingHeader("Animations"))
                 {
                     auto& controller = scene->anim_controller_v2[selected_index];
+                    ImGui::InputInt("Joint Offset", (s32*)&controller.joints_offset);
+
                     u32 num_anims = sb_count(controller.anim_instances);
                     for(u32 i = 0; i < num_anims; ++i)
                     {

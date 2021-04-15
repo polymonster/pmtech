@@ -443,7 +443,7 @@ def generate_vertex_buffer(mesh, buffer_dict):
                 mesh.vertex_buffer.append(mesh.vertex_elements[7].float_values[j + f])
 
 
-def parse_controller(controller_root, geom_name):
+def parse_controller(controller_root, geom_name, joint_sid_list, joint_list):
     for contoller in controller_root.iter(schema + 'controller'):
         for skin in contoller.iter(schema + 'skin'):
             skin_source = skin.get("source")
@@ -468,6 +468,17 @@ def parse_controller(controller_root, geom_name):
                         sc.bones_per_vertex = vcount.text.split()
                     for v in stream.iter(schema + 'v'):
                         sc.joint_weight_indices = v.text.split()
+
+                # re-order bind shape
+                orderer_bind_matrix = []
+                for j in joint_sid_list:
+                    if j not in sc.joints_sid:
+                        continue
+                    bi = sc.joints_sid.index(j)
+                    offset = bi * 16
+                    for i in range(0, 16):
+                        orderer_bind_matrix.append(sc.joint_bind_matrix[offset+i])
+                sc.joint_bind_matrix = orderer_bind_matrix
 
                 sc.vec4_weights = geometry_source()
                 sc.vec4_indices = geometry_source()
@@ -503,7 +514,14 @@ def parse_controller(controller_root, geom_name):
                     total = 0.0
                     for i in range(0, 4, 1):
                         # print("index = " + str(indices[i]) + " wght = " + str(weights[i]))
-                        sc.vec4_indices.float_values.append(weight_index[i][1])
+                        joint_name = sc.joints_sid[int(weight_index[i][1])]
+                        ji = 0
+                        for k in joint_sid_list.keys():
+                            if joint_name == k:
+                                node_name = joint_sid_list[k]
+                                break
+                            ji = ji + 1
+                        sc.vec4_indices.float_values.append(float(ji))
                         sc.vec4_weights.float_values.append(weight_index[i][0])
                         total += weight_index[i][0]
                     norm_error = False
@@ -521,7 +539,7 @@ def parse_controller(controller_root, geom_name):
     return None
 
 
-def parse_geometry(node, lib_controllers):
+def parse_geometry(node, lib_controllers, joint_sid_list, joint_list):
     helpers.output_file.geometry_names.clear()
     helpers.output_file.geometry_sizes.clear()
     helpers.output_file.geometry.clear()
@@ -535,7 +553,7 @@ def parse_geometry(node, lib_controllers):
         geom_container.controller = None
 
         if lib_controllers != None:
-            geom_container.controller = parse_controller(lib_controllers, geom_container.name)
+            geom_container.controller = parse_controller(lib_controllers, geom_container.name, joint_sid_list, joint_list)
 
         for mesh in geom.iter(schema + 'mesh'):
             submesh = 0

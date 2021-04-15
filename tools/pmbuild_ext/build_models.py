@@ -22,6 +22,7 @@ material_attach_data_list = []
 material_symbol_list = []
 type_list = []
 joint_list = []
+joint_sid_list = dict()
 transform_list = []
 parent_list = []
 animations = []
@@ -80,10 +81,12 @@ def parse_node(node, parent_node):
     if node.get('type') == "JOINT":
         geom_attach_data = "joint"
         node_type = 1
+        joint_sid_list[node.get('sid')] = node.get('name')
 
     type_list.append(node_type)
     parent_list.append(parent_node.get("name"))
     joint_list.append(node.get("name"))
+
     geom_attach_data_list.append(geom_attach_data)
     material_attach_data_list.append(material_attach_data)
     material_symbol_list.append(material_symbol_data)
@@ -144,7 +147,7 @@ def parse_dae():
 
     for child in root:
         if child.tag.find("library_geometries") != -1:
-            parse_meshes.parse_geometry(child, lib_controllers)
+            parse_meshes.parse_geometry(child, lib_controllers, joint_sid_list, joint_list)
         if child.tag.find("library_materials") != -1:
             parse_materials.parse_materials(root, child)
         if child.tag.find("library_animations") != -1:

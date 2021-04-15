@@ -111,10 +111,11 @@ float3 cook_torrence(
         fresnel *= roughness;
         fresnel += reflectivity;
         
-        float specular = (fresnel * geom_atten * roughness_atten) / (n_dot_v * n_dot_l * 3.1419);
+        float specular = (fresnel * geom_atten * roughness_atten) / (n_dot_v * n_dot_l * PI);
         
         //specular
-        float3 lit_colour = metalness * light_colour * n_dot_l * ( k + specular * ( 1.0 - k ) );
+		//  * ( k + specular * ( 1.0 - k ) );
+        float3 lit_colour = light_colour * specular * n_dot_l;
         
         return saturate(lit_colour);    
     }

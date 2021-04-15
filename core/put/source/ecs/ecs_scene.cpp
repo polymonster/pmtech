@@ -1877,7 +1877,10 @@ namespace put
 
                     s32 joints_offset = scene->anim_controller_v2[n].joints_offset;
                     for (s32 i = 0; i < p_geom->p_skin->num_joints; ++i)
-                        bb[i] = scene->world_matrices[joints_offset + i] * p_geom->p_skin->joint_bind_matrices[i];
+                    {
+                        mat4 bm = scene->world_matrices[joints_offset + i];
+                        bb[i] = bm * p_geom->p_skin->joint_bind_matrices[i];                         
+                    }
 
                     pen::renderer_update_buffer(scene->bone_cbuffer[n], bb, sizeof(bb));
                 }
