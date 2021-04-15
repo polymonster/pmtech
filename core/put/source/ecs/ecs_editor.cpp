@@ -2126,6 +2126,24 @@ namespace put
                         auto res = get_animation_resource(controller.anim_instance_handles[i]);
                         ImGui::Text("%s", res->name.c_str());
                     }
+
+                    static bool add_anim = false;
+                    if (ImGui::Button("Add Animation"))
+                    {
+                        add_anim = true;
+                    }
+
+                    if (add_anim)
+                    {
+                        const c8* anim_file = put::dev_ui::file_browser(add_anim, dev_ui::e_file_browser_flags::open, 1, "**.pma");
+
+                        if (anim_file)
+                        {
+                            anim_handle anim = load_pma(anim_file);
+                            bind_animation_to_rig(scene, anim, selected_index);
+                            add_anim = false;
+                        }
+                    }
                 }
             }
         }
@@ -3433,6 +3451,8 @@ namespace put
 
                         put::dbg::add_line(p1, p2, vec4f::one());
                     }
+
+
                 }
             }
 
