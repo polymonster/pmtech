@@ -14,6 +14,8 @@ class skin_controller:
     joint_weight_indices = []
     vec4_weights = None
     vec4_indices = None
+    submesh_bone_offset = 0
+    num_joints_actual = 0
 
 
 # Geometries
@@ -335,53 +337,6 @@ def generate_vertex_buffer(mesh, buffer_dict):
                 write_vertex_data(p + int(v.offsets[s]), v.source_ids[s], v.semantic_ids[s], mesh)
         p += index_stride
 
-    # new
-    '''
-    semantic_index = {
-        "POSITION": 0,
-        "NORMAL": 1,
-        "TEXCOORD": 2,
-        "TEXCOORD1": 3,
-        "TEXTANGENT": 4,
-        "TEXBINORMAL": 5,
-        "BLENDINDICES": 6,
-        "BLENDWEIGHTS": 7
-    }
-    p = 0
-    for sem in semantic_index:
-        mesh.vertex_elements[semantic_index[sem]].float_values = []
-    while p < len(mesh.triangle_indices):
-        for s in buffer_dict["streams"]:
-            stream = buffer_dict["streams"][s]
-            data = buffer_dict["data"][s]
-            ii = semantic_index[s]
-            stride = int(stream["stride"])
-            offset = int(stream["offset"])
-            pi = int(mesh.triangle_indices[p + offset])
-            bp = pi * stride
-            vv = swizzle_vertex(s, data[bp:bp+3])
-            for si in range(0, stride):
-                mesh.vertex_elements[ii].float_values.append(vv[si])
-            for si in range(stride, 4):
-                mesh.vertex_elements[ii].float_values.append("1.0")
-            if s == "POSITION":
-                v = []
-                for vi in range(0, 3):
-                    v.append(float(data[bp+vi]))
-                grow_extents(v, mesh)
-        if mesh.controller:
-            i1 = semantic_index["BLENDINDICES"]
-            i2 = semantic_index["BLENDWEIGHTS"]
-            s1 = mesh.controller.vec4_indices.float_values
-            s2 = mesh.controller.vec4_weights.float_values
-            pi = int(mesh.triangle_indices[p])
-            bp = pi * 4
-            for i in range(0, int(4)):
-                mesh.vertex_elements[i1].float_values.append(s1[bp + i])
-                mesh.vertex_elements[i2].float_values.append(s2[bp + i])
-        p += index_stride
-    '''
-
     # interleave streams
     num_floats = len(mesh.vertex_elements[0].float_values)
 
@@ -444,11 +399,13 @@ def generate_vertex_buffer(mesh, buffer_dict):
 
 
 def parse_controller(controller_root, geom_name, joint_sid_list, joint_list):
+    sc = skin_controller()
+    count = 0
     for contoller in controller_root.iter(schema + 'controller'):
         for skin in contoller.iter(schema + 'skin'):
             skin_source = skin.get("source")
             if skin_source == "#geom-" + geom_name or skin_source == "#" + geom_name:
-                sc = skin_controller()
+                # print(contoller.get("name") + " = " + geom_name)
                 for bs_node in contoller.iter(schema + 'bind_shape_matrix'):
                     sc.bind_shape_matrix = bs_node.text.split()
                 for src in skin.iter(schema + 'source'):
@@ -469,15 +426,49 @@ def parse_controller(controller_root, geom_name, joint_sid_list, joint_list):
                     for v in stream.iter(schema + 'v'):
                         sc.joint_weight_indices = v.text.split()
 
+                # print bone list
+                if False:
+                    for j in joint_list:
+                        print(j + " " + str(joint_list.index(j)))
+                    print(json.dumps(joint_sid_list, indent=4))
+
+                # find bone range
+                first = len(joint_list)
+                last = 0
+                first_bone_name = ""
+                last_bone_name = ""
+                for bone in sc.joints_sid:
+                    bone_name = joint_sid_list[bone]
+                    bi = joint_list.index(bone_name)
+                    if bi < first:
+                        first = bi
+                        first_bone_name = bone_name
+                    if bi > last:
+                        last = bi
+                        last_bone_name = bone_name
+
+                sc.submesh_bone_offset = first
+
+                if False:
+                    print("first bone name: " + first_bone_name)
+                    print("last bone name: " + last_bone_name)
+                    print("sub mesh bone offset: " + str(sc.submesh_bone_offset))
+                    print("num bones: " + str(last - first))
+                    print("inds: " + str(first) + "/" + str(last))
+
                 # re-order bind shape
                 orderer_bind_matrix = []
-                for j in joint_sid_list:
-                    if j not in sc.joints_sid:
+                num_joints = (last - first) + 1
+                for i in range(0, 16*num_joints):
+                    orderer_bind_matrix.append(0)
+                for j in sc.joints_sid:
+                    if j not in joint_sid_list:
                         continue
-                    bi = sc.joints_sid.index(j)
-                    offset = bi * 16
+                    node_name = joint_sid_list[j]
+                    bone_index = joint_list.index(node_name) - sc.submesh_bone_offset
+                    bind_matrix_index = sc.joints_sid.index(j)
                     for i in range(0, 16):
-                        orderer_bind_matrix.append(sc.joint_bind_matrix[offset+i])
+                        orderer_bind_matrix[bone_index*16+i] = sc.joint_bind_matrix[bind_matrix_index*16+i]
                 sc.joint_bind_matrix = orderer_bind_matrix
 
                 sc.vec4_weights = geometry_source()
@@ -513,14 +504,13 @@ def parse_controller(controller_root, geom_name, joint_sid_list, joint_list):
                     weight_index.sort(reverse=True)
                     total = 0.0
                     for i in range(0, 4, 1):
-                        # print("index = " + str(indices[i]) + " wght = " + str(weights[i]))
                         joint_name = sc.joints_sid[int(weight_index[i][1])]
-                        ji = 0
                         for k in joint_sid_list.keys():
                             if joint_name == k:
                                 node_name = joint_sid_list[k]
                                 break
-                            ji = ji + 1
+                        ji = joint_list.index(node_name)
+                        ji -= sc.submesh_bone_offset
                         sc.vec4_indices.float_values.append(float(ji))
                         sc.vec4_weights.float_values.append(weight_index[i][0])
                         total += weight_index[i][0]
@@ -534,9 +524,10 @@ def parse_controller(controller_root, geom_name, joint_sid_list, joint_list):
                 if warn > 0:
                     print("warning: more than 4 bone influences found on " + str(warn) + " vertices")
                     print("excess weights have been discarded and the remaining re-normalised")
+                count = count + 1
                 return sc
-            return None
-    return None
+            # return None
+    # return None
 
 
 def parse_geometry(node, lib_controllers, joint_sid_list, joint_list):
@@ -615,6 +606,7 @@ def write_geometry_file(geom_instance):
         # skinning is conditional, but write any fixed length data anyway
         skinned = 0
         num_joint_floats = 0
+        bone_offset = 0
         bind_shape_matrix = [
             1.0, 0.0, 0.0, 0.0,
             0.0, 1.0, 1.0, 0.0,
@@ -625,8 +617,10 @@ def write_geometry_file(geom_instance):
             skinned = 1
             num_joint_floats = len(geom_instance.controller.joint_bind_matrix)
             bind_shape_matrix = geom_instance.controller.bind_shape_matrix
+            bone_offset = geom_instance.controller.submesh_bone_offset
         mesh_data.append(struct.pack("i", int(skinned)))
         mesh_data.append(struct.pack("i", int(num_joint_floats)))
+        mesh_data.append(struct.pack("i", int(bone_offset)))
         helpers.pack_corrected_4x4matrix(mesh_data, bind_shape_matrix)
 
         # now write data

@@ -192,6 +192,7 @@ namespace put
             mat4 bind_shape_matrix;
             mat4 joint_bind_matrices[85];
             u32  bone_cbuffer = PEN_INVALID_HANDLE;
+            u32  bone_offset = 0;
         };
 
         // contains handles and data to re-create a material from scratch

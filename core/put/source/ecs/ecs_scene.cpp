@@ -198,7 +198,7 @@ namespace put
                 pen::renderer_release_buffer(scene->cbuffer[node_index]);
                 
             // delete skinng buffers, sub_geomtry share their parents
-            if(!(scene->bone_cbuffer[node_index] & e_cmp::sub_geometry))
+            if(!(scene->entities[node_index] & e_cmp::sub_geometry))
                 if (is_valid_non_null(scene->bone_cbuffer[node_index]))
                     pen::renderer_release_buffer(scene->cbuffer[node_index]);
 
@@ -1055,8 +1055,6 @@ namespace put
                     cur_ib = p_geom->index_buffer;
                 }
 
-                // draw
-
                 // instances
                 if (scene->entities[n] & e_cmp::master_instance)
                 {
@@ -1089,6 +1087,10 @@ namespace put
                     continue;
 
                 cmp_anim_controller_v2 controller = scene->anim_controller_v2[n];
+                
+                // rig may be scaled
+                u32 p = scene->parents[n];
+                vec3f parent_scale = scene->transforms[p].scale;
 
                 u32 num_anims = sb_count(controller.anim_instances);
                 for (u32 ai = 0; ai < num_anims; ++ai)
@@ -1224,7 +1226,7 @@ namespace put
                     if (tj != PEN_INVALID_HANDLE)
                     {
                         f32*  f = &instance.targets[tj].t[0];
-                        vec3f tt = vec3f(f[0], f[1], f[2]);
+                        vec3f tt = vec3f(f[0], f[1], f[2]) * parent_scale;
 
                         if (instance.samplers[0].flags & e_anim_flags::looped)
                         {
@@ -1265,17 +1267,20 @@ namespace put
                             q.get_matrix(rot_mat);
 
                             vec3f transform_translation = rot_mat.transform_vector(lerp_delta);
+                            
+                            // apply to parent so we bring along sub or sibling meshes
+                            u32 p = scene->parents[n];
 
                             // apply root motion to the root controller, so we bring along the meshes
-                            scene->transforms[n].rotation = q;
-                            scene->transforms[n].translation += transform_translation;
-                            scene->entities[n] |= e_cmp::transform;
+                            scene->transforms[p].rotation = q;
+                            scene->transforms[p].translation += transform_translation;
+                            scene->entities[p] |= e_cmp::transform;
 
                             continue;
                         }
 
                         tc.translation = lerp(ta.translation, tb.translation, t);
-                        tc.rotation = slerp2(ta.rotation, tb.rotation, t);
+                        tc.rotation = slerp(ta.rotation, tb.rotation, t);
                         tc.scale = lerp(ta.scale, tb.scale, t);
 
                         scene->entities[jnode] |= e_cmp::transform;
@@ -1874,12 +1879,16 @@ namespace put
 
                         scene->bone_cbuffer[n] = pen::renderer_create_buffer(bcp);
                     }
-
+                    
                     s32 joints_offset = scene->anim_controller_v2[n].joints_offset;
+                    joints_offset += p_geom->p_skin->bone_offset;
+                    
                     for (s32 i = 0; i < p_geom->p_skin->num_joints; ++i)
                     {
-                        mat4 bm = scene->world_matrices[joints_offset + i];
-                        bb[i] = bm * p_geom->p_skin->joint_bind_matrices[i];                         
+                        mat4& joint_matrix = scene->world_matrices[joints_offset + i];
+                        mat4& bind_matrix = p_geom->p_skin->joint_bind_matrices[i];
+                        
+                        bb[i] = joint_matrix * bind_matrix;
                     }
 
                     pen::renderer_update_buffer(scene->bone_cbuffer[n], bb, sizeof(bb));

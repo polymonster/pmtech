@@ -295,6 +295,7 @@ def write_geometry(file, root):
         # skinning is not supported in obj, but write any fixed length data anyway
         mesh_data.append(struct.pack("i", int(skinned)))
         mesh_data.append(struct.pack("i", int(num_joint_floats)))
+        mesh_data.append(struct.pack("i", int(0))) # bone offset
         helpers.pack_corrected_4x4matrix(mesh_data, bind_shape_matrix)
 
         for vf in mesh[pb]:

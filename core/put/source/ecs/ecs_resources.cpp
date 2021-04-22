@@ -83,6 +83,7 @@ namespace
         u32   num_indices;
         u32   skinned;
         u32   num_joint_floats;
+        u32   bone_offset;
         mat4  bind_shape_matrix;
         // end of header
         u32    vertex_size;
@@ -202,6 +203,7 @@ namespace
                 sm.num_indices = *p_reader++;
                 sm.skinned = *p_reader++;
                 sm.num_joint_floats = *p_reader++;
+                sm.bone_offset = *p_reader++;
                 memcpy(&sm.bind_shape_matrix, p_reader, sizeof(mat4));
                 p_reader += k_matrix_floats;
 
@@ -252,6 +254,8 @@ namespace
     {
         std::vector<pmm_geometry> geom;
         parse_pmm_geometry(contents, geom);
+        
+        u32 first_bone_offset = -1;
 
         for (u32 g = 0; g < contents.num_geometry; ++g)
         {
@@ -298,9 +302,18 @@ namespace
                 // assign skinning
                 if (sm.skinned)
                 {
+                    // bones indices are relative to the first bone
+                    u32 bone_offset = sm.bone_offset;
+                    if(first_bone_offset == -1)
+                    {
+                        first_bone_offset = bone_offset;
+                    }
+                    bone_offset -= first_bone_offset;
+                    
                     p_geometry->p_skin = (cmp_skin*)pen::memory_alloc(sizeof(cmp_skin));
                     p_geometry->p_skin->bone_cbuffer = PEN_INVALID_HANDLE;
                     p_geometry->p_skin->bind_shape_matrix = sm.bind_shape_matrix;
+                    p_geometry->p_skin->bone_offset = bone_offset;
                     p_geometry->p_skin->num_joints = sm.num_joint_floats / k_matrix_floats;
                     memset(p_geometry->p_skin->joint_bind_matrices, 0x0, sizeof(p_geometry->p_skin->joint_bind_matrices));
                     memcpy(p_geometry->p_skin->joint_bind_matrices, sm.joint_data, sm.joint_data_size);
@@ -453,6 +466,8 @@ namespace
         u32 node_zero_offset = nodes_start + 1;
         u32 current_node = node_zero_offset;
         u32 inserted_nodes = 0;
+        s32 root_bone = -1;
+        s32 trajectory_node = -1;
 
         // load scene nodes
         for (u32 n = 0; n < num_import_nodes; ++n)
@@ -471,10 +486,18 @@ namespace
             scene->entities[current_node] |= e_cmp::allocated;
 
             if (scene->id_geometry[current_node] == ID_JOINT)
+            {
                 scene->entities[current_node] |= e_cmp::bone;
+                
+                if(root_bone == -1)
+                    root_bone = current_node;
+            }
 
             if (scene->id_name[current_node] == ID_TRAJECTORY)
+            {
                 scene->entities[current_node] |= e_cmp::anim_trajectory;
+                trajectory_node = current_node;
+            }
 
             u32 num_meshes = *p_u32reader++;
 
@@ -741,6 +764,12 @@ namespace
 
             // delete temp root
             scene->entities[old_root] &= ~e_cmp::allocated;
+        }
+        
+        // assign trajectory to root bone if we dont have a dedicated trajectory node
+        if(trajectory_node == -1 && root_bone != -1)
+        {
+            scene->entities[root_bone] |= e_cmp::anim_trajectory;
         }
 
         // now we have loaded the whole scene fix up any anim controllers
@@ -1284,6 +1313,9 @@ namespace put
                 if (!mr->id_sampler_state[i])
                     mr->id_sampler_state[i] = id_default_sampler_state;
             }
+            
+            memset(&scene->material_resources[node_index].shader_name , 0x00, sizeof(Str));
+            memset(&scene->material_resources[node_index].material_name , 0x00, sizeof(Str));
 
             scene->material_resources[node_index] = *mr;
 
@@ -1505,7 +1537,7 @@ namespace put
                                 f32*  ts[3] = {0};
                                 quat* tq[3] = {0};
                                 tq[0] = new quat[num_mats];
-
+                                
                                 for (u32 t = 0; t < 3; ++t)
                                 {
                                     to[t] = new f32[num_mats];
@@ -1524,7 +1556,6 @@ namespace put
                                     quat  rot;
                                     rot.from_matrix(mat);
 
-                                    //tq[0][m] = normalised(rot);
                                     tq[0][m] = rot;
 
                                     f32 sx = mag((vec3f)mat.get_row(0).xyz);
@@ -1955,6 +1986,7 @@ namespace put
                     ofs.write((const c8*)&sm.num_indices, sizeof(u32));
                     ofs.write((const c8*)&sm.skinned, sizeof(u32));
                     ofs.write((const c8*)&sm.num_joint_floats, sizeof(u32));
+                    ofs.write((const c8*)&sm.bone_offset, sizeof(u32));
                     ofs.write((const c8*)&sm.bind_shape_matrix, sizeof(mat4));
                     // data buffers
                     ofs.write((const c8*)sm.joint_data, sm.joint_data_size);
