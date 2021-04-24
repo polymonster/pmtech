@@ -145,7 +145,7 @@ shader_resources
     texture_2d( ltc_mat, 13 );
     texture_2d( ltc_mag, 12 );
     if:(PMFX_TEXTURE_CUBE_ARRAY) {
-        texture_cube_array( omni_shadow_texture, 10 );
+        depth_cube_array( omni_shadow_texture, 10 );
     }
     texture_2d_array( area_light_textures, 11 );
     texture_3d( volume_gi, 9 );
@@ -599,9 +599,13 @@ ps_output ps_forward_lit( vs_output input )
                 float3 to_light = (input.world_pos.xyz - lights[i].pos_radius.xyz);
                 float d = length(to_light) / 2.0; // omni shadow space far plane is radius * 2.0
                 float3 cv = normalize(to_light) * float3(1.0, 1.0, -1.0);
-                
-                float cube_d = sample_texture_cube_array_level(omni_shadow_texture, cv, float(omni_shadow_index), 0.0).r;
-                lit_colour += d < cube_d * lights[i].pos_radius.w ? light_col : float3(0.0, 0.0, 0.0);
+				
+				// add small epsilon and convert to 0-1
+				d /= lights[i].pos_radius.w;
+				d -= 0.00025f;
+                				
+				float ll = sample_depth_compare_cube_array(omni_shadow_texture, cv, float(omni_shadow_index), d).r;
+				lit_colour += light_col * ll;
 
                 ++omni_shadow_index;
             }

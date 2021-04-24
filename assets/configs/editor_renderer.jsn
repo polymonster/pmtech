@@ -70,7 +70,7 @@ import post_process.jsn
             [
                 { texture: shadow_map, unit: 15, state: shadow_compare, shader: ps },
                 { texture: area_light_textures, unit: 11, state: clamp_linear, shader: ps },
-                { texture: omni_shadow_map, unit: 10, state: clamp_linear, shader: ps },
+                { texture: omni_shadow_map, unit: 10, state: shadow_compare, shader: ps },
                 { texture: volume_gi, unit: 9, state: clamp_linear, shader: ps },
             ],
         },
