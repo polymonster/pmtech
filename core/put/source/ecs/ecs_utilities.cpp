@@ -697,8 +697,7 @@ namespace put
                 sb_push(anim_instance.samplers, sampler);
             }
 
-            u32 num_samplers = sb_count(anim_instance.samplers);
-            PEN_ASSERT(num_samplers == anim->num_channels);
+            PEN_ASSERT(sb_count(anim_instance.samplers) == anim->num_channels);
 
             u32 anim_index = sb_count(controller.anim_instances);
             sb_push(controller.anim_instances, anim_instance);

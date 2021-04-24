@@ -1688,7 +1688,6 @@ namespace put
         {
             static u32     dim = 128;
             static hash_id id_volume_raster_rt = PEN_HASH("volume_raster");
-            static hash_id id_volume_raster_ds = PEN_HASH("volume_raster_ds");
 
             u32 cur_dim = 1 << s_options.volume_dimension;
 
