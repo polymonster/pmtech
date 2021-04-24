@@ -425,7 +425,7 @@ function setup_live_lib( project_name )
 		configuration { "Release" }
 			if platform == "osx" then
 				defines {
-					('LIVE_LIB="\\\"lib' .. project_name .. '.dylb\\\""')
+					('LIVE_LIB="\\\"lib' .. project_name .. '.dylib\\\""')
 				}
 			elseif platform == "win2" then
 				defines {

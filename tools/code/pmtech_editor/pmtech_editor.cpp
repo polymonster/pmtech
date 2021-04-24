@@ -45,10 +45,16 @@
 #endif
 #endif
 
+// setup for cr live linking
 #define CR_HOST
 #define CR_DEBUG
 #include "cr/cr.h"
 #include "ecs/ecs_live.h"
+
+// allows linking with cr as dll or the same code path statically linked in for final executables
+#if CR_STATIC
+extern int cr_main(struct cr_plugin *ctx, enum cr_op operation);
+#endif
 
 using namespace put;
 using namespace put::ecs;
@@ -100,13 +106,15 @@ namespace
         ll = pen::str_replace_string(ll, "\"", "");
 
         live_lib = cr_plugin_open(ctx, ll.c_str());
-
-        if(live_lib)
-        {
-            lc = new live_context();
-            lc->scene = main_scene;
-            lc->main_camera = &main_camera;
-        }
+        
+        lc = new live_context();
+        lc->scene = main_scene;
+        lc->main_camera = &main_camera;
+        
+#if CR_STATIC
+        ctx.userdata = lc;
+        cr_main(&ctx, CR_LOAD);
+#endif
     }
     
     void* editor_setup(void* params)
@@ -170,13 +178,19 @@ namespace
     
     void update_live_lib()
     {
+        lc->dt = dt;
+        ctx.userdata = (void*)lc;
+            
+#if CR_STATIC
+        cr_main(&ctx, CR_STEP);
+#else
         if(live_lib)
         {
-            lc->dt = dt;
-            ctx.userdata = (void*)lc;
             cr_plugin_update(ctx);
-            lc->load_index++;
         }
+#endif
+
+        lc->load_index++;
     }
 
     loop_t editor_update()
