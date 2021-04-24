@@ -48,7 +48,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->lights[light].colour = vec3f::one() * 0.3f;
     scene->lights[light].direction = vec3f::one();
     scene->lights[light].type = e_light_type::dir;
-    //scene->lights[light].flags |= e_light_flags::shadow_map;
+    scene->lights[light].flags |= e_light_flags::shadow_map;
     scene->transforms[light].translation = vec3f::zero();
     scene->transforms[light].rotation = quat();
     scene->transforms[light].scale = vec3f::one();
@@ -94,7 +94,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->lights[light].radius = 30.0f; // range
     scene->lights[light].spot_falloff = 0.2f;
     scene->lights[light].type = e_light_type::spot;
-    //scene->lights[light].flags |= e_light_flags::shadow_map;
+    scene->lights[light].flags |= e_light_flags::shadow_map;
     scene->transforms[light].translation = vec3f(75.0f, 30.0f, -50.0f);
     scene->transforms[light].rotation = quat(-45.0f, 0.0f, 0.0f);
     scene->transforms[light].scale = vec3f::one();
@@ -110,7 +110,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->lights[light].radius = 30.0f; // range
     scene->lights[light].spot_falloff = 0.2f;
     scene->lights[light].type = e_light_type::spot;
-    //scene->lights[light].flags |= e_light_flags::shadow_map;
+    scene->lights[light].flags |= e_light_flags::shadow_map;
     scene->transforms[light].translation = vec3f(-75.0f, 30.0f, 50.0f);
     scene->transforms[light].rotation = quat(45.0f, 0.0f, 0.0f);
     scene->transforms[light].scale = vec3f::one();

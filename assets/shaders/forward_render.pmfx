@@ -604,7 +604,7 @@ ps_output ps_forward_lit( vs_output input )
 				d /= lights[i].pos_radius.w;
 				d -= 0.00025f;
                 				
-				float ll = sample_depth_compare_cube_array(omni_shadow_texture, cv, float(omni_shadow_index), d).r;
+				float ll = sample_depth_compare_cube_array(omni_shadow_texture, cv, float(omni_shadow_index), d);
 				lit_colour += light_col * ll;
 
                 ++omni_shadow_index;
