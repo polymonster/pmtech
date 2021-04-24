@@ -427,7 +427,7 @@ function setup_live_lib( project_name )
 				defines {
 					('LIVE_LIB="\\\"lib' .. project_name .. '.dylib\\\""')
 				}
-			elseif platform == "win2" then
+			elseif platform == "win32" then
 				defines {
 					('LIVE_LIB="\\\"' .. project_name .. '.dll\\\""')
 				}
