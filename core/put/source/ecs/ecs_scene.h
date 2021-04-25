@@ -163,7 +163,8 @@ namespace put
                 sub_geometry = (1 << 17),
                 sdf_shadow = (1 << 18),
                 volume = (1 << 19),
-                samplers = (1 << 20)
+                samplers = (1 << 20),
+                custom_instance_buffer = (1<<21)
             };
         }
 

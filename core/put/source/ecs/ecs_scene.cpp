@@ -966,6 +966,11 @@ namespace put
             for (u32 i = 0; i < vc; ++i)
             {
                 u32 n = culled_entities[i];
+                
+                // skip 0 instance buffers
+                if (scene->entities[n] & e_cmp::master_instance)
+                    if(scene->master_instances[n].num_instances == 0)
+                        continue;
 
                 cmp_geometry* p_geom = &scene->geometries[n];
                 if (!(scene->entities[n] & e_cmp::skinned))
@@ -1038,6 +1043,7 @@ namespace put
                     u32 offsets[2] = {0};
 
                     pen::renderer_set_vertex_buffers(vbs, 2, 0, strides, offsets);
+                    cur_vb = vbs[0];
                 }
                 else
                 {
@@ -1058,9 +1064,12 @@ namespace put
                 // instances
                 if (scene->entities[n] & e_cmp::master_instance)
                 {
-                    u32 num_instances = scene->master_instances[n].num_instances;
-                    pen::renderer_draw_indexed_instanced(num_instances, 0, p_geom->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
-                    n += num_instances;
+                    pen::renderer_draw_indexed_instanced(
+                        scene->master_instances[n].num_instances, 0, p_geom->num_indices, 0, 0, PEN_PT_TRIANGLELIST);
+                    
+                    if(!(scene->entities[n] & e_cmp::custom_instance_buffer))
+                        n += scene->master_instances[n].num_instances;
+                        
                     continue;
                 }
 
@@ -1937,6 +1946,9 @@ namespace put
             for (size_t n = 0; n < scene->num_entities; ++n)
             {
                 if (!(scene->entities[n] & e_cmp::master_instance))
+                    continue;
+                    
+                if (scene->entities[n] & e_cmp::custom_instance_buffer)
                     continue;
 
                 cmp_master_instance& master = scene->master_instances[n];
