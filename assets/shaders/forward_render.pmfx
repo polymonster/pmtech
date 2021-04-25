@@ -1140,8 +1140,8 @@ pmfx:
         
         permutations:
         {
-            "SKINNED": [31, [0,1]],
-            "INSTANCED": [30, [0,1]]
+            SKINNED: [31, [0,1]],
+            INSTANCED: [30, [0,1]]
         }
     },
     
