@@ -261,6 +261,10 @@ namespace put
             entity_cpy(scene, a, b);
             entity_cpy(scene, b, temp);
 
+            // update refs
+            scene->ecs_refs[scene->ref_slot[b]] = b;
+            scene->ecs_refs[scene->ref_slot[a]] = a;
+            
             // swap parents
             for (u32 i = 0; i < scene->num_entities; ++i)
             {
@@ -323,6 +327,7 @@ namespace put
             if (mode == e_clone_mode::instantiate)
             {
                 // todo, clone / instantiate constraint
+                p_sn->ref_slot[dst] = ecs::allocate_ref(scene, dst);
 
                 if (p_sn->physics_handles[src])
                     instantiate_rigid_body(scene, dst);
@@ -1096,6 +1101,7 @@ namespace put
                     continue;
 
                 cmp_anim_controller_v2 controller = scene->anim_controller_v2[n];
+                u32 root = ecs::get_index_from_ref(scene, controller.root_joint_ref);
                 
                 // rig may be scaled
                 u32 p = scene->parents[n];
@@ -1209,7 +1215,7 @@ namespace put
                     u32 tj = PEN_INVALID_HANDLE;
                     for (u32 j = 0; j < num_joints; ++j)
                     {
-                        u32 jnode = controller.joint_indices[j];
+                        u32 jnode = controller.joint_indices[j] + root;
 
                         if (scene->entities[jnode] & e_cmp::anim_trajectory)
                         {
@@ -1261,7 +1267,7 @@ namespace put
                     u32 num_joints = sb_count(a.joints);
                     for (u32 j = 0; j < num_joints; ++j)
                     {
-                        u32 jnode = controller.joint_indices[j];
+                        u32 jnode = controller.joint_indices[j] + root;
 
                         cmp_transform& tc = scene->transforms[jnode];
                         cmp_transform& ta = a.joints[j];
@@ -1827,6 +1833,7 @@ namespace put
                         continue;
 
                     // update bone cbuffer
+                    static mat4 bb[85];
                     cmp_geometry& geom = scene->geometries[n];
                     if (geom.p_skin->bone_cbuffer == PEN_INVALID_HANDLE)
                     {
@@ -1840,8 +1847,10 @@ namespace put
                         geom.p_skin->bone_cbuffer = pen::renderer_create_buffer(bcp);
                     }
 
-                    static mat4 bb[85];
-                    s32         joints_offset = scene->anim_controller_v2[n].joints_offset;
+                    u32 rjr = scene->anim_controller_v2[n].root_joint_ref;
+                    s32 joints_offset = ecs::get_index_from_ref(scene, rjr);
+                    joints_offset += geom.p_skin->bone_offset;
+                    
                     for (s32 i = 0; i < geom.p_skin->num_joints; ++i)
                         bb[i] = scene->world_matrices[joints_offset + i] * geom.p_skin->joint_bind_matrices[i];
 
@@ -1889,14 +1898,14 @@ namespace put
                         scene->bone_cbuffer[n] = pen::renderer_create_buffer(bcp);
                     }
                     
-                    s32 joints_offset = scene->anim_controller_v2[n].joints_offset;
+                    u32 rjr = scene->anim_controller_v2[n].root_joint_ref;
+                    s32 joints_offset = ecs::get_index_from_ref(scene, rjr);
                     joints_offset += p_geom->p_skin->bone_offset;
                     
                     for (s32 i = 0; i < p_geom->p_skin->num_joints; ++i)
                     {
                         mat4& joint_matrix = scene->world_matrices[joints_offset + i];
                         mat4& bind_matrix = p_geom->p_skin->joint_bind_matrices[i];
-                        
                         bb[i] = joint_matrix * bind_matrix;
                     }
 

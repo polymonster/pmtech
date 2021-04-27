@@ -2118,7 +2118,9 @@ namespace put
                 if (ImGui::CollapsingHeader("Animations"))
                 {
                     auto& controller = scene->anim_controller_v2[selected_index];
-                    ImGui::InputInt("Joint Offset", (s32*)&controller.joints_offset);
+                    u32 root_joint = ecs::get_index_from_ref(scene, controller.root_joint_ref);
+                    
+                    ImGui::InputInt("Root Joint", (s32*)&root_joint);
 
                     u32 num_anims = sb_count(controller.anim_instances);
                     for(u32 i = 0; i < num_anims; ++i)

@@ -22,7 +22,9 @@
 namespace put
 {
     struct scene_view;
+    
     typedef s32 anim_handle;
+    typedef u32 ecs_ref;
 
     namespace ecs
     {
@@ -304,10 +306,10 @@ namespace put
             anim_instance* anim_instances = nullptr;
             anim_handle*   anim_instance_handles = nullptr;
             hash_id*       anim_instance_ids = nullptr;
-            u32*           joint_indices = nullptr; // indices into the scene hierarchy
+            u32*           joint_indices = nullptr; // indices offset from the root_joint
             u8*            joint_flags = nullptr;
-            anim_blend     blend;
-            u32            joints_offset;
+            anim_blend     blend = {};
+            ecs_ref        root_joint_ref = -1;
         };
 
         struct cmp_light
@@ -453,7 +455,7 @@ namespace put
             void*                    context = nullptr;
             ecs_controller_functions funcs;
         };
-
+        
         struct ecs_scene
         {
             static const u32 k_version = 9;
@@ -505,6 +507,7 @@ namespace put
             cmp_array<pmfx::scene_render_flags> render_flags;
             cmp_array<cmp_pos_extent>           pos_extent;           // version 10
             cmp_array<u32>                      bone_cbuffer;
+            cmp_array<ecs_ref>                  ref_slot;             // version 11
 
             // num base components calculates value based on its address - entities address.
             u32 num_base_components;
@@ -518,6 +521,8 @@ namespace put
             size_t           num_entities = 0;
             u32              soa_size = 0;
             free_node_list*  free_list_head = nullptr;
+            free_node_list*  ref_free_list_head = nullptr;
+            ecs_ref*         ecs_refs = nullptr;
             u32              forward_light_buffer = PEN_INVALID_HANDLE;
             u32              sdf_shadow_buffer = PEN_INVALID_HANDLE;
             u32              area_light_buffer = PEN_INVALID_HANDLE;
@@ -551,7 +556,7 @@ namespace put
         void update(f32 dt);
         void update_scene(ecs_scene* scene, f32 dt);
         void reset(ecs_scene* scene);
-
+        
         void render_scene_view(const scene_view& view);
         void render_light_volumes(const scene_view& view);
         void render_shadow_views(const scene_view& view);
@@ -569,7 +574,7 @@ namespace put
         void delete_entity_first_pass(ecs_scene* scene, u32 node_index);
         void delete_entity_second_pass(ecs_scene* scene, u32 node_index);
 
-        void initialise_free_list(ecs_scene* scene);
+        void    initialise_free_list(ecs_scene* scene);
 
         void            register_ecs_extension(ecs_scene* scene, const ecs_extension& ext);
         void            unregister_ecs_extensions(ecs_scene* scene);

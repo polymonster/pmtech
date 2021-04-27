@@ -87,6 +87,52 @@ namespace put
                 ofs.write((const c8*)&zero, sizeof(u32));
             }
         }
+        
+        void insert_new_entities(ecs_scene* scene, s32 pos, s32 num)
+        {
+            u32 shift_count = scene->num_entities - pos;
+            
+            // inserts new entites at pos moving entities downward to make space
+            u32 max_num = scene->num_entities + num;
+            if (max_num >= scene->soa_size || !scene->free_list_head)
+                resize_scene_buffers(scene, max_num * 2);
+            
+            scene->num_entities = max_num;
+            
+            // move components
+            for (u32 i = 0; i < scene->num_components; ++i)
+            {
+                generic_cmp_array& cmp = scene->get_component_array(i);
+                memmove(cmp[pos+num], cmp[pos], cmp.size*shift_count);
+            }
+            
+            // fix refs
+            for (u32 i = pos+num; i < scene->num_entities; ++i)
+            {
+                ecs_ref r = scene->ref_slot[i];
+                scene->ecs_refs[r] = i;
+                scene->parents[i] += num;
+            }
+            
+            // zero mem
+            for (u32 i = 0; i < scene->num_components; ++i)
+            {
+                generic_cmp_array& cmp = scene->get_component_array(i);
+                memset(cmp[pos], 0x00, cmp.size*num);
+            }
+            
+            // allocate new entities
+            for(u32 i = pos; i < pos+num; ++i)
+            {
+                scene->ref_slot[i] = allocate_ref(scene, i);
+                scene->entities[i] |= e_cmp::allocated;
+                scene->parents[i] = i;
+            }
+
+            //fully update free list
+            initialise_free_list(scene);
+            scene->flags |= e_scene_flags::invalidate_scene_tree;
+        }
 
         void get_new_entities_append(ecs_scene* scene, s32 num, s32& start, s32& end)
         {
@@ -100,7 +146,10 @@ namespace put
 
             // iterate over nodes flagging allocated
             for (s32 i = start; i < end; ++i)
+            {
+                scene->ref_slot[i] = allocate_ref(scene, i);
                 scene->entities[i] |= e_cmp::allocated;
+            }
 
             scene->free_list_head = scene->free_list[end].next;
 
@@ -164,7 +213,9 @@ namespace put
                 fnl_iter = fnl_start;
                 for (s32 i = 0; i < num + 1; ++i)
                 {
+                    scene->ref_slot[fnl_iter->node] = allocate_ref(scene, fnl_iter->node);
                     scene->entities[fnl_iter->node] |= e_cmp::allocated;
+                    
                     scene->free_list_head = fnl_iter;
                     fnl_iter = fnl_iter->next;
                 }
@@ -198,14 +249,17 @@ namespace put
 
             scene->num_entities = std::max<u32>(i + 1, scene->num_entities);
 
-            scene->entities[i] = e_cmp::allocated;
-
             scene->names[i] = "";
             scene->names[i].appendf("entity_%i", i);
+            scene->id_name[i] = PEN_HASH(scene->names[i].c_str());
 
             // default parent is self (no parent)
             scene->parents[i] = i;
-
+            
+            // allocate
+            scene->ref_slot[i] = allocate_ref(scene, i);
+            scene->entities[i] = e_cmp::allocated;
+            
             return i;
         }
 
@@ -640,12 +694,13 @@ namespace put
             anim_instance.length = anim->length;
 
             cmp_anim_controller_v2& controller = scene->anim_controller_v2[node_index];
+            u32 root = ecs::get_index_from_ref(scene, controller.root_joint_ref);
 
             // initialise anim with starting transform
             u32 num_joints = sb_count(controller.joint_indices);
             for (u32 j = 0; j < num_joints; ++j)
             {
-                u32 jnode = controller.joint_indices[j];
+                u32 jnode = controller.joint_indices[j] + root;
 
                 // create space for trans quat scale
                 const cmp_transform& t = scene->initial_transform[jnode];
@@ -677,7 +732,7 @@ namespace put
                 // find bone for channel
                 for (u32 j = 0; j < num_joints; ++j)
                 {
-                    u32 jnode = controller.joint_indices[j];
+                    u32 jnode = controller.joint_indices[j] + root;
 
                     u32 bone_len = scene->names[jnode].length();
                     u32 target_len = anim->channels[c].target_name.length();

@@ -456,6 +456,7 @@ namespace
         // root node
         u32 root = nodes_start;
         scene->names[root] = pen::str_basename(filename);
+        scene->id_name[root] = PEN_HASH(scene->names[root]);
         scene->parents[root] = nodes_start;
         scene->transforms[root].scale = vec3f::one();
         scene->transforms[root].translation = vec3f::zero();
@@ -1130,44 +1131,24 @@ namespace put
             {
                 cmp_anim_controller_v2& controller = scene->anim_controller_v2[node_index];
 
-                //std::vector<s32> joint_indices;
-                //build_heirarchy_node_list(scene, node_index, joint_indices);
-
-                controller.joints_offset = -1;
+                u32 joints_offset = -1;
                 for (u32 i = node_index; i < scene->soa_size; ++i)
                 {
                     if(scene->entities[i] & e_cmp::bone)
                     {
-                        if (controller.joints_offset == -1)
+                        if (joints_offset == -1)
                         {
-                            controller.joints_offset = i;
+                            joints_offset = i;
                         }
 
-                        sb_push(controller.joint_indices, i);
+                        sb_push(controller.joint_indices, i - joints_offset);
                     }
 
-                    if (!(scene->entities[i] & e_cmp::bone) && controller.joints_offset != -1)
+                    if (!(scene->entities[i] & e_cmp::bone) && joints_offset != -1)
                         break;
                 }
-
-                /*
-                std::vector<s32> joint_indices;
-                build_heirarchy_node_list(scene, first_bone, joint_indices);
-
-                controller.joints_offset = -1;
-                for (s32 jj = 0; jj < joint_indices.size(); ++jj)
-                {
-                    s32 jnode = joint_indices[jj];
-
-                    if (jnode > -1 && scene->entities[jnode] & e_cmp::bone)
-                    {
-                        if (controller.joints_offset == -1)
-                            controller.joints_offset = jnode;
-
-                        sb_push(controller.joint_indices, jnode);
-                    }
-                }
-                */
+                
+                controller.root_joint_ref = ecs::get_ref_from_index(scene, joints_offset);
 
                 scene->entities[node_index] |= e_cmp::anim_controller;
             }
