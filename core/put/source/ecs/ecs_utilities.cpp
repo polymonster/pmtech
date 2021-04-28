@@ -686,7 +686,7 @@ namespace put
             instantiate_model_cbuffer(scene, nn);
         }
 
-        u32 bind_animation_to_rig(ecs_scene* scene, anim_handle anim_handle, u32 node_index)
+        u32 bind_animation_to_rig(ecs_scene* scene, anim_handle anim_handle, u32 node_index, u32 flags)
         {
             animation_resource* anim = get_animation_resource(anim_handle);
             anim_instance       anim_instance;
@@ -751,6 +751,8 @@ namespace put
 
                 sb_push(anim_instance.samplers, sampler);
             }
+            
+            anim_instance.flags = flags;
 
             PEN_ASSERT(sb_count(anim_instance.samplers) == anim->num_channels);
 

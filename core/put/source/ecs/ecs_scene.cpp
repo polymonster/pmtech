@@ -1123,10 +1123,19 @@ namespace put
 
                     // roll on time
                     instance.time += dt;
-                    if (instance.time >= instance.length)
+                    
+                    //
+                    if (instance.flags & e_anim_flags::clamp)
                     {
-                        instance.time = 0.0f;
-                        looped = true;
+                        instance.time = min(instance.time, instance.length);
+                    }
+                    else
+                    {
+                        if (instance.time >= instance.length)
+                        {
+                            instance.time = 0.0f;
+                            looped = true;
+                        }
                     }
 
                     if (instance.flags & e_anim_flags::looped)

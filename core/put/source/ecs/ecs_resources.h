@@ -18,7 +18,8 @@ namespace put
                 apply_root_motion = 1 << 1,
                 baked_quaternion = 1 << 2,
                 looped = 1 << 3,
-                paused = 1 << 4
+                paused = 1 << 4,
+                clamp = 1 << 5
             };
         }
         typedef u32 anim_flags;
