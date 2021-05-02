@@ -91,6 +91,9 @@ namespace put
                 // entity flags accept
                 if ((scene->entities[i] & accept_entities) != accept_entities)
                     continue;
+                    
+                if (scene->state_flags[i] & e_state::hidden)
+                    continue;
 
                 // entity flags reject
                 if (reject_entities)

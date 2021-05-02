@@ -33,6 +33,7 @@ namespace put
         void    free_ref(ecs_scene* scene, ecs_ref ref);
         ecs_ref get_ref_from_id(ecs_scene* scene, hash_id idname);
         ecs_ref get_child_ref_from_id(ecs_scene* scene, hash_id idname, s32 parent);
+        u32     get_child_index_from_id(ecs_scene* scene, hash_id idname, s32 parent);
         u32     get_index_from_id(ecs_scene* scene, hash_id idname);
         u32     get_index_from_ref(ecs_scene* scene, ecs_ref ref);
         u32     get_ref_from_index(ecs_scene* scene, u32 index);
@@ -100,6 +101,22 @@ namespace put
             {
                 if(idname == scene->id_name[i])
                     return scene->ref_slot[i];
+                    
+                u32 p = scene->parents[i];
+                if(p == i && i != parent)
+                {
+                    break;
+                }
+            }
+            return -1;
+        }
+        
+        pen_inline u32 get_child_index_from_id(ecs_scene* scene, hash_id idname, s32 parent)
+        {
+            for(u32 i = parent; i < scene->num_entities; ++i)
+            {
+                if(idname == scene->id_name[i])
+                    return i;
                     
                 u32 p = scene->parents[i];
                 if(p == i && i != parent)
