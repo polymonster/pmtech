@@ -1456,7 +1456,7 @@ namespace put
                 f = f2;
 
                 bool valid = true;
-                if ((s32)f.width <= 0 || (s32)f.height <= 0 || (s32)f.x <= 0 || (s32)f.y <= 0)
+                if ((s32)f.width <= 0 || (s32)f.height <= 0 || (s32)f.x < 0 || (s32)f.y < 0)
                     valid = false;
 
                 if (valid)
