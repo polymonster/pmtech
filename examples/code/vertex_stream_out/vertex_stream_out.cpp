@@ -70,6 +70,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->transforms[skinned_char].scale = vec3f(0.25f);
     scene->entities[skinned_char] |= e_cmp::transform;
 
+    // instantiates pre skin buffers, baking skinned mesh once per frame
     instantiate_model_pre_skin(scene, skinned_char);
 
     // load an animation
