@@ -277,25 +277,26 @@ namespace put
         void optimise_pmm(const c8* input_filename, const c8* output_filename);
         void optimise_pma(const c8* input_filename, const c8* output_filename);
 
-        void instantiate_rigid_body(ecs_scene* scene, u32 node_index);
+        void instantiate_rigid_body(ecs_scene* scene, u32 entity_index);
         void instantiate_compound_rigid_body(ecs_scene* scene, u32 parent, u32* children, u32 num_children);
-        void instantiate_constraint(ecs_scene* scene, u32 node_index);
-        void instantiate_geometry(geometry_resource* gr, ecs_scene* scene, s32 node_index);
-        void instantiate_model_pre_skin(ecs_scene* scene, s32 node_index);
-        void instantiate_model_cbuffer(ecs_scene* scene, s32 node_index);
-        void instantiate_material_cbuffer(ecs_scene* scene, s32 node_index, s32 size);
-        void instantiate_anim_controller_v2(ecs_scene* scene, s32 node_index);
-        void instantiate_material(material_resource* mr, ecs_scene* scene, u32 node_index);
-        void instantiate_sdf_shadow(const c8* pmv_filename, ecs_scene* scene, u32 node_index);
-        void instantiate_light(ecs_scene* scene, u32 node_index);
-        void instantiate_area_light(ecs_scene* scene, u32 node_index);
-        void instantiate_area_light_ex(ecs_scene* scene, u32 node_index, area_light_resource& alr);
+        void instantiate_constraint(ecs_scene* scene, u32 entity_index);
+        void instantiate_geometry(geometry_resource* gr, ecs_scene* scene, s32 entity_index);
+        void instantiate_model_pre_skin(ecs_scene* scene, s32 entity_index);
+        void instantiate_model_pre_skin_hierarchy(ecs_scene* scene, s32 entity_index);
+        void instantiate_model_cbuffer(ecs_scene* scene, s32 entity_index);
+        void instantiate_material_cbuffer(ecs_scene* scene, s32 entity_index, s32 size);
+        void instantiate_anim_controller_v2(ecs_scene* scene, s32 entity_index);
+        void instantiate_material(material_resource* mr, ecs_scene* scene, u32 entity_index);
+        void instantiate_sdf_shadow(const c8* pmv_filename, ecs_scene* scene, u32 entity_index);
+        void instantiate_light(ecs_scene* scene, u32 entity_index);
+        void instantiate_area_light(ecs_scene* scene, u32 entity_index);
+        void instantiate_area_light_ex(ecs_scene* scene, u32 entity_index, area_light_resource& alr);
 
-        void destroy_geometry(ecs_scene* scene, u32 node_index);
-        void destroy_physics(ecs_scene* scene, s32 node_index);
+        void destroy_geometry(ecs_scene* scene, u32 entity_index);
+        void destroy_physics(ecs_scene* scene, s32 entity_index);
 
-        void bake_rigid_body_params(ecs_scene* scene, u32 node_index);
-        void bake_material_handles(ecs_scene* scene, u32 node_index);
+        void bake_rigid_body_params(ecs_scene* scene, u32 entity_index);
+        void bake_material_handles(ecs_scene* scene, u32 entity_index);
         void bake_material_handles();
 
         void create_geometry_primitives();

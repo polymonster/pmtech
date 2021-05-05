@@ -37,6 +37,7 @@ namespace put
         u32     get_index_from_id(ecs_scene* scene, hash_id idname);
         u32     get_index_from_ref(ecs_scene* scene, ecs_ref ref);
         u32     get_ref_from_index(ecs_scene* scene, u32 index);
+        u32*    get_children_of_type(ecs_scene* scene, u32 parent, u32 cmp_flags);
         
         u32     get_next_entity(ecs_scene* scene); // gets next entity index
         u32     get_new_entity(ecs_scene* scene);  // allocates a new entity at the next index o(1)
@@ -143,6 +144,23 @@ namespace put
         pen_inline ecs_ref get_ref_from_index(ecs_scene* scene, u32 index)
         {
             return scene->ref_slot[index];
+        }
+
+        pen_inline u32* get_children_of_type(ecs_scene* scene, u32 parent, u32 cmp_flags)
+        {
+            u32* children = nullptr;
+            for (u32 i = parent; i < scene->num_entities; ++i)
+            {
+                u32 p = scene->parents[i];
+                if (p == i && i != parent)
+                {
+                    break;
+                }
+
+                if (scene->entities[i] & cmp_flags)
+                    sb_push(children, i);
+            }
+            return children;
         }
         
     } // namespace ecs

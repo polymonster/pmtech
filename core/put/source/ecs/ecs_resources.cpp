@@ -846,23 +846,23 @@ namespace put
             return nullptr;
         }
 
-        void instantiate_constraint(ecs_scene* scene, u32 node_index)
+        void instantiate_constraint(ecs_scene* scene, u32 entity_index)
         {
-            physics::constraint_params& cp = scene->physics_data[node_index].constraint;
+            physics::constraint_params& cp = scene->physics_data[entity_index].constraint;
 
             // hinge
             s32 rb = cp.rb_indices[0];
-            cp.pivot = scene->transforms[node_index].translation - scene->physics_data[rb].rigid_body.position;
+            cp.pivot = scene->transforms[entity_index].translation - scene->physics_data[rb].rigid_body.position;
 
-            scene->physics_handles[node_index] = physics::add_constraint(cp);
-            scene->physics_data[node_index].type = e_physics_type::constraint;
+            scene->physics_handles[entity_index] = physics::add_constraint(cp);
+            scene->physics_data[entity_index].type = e_physics_type::constraint;
 
-            scene->entities[node_index] |= e_cmp::constraint;
+            scene->entities[entity_index] |= e_cmp::constraint;
         }
 
-        void bake_rigid_body_params(ecs_scene* scene, u32 node_index)
+        void bake_rigid_body_params(ecs_scene* scene, u32 entity_index)
         {
-            u32 s = node_index;
+            u32 s = entity_index;
 
             physics::rigid_body_params& rb = scene->physics_data[s].rigid_body;
             cmp_transform&              pt = scene->physics_offset[s];
@@ -903,11 +903,11 @@ namespace put
             rb.start_matrix = start_transform;
         }
 
-        void instantiate_rigid_body(ecs_scene* scene, u32 node_index)
+        void instantiate_rigid_body(ecs_scene* scene, u32 entity_index)
         {
-            u32 s = node_index;
+            u32 s = entity_index;
 
-            bake_rigid_body_params(scene, node_index);
+            bake_rigid_body_params(scene, entity_index);
 
             physics::rigid_body_params& rb = scene->physics_data[s].rigid_body;
 
@@ -926,7 +926,7 @@ namespace put
                 scene->physics_handles[s] = physics::add_rb(rb);
             }
 
-            scene->physics_data[node_index].type = e_physics_type::rigid_body;
+            scene->physics_data[entity_index].type = e_physics_type::rigid_body;
             scene->entities[s] |= e_cmp::physics;
         }
 
@@ -968,21 +968,21 @@ namespace put
             }
         }
 
-        void destroy_physics(ecs_scene* scene, s32 node_index)
+        void destroy_physics(ecs_scene* scene, s32 entity_index)
         {
-            if (!(scene->entities[node_index] & e_cmp::physics))
+            if (!(scene->entities[entity_index] & e_cmp::physics))
                 return;
 
-            scene->entities[node_index] &= ~e_cmp::physics;
+            scene->entities[entity_index] &= ~e_cmp::physics;
 
-            physics::release_entity(scene->physics_handles[node_index]);
-            scene->physics_handles[node_index] = PEN_INVALID_HANDLE;
+            physics::release_entity(scene->physics_handles[entity_index]);
+            scene->physics_handles[entity_index] = PEN_INVALID_HANDLE;
         }
 
-        void instantiate_geometry(geometry_resource* gr, ecs_scene* scene, s32 node_index)
+        void instantiate_geometry(geometry_resource* gr, ecs_scene* scene, s32 entity_index)
         {
-            cmp_geometry* instance = &scene->geometries[node_index];
-            cmp_geometry* pos_instance = &scene->position_geometries[node_index];
+            cmp_geometry* instance = &scene->geometries[entity_index];
+            cmp_geometry* pos_instance = &scene->position_geometries[entity_index];
 
             pmm_renderable& vr = gr->renderable[e_pmm_renderable::full_vertex_buffer];
             pmm_renderable& pr = gr->renderable[e_pmm_renderable::position_only];
@@ -995,21 +995,21 @@ namespace put
             instance->vertex_size = vr.vertex_size;
             instance->p_skin = gr->p_skin;
 
-            cmp_bounding_volume* bv = &scene->bounding_volumes[node_index];
+            cmp_bounding_volume* bv = &scene->bounding_volumes[entity_index];
 
             bv->min_extents = gr->min_extents;
             bv->max_extents = gr->max_extents;
             bv->radius = mag(bv->max_extents - bv->min_extents) * 0.5f;
 
-            scene->geometry_names[node_index] = gr->geometry_name;
-            scene->id_geometry[node_index] = gr->hash;
-            scene->entities[node_index] |= e_cmp::geometry;
+            scene->geometry_names[entity_index] = gr->geometry_name;
+            scene->id_geometry[entity_index] = gr->hash;
+            scene->entities[entity_index] |= e_cmp::geometry;
 
             if (gr->p_skin)
-                scene->entities[node_index] |= e_cmp::skinned;
+                scene->entities[entity_index] |= e_cmp::skinned;
 
             instance->vertex_shader_class = ID_VERTEX_CLASS_BASIC;
-            if (scene->entities[node_index] & e_cmp::skinned)
+            if (scene->entities[entity_index] & e_cmp::skinned)
                 instance->vertex_shader_class = ID_VERTEX_CLASS_SKINNED;
 
             // copy base from vertex buffer to position only
@@ -1024,56 +1024,56 @@ namespace put
             pos_instance->vertex_size = pr.vertex_size;
         }
 
-        void destroy_geometry(ecs_scene* scene, u32 node_index)
+        void destroy_geometry(ecs_scene* scene, u32 entity_index)
         {
-            if (!(scene->entities[node_index] & e_cmp::geometry))
+            if (!(scene->entities[entity_index] & e_cmp::geometry))
                 return;
 
-            scene->entities[node_index] &= ~e_cmp::geometry;
-            scene->entities[node_index] &= ~e_cmp::material;
+            scene->entities[entity_index] &= ~e_cmp::geometry;
+            scene->entities[entity_index] &= ~e_cmp::material;
 
             // zero cmp geom
-            pen::memory_zero(&scene->geometries[node_index], sizeof(cmp_geometry));
+            pen::memory_zero(&scene->geometries[entity_index], sizeof(cmp_geometry));
 
             // release cbuffer
-            pen::renderer_release_buffer(scene->cbuffer[node_index]);
-            scene->cbuffer[node_index] = PEN_INVALID_HANDLE;
-            scene->geometry_names[node_index] = "";
+            pen::renderer_release_buffer(scene->cbuffer[entity_index]);
+            scene->cbuffer[entity_index] = PEN_INVALID_HANDLE;
+            scene->geometry_names[entity_index] = "";
 
             // release matrial cbuffer
-            if (is_valid(scene->materials[node_index].material_cbuffer))
-                pen::renderer_release_buffer(scene->materials[node_index].material_cbuffer);
+            if (is_valid(scene->materials[entity_index].material_cbuffer))
+                pen::renderer_release_buffer(scene->materials[entity_index].material_cbuffer);
 
-            scene->materials[node_index].material_cbuffer = PEN_INVALID_HANDLE;
+            scene->materials[entity_index].material_cbuffer = PEN_INVALID_HANDLE;
         }
 
-        void instantiate_material_cbuffer(ecs_scene* scene, s32 node_index, s32 size)
+        void instantiate_material_cbuffer(ecs_scene* scene, s32 entity_index, s32 size)
         {
-            if (is_valid(scene->materials[node_index].material_cbuffer))
+            if (is_valid(scene->materials[entity_index].material_cbuffer))
             {
-                if (size == scene->materials[node_index].material_cbuffer_size)
+                if (size == scene->materials[entity_index].material_cbuffer_size)
                     return;
 
-                pen::renderer_release_buffer(scene->materials[node_index].material_cbuffer);
-                scene->materials[node_index].material_cbuffer = PEN_INVALID_HANDLE;
+                pen::renderer_release_buffer(scene->materials[entity_index].material_cbuffer);
+                scene->materials[entity_index].material_cbuffer = PEN_INVALID_HANDLE;
             }
 
             if (size == 0)
                 return;
 
-            scene->materials[node_index].material_cbuffer_size = size;
+            scene->materials[entity_index].material_cbuffer_size = size;
 
             pen::buffer_creation_params bcp;
             bcp.usage_flags = PEN_USAGE_DYNAMIC;
             bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
             bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-            bcp.buffer_size = scene->materials[node_index].material_cbuffer_size;
+            bcp.buffer_size = scene->materials[entity_index].material_cbuffer_size;
             bcp.data = nullptr;
 
-            scene->materials[node_index].material_cbuffer = pen::renderer_create_buffer(bcp);
+            scene->materials[entity_index].material_cbuffer = pen::renderer_create_buffer(bcp);
         }
 
-        void instantiate_model_cbuffer(ecs_scene* scene, s32 node_index)
+        void instantiate_model_cbuffer(ecs_scene* scene, s32 entity_index)
         {
             pen::buffer_creation_params bcp;
             bcp.usage_flags = PEN_USAGE_DYNAMIC;
@@ -1082,14 +1082,28 @@ namespace put
             bcp.buffer_size = sizeof(cmp_draw_call);
             bcp.data = nullptr;
 
-            scene->cbuffer[node_index] = pen::renderer_create_buffer(bcp);
+            scene->cbuffer[entity_index] = pen::renderer_create_buffer(bcp);
         }
 
-        void instantiate_model_pre_skin(ecs_scene* scene, s32 node_index)
+        void instantiate_model_pre_skin_hierarchy(ecs_scene* scene, s32 entity_index)
         {
-            cmp_geometry& geom = scene->geometries[node_index];
-            cmp_geometry& pos_geom = scene->position_geometries[node_index];
-            cmp_pre_skin& pre_skin = scene->pre_skin[node_index];
+            instantiate_model_pre_skin(scene, entity_index);
+
+            u32* child_meshes = ecs::get_children_of_type(scene, entity_index, e_cmp::sub_geometry);
+            u32  num_meshes = sb_count(child_meshes);
+            for (u32 i = 0; i < num_meshes; ++i)
+            {
+                u32 m = child_meshes[i];
+                instantiate_model_pre_skin(scene, m);
+            }
+            sb_free(child_meshes);
+        }
+
+        void instantiate_model_pre_skin(ecs_scene* scene, s32 entity_index)
+        {
+            cmp_geometry& geom = scene->geometries[entity_index];
+            cmp_geometry& pos_geom = scene->position_geometries[entity_index];
+            cmp_pre_skin& pre_skin = scene->pre_skin[entity_index];
 
             u32 num_verts = geom.num_vertices;
 
@@ -1125,22 +1139,22 @@ namespace put
             geom.vertex_size = sizeof(vertex_model);
 
             // set pre-skinned and unset skinned
-            scene->entities[node_index] |= e_cmp::pre_skinned;
-            scene->entities[node_index] &= ~e_cmp::skinned;
+            scene->entities[entity_index] |= e_cmp::pre_skinned;
+            scene->entities[entity_index] &= ~e_cmp::skinned;
 
             geom.vertex_shader_class = ID_VERTEX_CLASS_BASIC;
         }
 
-        void instantiate_anim_controller_v2(ecs_scene* scene, s32 node_index)
+        void instantiate_anim_controller_v2(ecs_scene* scene, s32 entity_index)
         {
-            cmp_geometry* geom = &scene->geometries[node_index];
+            cmp_geometry* geom = &scene->geometries[entity_index];
 
             if (geom->p_skin)
             {
-                cmp_anim_controller_v2& controller = scene->anim_controller_v2[node_index];
+                cmp_anim_controller_v2& controller = scene->anim_controller_v2[entity_index];
 
                 u32 joints_offset = -1;
-                for (u32 i = node_index; i < scene->soa_size; ++i)
+                for (u32 i = entity_index; i < scene->soa_size; ++i)
                 {
                     if(scene->entities[i] & e_cmp::bone)
                     {
@@ -1158,11 +1172,11 @@ namespace put
                 
                 controller.root_joint_ref = ecs::get_ref_from_index(scene, joints_offset);
 
-                scene->entities[node_index] |= e_cmp::anim_controller;
+                scene->entities[entity_index] |= e_cmp::anim_controller;
             }
         }
 
-        void instantiate_sdf_shadow(const c8* pmv_filename, ecs_scene* scene, u32 node_index)
+        void instantiate_sdf_shadow(const c8* pmv_filename, ecs_scene* scene, u32 entity_index)
         {
             pen::json pmv = pen::json::load_from_file(pmv_filename);
 
@@ -1182,44 +1196,44 @@ namespace put
                 return;
             }
 
-            scene->transforms[node_index].scale = scale;
-            scene->shadows[node_index].texture_handle = volume_texture;
-            scene->shadows[node_index].sampler_state = pmfx::get_render_state(id_cl, pmfx::e_render_state::sampler);
-            scene->entities[node_index] |= e_cmp::sdf_shadow;
+            scene->transforms[entity_index].scale = scale;
+            scene->shadows[entity_index].texture_handle = volume_texture;
+            scene->shadows[entity_index].sampler_state = pmfx::get_render_state(id_cl, pmfx::e_render_state::sampler);
+            scene->entities[entity_index] |= e_cmp::sdf_shadow;
         }
 
-        void instantiate_light(ecs_scene* scene, u32 node_index)
+        void instantiate_light(ecs_scene* scene, u32 entity_index)
         {
-            if (is_valid(scene->cbuffer[node_index]) && scene->cbuffer[node_index] != 0)
+            if (is_valid(scene->cbuffer[entity_index]) && scene->cbuffer[entity_index] != 0)
                 return;
 
             // cbuffer for draw call, light volume for editor / deferred etc
-            scene->entities[node_index] |= e_cmp::light;
-            instantiate_model_cbuffer(scene, node_index);
+            scene->entities[entity_index] |= e_cmp::light;
+            instantiate_model_cbuffer(scene, entity_index);
 
-            scene->bounding_volumes[node_index].min_extents = -vec3f::one();
-            scene->bounding_volumes[node_index].max_extents = vec3f::one();
+            scene->bounding_volumes[entity_index].min_extents = -vec3f::one();
+            scene->bounding_volumes[entity_index].max_extents = vec3f::one();
 
-            scene->world_matrices[node_index] = mat4::create_identity();
-            f32 rad = std::max<f32>(scene->lights[node_index].radius, 1.0f);
-            scene->transforms[node_index].scale = vec3f(rad, rad, rad);
-            scene->entities[node_index] |= e_cmp::transform;
+            scene->world_matrices[entity_index] = mat4::create_identity();
+            f32 rad = std::max<f32>(scene->lights[entity_index].radius, 1.0f);
+            scene->transforms[entity_index].scale = vec3f(rad, rad, rad);
+            scene->entities[entity_index] |= e_cmp::transform;
 
             // basic defaults
-            cmp_light& snl = scene->lights[node_index];
+            cmp_light& snl = scene->lights[entity_index];
             snl.colour = vec3f::white();
             snl.radius = 1.0f;
             snl.spot_falloff = 0.001f;
             snl.cos_cutoff = 0.1f;
 
-            area_light_resource& alr = scene->area_light_resources[node_index];
+            area_light_resource& alr = scene->area_light_resources[entity_index];
             alr.sampler_state_name = "";
             alr.texture_name = "";
             alr.shader_name = "";
             alr.technique_name = "";
         }
 
-        void instantiate_area_light(ecs_scene* scene, u32 node_index)
+        void instantiate_area_light(ecs_scene* scene, u32 entity_index)
         {
             geometry_resource* gr = get_geometry_resource(PEN_HASH("quad"));
 
@@ -1229,16 +1243,16 @@ namespace put
             area_light_material.material_name = "area_light_colour";
             area_light_material.shader_name = "pmfx_utility";
 
-            instantiate_geometry(gr, scene, node_index);
-            instantiate_material(&area_light_material, scene, node_index);
-            instantiate_model_cbuffer(scene, node_index);
+            instantiate_geometry(gr, scene, entity_index);
+            instantiate_material(&area_light_material, scene, entity_index);
+            instantiate_model_cbuffer(scene, entity_index);
 
-            scene->entities[node_index] |= e_cmp::light;
-            scene->lights[node_index].type = e_light_type::area;
-            scene->area_light[node_index].shader = PEN_INVALID_HANDLE;
+            scene->entities[entity_index] |= e_cmp::light;
+            scene->lights[entity_index].type = e_light_type::area;
+            scene->area_light[entity_index].shader = PEN_INVALID_HANDLE;
         }
 
-        void instantiate_area_light_ex(ecs_scene* scene, u32 node_index, area_light_resource& alr)
+        void instantiate_area_light_ex(ecs_scene* scene, u32 entity_index, area_light_resource& alr)
         {
             geometry_resource* gr = get_geometry_resource(PEN_HASH("quad"));
 
@@ -1248,22 +1262,22 @@ namespace put
             area_light_material.material_name = "area_light_texture";
             area_light_material.shader_name = "pmfx_utility";
 
-            instantiate_geometry(gr, scene, node_index);
-            instantiate_material(&area_light_material, scene, node_index);
-            instantiate_model_cbuffer(scene, node_index);
+            instantiate_geometry(gr, scene, entity_index);
+            instantiate_material(&area_light_material, scene, entity_index);
+            instantiate_model_cbuffer(scene, entity_index);
 
-            scene->entities[node_index] |= e_cmp::light;
-            scene->lights[node_index].type = e_light_type::area_ex;
+            scene->entities[entity_index] |= e_cmp::light;
+            scene->lights[entity_index].type = e_light_type::area_ex;
 
             if (!alr.texture_name.empty())
             {
-                scene->area_light[node_index].texture_handle = put::load_texture(alr.texture_name.c_str());
+                scene->area_light[entity_index].texture_handle = put::load_texture(alr.texture_name.c_str());
             }
 
             if (!alr.shader_name.empty())
             {
-                scene->area_light[node_index].shader = pmfx::load_shader(alr.shader_name.c_str());
-                scene->area_light[node_index].technique = PEN_HASH(alr.technique_name.c_str());
+                scene->area_light[entity_index].shader = pmfx::load_shader(alr.shader_name.c_str());
+                scene->area_light[entity_index].technique = PEN_HASH(alr.technique_name.c_str());
             }
             else
             {
@@ -1274,15 +1288,15 @@ namespace put
             }
 
             // store for later for save load.
-            scene->area_light_resources[node_index] = alr;
+            scene->area_light_resources[entity_index] = alr;
         }
 
-        void instantiate_material(material_resource* mr, ecs_scene* scene, u32 node_index)
+        void instantiate_material(material_resource* mr, ecs_scene* scene, u32 entity_index)
         {
-            scene->id_material[node_index] = mr->hash;
-            scene->material_names[node_index] = mr->material_name;
+            scene->id_material[entity_index] = mr->hash;
+            scene->material_names[entity_index] = mr->material_name;
 
-            scene->entities[node_index] |= e_cmp::material;
+            scene->entities[entity_index] |= e_cmp::material;
 
             // set defaults
             if (mr->id_shader == 0)
@@ -1303,12 +1317,12 @@ namespace put
                     mr->id_sampler_state[i] = id_default_sampler_state;
             }
             
-            memset(&scene->material_resources[node_index].shader_name , 0x00, sizeof(Str));
-            memset(&scene->material_resources[node_index].material_name , 0x00, sizeof(Str));
+            memset(&scene->material_resources[entity_index].shader_name , 0x00, sizeof(Str));
+            memset(&scene->material_resources[entity_index].material_name , 0x00, sizeof(Str));
 
-            scene->material_resources[node_index] = *mr;
+            scene->material_resources[entity_index] = *mr;
 
-            bake_material_handles(scene, node_index);
+            bake_material_handles(scene, entity_index);
         }
 
         void permutation_flags_from_vertex_class(u32& permutation, hash_id vertex_class)
@@ -1323,13 +1337,13 @@ namespace put
                 permutation |= e_shader_permutation::instanced;
         }
 
-        void bake_material_handles(ecs_scene* scene, u32 node_index)
+        void bake_material_handles(ecs_scene* scene, u32 entity_index)
         {
-            material_resource* resource = &scene->material_resources[node_index];
-            cmp_material*      material = &scene->materials[node_index];
-            cmp_samplers&      samplers = scene->samplers[node_index];
-            u32&               permutation = scene->material_permutation[node_index];
-            cmp_geometry*      geometry = &scene->geometries[node_index];
+            material_resource* resource = &scene->material_resources[entity_index];
+            cmp_material*      material = &scene->materials[entity_index];
+            cmp_samplers&      samplers = scene->samplers[entity_index];
+            u32&               permutation = scene->material_permutation[entity_index];
+            cmp_geometry*      geometry = &scene->geometries[entity_index];
 
             if (!resource)
                 return;
@@ -1349,18 +1363,18 @@ namespace put
             // material / technique constant buffers
             s32 cbuffer_size = pmfx::get_technique_cbuffer_size(material->shader, material->technique_index);
 
-            if (!(scene->state_flags[node_index] & e_state::material_initialised))
+            if (!(scene->state_flags[entity_index] & e_state::material_initialised))
             {
                 pmfx::initialise_constant_defaults(material->shader, material->technique_index,
-                                                   scene->material_data[node_index].data);
+                                                   scene->material_data[entity_index].data);
 
-                scene->state_flags[node_index] |= e_state::material_initialised;
+                scene->state_flags[entity_index] |= e_state::material_initialised;
             }
 
-            instantiate_material_cbuffer(scene, node_index, cbuffer_size);
+            instantiate_material_cbuffer(scene, entity_index, cbuffer_size);
 
             // material samplers
-            if (!(scene->state_flags[node_index] & e_state::samplers_initialised))
+            if (!(scene->state_flags[entity_index] & e_state::samplers_initialised))
             {
                 pmfx::initialise_sampler_defaults(material->shader, material->technique_index, samplers);
 
@@ -1381,8 +1395,8 @@ namespace put
                     }
                 }
 
-                scene->entities[node_index] |= e_cmp::samplers;
-                scene->state_flags[node_index] |= e_state::samplers_initialised;
+                scene->entities[entity_index] |= e_cmp::samplers;
+                scene->state_flags[entity_index] |= e_state::samplers_initialised;
             }
 
             // bake ss handles

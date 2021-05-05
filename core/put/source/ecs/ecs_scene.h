@@ -517,7 +517,7 @@ namespace put
             ecs_extension*  extensions = nullptr;
             ecs_controller* controllers = nullptr;
 
-            // Scene Data
+            // scene Data
             size_t           num_entities = 0;
             u32              soa_size = 0;
             free_node_list*  free_list_head = nullptr;
