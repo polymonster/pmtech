@@ -981,7 +981,7 @@ namespace put
                 if (!(scene->entities[n] & e_cmp::skinned))
                     if (view.render_flags & pmfx::e_scene_render_flags::shadow_map)
                         p_geom = &scene->position_geometries[n];
-
+                        
                 cmp_material* p_mat = &scene->materials[n];
                 u32           permutation = scene->material_permutation[n];
 
@@ -1831,43 +1831,59 @@ namespace put
                 }
             }
 
-            // Update pre skinned vertex buffers
-            static hash_id id_pre_skin_technique = PEN_HASH("pre_skin");
-            static u32     shader = pmfx::load_shader("forward_render");
-            if (pmfx::set_technique_perm(shader, id_pre_skin_technique))
+            // update pre skinned vertex buffers
+            for (size_t n = 0; n < scene->num_entities; ++n)
             {
-                for (size_t n = 0; n < scene->num_entities; ++n)
+                if (!(scene->entities[n] & e_cmp::pre_skinned))
+                    continue;
+
+                // create bone cbuffer
+                static mat4 bb[85];
+                cmp_geometry& geom = scene->geometries[n];
+                if (geom.p_skin->bone_cbuffer == PEN_INVALID_HANDLE)
                 {
-                    if (!(scene->entities[n] & e_cmp::pre_skinned))
-                        continue;
+                    pen::buffer_creation_params bcp;
+                    bcp.usage_flags = PEN_USAGE_DYNAMIC;
+                    bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
+                    bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
+                    bcp.buffer_size = sizeof(mat4) * 85;
+                    bcp.data = nullptr;
 
-                    // update bone cbuffer
-                    static mat4 bb[85];
-                    cmp_geometry& geom = scene->geometries[n];
-                    if (geom.p_skin->bone_cbuffer == PEN_INVALID_HANDLE)
-                    {
-                        pen::buffer_creation_params bcp;
-                        bcp.usage_flags = PEN_USAGE_DYNAMIC;
-                        bcp.bind_flags = PEN_BIND_CONSTANT_BUFFER;
-                        bcp.cpu_access_flags = PEN_CPU_ACCESS_WRITE;
-                        bcp.buffer_size = sizeof(mat4) * 85;
-                        bcp.data = nullptr;
+                    geom.p_skin->bone_cbuffer = pen::renderer_create_buffer(bcp);
+                }
 
-                        geom.p_skin->bone_cbuffer = pen::renderer_create_buffer(bcp);
-                    }
+                // update bone cbuffer
+                u32 rjr = scene->anim_controller_v2[n].root_joint_ref;
+                s32 joints_offset = ecs::get_index_from_ref(scene, rjr);
+                joints_offset += geom.p_skin->bone_offset;
+                
+                for (s32 i = 0; i < geom.p_skin->num_joints; ++i)
+                    bb[i] = scene->world_matrices[joints_offset + i] * geom.p_skin->joint_bind_matrices[i];
 
-                    u32 rjr = scene->anim_controller_v2[n].root_joint_ref;
-                    s32 joints_offset = ecs::get_index_from_ref(scene, rjr);
-                    joints_offset += geom.p_skin->bone_offset;
+                pen::renderer_update_buffer(geom.p_skin->bone_cbuffer, bb, sizeof(bb));
+                
+                // bind shaders, skin position and full vertex buffer
+                static u32 shader = pmfx::load_shader("forward_render");
+            
+                static hash_id id_pre_skin[] = {
+                    PEN_HASH("pre_skin"),
+                    PEN_HASH("pre_skin_position")
+                };
+                
+                u32 pre_skin_target[2] = {
+                    geom.vertex_buffer,
+                    geom.position_buffer
+                };
+
+                for(u32 b = 0; b < 2; ++b)
+                {
+                    // set pre skin technique
+                    pmfx::set_technique_perm(shader, id_pre_skin[b]);
                     
-                    for (s32 i = 0; i < geom.p_skin->num_joints; ++i)
-                        bb[i] = scene->world_matrices[joints_offset + i] * geom.p_skin->joint_bind_matrices[i];
-
-                    pen::renderer_update_buffer(geom.p_skin->bone_cbuffer, bb, sizeof(bb));
-
                     // bind stream out targets
                     cmp_pre_skin& pre_skin = scene->pre_skin[n];
-                    pen::renderer_set_stream_out_target(geom.vertex_buffer);
+                    pen::renderer_set_stream_out_target(pre_skin_target[b]);
+                    
                     pen::renderer_set_vertex_buffer(pre_skin.vertex_buffer, 0, pre_skin.vertex_size, 0);
                     pen::renderer_set_constant_buffer(geom.p_skin->bone_cbuffer, 2, pen::CBUFFER_BIND_VS);
 

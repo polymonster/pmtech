@@ -1088,6 +1088,7 @@ namespace put
         void instantiate_model_pre_skin(ecs_scene* scene, s32 node_index)
         {
             cmp_geometry& geom = scene->geometries[node_index];
+            cmp_geometry& pos_geom = scene->position_geometries[node_index];
             cmp_pre_skin& pre_skin = scene->pre_skin[node_index];
 
             u32 num_verts = geom.num_vertices;
@@ -1100,8 +1101,12 @@ namespace put
             bcp.buffer_size = sizeof(vertex_model) * num_verts;
             bcp.data = nullptr;
 
+            // vb
             u32 vb = pen::renderer_create_buffer(bcp);
-            u32 pb = 0; // todo - position only buffer is currently not used
+            
+            // pb
+            bcp.buffer_size = sizeof(vertex_position) * num_verts;
+            u32 pb = pen::renderer_create_buffer(bcp);
 
             // swap the bufers around
 
@@ -1110,6 +1115,9 @@ namespace put
             pre_skin.position_buffer = geom.position_buffer;
             pre_skin.vertex_size = geom.vertex_size;
             pre_skin.num_verts = geom.num_vertices;
+            
+            pos_geom.vertex_buffer = pb;
+            pos_geom.vertex_size = sizeof(vertex_position);
 
             // geometry has the stream out target and non-skinned vertex format
             geom.vertex_buffer = vb;

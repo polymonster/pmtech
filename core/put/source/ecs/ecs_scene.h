@@ -268,7 +268,7 @@ namespace put
 
         struct cmp_geometry
         {
-            u32       position_buffer;
+            u32       position_buffer; // 
             u32       vertex_buffer;
             u32       index_buffer;
             u32       num_indices;

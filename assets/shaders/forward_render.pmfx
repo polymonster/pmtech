@@ -96,6 +96,11 @@ struct vs_output_pre_skin
     float4 texcoord : TEXCOORD4;
 };
 
+struct vs_output_pre_skin_position
+{
+    float4 vb_position : TEXCOORD0;
+};
+
 struct vs_output_zonly
 {
     float4 position : SV_POSITION;
@@ -276,6 +281,17 @@ vs_output_pre_skin vs_main_pre_skin( vs_input_skinned input )
     output.normal.xyz = n;
     output.tangent.xyz = t;
     output.bitangent.xyz = b;
+    
+    return output;
+}
+
+vs_output_pre_skin_position vs_main_pre_skin_position( vs_input_skinned input )
+{
+    vs_output_pre_skin_position output;
+    
+    float4 sp = skin_pos(input.position, input.blend_weights, input.blend_indices);
+    
+    output.vb_position = sp;
     
     return output;
 }
@@ -1218,33 +1234,33 @@ pmfx:
     
     simple_lighting:
     {
-        vs: vs_main,
-        ps: ps_simple_lighting,
+        vs: vs_main
+        ps: ps_simple_lighting
         
         permutations:
         {
-            SKINNED: [31, [0,1]],
-            INSTANCED: [30, [0,1]],
+            SKINNED: [31, [0,1]]
+            INSTANCED: [30, [0,1]]
             SSS: [2, [0,1]]
-        },
+        }
         
         constants:
         {
-            albedo       : { type: float4, widget: colour, default: [1.0, 1.0, 1.0, 1.0] },
-            roughness    : { type: float, widget: slider, min: 0, max: 1, default: 0.5 },
-            reflectivity : { type: float, widget: slider, min: 0, max: 1, default: 0.3 },
+            albedo       : { type: float4, widget: colour, default: [1.0, 1.0, 1.0, 1.0]}
+            roughness    : { type: float, widget: slider, min: 0, max: 1, default: 0.5 }
+            reflectivity : { type: float, widget: slider, min: 0, max: 1, default: 0.3 }
             
             "permutation(SSS)":
             {
                 sss_scale: { type: float, widget: slider, min: 0, max: 500, default: 1.0 }   
-            },
+            }
         }
-    },
+    }
     
     gbuffer:
     {
-        vs: vs_main,
-        ps: ps_gbuffer,
+        vs: vs_main
+        ps: ps_gbuffer
         
         permutations:
         {
@@ -1254,41 +1270,41 @@ pmfx:
         },
         
         inherit_constants: [forward_lit]
-    },
+    }
         
     zonly:
     {
-        vs: vs_main_zonly,
-        ps: ps_null,
+        vs: vs_main_zonly
+        ps: ps_null
         
         permutations:
         {
             SKINNED: [31, [0,1]],
             INSTANCED: [30, [0,1]]
         }
-    },
+    }
     
     single_light_directional:
     {
-        vs: vs_main,
-        ps: ps_single_light,
+        vs: vs_main
+        ps: ps_single_light
                 
         constants:
         {
-            albedo       : { type: float4, widget: colour, default: [1.0, 1.0, 1.0, 1.0] },
-            roughness    : { type: float, widget: slider, min: 0, max: 1, default: 0.5 },
+            albedo       : { type: float4, widget: colour, default: [1.0, 1.0, 1.0, 1.0] }
+            roughness    : { type: float, widget: slider, min: 0, max: 1, default: 0.5 }
             reflectivity : { type: float, widget: slider, min: 0, max: 1, default: 0.3 }
         }
-    },
+    }
     
     lambert:
     {
-        vs: vs_main,
-        ps: ps_lambert,
+        vs: vs_main
+        ps: ps_lambert
         
         permutations:
         {
-            SKINNED: [31, [0,1]],
+            SKINNED: [31, [0,1]]
             INSTANCED: [30, [0,1]]
         },
         
@@ -1296,31 +1312,37 @@ pmfx:
         {
             albedo : { type: float4, widget: colour, default: [1.0, 1.0, 1.0, 1.0] }
         }
-    },
+    }
     
     gi:
     {
-        vs: vs_main,
-        ps: ps_single_light_diffuse,
+        vs: vs_main
+        ps: ps_single_light_diffuse
         
         permutations:
         {
-            SKINNED: [31, [0,1]],
+            SKINNED: [31, [0,1]]
             INSTANCED: [30, [0,1]]
-        },
+        }
         
         inherit_constants: [forward_lit]
-    },
+    }
     
     pre_skin:
     {
-        vs: vs_main_pre_skin,
+        vs: vs_main_pre_skin
         stream_out: true
-    },
+    }
+    
+	pre_skin_position:
+    {
+        vs: vs_main_pre_skin_position
+        stream_out: true
+    }
     
     shadow_extrude:
     {
-        vs: vs_main_extrude,
+        vs: vs_main_extrude
         ps: ps_dbg
-    },
+    }
 }

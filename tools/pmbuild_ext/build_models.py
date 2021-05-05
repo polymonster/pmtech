@@ -302,7 +302,8 @@ for file in file_list:
             parse_animations.write_animation_file(base_out_file + ".pma")
             # apply optimisation
             if len(mesh_opt) > 0:
-                cmd = " -i " + base_out_file + ".pmm"
+                full_path = os.path.join(os.getcwd(), base_out_file)
+                cmd = " -i " + full_path + ".pmm"
                 p = subprocess.Popen(mesh_opt + cmd, shell=True)
                 p.wait()
             dependencies.write_to_file_single(dep, depends_dest + ".dep")

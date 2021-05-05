@@ -719,6 +719,9 @@ namespace pen
 
     const Str os_path_for_resource(const c8* filename)
     {
+        if(filename[0] == '/')
+            return filename;
+        
         if (strncmp(filename, s_ctx.pen_user_info.working_directory, strlen(s_ctx.pen_user_info.working_directory) - 1) == 0)
             return filename;
 
