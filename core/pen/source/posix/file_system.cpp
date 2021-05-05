@@ -145,7 +145,8 @@ namespace pen
     }
 
     static bool s_show_hidden = false;
-    void        filesystem_toggle_hidden_files()
+    
+    void filesystem_toggle_hidden_files()
     {
         s_show_hidden = !s_show_hidden;
     }
