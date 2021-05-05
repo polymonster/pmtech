@@ -91,9 +91,9 @@ struct vs_output_pre_skin
 {
     float4 vb_position : TEXCOORD0;
     float4 normal : TEXCOORD1;
+    float4 texcoord : TEXCOORD4;
     float4 tangent : TEXCOORD2;
     float4 bitangent : TEXCOORD3;
-    float4 texcoord : TEXCOORD4;
 };
 
 struct vs_output_pre_skin_position
