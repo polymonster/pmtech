@@ -91,9 +91,9 @@ struct vs_output_pre_skin
 {
     float4 vb_position : TEXCOORD0;
     float4 normal : TEXCOORD1;
-    float4 texcoord : TEXCOORD4;
-    float4 tangent : TEXCOORD2;
-    float4 bitangent : TEXCOORD3;
+    float4 texcoord : TEXCOORD2;
+    float4 tangent : TEXCOORD3;
+    float4 bitangent : TEXCOORD4;
 };
 
 struct vs_output_pre_skin_position
@@ -149,9 +149,11 @@ shader_resources
     texture_3d( sdf_volume, 14 );
     texture_2d( ltc_mat, 13 );
     texture_2d( ltc_mag, 12 );
+    
     if:(PMFX_TEXTURE_CUBE_ARRAY) {
         depth_cube_array( omni_shadow_texture, 10 );
     }
+    
     texture_2d_array( area_light_textures, 11 );
     texture_3d( volume_gi, 9 );
     
@@ -290,7 +292,6 @@ vs_output_pre_skin_position vs_main_pre_skin_position( vs_input_skinned input )
     vs_output_pre_skin_position output;
     
     float4 sp = skin_pos(input.position, input.blend_weights, input.blend_indices);
-    
     output.vb_position = sp;
     
     return output;
@@ -896,6 +897,13 @@ void ps_null( vs_output_zonly input )
     return;
 }
 
+ps_output ps_dbg_pos( vs_output_zonly input )
+{
+    ps_output output;
+    output.colour = float4(1.0, 0.0, 1.0, 1.0);
+    return output;
+}
+
 ps_output ps_dbg( vs_output input )
 {
     ps_output output;
@@ -1151,15 +1159,27 @@ pmfx:
 {    
     omni_shadow:
     {
-        vs: vs_main_zonly_wp,
-        ps: ps_omni_shadow,
+        vs: vs_main_zonly_wp
+        ps: ps_omni_shadow
         
         permutations:
         {
-            SKINNED: [31, [0,1]],
+            SKINNED: [31, [0,1]]
             INSTANCED: [30, [0,1]]
         }
-    },
+    }
+    
+	dbg_pos:
+    {
+        vs: vs_main_zonly
+        ps: ps_dbg_pos
+        
+        permutations:
+        {
+            SKINNED: [31, [0,1]]
+            INSTANCED: [30, [0,1]]
+        }
+    }
     
     forward_lit:
     {
@@ -1230,7 +1250,7 @@ pmfx:
                 default: data/textures/defaults/black.dds
             }
         }
-    },
+    }
     
     simple_lighting:
     {

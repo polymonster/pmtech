@@ -1130,13 +1130,18 @@ namespace put
             pre_skin.vertex_size = geom.vertex_size;
             pre_skin.num_verts = geom.num_vertices;
             
+            // initial pos geoms are separate meshes, so they have different index/vert order
+            // when pre-skinned pos geom becomes closer to the full vb
             pos_geom.vertex_buffer = pb;
             pos_geom.vertex_size = sizeof(vertex_position);
+            pos_geom.num_vertices = pre_skin.num_verts;
+            pos_geom.index_buffer = geom.index_buffer;
+            pos_geom.num_indices = geom.num_indices;
 
             // geometry has the stream out target and non-skinned vertex format
             geom.vertex_buffer = vb;
-            geom.position_buffer = pb;
             geom.vertex_size = sizeof(vertex_model);
+            geom.num_vertices = pre_skin.num_verts;
 
             // set pre-skinned and unset skinned
             scene->entities[entity_index] |= e_cmp::pre_skinned;
