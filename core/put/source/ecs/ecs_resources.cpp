@@ -1176,6 +1176,7 @@ namespace put
                 }
                 
                 controller.root_joint_ref = ecs::get_ref_from_index(scene, joints_offset);
+                controller.playback_rate = 1.0f;
 
                 scene->entities[entity_index] |= e_cmp::anim_controller;
             }

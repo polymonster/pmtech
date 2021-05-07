@@ -415,6 +415,18 @@ namespace
         x = location.x * s_ctx.window_scale;
         y = ((int)adjust_frame.size.height - location.y) * s_ctx.window_scale;
     }
+    
+    bool mouse_pos_valid()
+    {
+        NSRect  original_frame = [s_ctx.window frame];
+        NSPoint location = [s_ctx.window mouseLocationOutsideOfEventStream];
+        NSRect  adjust_frame = [s_ctx.window contentRectForFrameRect:original_frame];
+
+        f32 y = ((int)adjust_frame.size.height - location.y) * s_ctx.window_scale;
+        if(y < 0.0f)
+            return false;
+        return true;
+    }
 
     void handle_modifiers(NSEvent* event)
     {
@@ -500,6 +512,7 @@ namespace
 
     bool handle_event(NSEvent* event)
     {
+        bool mpv = mouse_pos_valid();
         if (event)
         {
             NSEventType event_type = [event type];
@@ -517,13 +530,13 @@ namespace
                     return true;
                 }
                 case NSEventTypeLeftMouseDown:
-                    pen::input_set_mouse_down(PEN_MOUSE_L);
+                    if(mpv) pen::input_set_mouse_down(PEN_MOUSE_L);
                     break;
                 case NSEventTypeRightMouseDown:
-                    pen::input_set_mouse_down(PEN_MOUSE_R);
+                    if(mpv) pen::input_set_mouse_down(PEN_MOUSE_R);
                     break;
                 case NSEventTypeOtherMouseDown:
-                    pen::input_set_mouse_down(PEN_MOUSE_M);
+                    if(mpv) pen::input_set_mouse_down(PEN_MOUSE_M);
                     break;
                 case NSEventTypeLeftMouseUp:
                     pen::input_set_mouse_up(PEN_MOUSE_L);

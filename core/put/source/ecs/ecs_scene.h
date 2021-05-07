@@ -310,6 +310,7 @@ namespace put
             u8*            joint_flags = nullptr;
             anim_blend     blend = {};
             ecs_ref        root_joint_ref = -1;
+            f32            playback_rate = 1.0f;
         };
 
         struct cmp_light

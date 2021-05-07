@@ -1122,7 +1122,7 @@ namespace put
                     bool looped = false;
 
                     // roll on time
-                    instance.time += dt;
+                    instance.time += dt * controller.playback_rate;
                     
                     //
                     if (instance.flags & e_anim_flags::clamp)
