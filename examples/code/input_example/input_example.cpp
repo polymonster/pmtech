@@ -139,8 +139,12 @@ namespace
         put::dbg::add_quad_2f(mouse_pos, mouse_quad_size, vec4f::cyan());
 
         put::dbg::add_text_2f(10.0f, 20.0f, vvp, vec4f(1.0f, 1.0f, 1.0f, 1.0f),
-                              "mouse down : left %i, middle %i, right %i: mouse_wheel %i", ms.buttons[PEN_MOUSE_L],
-                              ms.buttons[PEN_MOUSE_M], ms.buttons[PEN_MOUSE_R], ms.wheel);
+                              "mouse (%f,%f) | down : left %i, middle %i, right %i: mouse_wheel %i", 
+                              mouse_pos.x, mouse_pos.y,
+                              ms.buttons[PEN_MOUSE_L],
+                              ms.buttons[PEN_MOUSE_M], 
+                              ms.buttons[PEN_MOUSE_R],
+                              ms.wheel);
 
         // key down
         Str key_msg = "key down: ";
