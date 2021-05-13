@@ -150,7 +150,7 @@ namespace put
                 physics = (1 << 2),
                 physics_multi = (1 << 3),
                 material = (1 << 4),
-                // 1<<5 unused
+                additive_rotation = (1<<5),
                 skinned = (1 << 6),
                 bone = (1 << 7),
                 dynamic = (1 << 8),
@@ -459,7 +459,7 @@ namespace put
         
         struct ecs_scene
         {
-            static const u32 k_version = 9;
+            static const u32 k_version = 10;
 
             ecs_scene()
             {
@@ -508,7 +508,8 @@ namespace put
             cmp_array<pmfx::scene_render_flags> render_flags;
             cmp_array<cmp_pos_extent>           pos_extent;           // version 10
             cmp_array<u32>                      bone_cbuffer;
-            cmp_array<ecs_ref>                  ref_slot;             // version 11
+            cmp_array<ecs_ref>                  ref_slot;
+            cmp_array<quat>                     additive_rotation;
 
             // num base components calculates value based on its address - entities address.
             u32 num_base_components;

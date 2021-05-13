@@ -1264,6 +1264,7 @@ namespace put
                         }
                     }
                 }
+                
 
                 // for active controller.anim_instances, make trans, quat, scale
                 //      blend tree
@@ -1306,6 +1307,11 @@ namespace put
                         tc.translation = lerp(ta.translation, tb.translation, t);
                         tc.rotation = slerp(ta.rotation, tb.rotation, t);
                         tc.scale = lerp(ta.scale, tb.scale, t);
+                        
+                        if(scene->entities[jnode] & e_cmp::additive_rotation)
+                        {
+                            tc.rotation *= scene->additive_rotation[jnode];
+                        }
 
                         scene->entities[jnode] |= e_cmp::transform;
                     }
