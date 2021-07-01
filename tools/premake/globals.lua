@@ -46,7 +46,7 @@ end
 function setup_from_action()
     if _ACTION == "gmake" then
     	if platform_dir == "web" then
-    		build_cmd = "-std=c++11 -s WASM=1 -s INITIAL_MEMORY=1024MB -s DETERMINISTIC=1 -s PTHREAD_POOL_SIZE=8"
+    		build_cmd = "-std=c++11 -s WASM=1 -s INITIAL_MEMORY=1024MB -s DETERMINISTIC=0 -s PTHREAD_POOL_SIZE=8"
     		link_cmd = "-s --shared-memory -s WASM=1 -s FULL_ES3=1 -s MIN_WEBGL_VERSION=2 -s MAX_WEBGL_VERSION=2 -s PTHREAD_POOL_SIZE=8 -s INITIAL_MEMORY=1024MB --shell-file ../../../core/template/web/shell.html"    		
         elseif platform_dir == "linux" then
             build_cmd = "-std=c++11 -mfma -mavx -mavx2 -msse2"
