@@ -338,6 +338,41 @@ void test_ray_plane_intersect(ecs_scene* scene, bool initialise)
     dbg::add_line(ray.origin, ray.origin + ray.direction * 500.0f, vec4f::green());
 }
 
+void test_ray_sphere_intersect(ecs_scene* scene, bool initialise)
+{
+    static debug_sphere sphere;
+    static debug_ray    ray;
+
+    static debug_extents e = {vec3f(-10.0, -10.0, -10.0), vec3f(10.0, 10.0, 10.0)};
+
+    bool randomise = ImGui::Button("Randomise");
+
+    if (initialise || randomise)
+    {
+        ecs::clear_scene(scene);
+
+        add_debug_ray(e, scene, ray);
+        add_debug_sphere(e, scene, sphere);
+
+        ecs::update_scene(scene, 1.0f / 60.0f);
+    }
+
+    vec3f ip; 
+    bool intersect = maths::ray_sphere_intersect(ray.origin, ray.direction, sphere.pos, sphere.radius, ip);
+
+    // debug output
+    dbg::add_point(ip, 0.3f, vec4f::green());
+
+    vec4f col = vec4f::green();
+
+    if (intersect)
+        col = vec4f::red();
+
+    dbg::add_line(ray.origin, ray.origin + ray.direction * 500.0f, col);
+
+    scene->draw_call_data[sphere.node].v2 = col;
+}
+
 void test_ray_vs_aabb(ecs_scene* scene, bool initialise)
 {
     static debug_aabb aabb;
@@ -1043,6 +1078,7 @@ typedef void (*maths_test_function)(ecs_scene*, bool);
 const c8* test_names[]{
     "Point Plane Distance",
     "Ray Plane Intersect",
+    "Ray Sphere Intersect",
     "AABB Plane Classification",
     "Sphere Plane Classification",
     "Project / Unproject",
@@ -1066,6 +1102,7 @@ const c8* test_names[]{
 maths_test_function test_functions[] = {
     test_point_plane_distance,
     test_ray_plane_intersect,
+    test_ray_sphere_intersect,
     test_aabb_vs_plane,
     test_sphere_vs_plane,
     test_project,

@@ -11,8 +11,7 @@
 //      Vulkan (win32) [wip]
 
 // Public api used by the user thread will store function call arguments in a command buffer
-// Dedicated thread will wait on a semaphore until renderer_consume_command_buffer is called
-// command buffer will be consumed passing arguments to the direct:: functions.
+// A dedicated thread will wait for commands and pass arguments to the direct:: functions.
 
 #pragma once
 
