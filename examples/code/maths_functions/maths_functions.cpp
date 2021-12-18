@@ -1072,6 +1072,48 @@ void test_line_vs_line(ecs_scene* scene, bool initialise)
     dbg::add_line(line1.l1, line1.l2, col);
 }
 
+void test_barycentric(ecs_scene* scene, bool initialise)
+{
+    static debug_extents e = {vec3f(-10.0, -10.0, -10.0), vec3f(10.0, 10.0, 10.0)};
+    
+    static debug_triangle tri;
+    static vec3f random_point;
+    static f32 fratio[3];
+    
+    bool randomise = ImGui::Button("Randomise");
+    
+    if (initialise || randomise)
+    {
+        ecs::clear_scene(scene);
+
+        add_debug_triangle(e, scene, tri);
+        
+        u8 ratio[3];
+        ratio[0] = (rand() % 255);
+        ratio[1] = (rand() % (255 - ratio[0]));
+        ratio[2] = 255 - ratio[1] - ratio[0];
+        
+        for(u32 r = 0; r < 3; ++r)
+            fratio[r] = (f32)ratio[r] / 255.0f;
+            
+        random_point = tri.t0 * fratio[0] + tri.t1 * fratio[1] + tri.t2 * fratio[2];
+        
+        ecs::update_scene(scene, 1.0f / 60.0f);
+    }
+    
+    vec3f b = maths::barycentric<3, f32>(random_point, tri.t0, tri.t1, tri.t2);
+    
+    ImGui::Text("barycentric: [%f (u), %f (v), %f (w)]", b.x, b.y, b.z);
+    ImGui::Text("created with ratio: [%f (u), %f (v), %f (w)]", fratio[0], fratio[1], fratio[2]);
+    
+    dbg::add_point(random_point, 0.3f, vec4f::white());
+    dbg::add_triangle(tri.t0, tri.t1, tri.t2, vec4f::orange());
+    
+    dbg::add_line(random_point, tri.t0, vec4f::green());
+    dbg::add_line(random_point, tri.t1, vec4f::green());
+    dbg::add_line(random_point, tri.t2, vec4f::green());
+}
+
 typedef void (*maths_test_function)(ecs_scene*, bool);
 
 // clang-format off
@@ -1096,7 +1138,8 @@ const c8* test_names[]{
     "Point Inside OBB / Closest Point on OBB",
     "Point Inside Cone",
     "AABB vs Frustum",
-    "Sphere vs Frustum"
+    "Sphere vs Frustum",
+    "Barycentric Coordinates"
 };
 
 maths_test_function test_functions[] = {
@@ -1120,7 +1163,8 @@ maths_test_function test_functions[] = {
     test_point_obb,
     test_point_cone,
     test_aabb_vs_frustum,
-    test_sphere_vs_frustum
+    test_sphere_vs_frustum,
+    test_barycentric
 };
 // clang-format on
 
