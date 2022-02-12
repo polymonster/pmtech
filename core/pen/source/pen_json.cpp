@@ -595,8 +595,16 @@ namespace pen
         json new_json;
 
         new_json.m_internal_object = (json_object*)memory_alloc(sizeof(json_object));
+        if(m_internal_object)
+        {
+            *new_json.m_internal_object = m_internal_object->get_object_by_name(name);
+        }
+        else
+        {
+            // construct a null object
+            memset(new_json.m_internal_object, 0x0, sizeof(json_object));
+        }
 
-        *new_json.m_internal_object = m_internal_object->get_object_by_name(name);
         return new_json;
     }
 
