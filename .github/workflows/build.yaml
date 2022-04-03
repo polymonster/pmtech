@@ -25,6 +25,6 @@ jobs:
         with: 
           submodules: "recursive"
           lfs: true
-      - run: |
-        sudo apt-get install libglew-dev
-        .ci/linux-gl.sh
+      - run: sudo -E apt-add-repository -y "ppa:ubuntu-toolchain-r"
+      - run: sudo apt-get install libglew-dev
+      - run: .ci/linux-gl.sh
