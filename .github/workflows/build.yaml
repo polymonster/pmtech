@@ -7,7 +7,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with: 
-          submodules: true
+          submodules: "recursive"
           lfs: true
       - run: .ci/mac-metal.sh
   macos-gl:
@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with: 
-          submodules: true
+          submodules: "recursive"
           lfs: true
       - run: .ci/mac-gl.sh
   linux-gl:
@@ -23,6 +23,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with: 
-          submodules: true
+          submodules: "recursive"
           lfs: true
       - run: .ci/linux-gl.sh
