@@ -1,0 +1,19 @@
+
+name: build
+on: [push]
+jobs:
+  macos-metal:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: .ci/mac-metal.sh
+  macos-gl:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: .ci/mac-gl.sh
+  linux-gl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: .ci/linux-gl.sh
