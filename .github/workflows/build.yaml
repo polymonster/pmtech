@@ -5,9 +5,24 @@ jobs:
   macos-metal:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v2
-      - run: |
-          ls
-          cd examples
-          ls
-          ../pmbuild mac -libs
+      - uses: actions/checkout@v3
+        with: 
+          submodules: true
+          lfs: true
+      - run: .ci/mac-metal.sh
+  macos-gl:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+        with: 
+          submodules: true
+          lfs: true
+      - run: .ci/mac-gl.sh
+  linux-gl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with: 
+          submodules: true
+          lfs: true
+      - run: .ci/linux-gl.sh
