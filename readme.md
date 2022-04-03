@@ -1,5 +1,5 @@
 # pmtech   
-[![build](https://github.com/polymonster/pmtech/actions/workflows/build.yaml/badge.svg)] 
+[![build](https://github.com/polymonster/pmtech/actions/workflows/build.yaml/badge.svg)](https://github.com/polymonster/pmtech/actions/workflows/build.yaml) 
 [![Build Status](https://ci.appveyor.com/api/projects/status/5n3aguiq1ppjrhws?svg=true)](https://ci.appveyor.com/project/polymonster/pmtech) 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Track on https://trello.com/b/05omR9Mj/igneous](https://img.shields.io/badge/track-on_trello-007BC2.svg?logo=trello&logoColor=ffffff&labelColor=026AA7)](https://trello.com/b/ciujzpUT) 
