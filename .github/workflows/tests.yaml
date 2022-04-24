@@ -1,0 +1,17 @@
+
+name: tests
+on: [push]
+jobs:
+  windows-direct3d11:
+    runs-on: [self-hosted, Windows]
+    steps:
+      - uses: actions/checkout@v3
+        with: 
+          submodules: "recursive"
+          lfs: true
+      - run: |
+          cd examples
+          ..\\pmbuild win32 -libs
+          ..\\pmbuild win32
+          ..\\pmbuild make win32 all /p:Platform=x64 /p:Configuration=Release
+          ..\\pmbuild launch win32 all -test
