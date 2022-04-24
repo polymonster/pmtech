@@ -329,7 +329,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
         pmfx: {
             args: [
                 "-shader_platform glsl"
-                "-shader_version 420"
+                "-shader_version 450"
                 "-i assets/shaders ../assets/shaders"
                 "-o bin/win32/data/pmfx/glsl"
                 "-h shader_structs"
