@@ -1,5 +1,6 @@
 
 name: tests
+on: [workflow_dispatch]
 jobs:
   windows-direct3d11:
     runs-on: [self-hosted, Windows]
