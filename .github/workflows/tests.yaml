@@ -35,8 +35,8 @@ jobs:
           submodules: "recursive"
           lfs: true
       - run: |
-        cd examples
-        ../pmbuild mac -libs
-        ../pmbuild mac
-        ../pmbuild make mac all -configuration Release -quiet CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
-        ../pmbuild launch mac all -test
+          cd examples
+          ../pmbuild mac -libs
+          ../pmbuild mac
+          ../pmbuild make mac all -configuration Release -quiet CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+          ../pmbuild launch mac all -test

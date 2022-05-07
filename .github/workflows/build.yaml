@@ -18,6 +18,14 @@ jobs:
           submodules: "recursive"
           lfs: true
       - run: .ci/mac-gl.sh
+  ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+        with: 
+          submodules: "recursive"
+          lfs: true
+      - run: .ci/ios.sh
   linux-gl:
     runs-on: ubuntu-latest
     steps:
