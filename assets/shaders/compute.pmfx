@@ -24,10 +24,10 @@ void cs_main_greyscale(uint3 gid : SV_DispatchThreadID)
 
 cbuffer gi_info : register(b1)
 {
-    float4         scene_size;
-    float4        volume_size;
-    float4        shadow_map_size;
-    float4x4     inv_mat;
+    float4		scene_size;
+    float4		volume_size;
+    float4		shadow_map_size;
+    float4x4	inv_mat;
 };
 
 void cs_main_volume_gi(uint2 gid : SV_DispatchThreadID)
@@ -48,7 +48,7 @@ void cs_main_volume_gi(uint2 gid : SV_DispatchThreadID)
     float3 ws = scene_size.xyz * 0.5;
     float3 ts = volume_size.xyz;
     float3 ns = (up.xyz / ws) * 0.5 + 0.5;
-    int3 tp = int3(ns * ts);
+    read3 tp = read3(ns * ts);
 
     // skip first texel to avoid bleeding / wraparound
     for(int i = 0; i < 3; ++i)
