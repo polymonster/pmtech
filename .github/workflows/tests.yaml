@@ -1,6 +1,6 @@
 
 name: tests
-on: [push]
+on: [workflow_dispatch]
 jobs:
   windows-direct3d11:
     runs-on: [self-hosted, Windows]
@@ -28,3 +28,16 @@ jobs:
           ..\\pmbuild win32-gl
           ..\\pmbuild make win32-gl all /p:Platform=x64 /p:Configuration=Release
           ..\\pmbuild launch win32-gl all -test
+  macos-metal:
+    runs-on: [self-hosted, MacOS]
+    steps:
+      - uses: actions/checkout@v3
+        with: 
+          submodules: "recursive"
+          lfs: true
+      - run: |
+          cd examples
+          ../pmbuild mac -libs
+          ../pmbuild mac
+          ../pmbuild make mac all -configuration Release -quiet CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+          ../pmbuild launch mac all -test

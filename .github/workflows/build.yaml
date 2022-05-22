@@ -18,6 +18,14 @@ jobs:
           submodules: "recursive"
           lfs: true
       - run: .ci/mac-gl.sh
+  ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+        with: 
+          submodules: "recursive"
+          lfs: true
+      - run: .ci/ios.sh
   linux-gl:
     runs-on: ubuntu-latest
     steps:
@@ -28,3 +36,27 @@ jobs:
       - run: sudo -E apt-add-repository -y "ppa:ubuntu-toolchain-r"
       - run: sudo apt-get install libglew-dev
       - run: .ci/linux-gl.sh
+  windows-direct3d11:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+        with: 
+          submodules: "recursive"
+          lfs: true
+      - run: |
+          cd examples
+          ..\\pmbuild win32 -libs
+          ..\\pmbuild win32
+          ..\\pmbuild make win32 all /p:Platform=x64 /p:Configuration=Release
+  windows-opengl:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+        with: 
+          submodules: "recursive"
+          lfs: true
+      - run: |
+          cd examples
+          ..\\pmbuild win32-gl -libs
+          ..\\pmbuild win32-gl
+          ..\\pmbuild make win32-gl all /p:Platform=x64 /p:Configuration=Release

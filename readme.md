@@ -1,6 +1,6 @@
 # pmtech   
 [![build](https://github.com/polymonster/pmtech/actions/workflows/build.yaml/badge.svg)](https://github.com/polymonster/pmtech/actions/workflows/build.yaml) 
-[![Build Status](https://ci.appveyor.com/api/projects/status/5n3aguiq1ppjrhws?svg=true)](https://ci.appveyor.com/project/polymonster/pmtech) 
+[![tests](https://github.com/polymonster/pmtech/actions/workflows/tests.yaml/badge.svg)](https://github.com/polymonster/pmtech/actions/workflows/tests.yaml) 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Track on https://trello.com/b/05omR9Mj/igneous](https://img.shields.io/badge/track-on_trello-007BC2.svg?logo=trello&logoColor=ffffff&labelColor=026AA7)](https://trello.com/b/ciujzpUT) 
 [![Discord](https://img.shields.io/discord/807665639845789796.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/3yjXwJ8wJC)
