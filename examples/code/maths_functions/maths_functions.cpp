@@ -5,6 +5,7 @@
 using namespace put;
 using namespace ecs;
 
+// TODO:
 // tests ------------------------------------------------------------
 // point inside frustum
 // ray vs sphere
@@ -14,11 +15,11 @@ using namespace ecs;
 // line_segment_between_line_segment
 // quat
 // point inside triangle, closest point on triangle
+// capsule_vs_plane
+// cone_vs_plane
 
 // demos ------------------------------------------------------------
 // point inside poly
-// capsule_vs_plane
-// cone_vs_plane
 
 // functions --------------------------------------------------------
 // ray_vs_capsule
