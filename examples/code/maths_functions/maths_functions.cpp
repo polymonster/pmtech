@@ -5,6 +5,36 @@
 using namespace put;
 using namespace ecs;
 
+// TODO: additions and fixes from maths-rs
+// bugs ------------------------------------------------------------
+// fix point inside triangle, closest point on triangle + tests
+
+// tests ------------------------------------------------------------
+// point inside frustum (test)
+// ray vs sphere (test)
+// ray triangle (test)
+// convex hull from points (test)
+// point inside hull (test)
+// line_segment_between_line_segment (test)
+// quat tests
+
+// demos ------------------------------------------------------------
+// point inside poly (demo, test)
+
+// functions ------------------------------------------------------------
+// point sphere distance
+// closest point on hull
+// closest point on poly
+// point hull distance
+// point poly distance
+// closest point on cone
+// point cone distance
+// ray vs line segment
+// capsule_vs_plane
+// cone_vs_plane
+// sphere_vs_capsule
+// ray_vs_capsule
+
 #define EASING_FUNC(NAME) \
 { \
     f32 t = 0.0f; \
@@ -151,6 +181,18 @@ void add_debug_ray(const debug_extents& extents, ecs_scene* scene, debug_ray& ra
     scene->parents[node] = node;
 
     ray.direction = normalize(random_vec_range({-vec3f::one(), vec3f::one()}));
+    ray.origin = scene->transforms[node].translation;
+}
+
+void add_debug_ray2(const debug_extents& extents, ecs_scene* scene, debug_ray& ray)
+{
+    u32 node = ecs::get_new_entity(scene);
+    scene->names[node] = "ray";
+    scene->transforms[node].translation = random_vec_range(extents);
+    scene->entities[node] |= e_cmp::transform;
+    scene->parents[node] = node;
+
+    ray.direction = normalize(random_vec_range({vec3f::zero(), vec3f::one()}));
     ray.origin = scene->transforms[node].translation;
 }
 
@@ -487,6 +529,42 @@ void test_ray_vs_obb(ecs_scene* scene, bool initialise)
     scene->draw_call_data[obb.node].v2 = col;
 }
 
+void test_ray_vs_sphere(ecs_scene* scene, bool initialise)
+{
+    static debug_sphere sphere;
+    static debug_ray ray;
+    
+    static debug_extents e = {vec3f(-10.0, -10.0, -10.0), vec3f(10.0, 10.0, 10.0)};
+
+    bool randomise = ImGui::Button("Randomise");
+
+    if (initialise || randomise)
+    {
+        ecs::clear_scene(scene);
+
+        add_debug_ray(e, scene, ray);
+        add_debug_sphere(e, scene, sphere);
+
+        ecs::update_scene(scene, 1.0f / 60.0f);
+    }
+    
+    vec3f ip = vec3f::zero();
+    bool  intersect = maths::ray_sphere_intersect(ray.origin, ray.direction, sphere.pos, sphere.radius, ip);
+
+    vec4f col = vec4f::green();
+
+    if (intersect)
+        col = vec4f::red();
+
+    dbg::add_line(ray.origin, ray.origin + ray.direction * 500.0f, col);
+
+    // debug output
+    if (intersect)
+        dbg::add_point(ip, 0.5f, vec4f::white());
+    
+    scene->draw_call_data[sphere.node].v2 = col;
+}
+
 void test_point_plane_distance(ecs_scene* scene, bool initialise)
 {
     static debug_point point;
@@ -785,6 +863,43 @@ void test_point_triangle(ecs_scene* scene, bool initialise)
     dbg::add_point(cp, 0.3f, col2);
 }
 
+void test_ray_triangle(ecs_scene* scene, bool initialise)
+{
+    static debug_triangle tri;
+    static debug_ray ray;
+
+    static debug_extents e = {vec3f(-10.0, 0.0, -10.0), vec3f(10.0, 0.0, 10.0)};
+    static debug_extents te = {vec3f(-50.0, 0.0, -50.0), vec3f(50.0, 0.0, 50.0)};
+
+    bool randomise = ImGui::Button("Randomise");
+
+    if (initialise || randomise)
+    {
+        ecs::clear_scene(scene);
+
+        add_debug_triangle(te, scene, tri);
+        add_debug_ray2(e, scene, ray);
+
+        ecs::update_scene(scene, 1.0f / 60.0f);
+    }
+
+    vec3f ip;
+    bool intersect = maths::ray_triangle_intersect(ray.origin, ray.direction, tri.t0, tri.t1, tri.t2, ip);
+    
+    vec4f col = vec4f::green();
+    if (intersect)
+        col = vec4f::red();
+
+    dbg::add_line(ray.origin, ray.origin + ray.direction * 500.0f, col);
+
+    // intersection point
+    if (intersect)
+        dbg::add_point(ip, 0.5f, vec4f::white());
+    
+    // triangle
+    dbg::add_triangle(tri.t0, tri.t1, tri.t2, col);
+}
+
 void test_sphere_vs_sphere(ecs_scene* scene, bool initialise)
 {
     static debug_sphere sphere0;
@@ -917,6 +1032,41 @@ void test_sphere_vs_frustum(ecs_scene* scene, bool initialise)
         col = vec4f::red();
 
     scene->draw_call_data[sphere.node].v2 = vec4f(col);
+}
+
+void test_point_vs_frustum(ecs_scene* scene, bool initialise)
+{
+    static debug_point point;
+    static debug_extents e = {vec3f(-100.0, -10.0, -100.0), vec3f(100.0, 10.0, 100.0)};
+
+    bool randomise = ImGui::Button("Randomise");
+
+    if (initialise || randomise)
+    {
+        ecs::clear_scene(scene);
+        add_debug_point(e, scene, point);
+        ecs::update_scene(scene, 1.0f / 60.0f);
+    }
+
+    static camera dc;
+    camera_create_perspective(&dc, 60.0f, 16.0f / 9.0f, 0.01f, 100.0f);
+    camera_update_look_at(&dc);
+    camera_update_frustum(&dc);
+
+    dbg::add_frustum(dc.camera_frustum.corners[0], dc.camera_frustum.corners[1]);
+
+    vec4f planes[6];
+    mat4  view_proj = dc.proj * dc.view;
+    maths::get_frustum_planes_from_matrix(view_proj, &planes[0]);
+
+    bool i = maths::point_inside_frustum(point.point, &planes[0]);
+
+    // debug output
+    vec4f col = vec4f::green();
+    if (!i)
+        col = vec4f::red();
+
+    dbg::add_point(point.point, 0.3f, col);
 }
 
 void test_aabb_vs_frustum(ecs_scene* scene, bool initialise)
@@ -1072,6 +1222,77 @@ void test_line_vs_line(ecs_scene* scene, bool initialise)
     dbg::add_line(line1.l1, line1.l2, col);
 }
 
+void test_line_segment_between_line_segments(ecs_scene* scene, bool initialise)
+{
+    static debug_line line0;
+    static debug_line line1;
+
+    static debug_extents e = {vec3f(-10.0, 0.0, -10.0), vec3f(10.0, 0.0, 10.0)};
+
+    bool randomise = ImGui::Button("Randomise");
+
+    if (initialise || randomise)
+    {
+        ecs::clear_scene(scene);
+
+        add_debug_line(e, scene, line0);
+        add_debug_line(e, scene, line1);
+
+        ecs::update_scene(scene, 1.0f / 60.0f);
+    }
+
+    vec3f r0 = vec3f::zero();
+    vec3f r1 = vec3f::zero();
+    bool has_line = maths::shortest_line_segment_between_line_segments(line0.l1, line0.l2, line1.l1, line1.l2, r0, r1);
+    
+    if(has_line)
+    {
+        dbg::add_line(r0, r1, vec4f::green());
+    }
+
+    vec4f col = has_line ? vec4f::white() : vec4f::red();
+
+    dbg::add_line(line0.l1, line0.l2, col);
+    dbg::add_line(line1.l1, line1.l2, col);
+}
+
+void test_line_segment_between_lines(ecs_scene* scene, bool initialise)
+{
+    static debug_line line0;
+    static debug_line line1;
+
+    static debug_extents e = {vec3f(-10.0, -5.0, -10.0), vec3f(10.0, 5.0, 10.0)};
+
+    bool randomise = ImGui::Button("Randomise");
+
+    if (initialise || randomise)
+    {
+        ecs::clear_scene(scene);
+
+        add_debug_line(e, scene, line0);
+        add_debug_line(e, scene, line1);
+
+        ecs::update_scene(scene, 1.0f / 60.0f);
+    }
+
+    vec3f r0 = vec3f::zero();
+    vec3f r1 = vec3f::zero();
+    bool has_line = maths::shortest_line_segment_between_lines(line0.l1, line0.l2, line1.l1, line1.l2, r0, r1);
+    
+    if(has_line)
+    {
+        dbg::add_line(r0, r1, vec4f::green());
+    }
+
+    vec4f col = has_line ? vec4f::white() : vec4f::red();
+
+    vec3f v1 = normalize(line0.l2 - line0.l1) * 1000.0f;
+    dbg::add_line(line0.l1 - v1, line0.l2 + v1, col);
+    
+    vec3f v2 = normalize(line1.l2 - line1.l1) * 1000.0f;
+    dbg::add_line(line1.l1 - v2, line1.l2 + v2, col);
+}
+
 void test_barycentric(ecs_scene* scene, bool initialise)
 {
     static debug_extents e = {vec3f(-10.0, -10.0, -10.0), vec3f(10.0, 10.0, 10.0)};
@@ -1114,6 +1335,86 @@ void test_barycentric(ecs_scene* scene, bool initialise)
     dbg::add_line(random_point, tri.t2, vec4f::green());
 }
 
+void test_convex_hull(ecs_scene* scene, bool initialise)
+{
+    static debug_extents e = {vec3f(-10.0, 0.0, -10.0), vec3f(10.0, 0.0, 10.0)};
+    
+    static std::vector<debug_point> debug_points;
+    static std::vector<debug_point> test_inside_points;
+    
+    static std::vector<vec3f> vec3_points;
+    static std::vector<vec2f> vec2_points;
+    static std::vector<vec2f> hull_points;
+    
+    static u32 num_src_points;
+    
+    bool randomise = ImGui::Button("Randomise");
+    ImGui::Text("magenta points = src point cloud");
+    ImGui::Text("orange point = rightmost convex hull point (start of winding)");
+    ImGui::Text("white line = hull generated by src points (discard the inside)");
+    ImGui::Text("green points = outside hull");
+    ImGui::Text("red points = inside hull");
+    
+    if (initialise || randomise)
+    {
+        constexpr u32 data_size = 64;
+        
+        num_src_points = (data_size/2) + (rand() % (data_size/2));
+        
+        debug_points.clear();
+        vec3_points.clear();
+        vec2_points.clear();
+        
+        debug_points.resize(num_src_points);
+        for(u32 i = 0; i < num_src_points; ++i)
+        {
+            add_debug_point(e, scene, debug_points[i]);
+            vec3_points.push_back(debug_points[i].point);
+            vec2_points.push_back(debug_points[i].point.xz);
+        }
+
+        test_inside_points.clear();
+        test_inside_points.resize(data_size);
+        for(u32 i = 0; i < data_size; ++i)
+        {
+            add_debug_point(e, scene, test_inside_points[i]);
+        }
+        
+        hull_points.clear();
+        maths::convex_hull_from_points(hull_points, vec2_points);
+    }
+    
+    // draw src points
+    for(auto& p : vec3_points)
+    {
+        dbg::add_point(p, 0.3f, vec4f::magenta());
+    }
+    
+    // hull from points
+    dbg::add_point(vec3f(hull_points[0].x, 0.0f, hull_points[0].y), 1.0f, vec4f::orange());
+    
+    // draw hull
+    for(s32 i = 0; i < hull_points.size(); ++i)
+    {
+        s32 j = (i + 1) % hull_points.size();
+        vec3f p1 = vec3f(hull_points[i].x, 0.0f, hull_points[i].y);
+        vec3f p2 = vec3f(hull_points[j].x, 0.0f, hull_points[j].y);
+        dbg::add_line(p1, p2, vec4f::white());
+    }
+    
+    // inside hull points
+    for(auto& p : test_inside_points)
+    {
+        vec4f col = vec4f::green();
+        if(maths::point_inside_convex_hull(p.point.xz, hull_points))
+        {
+            col = vec4f::red();
+        }
+        
+        dbg::add_point(p.point, 0.3f, col);
+    }
+}
+
 typedef void (*maths_test_function)(ecs_scene*, bool);
 
 // clang-format off
@@ -1134,12 +1435,18 @@ const c8* test_names[]{
     "Point inside Sphere",
     "Ray vs AABB",
     "Ray vs OBB",
+    "Ray vs Sphere",
+    "Ray vs Triangle",
     "Line vs Line",
     "Point Inside OBB / Closest Point on OBB",
     "Point Inside Cone",
     "AABB vs Frustum",
     "Sphere vs Frustum",
-    "Barycentric Coordinates"
+    "Point Inside Frustum",
+    "Barycentric Coordinates",
+    "Convex Hull",
+    "Shortest Line Segment Between Line Segments",
+    "Shortest Line Segment Between Lines"
 };
 
 maths_test_function test_functions[] = {
@@ -1159,12 +1466,18 @@ maths_test_function test_functions[] = {
     test_point_sphere,
     test_ray_vs_aabb,
     test_ray_vs_obb,
+    test_ray_vs_sphere,
+    test_ray_triangle,
     test_line_vs_line,
     test_point_obb,
     test_point_cone,
     test_aabb_vs_frustum,
     test_sphere_vs_frustum,
-    test_barycentric
+    test_point_vs_frustum,
+    test_barycentric,
+    test_convex_hull,
+    test_line_segment_between_line_segments,
+    test_line_segment_between_lines
 };
 // clang-format on
 
