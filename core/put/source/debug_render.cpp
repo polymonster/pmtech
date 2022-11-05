@@ -279,7 +279,7 @@ namespace put
                 f32 x = cos(clamped_angle);
                 f32 y = -sin(clamped_angle);
 
-                vec3f v1 = normalised(vec3f(x, y, 0.0));
+                vec3f v1 = normalize(vec3f(x, y, 0.0));
 
                 v1 = right * x + up * y;
 
@@ -290,7 +290,7 @@ namespace put
 
                 x = cos(clamped_angle);
                 y = -sin(clamped_angle);
-                vec3f v2 = normalised(vec3f(x, y, 0.0));
+                vec3f v2 = normalize(vec3f(x, y, 0.0));
 
                 v2 = right * x + up * y;
 
@@ -493,7 +493,7 @@ namespace put
                 vec2f p2 = vec2f(pp[i + 1].x, pp[i + 1].y);
                 vec2f base = vec2f(pp[0].x, pp[0].y);
 
-                vec2f v1 = normalised(p2 - base);
+                vec2f v1 = normalize(p2 - base);
 
                 vec4f col = colours[i + 1];
 

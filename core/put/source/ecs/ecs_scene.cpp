@@ -549,7 +549,7 @@ namespace put
                     emax = min_union(scene->shadow_extent_constraints.max, emax);
                 }
 
-                vec3f light_dir = normalised(-scene->lights[n].direction);
+                vec3f light_dir = normalize(-scene->lights[n].direction);
                 camera_update_shadow_frustum(&cam, light_dir, emin - vec3f(0.1f), emax + vec3f(0.1f));
             }
             else
@@ -557,9 +557,9 @@ namespace put
                 // spot
                 camera_create_perspective(&cam, 100.0f, 1.0f, 0.1f, 500.0f);
 
-                cam.view.set_row(0, vec4f((vec3f)normalised(scene->world_matrices[n].get_column(2).xyz), 0.0f));
-                cam.view.set_row(1, vec4f((vec3f)normalised(scene->world_matrices[n].get_column(0).xyz), 0.0f));
-                cam.view.set_row(2, vec4f((vec3f)normalised(scene->world_matrices[n].get_column(1).xyz), 0.0f));
+                cam.view.set_row(0, vec4f((vec3f)normalize(scene->world_matrices[n].get_column(2).xyz), 0.0f));
+                cam.view.set_row(1, vec4f((vec3f)normalize(scene->world_matrices[n].get_column(0).xyz), 0.0f));
+                cam.view.set_row(2, vec4f((vec3f)normalize(scene->world_matrices[n].get_column(1).xyz), 0.0f));
                 cam.view.set_row(3, vec4f(0.0f, 0.0f, 0.0f, 1.0f));
 
                 mat4 translate = mat::create_translation(-scene->world_matrices[n].get_translation());
@@ -1653,7 +1653,7 @@ namespace put
 
                 cmp_transform& t = scene->transforms[n];
 
-                vec3f dir = normalized(-scene->world_matrices[n].get_column(1).xyz);
+                vec3f dir = normalize(-scene->world_matrices[n].get_column(1).xyz);
 
                 bool sm = l.flags & e_light_flags::shadow_map;
                 light_buffer.lights[pos].pos_radius = vec4f(t.translation, l.radius);

@@ -140,7 +140,7 @@ void example_setup(ecs_scene* scene, camera& cam)
 
         for (u32 j = 0; j < num; ++j)
         {
-            vec3f a = normalised(pos);
+            vec3f a = normalize(pos);
 
             mat4 rot = mat::create_rotation(cross(vec3f::unit_y(), a), inner_angle);
 

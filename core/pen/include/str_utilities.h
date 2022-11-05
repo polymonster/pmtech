@@ -30,7 +30,7 @@ namespace pen
     Str  str_remove_ext(const Str& string);
     Str  str_replace_chars(const Str& string, const c8 search, const c8 replace);
     Str  str_replace_string(const Str& string, const c8* search, const c8* replace);
-    Str  str_normalise_filepath(const Str& filepath);
+    Str  str_normalize_filepath(const Str& filepath);
     Str  str_sanitize_filepath(const Str& filepath);
     Str  str_basename(const Str& filepath);
     Str  str_to_lower(const Str& string);
@@ -187,7 +187,7 @@ namespace pen
         return str_replace_chars(filepath, PEN_OS_RSEP, PEN_OS_SEP);
     }
 
-    inline Str str_normalise_filepath(const Str& filepath)
+    inline Str str_normalize_filepath(const Str& filepath)
     {
         Str f = str_replace_chars(filepath, '\\', '/');
 

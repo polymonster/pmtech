@@ -50,7 +50,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->names[light] = "front_light";
     scene->id_name[light] = PEN_HASH("front_light");
     scene->lights[light].colour = vec3f(0.8f, 0.8f, 0.8f) * 0.5f;
-    scene->lights[light].direction = normalised(vec3f(-0.7f, 0.6f, -0.4f));
+    scene->lights[light].direction = normalize(vec3f(-0.7f, 0.6f, -0.4f));
     scene->lights[light].type = e_light_type::dir;
     scene->lights[light].flags |= e_light_flags::shadow_map | e_light_flags::global_illumination;
     scene->transforms[light].translation = vec3f::zero();
@@ -64,7 +64,7 @@ void example_setup(ecs_scene* scene, camera& cam)
     scene->names[light] = "opposite_light";
     scene->id_name[light] = PEN_HASH("opposite_light");
     scene->lights[light].colour = vec3f(0.8f, 0.8f, 0.8f) * 0.5f;
-    scene->lights[light].direction = normalised(vec3f(0.7f, 0.8f, 0.3f));
+    scene->lights[light].direction = normalize(vec3f(0.7f, 0.8f, 0.3f));
     scene->lights[light].type = e_light_type::dir;
     scene->lights[light].flags |= e_light_flags::shadow_map;
     scene->transforms[light].translation = vec3f::zero();
@@ -191,7 +191,7 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
                 }
             }
 
-            t += normalised(v) * 1.0f / 60.0f * 10.0f;
+            t += normalize(v) * 1.0f / 60.0f * 10.0f;
 
             scene->entities[e] |= e_cmp::transform;
         }

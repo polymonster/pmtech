@@ -92,7 +92,7 @@ void example_update(ecs::ecs_scene* scene, camera& cam, f32 dt)
                 f32 rrz = (f32)(rand() % 255) / 255.0f;
 
                 anim_dir[dir_index] = vec3f(rrx, rry, rrz) * vec3f(2.0f) - vec3f(1.0);
-                anim_dir[dir_index] += normalised(vec3f(0.0f, scene_size / 2.0f, 0.0f) - scene->transforms[i].translation);
+                anim_dir[dir_index] += normalize(vec3f(0.0f, scene_size / 2.0f, 0.0f) - scene->transforms[i].translation);
             }
         }
 
@@ -209,7 +209,7 @@ void example_setup(ecs::ecs_scene* scene, camera& main_camera)
         f32 rrz = (f32)(rand() % 255) / 255.0f;
 
         ImColor ii = ImColor::HSV((rand() % 255) / 255.0f, (rand() % 255) / 255.0f, (rand() % 255) / 255.0f);
-        vec4f   col = normalised(vec4f(ii.Value.x, ii.Value.y, ii.Value.z, 1.0f));
+        vec4f   col = normalize(vec4f(ii.Value.x, ii.Value.y, ii.Value.z, 1.0f));
 
         col = _pallete[rand() % 5];
 

@@ -163,8 +163,8 @@ namespace put
         for (s32 i = 0; i < 6; ++i)
         {
             s32   offset = i * 3;
-            vec3f v1 = normalised(plane_vectors[offset + 1] - plane_vectors[offset + 0]);
-            vec3f v2 = normalised(plane_vectors[offset + 2] - plane_vectors[offset + 0]);
+            vec3f v1 = normalize(plane_vectors[offset + 1] - plane_vectors[offset + 0]);
+            vec3f v2 = normalize(plane_vectors[offset + 2] - plane_vectors[offset + 0]);
 
             p_camera->camera_frustum.n[i] = cross(v1, v2);
             p_camera->camera_frustum.p[i] = plane_vectors[offset];

@@ -958,7 +958,7 @@ int main(int argc, char** argv)
 
         // get working dir
         Str working_dir = argv[0];
-        working_dir = pen::str_normalise_filepath(working_dir);
+        working_dir = pen::str_normalize_filepath(working_dir);
 
         // strip exe and go back 2 \contents\macos\exe
         for (u32 i = 0, pos = 0; i < 4; ++i)

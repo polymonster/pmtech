@@ -137,7 +137,7 @@ void add_debug_plane(const debug_extents& extents, ecs_scene* scene, debug_plane
     scene->entities[node] |= e_cmp::transform;
     scene->parents[node] = node;
 
-    plane.normal = normalised(random_vec_range({-vec3f::one(), vec3f::one()}));
+    plane.normal = normalize(random_vec_range({-vec3f::one(), vec3f::one()}));
     plane.point = scene->transforms[node].translation;
 }
 
@@ -150,7 +150,7 @@ void add_debug_ray(const debug_extents& extents, ecs_scene* scene, debug_ray& ra
     scene->entities[node] |= e_cmp::transform;
     scene->parents[node] = node;
 
-    ray.direction = normalised(random_vec_range({-vec3f::one(), vec3f::one()}));
+    ray.direction = normalize(random_vec_range({-vec3f::one(), vec3f::one()}));
     ray.origin = scene->transforms[node].translation;
 }
 
@@ -442,7 +442,7 @@ void test_ray_vs_obb(ecs_scene* scene, bool initialise)
         invm.set_translation(vec3f::zero());
         vec3f trv = invm.transform_vector(vec4f(ray.direction, 1.0f)).xyz;
 
-        bool ii = maths::ray_vs_aabb(-vec3f::one(), vec3f::one(), tr1, normalised(trv), ip);
+        bool ii = maths::ray_vs_aabb(-vec3f::one(), vec3f::one(), tr1, normalize(trv), ip);
 
         put::dbg::add_aabb(-vec3f::one(), vec3f::one(), vec4f::cyan());
 
@@ -472,7 +472,7 @@ void test_ray_vs_obb(ecs_scene* scene, bool initialise)
         invm.set_translation(vec3f::zero());
         vec3f trv = invm.transform_vector(vec4f(rv, 1.0f)).xyz;
 
-        vec3f cp = maths::closest_point_on_ray(tr1, normalised(trv), vec3f::zero());
+        vec3f cp = maths::closest_point_on_ray(tr1, normalize(trv), vec3f::zero());
         vec3f ccp = mat.transform_vector(vec4f(cp, 1.0f)).xyz;
 
         put::dbg::add_point(ccp, 0.1f, vec4f::yellow());
@@ -1026,7 +1026,7 @@ void test_point_cone(ecs_scene* scene, bool initialise)
     f32 r = scene->transforms[cone.node].scale.x;
     f32 h = scene->transforms[cone.node].scale.y;
 
-    vec3f cv = normalised(-scene->world_matrices[cone.node].get_column(1).xyz);
+    vec3f cv = normalize(-scene->world_matrices[cone.node].get_column(1).xyz);
     vec3f cp = scene->world_matrices[cone.node].get_translation();
 
     bool i = maths::point_inside_cone(point.point, cp, cv, h, r);

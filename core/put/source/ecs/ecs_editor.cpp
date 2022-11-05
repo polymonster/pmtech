@@ -545,8 +545,8 @@ namespace put
             for (s32 i = 0; i < 6; ++i)
             {
                 s32   offset = i * 3;
-                vec3f v1 = normalised(plane_vectors[offset + 1] - plane_vectors[offset + 0]);
-                vec3f v2 = normalised(plane_vectors[offset + 2] - plane_vectors[offset + 0]);
+                vec3f v1 = normalize(plane_vectors[offset + 1] - plane_vectors[offset + 0]);
+                vec3f v2 = normalize(plane_vectors[offset + 2] - plane_vectors[offset + 0]);
 
                 n[i] = cross(v1, v2);
                 p[i] = plane_vectors[offset];
@@ -2725,7 +2725,7 @@ namespace put
             mat4  view_proj = view.camera->proj * view.camera->view;
             vec3f r0 = maths::unproject_sc(vec3f(mousev3.x, mousev3.y, 0.0f), view_proj, vpi);
             vec3f r1 = maths::unproject_sc(vec3f(mousev3.x, mousev3.y, 1.0f), view_proj, vpi);
-            vec3f vr = normalised(r1 - r0);
+            vec3f vr = normalize(r1 - r0);
 
             if (s_transform_mode == e_transform_mode::physics)
             {
@@ -2876,9 +2876,9 @@ namespace put
                     {
                         s_select_flags |= e_select_flags::widget_selected;
 
-                        vec3f prev_line = normalised(attach_point - pos);
-                        vec3f cur_line = normalised(_cp - pos);
-                        vec3f start_line = normalised(drag_point - pos);
+                        vec3f prev_line = normalize(attach_point - pos);
+                        vec3f cur_line = normalize(_cp - pos);
+                        vec3f start_line = normalize(drag_point - pos);
 
                         dbg::add_line(pos, pos + cur_line * rd, vec4f::white());
                         dbg::add_line(pos, pos + start_line * rd, vec4f::white() * vec4f(0.3f, 0.3f, 0.3f, 1.0f));
@@ -2976,7 +2976,7 @@ namespace put
 
                     if (s_transform_mode == e_transform_mode::translate)
                     {
-                        vec2f v = normalised(pp[i].xy - pp[0].xy);
+                        vec2f v = normalize(pp[i].xy - pp[0].xy);
                         vec2f px = perp(v) * 5.0f;
 
                         vec2f base = pp[i].xy - v * 5.0f;
@@ -3494,71 +3494,3 @@ namespace put
         }
     } // namespace ecs
 } // namespace put
-
-#if 0 // code to calc tangents
-for (long i = 0; i < vertices.size(); i += 3)
-{
-    if (i + 2 < vertices.size())
-    {
-        long i1 = i;
-        long i2 = i + 1;
-        long i3 = i + 2;
-
-        const Vector3f& v1 = vertices.at(i1);
-        const Vector3f& v2 = vertices.at(i2);
-        const Vector3f& v3 = vertices.at(i3);
-
-        const Vector2f& w1 = tex_coords.at(i1);
-        const Vector2f& w2 = tex_coords.at(i2);
-        const Vector2f& w3 = tex_coords.at(i3);
-
-        float x1 = v2.x - v1.x;
-        float x2 = v3.x - v1.x;
-        float y1 = v2.y - v1.y;
-        float y2 = v3.y - v1.y;
-        float z1 = v2.z - v1.z;
-        float z2 = v3.z - v1.z;
-
-        float s1 = w2.x - w1.x;
-        float s2 = w3.x - w1.x;
-        float t1 = w2.y - w1.y;
-        float t2 = w3.y - w1.y;
-
-        float r = 1.0F / (s1 * t2 - s2 * t1);
-        Vector3f sdir((t2 * x1 - t1 * x2) * r, (t2 * y1 - t1 * y2) * r,
-            (t2 * z1 - t1 * z2) * r);
-
-        Vector3f tdir((s1 * x2 - s2 * x1) * r, (s1 * y2 - s2 * y1) * r,
-            (s1 * z2 - s2 * z1) * r);
-
-        tan1.push_back(sdir);
-        tan1.push_back(sdir);
-        tan1.push_back(sdir);
-
-        tan2.push_back(tdir);
-        tan2.push_back(tdir);
-        tan2.push_back(tdir);
-    }
-    else
-    {
-        missed_faces += 3;
-    }
-}
-
-for (long i = 0; i < vertices.size() - missed_faces; i++)
-{
-    Vector3f n = normals.at(i);
-    Vector3f t = tan1.at(i);
-
-    //Orthogonalize
-    t = psmath::normalise((t - n * psmath::dot(n, t)));
-
-    //Calculate handedness which way? possibly only for opposite face culling
-    float handedness = (psmath::dot(psmath::cross(n, t), tan2.at(i)) < 0.0F) ? -1.0F : 1.0F;
-
-    Vector4f final_tan = Vector4f(t, handedness);
-
-    vbo_tangents.push_back(final_tan);
-}
-
-#endif

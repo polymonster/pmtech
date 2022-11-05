@@ -380,8 +380,8 @@ namespace put
 
                     vec3f p_next = vec3f(xz.x, y + height_step, xz.z);
 
-                    p = normalised(p);
-                    p_next = normalised(p_next);
+                    p = normalize(p);
+                    p_next = normalize(p_next);
 
                     vec3f n = p;
 
@@ -399,10 +399,10 @@ namespace put
                     // cylindrical normals for the centre cause artifacts
                     /*
                     if (fabs(r - (segments / 2.0f)) < 2.0f)
-                        n = normalised(xz);
+                        n = normalize(xz);
                     */
 
-                    vec3f t = normalised(p_next - p);
+                    vec3f t = normalize(p_next - p);
                     vec3f bt = cross(p, t);
 
                     v[v_index].pos = vec4f(p, 1.0f);
@@ -519,9 +519,9 @@ namespace put
                     xz = vec3f(x, 0.0f, z) * radius;
 
                     vec3f p_next = vec3f(xz.x, y, xz.z);
-                    p_next = normalised(p_next);
+                    p_next = normalize(p_next);
 
-                    p = normalised(p);
+                    p = normalize(p);
                     vec3f t = p_next - p;
                     vec3f bt = cross(p, t);
 
@@ -1040,9 +1040,9 @@ namespace put
             if (mag(right) < 0.1)
                 right = cross(axis, vec3d::unit_x());
                 
-            normalise(right);
-            up = normalised(cross(axis, right));
-            right = normalised(cross(axis, up));
+            right = normalize(right);
+            up = normalize(cross(axis, right));
+            right = normalize(cross(axis, up));
             at = cross(right, up);
         }
         
@@ -1089,7 +1089,7 @@ namespace put
                 }
                 
                 vec3f n = maths::get_normal((vec3f)p, (vec3f)np, (vec3f)tp);
-                vec3f b = (vec3f)normalised(p - np);
+                vec3f b = (vec3f)normalize(p - np);
                 vec3f t = cross(n, b);
                 
                 vertex_model v[3];
@@ -1152,7 +1152,7 @@ namespace put
                     }
                     
                     vec3f n = maths::get_normal(v[0].pos.xyz, v[2].pos.xyz, v[1].pos.xyz);
-                    vec3f b = normalised(v[0].pos.xyz - v[1].pos.xyz);
+                    vec3f b = normalize(v[0].pos.xyz - v[1].pos.xyz);
                     vec3f t = cross(n, b);
                     
                     for(u32 k = 0; k < 3; ++k)
@@ -1202,7 +1202,7 @@ namespace put
                 v[2].pos.xyz = pos;
                 
                 vec3f n = maths::get_normal(v[0].pos.xyz, v[2].pos.xyz, v[1].pos.xyz);
-                vec3f b = normalised(v[0].pos.xyz - v[1].pos.xyz);
+                vec3f b = normalize(v[0].pos.xyz - v[1].pos.xyz);
                 vec3f t = cross(n, b);
                 
                 for(u32 j = 0; j < 3; ++j)
@@ -1215,8 +1215,8 @@ namespace put
                     sb_push(verts, v[j]);
                 }
                             
-                vec3d ev = normalised(np - p);
-                vec3d cp = normalised(cross(ev, axis));
+                vec3d ev = normalize(np - p);
+                vec3d cp = normalize(cross(ev, axis));
 
                 vec3d mid = p + (np - p) * 0.5;
                 
@@ -1224,11 +1224,11 @@ namespace put
                 f64 ry = cos((M_PI*2.0)+internal_angle) * M_INV_PHI;
                 vec3d xp = mid + cp * rx + axis * ry;
                 
-                vec3d xv = normalised(xp - mid);
+                vec3d xv = normalize(xp - mid);
 
                 if(recurse)
                 {
-                    vec3d next_axis = normalised(cross(xv, ev));
+                    vec3d next_axis = normalize(cross(xv, ev));
                     dodecahedron_face_in_axis(next_axis, mid + xv * half_gr * M_INV_PHI, M_PI + start_angle, false, verts);
                 }
             }
@@ -1277,7 +1277,7 @@ namespace put
                 v[2].pos.xyz = np;
                 
                 vec3f n = maths::get_normal(v[0].pos.xyz, v[2].pos.xyz, v[1].pos.xyz);
-                vec3f b = normalised(v[0].pos.xyz - v[1].pos.xyz);
+                vec3f b = normalize(v[0].pos.xyz - v[1].pos.xyz);
                 vec3f t = cross(n, b);
                 
                 for(u32 j = 0; j < 3; ++j)
@@ -1290,14 +1290,14 @@ namespace put
                     sb_push(verts, v[j]);
                 }
                 
-                vec3d side_dip = dip + cross(normalized(p-np), at);
+                vec3d side_dip = dip + cross(normalize(p-np), at);
                 
                 v[0].pos.xyz = p;
                 v[1].pos.xyz = np;
                 v[2].pos.xyz = side_dip;
                 
                 n = maths::get_normal(v[0].pos.xyz, v[2].pos.xyz, v[1].pos.xyz);
-                b = normalised(v[0].pos.xyz - v[1].pos.xyz);
+                b = normalize(v[0].pos.xyz - v[1].pos.xyz);
                 t = cross(n, b);
                 
                 for(u32 j = 0; j < 3; ++j)
@@ -1347,11 +1347,11 @@ namespace put
                 vec3f np = vec3f(x2, 0.0, y2);
                 vec3f nnp = vec3f(x3, 0.0, y3);
                 
-                vec3f at = normalized(np - p);
+                vec3f at = normalize(np - p);
                 vec3f up = vec3f::unit_y();
                 vec3f right = cross(up, at);
                 
-                vec3f nat = normalized(nnp - np);
+                vec3f nat = normalize(nnp - np);
                 vec3f nright = cross(up, nat);
                 
                 f64 ab = 0.0f;
@@ -1384,7 +1384,7 @@ namespace put
                     for(u32 k = 0; k < 6; ++k)
                     {
                         v[k].pos.w = 1.0;
-                        v[k].normal.xyz = normalized(vx * up + vy * right);
+                        v[k].normal.xyz = normalize(vx * up + vy * right);
                         v[k].tangent.xyz = right;
                         v[k].bitangent.xyz = up;
                         
