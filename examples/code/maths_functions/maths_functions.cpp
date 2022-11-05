@@ -743,8 +743,9 @@ void test_cone_vs_plane(ecs_scene* scene, bool initialise)
     // TODO: cone util
     f32 r = scene->transforms[cone.node].scale.x;
     f32 h = scene->transforms[cone.node].scale.y;
-    vec3f cv = normalize(-scene->world_matrices[cone.node].get_column(1).xyz);
-    vec3f cp = scene->world_matrices[cone.node].get_translation();
+    
+    vec3f cv = normalize(scene->world_matrices[cone.node].get_column(1).xyz);
+    vec3f cp = scene->world_matrices[cone.node].get_translation() - cv * h;
     
     u32 c = maths::cone_vs_plane(cp, cv, h, r, plane.point, plane.normal);
 
