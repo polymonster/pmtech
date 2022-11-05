@@ -502,7 +502,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     GetModuleFileNameA(hInstance, module_filename, MAX_PATH);
 
     static Str working_directory = module_filename;
-    working_directory = pen::str_normalise_filepath(working_directory);
+    working_directory = pen::str_normalize_filepath(working_directory);
 
     // remove exe
     u32 dir = pen::str_find_reverse(working_directory, "/");
