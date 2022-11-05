@@ -5,23 +5,24 @@
 using namespace put;
 using namespace ecs;
 
-// TODO: additions and fixes from maths-rs
-// bugs ------------------------------------------------------------
-// fix point inside triangle, closest point on triangle + tests
-
 // tests ------------------------------------------------------------
-// point inside frustum (test)
-// ray vs sphere (test)
-// ray triangle (test)
-// convex hull from points (test)
-// point inside hull (test)
-// line_segment_between_line_segment (test)
-// quat tests
+// point inside frustum
+// ray vs sphere
+// ray triangle
+// convex hull from points
+// point inside hull
+// line_segment_between_line_segment
+// quat
+// point inside triangle, closest point on triangle
 
 // demos ------------------------------------------------------------
-// point inside poly (demo, test)
+// point inside poly
+// capsule_vs_plane
+// cone_vs_plane
 
-// functions ------------------------------------------------------------
+// functions --------------------------------------------------------
+// ray_vs_capsule
+// sphere_vs_capsule
 // point sphere distance
 // closest point on hull
 // closest point on poly
@@ -30,10 +31,6 @@ using namespace ecs;
 // closest point on cone
 // point cone distance
 // ray vs line segment
-// capsule_vs_plane
-// cone_vs_plane
-// sphere_vs_capsule
-// ray_vs_capsule
 
 #define EASING_FUNC(NAME) \
 { \
@@ -113,6 +110,14 @@ struct debug_sphere
     u32   node;
     vec3f pos;
     f32   radius;
+};
+
+struct debug_capsule
+{
+    u32   node;
+    f32   radius;
+    vec3f cp1;
+    vec3f cp2;
 };
 
 struct debug_point
@@ -248,6 +253,33 @@ void add_debug_sphere(const debug_extents& extents, ecs_scene* scene, debug_sphe
     sphere.pos = scene->transforms[node].translation;
     sphere.radius = size.x;
     sphere.node = node;
+}
+
+// Add debug sphere with randon radius within range extents and at random position within extents
+void add_debug_capsule(const debug_extents& extents, ecs_scene* scene, debug_capsule& capsule)
+{
+    geometry_resource* capsule_res = get_geometry_resource(PEN_HASH("capsule"));
+
+    vec3f size = fabs(random_vec_range(extents));
+
+    u32 node = ecs::get_new_entity(scene);
+    scene->names[node] = "sphere";
+
+    scene->transforms[node].rotation = quat();
+    scene->transforms[node].scale = vec3f(size.x, size.y, size.x);
+    scene->transforms[node].translation = random_vec_range(extents);
+
+    scene->entities[node] |= e_cmp::transform;
+    scene->parents[node] = node;
+
+    instantiate_geometry(capsule_res, scene, node);
+    instantiate_material(constant_colour_material, scene, node);
+    instantiate_model_cbuffer(scene, node);
+
+    capsule.cp1 = scene->transforms[node].translation - vec3f(0.0f, size.y, 0.0f);
+    capsule.cp2 = scene->transforms[node].translation + vec3f(0.0f, size.y, 0.0f);
+    capsule.radius = size.x;
+    capsule.node = node;
 }
 
 void add_debug_solid_aabb(const debug_extents& extents, ecs_scene* scene, debug_aabb& aabb)
@@ -660,6 +692,70 @@ void test_sphere_vs_plane(ecs_scene* scene, bool initialise)
     dbg::add_plane(plane.point, plane.normal);
 }
 
+void test_capsule_vs_plane(ecs_scene* scene, bool initialise)
+{
+    static debug_capsule capsule;
+    static debug_plane  plane;
+
+    static debug_extents e = {vec3f(-10.0, -10.0, -10.0), vec3f(10.0, 10.0, 10.0)};
+
+    bool randomise = ImGui::Button("Randomise");
+
+    if (initialise || randomise)
+    {
+        ecs::clear_scene(scene);
+
+        add_debug_plane(e, scene, plane);
+        add_debug_capsule(e, scene, capsule);
+
+        ecs::update_scene(scene, 1.0f / 60.0f);
+    }
+
+    u32 c = maths::capsule_vs_plane(capsule.cp1, capsule.cp2, capsule.radius, plane.point, plane.normal);
+
+    // debug output
+    ImGui::Text("Classification %s", classifications[c]);
+
+    scene->draw_call_data[capsule.node].v2 = vec4f(classification_colours[c]);
+
+    dbg::add_plane(plane.point, plane.normal);
+}
+
+void test_cone_vs_plane(ecs_scene* scene, bool initialise)
+{
+    static debug_cone cone;
+    static debug_plane plane;
+
+    static debug_extents e = {vec3f(-10.0, -10.0, -10.0), vec3f(10.0, 10.0, 10.0)};
+
+    bool randomise = ImGui::Button("Randomise");
+
+    if (initialise || randomise)
+    {
+        ecs::clear_scene(scene);
+
+        add_debug_plane(e, scene, plane);
+        add_debug_solid_cone(e, scene, cone);
+
+        ecs::update_scene(scene, 1.0f / 60.0f);
+    }
+
+    // TODO: cone util
+    f32 r = scene->transforms[cone.node].scale.x;
+    f32 h = scene->transforms[cone.node].scale.y;
+    vec3f cv = normalize(-scene->world_matrices[cone.node].get_column(1).xyz);
+    vec3f cp = scene->world_matrices[cone.node].get_translation();
+    
+    u32 c = maths::cone_vs_plane(cp, cv, h, r, plane.point, plane.normal);
+
+    // debug output
+    ImGui::Text("Classification %s", classifications[c]);
+
+    scene->draw_call_data[cone.node].v2 = vec4f(classification_colours[c]);
+
+    dbg::add_plane(plane.point, plane.normal);
+}
+
 void test_project(ecs_scene* scene, bool initialise)
 {
     static debug_point point;
@@ -824,6 +920,8 @@ void test_point_triangle(ecs_scene* scene, bool initialise)
     static debug_point    point;
 
     static debug_extents e = {vec3f(-10.0, 0.0, -10.0), vec3f(10.0, 0.0, 10.0)};
+    
+    static std::vector<debug_point> test_points;
 
     bool randomise = ImGui::Button("Randomise");
 
@@ -833,6 +931,13 @@ void test_point_triangle(ecs_scene* scene, bool initialise)
 
         add_debug_triangle(e, scene, tri);
         add_debug_point(e, scene, point);
+        
+        test_points.clear();
+        test_points.resize(64);
+        for(u32 i = 0; i < 64; ++i)
+        {
+            add_debug_point(e, scene, test_points[i]);
+        }
 
         ecs::update_scene(scene, 1.0f / 60.0f);
     }
@@ -861,6 +966,14 @@ void test_point_triangle(ecs_scene* scene, bool initialise)
 
     dbg::add_line(cp, point.point, col2);
     dbg::add_point(cp, 0.3f, col2);
+    
+    // ..
+    for(auto& p : test_points)
+    {
+        bool inside = maths::point_inside_triangle(p.point, tri.t0, tri.t1, tri.t2);
+        vec4f col = inside ? vec4f::red() : vec4f::green();
+        dbg::add_point(p.point, 0.3f, col);
+    }
 }
 
 void test_ray_triangle(ecs_scene* scene, bool initialise)
@@ -1424,6 +1537,8 @@ const c8* test_names[]{
     "Ray Sphere Intersect",
     "AABB Plane Classification",
     "Sphere Plane Classification",
+    "Capsule Plane Classification",
+    "Cone Plane Classification",
     "Project / Unproject",
     "Point Inside AABB / Closest Point on AABB",
     "Closest Point on Line / Point Segment Distance",
@@ -1455,6 +1570,8 @@ maths_test_function test_functions[] = {
     test_ray_sphere_intersect,
     test_aabb_vs_plane,
     test_sphere_vs_plane,
+    test_capsule_vs_plane,
+    test_cone_vs_plane,
     test_project,
     test_point_aabb,
     test_point_line,
