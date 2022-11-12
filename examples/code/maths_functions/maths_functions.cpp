@@ -6,6 +6,9 @@ using namespace put;
 using namespace ecs;
 
 // TODO:
+// issues -----------------------------------------------------------
+// cone direction inconsistencies
+
 // tests ------------------------------------------------------------
 // point inside frustum
 // ray vs sphere
@@ -17,21 +20,22 @@ using namespace ecs;
 // point inside triangle, closest point on triangle
 // capsule_vs_plane
 // cone_vs_plane
+// ray_vs_capsule
 
 // demos ------------------------------------------------------------
 // point inside poly
 
 // functions --------------------------------------------------------
-// ray_vs_capsule
+// ray_vs_cylinder
 // sphere_vs_capsule
 // point sphere distance
+// closest point on cone
+// point cone distance
+// ray vs line segment
 // closest point on hull
 // closest point on poly
 // point hull distance
 // point poly distance
-// closest point on cone
-// point cone distance
-// ray vs line segment
 
 #define EASING_FUNC(NAME) \
 { \
@@ -115,7 +119,7 @@ struct debug_sphere
 
 struct debug_capsule
 {
-    u32   node;
+    u32   nodes[3] = { 0 };
     f32   radius;
     vec3f cp1;
     vec3f cp2;
@@ -190,6 +194,22 @@ void add_debug_ray(const debug_extents& extents, ecs_scene* scene, debug_ray& ra
     ray.origin = scene->transforms[node].translation;
 }
 
+// Spawn a random ray which contains point within extents
+void add_debug_ray_targeted(const debug_extents& extents, ecs_scene* scene, debug_ray& ray)
+{
+    vec3f target = random_vec_range(extents);
+    vec3f dir = normalize(random_vec_range({-vec3f::one(), vec3f::one()}));
+    
+    u32 node = ecs::get_new_entity(scene);
+    scene->names[node] = "ray";
+    scene->transforms[node].translation = target + dir * mag(extents.max);
+    scene->entities[node] |= e_cmp::transform;
+    scene->parents[node] = node;
+
+    ray.direction = -dir;
+    ray.origin = scene->transforms[node].translation;
+}
+
 void add_debug_ray2(const debug_extents& extents, ecs_scene* scene, debug_ray& ray)
 {
     u32 node = ecs::get_new_entity(scene);
@@ -259,28 +279,67 @@ void add_debug_sphere(const debug_extents& extents, ecs_scene* scene, debug_sphe
 // Add debug sphere with randon radius within range extents and at random position within extents
 void add_debug_capsule(const debug_extents& extents, ecs_scene* scene, debug_capsule& capsule)
 {
-    geometry_resource* capsule_res = get_geometry_resource(PEN_HASH("capsule"));
+    geometry_resource* sphere_res = get_geometry_resource(PEN_HASH("sphere"));
+    geometry_resource* cyl_res = get_geometry_resource(PEN_HASH("cylinder"));
 
     vec3f size = fabs(random_vec_range(extents));
-
-    u32 node = ecs::get_new_entity(scene);
-    scene->names[node] = "sphere";
-
-    scene->transforms[node].rotation = quat();
-    scene->transforms[node].scale = vec3f(size.x, size.y, size.x);
-    scene->transforms[node].translation = random_vec_range(extents);
-
-    scene->entities[node] |= e_cmp::transform;
-    scene->parents[node] = node;
-
-    instantiate_geometry(capsule_res, scene, node);
-    instantiate_material(constant_colour_material, scene, node);
-    instantiate_model_cbuffer(scene, node);
-
-    capsule.cp1 = scene->transforms[node].translation - vec3f(0.0f, size.y, 0.0f);
-    capsule.cp2 = scene->transforms[node].translation + vec3f(0.0f, size.y, 0.0f);
+    size.y = std::max(size.y, size.x);
+    
+    vec3f pos = random_vec_range(extents);
+    
+    capsule.cp1 = pos - vec3f(0.0f, size.y, 0.0f);
+    capsule.cp2 = pos + vec3f(0.0f, size.y, 0.0f);
     capsule.radius = size.x;
-    capsule.node = node;
+    
+    // sp1
+    u32 sp1 = ecs::get_new_entity(scene);
+    scene->names[sp1] = "sphere1";
+    
+    scene->transforms[sp1].rotation = quat();
+    scene->transforms[sp1].scale = vec3f(size.x, size.x, size.x);
+    scene->transforms[sp1].translation = capsule.cp1;
+
+    scene->entities[sp1] |= e_cmp::transform;
+    scene->parents[sp1] = sp1;
+
+    instantiate_geometry(sphere_res, scene, sp1);
+    instantiate_material(constant_colour_material, scene, sp1);
+    instantiate_model_cbuffer(scene, sp1);
+    
+    // sp2
+    u32 sp2 = ecs::get_new_entity(scene);
+    scene->names[sp2] = "sphere2";
+    
+    scene->transforms[sp2].rotation = quat();
+    scene->transforms[sp2].scale = vec3f(size.x, size.x, size.x);
+    scene->transforms[sp2].translation = capsule.cp2;
+
+    scene->entities[sp2] |= e_cmp::transform;
+    scene->parents[sp2] = sp2;
+
+    instantiate_geometry(sphere_res, scene, sp2);
+    instantiate_material(constant_colour_material, scene, sp2);
+    instantiate_model_cbuffer(scene, sp2);
+    
+    // cyl
+    u32 cylinder = ecs::get_new_entity(scene);
+    scene->names[cylinder] = "cylinder";
+    
+    scene->transforms[cylinder].rotation = quat();
+    scene->transforms[cylinder].scale = vec3f(size.x, size.y, size.x);
+    scene->transforms[cylinder].translation = pos;
+
+    scene->entities[cylinder] |= e_cmp::transform;
+    scene->parents[cylinder] = cylinder;
+
+    instantiate_geometry(cyl_res, scene, cylinder);
+    instantiate_material(constant_colour_material, scene, cylinder);
+    instantiate_model_cbuffer(scene, cylinder);
+    
+    // set nodes
+    capsule.nodes[0] = sp1;
+    capsule.nodes[1] = sp2;
+    capsule.nodes[2] = cylinder;
 }
 
 void add_debug_solid_aabb(const debug_extents& extents, ecs_scene* scene, debug_aabb& aabb)
@@ -411,41 +470,6 @@ void test_ray_plane_intersect(ecs_scene* scene, bool initialise)
     dbg::add_plane(plane.point, plane.normal);
 
     dbg::add_line(ray.origin, ray.origin + ray.direction * 500.0f, vec4f::green());
-}
-
-void test_ray_sphere_intersect(ecs_scene* scene, bool initialise)
-{
-    static debug_sphere sphere;
-    static debug_ray    ray;
-
-    static debug_extents e = {vec3f(-10.0, -10.0, -10.0), vec3f(10.0, 10.0, 10.0)};
-
-    bool randomise = ImGui::Button("Randomise");
-
-    if (initialise || randomise)
-    {
-        ecs::clear_scene(scene);
-
-        add_debug_ray(e, scene, ray);
-        add_debug_sphere(e, scene, sphere);
-
-        ecs::update_scene(scene, 1.0f / 60.0f);
-    }
-
-    vec3f ip; 
-    bool intersect = maths::ray_sphere_intersect(ray.origin, ray.direction, sphere.pos, sphere.radius, ip);
-
-    // debug output
-    dbg::add_point(ip, 0.3f, vec4f::green());
-
-    vec4f col = vec4f::green();
-
-    if (intersect)
-        col = vec4f::red();
-
-    dbg::add_line(ray.origin, ray.origin + ray.direction * 500.0f, col);
-
-    scene->draw_call_data[sphere.node].v2 = col;
 }
 
 void test_ray_vs_aabb(ecs_scene* scene, bool initialise)
@@ -582,7 +606,7 @@ void test_ray_vs_sphere(ecs_scene* scene, bool initialise)
     }
     
     vec3f ip = vec3f::zero();
-    bool  intersect = maths::ray_sphere_intersect(ray.origin, ray.direction, sphere.pos, sphere.radius, ip);
+    bool  intersect = maths::ray_vs_sphere(ray.origin, ray.direction, sphere.pos, sphere.radius, ip);
 
     vec4f col = vec4f::green();
 
@@ -596,6 +620,69 @@ void test_ray_vs_sphere(ecs_scene* scene, bool initialise)
         dbg::add_point(ip, 0.5f, vec4f::white());
     
     scene->draw_call_data[sphere.node].v2 = col;
+}
+
+void test_ray_vs_capsule(ecs_scene* scene, bool initialise)
+{
+    static debug_capsule capsule;
+    static debug_ray ray;
+    
+    static debug_extents e = {vec3f(-10.0, -10.0, -10.0), vec3f(10.0, 10.0, 10.0)};
+
+    bool randomise = ImGui::Button("Randomise");
+
+    if (initialise || randomise)
+    {
+        ecs::clear_scene(scene);
+
+        add_debug_ray_targeted(e, scene, ray);
+        add_debug_capsule(e, scene, capsule);
+
+        ecs::update_scene(scene, 1.0f / 60.0f);
+    }
+    
+    vec3f ip = vec3f::zero();
+    bool  intersect = maths::ray_vs_capsule(ray.origin, ray.direction, capsule.cp1, capsule.cp2, capsule.radius, ip);
+
+    vec4f col = vec4f::green();
+
+    if (intersect)
+    {
+        col = vec4f::red();
+        dbg::add_point(ip, 1.0f, vec4f::white());
+    }
+
+    dbg::add_point(ray.origin, 1.0f, vec4f::cyan());
+    dbg::add_line(ray.origin, ray.origin + ray.direction * 500.0f, col);
+    
+    // ..
+    static bool hide = false;
+    ImGui::Checkbox("Hide Geometry", &hide);
+    
+    static bool hide_spheres = false;
+    ImGui::Checkbox("Hide Spheres", &hide_spheres);
+    
+    // debug col
+    for(u32 i = 0; i < 3; ++i)
+    {
+        scene->draw_call_data[capsule.nodes[i]].v2 = col;
+        
+        bool compound_hide = hide;
+        if(i < 2)
+        {
+            compound_hide |= hide_spheres;
+        }
+                
+        if(compound_hide)
+        {
+            scene->state_flags[capsule.nodes[i]] |= e_state::hidden;
+        }
+        else
+        {
+            scene->state_flags[capsule.nodes[i]] &= ~e_state::hidden;
+        }
+    }
+
 }
 
 void test_point_plane_distance(ecs_scene* scene, bool initialise)
@@ -717,7 +804,10 @@ void test_capsule_vs_plane(ecs_scene* scene, bool initialise)
     // debug output
     ImGui::Text("Classification %s", classifications[c]);
 
-    scene->draw_call_data[capsule.node].v2 = vec4f(classification_colours[c]);
+    for(u32 i = 0; i < 3; ++i)
+    {
+        scene->draw_call_data[capsule.nodes[i]].v2 = vec4f(classification_colours[c]);
+    }
 
     dbg::add_plane(plane.point, plane.normal);
 }
@@ -1536,7 +1626,6 @@ typedef void (*maths_test_function)(ecs_scene*, bool);
 const c8* test_names[]{
     "Point Plane Distance",
     "Ray Plane Intersect",
-    "Ray Sphere Intersect",
     "AABB Plane Classification",
     "Sphere Plane Classification",
     "Capsule Plane Classification",
@@ -1554,6 +1643,7 @@ const c8* test_names[]{
     "Ray vs OBB",
     "Ray vs Sphere",
     "Ray vs Triangle",
+    "Ray vs Capsule",
     "Line vs Line",
     "Point Inside OBB / Closest Point on OBB",
     "Point Inside Cone",
@@ -1569,7 +1659,6 @@ const c8* test_names[]{
 maths_test_function test_functions[] = {
     test_point_plane_distance,
     test_ray_plane_intersect,
-    test_ray_sphere_intersect,
     test_aabb_vs_plane,
     test_sphere_vs_plane,
     test_capsule_vs_plane,
@@ -1587,6 +1676,7 @@ maths_test_function test_functions[] = {
     test_ray_vs_obb,
     test_ray_vs_sphere,
     test_ray_triangle,
+    test_ray_vs_capsule,
     test_line_vs_line,
     test_point_obb,
     test_point_cone,
@@ -1619,7 +1709,9 @@ void maths_test_ui(ecs_scene* scene)
     if (ImGui::Combo("Test", &test_index, test_names, PEN_ARRAY_SIZE(test_names)))
         initialise = true;
 
+    ImGui::SameLine();
     ImGui::Checkbox("Animate", &animate);
+    ImGui::Separator();
 
     if (animate)
     {
