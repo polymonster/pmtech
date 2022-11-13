@@ -125,6 +125,14 @@ struct debug_capsule
     vec3f cp2;
 };
 
+struct debug_cylinder
+{
+    u32   node;
+    f32   radius;
+    vec3f cp1;
+    vec3f cp2;
+};
+
 struct debug_point
 {
     u32   node;
@@ -276,7 +284,6 @@ void add_debug_sphere(const debug_extents& extents, ecs_scene* scene, debug_sphe
     sphere.node = node;
 }
 
-// Add debug sphere with randon radius within range extents and at random position within extents
 void add_debug_capsule(const debug_extents& extents, ecs_scene* scene, debug_capsule& capsule)
 {
     geometry_resource* sphere_res = get_geometry_resource(PEN_HASH("sphere"));
@@ -365,6 +372,37 @@ void add_debug_solid_aabb(const debug_extents& extents, ecs_scene* scene, debug_
     aabb.min = scene->transforms[node].translation - size;
     aabb.max = scene->transforms[node].translation + size;
     aabb.node = node;
+}
+
+void add_debug_cylinder(const debug_extents& extents, ecs_scene* scene, debug_cylinder& cylinder)
+{
+    geometry_resource* cyl_res = get_geometry_resource(PEN_HASH("cylinder"));
+
+    vec3f size = fabs(random_vec_range(extents));
+    size.y = std::max(size.y, size.x);
+    
+    vec3f pos = random_vec_range(extents);
+    
+    cylinder.cp1 = pos - vec3f(0.0f, size.y, 0.0f);
+    cylinder.cp2 = pos + vec3f(0.0f, size.y, 0.0f);
+    cylinder.radius = size.x;
+    
+    // cyl
+    u32 c = ecs::get_new_entity(scene);
+    scene->names[c] = "cylinder";
+    
+    scene->transforms[c].rotation = quat();
+    scene->transforms[c].scale = vec3f(size.x, size.y, size.x);
+    scene->transforms[c].translation = pos;
+
+    scene->entities[c] |= e_cmp::transform;
+    scene->parents[c] = c;
+
+    instantiate_geometry(cyl_res, scene, c);
+    instantiate_material(constant_colour_material, scene, c);
+    instantiate_model_cbuffer(scene, c);
+    
+    cylinder.node = c;
 }
 
 void add_debug_obb(const debug_extents& extents, ecs_scene* scene, debug_obb& obb)
@@ -682,8 +720,57 @@ void test_ray_vs_capsule(ecs_scene* scene, bool initialise)
             scene->state_flags[capsule.nodes[i]] &= ~e_state::hidden;
         }
     }
-
 }
+
+void test_ray_vs_cylinder(ecs_scene* scene, bool initialise)
+{
+    static debug_cylinder cylinder;
+    static debug_ray ray;
+    
+    static debug_extents e = {vec3f(-10.0, -10.0, -10.0), vec3f(10.0, 10.0, 10.0)};
+
+    bool randomise = ImGui::Button("Randomise");
+
+    if (initialise || randomise)
+    {
+        ecs::clear_scene(scene);
+
+        add_debug_ray_targeted(e, scene, ray);
+        add_debug_cylinder(e, scene, cylinder);
+
+        ecs::update_scene(scene, 1.0f / 60.0f);
+    }
+    
+    vec3f ip = vec3f::zero();
+    bool  intersect = maths::ray_vs_cylinder(ray.origin, ray.direction, cylinder.cp1, cylinder.cp2, cylinder.radius, ip);
+
+    vec4f col = vec4f::green();
+
+    if (intersect)
+    {
+        col = vec4f::red();
+        dbg::add_point(ip, 1.0f, vec4f::white());
+    }
+
+    dbg::add_point(ray.origin, 1.0f, vec4f::cyan());
+    dbg::add_line(ray.origin, ray.origin + ray.direction * 500.0f, col);
+    
+    // ..
+    static bool hide = false;
+    ImGui::Checkbox("Hide Geometry", &hide);
+    
+    scene->draw_call_data[cylinder.node].v2 = col;
+
+    if(hide)
+    {
+        scene->state_flags[cylinder.node] |= e_state::hidden;
+    }
+    else
+    {
+        scene->state_flags[cylinder.node] &= ~e_state::hidden;
+    }
+}
+
 
 void test_point_plane_distance(ecs_scene* scene, bool initialise)
 {
@@ -1644,6 +1731,7 @@ const c8* test_names[]{
     "Ray vs Sphere",
     "Ray vs Triangle",
     "Ray vs Capsule",
+    "Ray vs Cylinder",
     "Line vs Line",
     "Point Inside OBB / Closest Point on OBB",
     "Point Inside Cone",
@@ -1677,6 +1765,7 @@ maths_test_function test_functions[] = {
     test_ray_vs_sphere,
     test_ray_triangle,
     test_ray_vs_capsule,
+    test_ray_vs_cylinder,
     test_line_vs_line,
     test_point_obb,
     test_point_cone,
