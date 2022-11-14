@@ -21,17 +21,15 @@ using namespace ecs;
 // capsule_vs_plane
 // cone_vs_plane
 // ray_vs_capsule
-
-// demos ------------------------------------------------------------
+// ray_vs_cylinder
+// sphere_vs_capsule
 // point inside poly
 
 // functions --------------------------------------------------------
-// ray_vs_cylinder
-// sphere_vs_capsule
 // point sphere distance
 // closest point on cone
 // point cone distance
-// ray vs line segment
+
 // closest point on hull
 // closest point on poly
 // point hull distance
@@ -679,6 +677,13 @@ void test_ray_vs_capsule(ecs_scene* scene, bool initialise)
         ecs::update_scene(scene, 1.0f / 60.0f);
     }
     
+    bool edge_case = ImGui::Button("Orthogonal Edge Case");
+    if(edge_case)
+    {
+        ray.origin = capsule.cp1 + normalize(capsule.cp1 - capsule.cp2) * 10.0f;
+        ray.direction = normalize(capsule.cp2 - capsule.cp1);
+    }
+    
     vec3f ip = vec3f::zero();
     bool  intersect = maths::ray_vs_capsule(ray.origin, ray.direction, capsule.cp1, capsule.cp2, capsule.radius, ip);
 
@@ -1222,6 +1227,38 @@ void test_sphere_vs_sphere(ecs_scene* scene, bool initialise)
     scene->draw_call_data[sphere1.node].v2 = vec4f(col);
 }
 
+void test_sphere_vs_capsule(ecs_scene* scene, bool initialise)
+{
+    static debug_sphere sphere0;
+    static debug_capsule capsule;
+
+    static debug_extents e = {vec3f(-10.0, -10.0, -10.0), vec3f(10.0, 10.0, 10.0)};
+
+    bool randomise = ImGui::Button("Randomise");
+
+    if (initialise || randomise)
+    {
+        ecs::clear_scene(scene);
+
+        add_debug_sphere(e, scene, sphere0);
+        add_debug_capsule(e, scene, capsule);
+
+        ecs::update_scene(scene, 1.0f / 60.0f);
+    }
+
+    bool i = maths::sphere_vs_capsule(sphere0.pos, sphere0.radius, capsule.cp1, capsule.cp2, capsule.radius);
+
+    // debug output
+    vec4f col = vec4f::green();
+    if (i)
+        col = vec4f::red();
+
+    scene->draw_call_data[sphere0.node].v2 = vec4f(col);
+    
+    for(u32 j = 0; j < 3; ++j)
+        scene->draw_call_data[capsule.nodes[j]].v2 = vec4f(col);
+}
+
 void test_sphere_vs_aabb(ecs_scene* scene, bool initialise)
 {
     static debug_aabb   aabb;
@@ -1707,6 +1744,84 @@ void test_convex_hull(ecs_scene* scene, bool initialise)
     }
 }
 
+void test_polygon(ecs_scene* scene, bool initialise)
+{
+    static debug_extents e = {vec3f(-10.0, 0.0, -10.0), vec3f(10.0, 0.0, 10.0)};
+    static debug_extents lengths = {vec3f(5.0, M_PI * 0.25f, 0.0), vec3f(10.0, M_PI * 0.75f, 10.0)};
+    
+    bool randomise = ImGui::Button("Randomise");
+    
+    static std::vector<vec2f> polygon;
+    static std::vector<debug_point> test_inside_points;
+    
+    static u32 num_src_points = 0;
+    if (initialise || randomise)
+    {
+        constexpr u32 data_size = 64;
+        num_src_points = (data_size/2) + (rand() % (data_size/2));
+        
+        vec2f start = random_vec_range(e).xz;
+        vec2f start_dir = vec2f::unit_y();
+        
+        vec2f cur_pos = start;
+        vec2f cur_dir = start_dir;
+        
+        // random poly points
+        polygon.clear();
+        polygon.push_back(start);
+        
+        f32 accumulated = 0.0f;
+        for(u32 i = 0; i < 16; ++i)
+        {
+            vec3f size = fabs(random_vec_range(lengths));
+            
+            f32 angle = size.y;
+            
+            accumulated += angle;
+            if(accumulated > M_PI * 2.0f)
+            {
+                break;
+            }
+            
+            vec2f new_dir = vec2f(cur_dir.x * cos(angle) - cur_dir.y * sin(angle),
+                                  cur_dir.x * sin(angle) + cur_dir.y * cos(angle));
+            
+            vec2f new_pos = cur_pos + new_dir * size.x;
+            
+            polygon.push_back(new_pos);
+        }
+        
+        // test points
+        test_inside_points.clear();
+        test_inside_points.resize(data_size);
+        for(u32 i = 0; i < data_size; ++i)
+        {
+            add_debug_point(e, scene, test_inside_points[i]);
+        }
+    }
+    
+    // draw polygon
+    for(s32 i = 0; i < polygon.size(); ++i)
+    {
+        s32 j = (i + 1) % polygon.size();
+        vec3f p1 = vec3f(polygon[i].x, 0.0f, polygon[i].y);
+        vec3f p2 = vec3f(polygon[j].x, 0.0f, polygon[j].y);
+        dbg::add_line(p1, p2, vec4f::white());
+    }
+    
+    // inside polygon points
+    for(auto& p : test_inside_points)
+    {
+        vec4f col = vec4f::green();
+        if(maths::point_inside_poly(p.point.xz, polygon))
+        {
+            col = vec4f::red();
+        }
+        
+        dbg::add_point(p.point, 0.3f, col);
+    }
+}
+
 typedef void (*maths_test_function)(ecs_scene*, bool);
 
 // clang-format off
@@ -1723,6 +1838,7 @@ const c8* test_names[]{
     "Closest Point on Ray",
     "Point Inside Triangle / Point Triangle Distance / Closest Point on Triangle / Get Normal",
     "Sphere vs Sphere",
+    "Sphere vs Capsule",
     "Sphere vs AABB",
     "AABB vs AABB",
     "Point inside Sphere",
@@ -1740,6 +1856,7 @@ const c8* test_names[]{
     "Point Inside Frustum",
     "Barycentric Coordinates",
     "Convex Hull",
+    "Polygon",
     "Shortest Line Segment Between Line Segments",
     "Shortest Line Segment Between Lines"
 };
@@ -1757,6 +1874,7 @@ maths_test_function test_functions[] = {
     test_point_ray,
     test_point_triangle,
     test_sphere_vs_sphere,
+    test_sphere_vs_capsule,
     test_sphere_vs_aabb,
     test_aabb_vs_aabb,
     test_point_sphere,
@@ -1774,6 +1892,7 @@ maths_test_function test_functions[] = {
     test_point_vs_frustum,
     test_barycentric,
     test_convex_hull,
+    test_polygon,
     test_line_segment_between_line_segments,
     test_line_segment_between_lines
 };
