@@ -1,4 +1,3 @@
-#define MATHS_PRINT_TESTS 1
 #include "../example_common.h"
 #include "maths/util.h"
 
@@ -10,31 +9,6 @@ using namespace ecs;
 // ray vs capsule (fix up)
 // cone direction inconsistencies
 // cone functions issues
-// point vs plane
-
-// TODO:
-// tests ------------------------------------------------------------
-// point inside frustum
-// ray vs sphere
-// ray triangle
-// convex hull from points
-// point inside hull
-// line_segment_between_line_segment
-// quat
-// point inside triangle, closest point on triangle
-// capsule_vs_plane
-// cone_vs_plane
-// ray_vs_capsule
-// ray_vs_cylinder
-// sphere_vs_capsule
-// point inside poly
-// point sphere distance
-// closest point on hull
-// closest point on poly
-// point hull distance
-// point poly distance
-// closest point on cone
-// point cone distance
 // point vs plane
 
 #define EASING_FUNC(NAME) \
@@ -649,7 +623,7 @@ void test_ray_vs_sphere(ecs_scene* scene, bool initialise)
     {
         ecs::clear_scene(scene);
 
-        add_debug_ray(e, scene, ray);
+        add_debug_ray_targeted(e, scene, ray);
         add_debug_sphere(e, scene, sphere);
 
         ecs::update_scene(scene, 1.0f / 60.0f);
@@ -663,6 +637,7 @@ void test_ray_vs_sphere(ecs_scene* scene, bool initialise)
     if (intersect)
         col = vec4f::red();
 
+    dbg::add_point(ray.origin, 1.0f, vec4f::cyan());
     dbg::add_line(ray.origin, ray.origin + ray.direction * 500.0f, col);
 
     // debug output
@@ -670,6 +645,32 @@ void test_ray_vs_sphere(ecs_scene* scene, bool initialise)
         dbg::add_point(ip, 0.5f, vec4f::white());
     
     scene->draw_call_data[sphere.node].v2 = col;
+    
+    bool gen = ImGui::Button("Gen Test");
+    if(gen)
+    {
+        PEN_LOG("{");
+        
+        //  ray with ip
+        PEN_LOG("\tvec3f ip = {(f32)0.0, (f32)0.0, (f32)0.0};");
+        PEN_LOG("\tvec3f r0 = {(f32)%f, (f32)%f, (f32)%f};", ray.origin.x, ray.origin.y, ray.origin.z);
+        PEN_LOG("\tvec3f rv = {(f32)%f, (f32)%f, (f32)%f};", ray.direction.x, ray.direction.y, ray.direction.z);
+
+        // sphere
+        PEN_LOG("\tvec3f sp = {(f32)%f, (f32)%f, (f32)%f};", sphere.pos.x, sphere.pos.y, sphere.pos.z);
+        PEN_LOG("\tf32 sr = (f32)%f;", sphere.radius);
+        
+        // custom
+        PEN_LOG("\tbool i = maths::ray_vs_sphere(r0, rv, sp, sr, ip);");
+        
+        // intersection and point
+        PEN_LOG("\tREQUIRE(i == bool(%i));", intersect);
+        
+        if(intersect)
+            PEN_LOG("\tREQUIRE(require_func(ip, {(f32)%f, (f32)%f, (f32)%f}));", ip.x, ip.y, ip.z);
+        
+        PEN_LOG("}");
+    }
 }
 
 void test_ray_vs_capsule(ecs_scene* scene, bool initialise)
