@@ -1512,7 +1512,7 @@ void test_point_cone(ecs_scene* scene, bool initialise)
 
     bool randomise = ImGui::Button("Randomise");
     ImGui::Separator();
-    ImGui::Text("%s", "orange point / line = closest point on cone");
+    ImGui::Text("%s", "yellow point / line = closest point on cone");
     ImGui::Separator();
 
     if (initialise || randomise)
