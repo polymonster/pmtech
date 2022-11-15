@@ -22,6 +22,39 @@ using namespace ecs;
     ImGui::PlotLines(#NAME, points, 32); \
 }
 
+namespace
+{
+    void print_test_case_ray(const vec3f& r0, const vec3f& rv)
+    {
+        PEN_LOG("\tvec3f ip = {(f32)0.0, (f32)0.0, (f32)0.0};");
+        PEN_LOG("\tvec3f r0 = {(f32)%f, (f32)%f, (f32)%f};", r0.x, r0.y, r0.z);
+        PEN_LOG("\tvec3f rv = {(f32)%f, (f32)%f, (f32)%f};", rv.x, rv.y, rv.z);
+    }
+    
+    void print_test_case_sphere(const vec3f& sp, f32 r)
+    {
+        PEN_LOG("\tvec3f sp = {(f32)%f, (f32)%f, (f32)%f};", sp.x, sp.y, sp.z);
+        PEN_LOG("\tf32 sr = (f32)%f;", r);
+    }
+    
+    void print_test_case_triangle(const vec3f& t0, const vec3f& t1, const vec3f& t2)
+    {
+        PEN_LOG("\tvec3f t0 = {(f32)%f, (f32)%f, (f32)%f};", t0.x, t0.y, t0.z);
+        PEN_LOG("\tvec3f t1 = {(f32)%f, (f32)%f, (f32)%f};", t1.x, t1.y, t1.z);
+        PEN_LOG("\tvec3f t2 = {(f32)%f, (f32)%f, (f32)%f};", t2.x, t2.y, t2.z);
+    }
+    
+    void print_test_case_intersection_point(bool intersect, const vec3f& ip)
+    {
+        // intersection and point
+        PEN_LOG("\tREQUIRE(i == bool(%i));", intersect);
+        if(intersect)
+        {
+            PEN_LOG("\tREQUIRE(require_func(ip, {(f32)%f, (f32)%f, (f32)%f}));", ip.x, ip.y, ip.z);
+        }
+    }
+}
+
 namespace pen
 {
     pen_creation_params pen_entry(int argc, char** argv)
@@ -1213,6 +1246,18 @@ void test_ray_triangle(ecs_scene* scene, bool initialise)
     
     // triangle
     dbg::add_triangle(tri.t0, tri.t1, tri.t2, col);
+    
+    // print test
+    bool gen = ImGui::Button("Gen Test");
+    if(gen)
+    {
+        PEN_LOG("{");
+        print_test_case_ray(ray.origin, ray.direction);
+        print_test_case_triangle(tri.t0, tri.t1, tri.t2);
+        PEN_LOG("\tbool i = maths::ray_triangle_intersect(r0, rv, t0, t1, t2, ip);");
+        print_test_case_intersection_point(intersect, ip);
+        PEN_LOG("}");
+    }
 }
 
 void test_sphere_vs_sphere(ecs_scene* scene, bool initialise)
