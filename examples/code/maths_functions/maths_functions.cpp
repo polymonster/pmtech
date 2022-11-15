@@ -8,12 +8,11 @@ using namespace ecs;
 // TODO: rust
 // ray vs cylinder
 // ray vs capsule (fix up)
-
-// TODO:
-// issues -----------------------------------------------------------
 // cone direction inconsistencies
 // cone functions issues
+// point vs plane
 
+// TODO:
 // tests ------------------------------------------------------------
 // point inside frustum
 // ray vs sphere
@@ -36,6 +35,7 @@ using namespace ecs;
 // point poly distance
 // closest point on cone
 // point cone distance
+// point vs plane
 
 #define EASING_FUNC(NAME) \
 { \
@@ -146,6 +146,18 @@ struct debug_extents
 };
 
 material_resource* constant_colour_material = new material_resource;
+
+const c8* classifications[]{
+    "Intersects",
+    "Behind",
+    "Infront",
+};
+
+const vec4f classification_colours[] = {
+    vec4f::red(),
+    vec4f::cyan(),
+    vec4f::green()
+};
 
 // Randomise vector in range of extents
 vec3f random_vec_range(const debug_extents& extents)
@@ -803,25 +815,22 @@ void test_point_plane(ecs_scene* scene, bool initialise)
 
     vec3f cp = maths::closest_point_on_plane(point.point, plane.point, plane.normal);
     f32 distance = maths::point_plane_distance(point.point, plane.point, plane.normal);
-
+    maths::classification c = maths::point_vs_plane(point.point, plane.point, plane.normal);
+    
     // debug output
     ImGui::Text("Distance %f", distance);
+    ImGui::Text("Classification %s", classifications[c]);
 
-    dbg::add_point(cp, 0.3f, vec4f::orange());
-    dbg::add_point(point.point, 0.3f, vec4f::green());
+    // point
+    dbg::add_point(point.point, 1.0f, classification_colours[c]);
     
+    // cloest point
+    dbg::add_point(cp, 0.3f, vec4f::orange());
     dbg::add_line(cp, point.point, vec4f::orange());
     
+    // plane
     dbg::add_plane(plane.point, plane.normal);
 }
-
-const c8* classifications[]{
-    "Intersects",
-    "Behind",
-    "Infront",
-};
-
-const vec4f classification_colours[] = {vec4f::red(), vec4f::cyan(), vec4f::green()};
 
 void test_aabb_vs_plane(ecs_scene* scene, bool initialise)
 {
@@ -932,12 +941,11 @@ void test_cone_vs_plane(ecs_scene* scene, bool initialise)
         ecs::update_scene(scene, 1.0f / 60.0f);
     }
 
-    // TODO: cone util
     f32 r = scene->transforms[cone.node].scale.x;
     f32 h = scene->transforms[cone.node].scale.y;
-    
-    vec3f cv = normalize(scene->world_matrices[cone.node].get_column(1).xyz);
-    vec3f cp = scene->world_matrices[cone.node].get_translation() - cv * h;
+
+    vec3f cv = normalize(-scene->world_matrices[cone.node].get_column(1).xyz);
+    vec3f cp = scene->world_matrices[cone.node].get_translation();
     
     u32 c = maths::cone_vs_plane(cp, cv, h, r, plane.point, plane.normal);
 
@@ -1500,7 +1508,7 @@ void test_point_cone(ecs_scene* scene, bool initialise)
     static debug_point point;
     static debug_cone  cone;
 
-    static debug_extents e = {vec3f(-5.0, -5.0, -10.0), vec3f(5.0, 5.0, 5.0)};
+    static debug_extents e = {vec3f(-10.0, 0.0, -10.0), vec3f(15.0, 15.0, 15.0)};
 
     bool randomise = ImGui::Button("Randomise");
     ImGui::Separator();
@@ -1522,24 +1530,41 @@ void test_point_cone(ecs_scene* scene, bool initialise)
 
     vec3f cv = normalize(-scene->world_matrices[cone.node].get_column(1).xyz);
     vec3f cp = scene->world_matrices[cone.node].get_translation();
+    
+    dbg::add_point(cp, 0.4f, vec4f::cyan());
+    dbg::add_point(cp + cv * h, 0.4f, vec4f::magenta());
 
     bool i = maths::point_inside_cone(point.point, cp, cv, h, r);
     vec3f closest = maths::closest_point_on_cone(point.point, cp, cv, h, r);
     f32 d = maths::point_cone_distance(point.point, cp, cv, h, r);
     
     ImGui::Text("%s : %f", "Point Cone Distance", d);
-
+    
+    dbg::add_point(closest, 0.3f, vec4f::yellow());
+    dbg::add_line(point.point, closest, vec4f::yellow());
+    
     // debug output
     vec4f col = vec4f::green();
     if (i)
         col = vec4f::red();
 
     dbg::add_point(point.point, 0.4f, col);
-    
-    dbg::add_point(closest, 0.4f, vec4f::orange());
-    dbg::add_line(closest, point.point, vec4f::orange());
 
     scene->draw_call_data[cone.node].v2 = vec4f(col);
+    
+    static bool hide = false;
+    ImGui::Checkbox("Hide Geometry", &hide);
+    
+    scene->draw_call_data[cone.node].v2 = col;
+
+    if(hide)
+    {
+        scene->state_flags[cone.node] |= e_state::hidden;
+    }
+    else
+    {
+        scene->state_flags[cone.node] &= ~e_state::hidden;
+    }
 }
 
 void test_line_vs_line(ecs_scene* scene, bool initialise)
