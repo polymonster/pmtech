@@ -53,6 +53,20 @@ namespace
             PEN_LOG("\tREQUIRE(require_func(ip, {(f32)%f, (f32)%f, (f32)%f}));", ip.x, ip.y, ip.z);
         }
     }
+    
+    void print_test_case_capsule(const vec3f& cp0, const vec3f& cp1, f32 cr)
+    {
+        PEN_LOG("\tvec3f cp0 = {(f32)%f, (f32)%f, (f32)%f};", cp0.x, cp0.y, cp0.z);
+        PEN_LOG("\tvec3f cp1 = {(f32)%f, (f32)%f, (f32)%f};", cp1.x, cp1.y, cp1.z);
+        PEN_LOG("\tf32 cr = (f32)%f;", cr);
+    }
+    
+    void print_test_case_cylinder(const vec3f& cy0, const vec3f& cy1, f32 cyr)
+    {
+        PEN_LOG("\tvec3f cy0 = {(f32)%f, (f32)%f, (f32)%f};", cy0.x, cy0.y, cy0.z);
+        PEN_LOG("\tvec3f cy1 = {(f32)%f, (f32)%f, (f32)%f};", cy1.x, cy1.y, cy1.z);
+        PEN_LOG("\tf32 cyr = (f32)%f;", cyr);
+    }
 }
 
 namespace pen
@@ -773,6 +787,17 @@ void test_ray_vs_capsule(ecs_scene* scene, bool initialise)
             scene->state_flags[capsule.nodes[i]] &= ~e_state::hidden;
         }
     }
+    
+    bool gen = ImGui::Button("Gen Test");
+    if(gen)
+    {
+        PEN_LOG("{");
+        print_test_case_ray(ray.origin, ray.direction);
+        print_test_case_capsule(capsule.cp1, capsule.cp2, capsule.radius);
+        PEN_LOG("\tbool i = maths::ray_vs_capsule(r0, rv, cp0, cp1, cr, ip);");
+        print_test_case_intersection_point(intersect, ip);
+        PEN_LOG("}");
+    }
 }
 
 void test_ray_vs_cylinder(ecs_scene* scene, bool initialise)
@@ -792,6 +817,13 @@ void test_ray_vs_cylinder(ecs_scene* scene, bool initialise)
         add_debug_cylinder(e, scene, cylinder);
 
         ecs::update_scene(scene, 1.0f / 60.0f);
+    }
+    
+    bool edge_case = ImGui::Button("Orthogonal Edge Case");
+    if(edge_case)
+    {
+        ray.origin = cylinder.cp1 + normalize(cylinder.cp1 - cylinder.cp2) * 10.0f;
+        ray.direction = normalize(cylinder.cp2 - cylinder.cp1);
     }
     
     vec3f ip = vec3f::zero();
@@ -821,6 +853,18 @@ void test_ray_vs_cylinder(ecs_scene* scene, bool initialise)
     else
     {
         scene->state_flags[cylinder.node] &= ~e_state::hidden;
+    }
+    
+    // print test
+    bool gen = ImGui::Button("Gen Test");
+    if(gen)
+    {
+        PEN_LOG("{");
+        print_test_case_ray(ray.origin, ray.direction);
+        print_test_case_cylinder(cylinder.cp1, cylinder.cp2, cylinder.radius);
+        PEN_LOG("\tbool i = maths::ray_vs_cylinder(r0, rv, cy0, cy1, cyr, ip);");
+        print_test_case_intersection_point(intersect, ip);
+        PEN_LOG("}");
     }
 }
 
