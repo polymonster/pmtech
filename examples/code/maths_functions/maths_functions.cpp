@@ -24,6 +24,12 @@ using namespace ecs;
 
 namespace
 {
+    void print_test_case_plane(const vec3f& x, const vec3f& n)
+    {
+        PEN_LOG("\tvec3f x = {(f32)%f, (f32)%f, (f32)%f};", x.x, x.y, x.z);
+        PEN_LOG("\tvec3f n = {(f32)%f, (f32)%f, (f32)%f};", n.x, n.y, n.z);
+    }
+    
     void print_test_case_ray(const vec3f& r0, const vec3f& rv)
     {
         PEN_LOG("\tvec3f ip = {(f32)0.0, (f32)0.0, (f32)0.0};");
@@ -44,6 +50,11 @@ namespace
         PEN_LOG("\tvec3f t2 = {(f32)%f, (f32)%f, (f32)%f};", t2.x, t2.y, t2.z);
     }
     
+    void print_test_case_point(const vec3f& p)
+    {
+        PEN_LOG("\tvec3f p = {(f32)%f, (f32)%f, (f32)%f};", p.x, p.y, p.z);
+    }
+    
     void print_test_case_intersection_point(bool intersect, const vec3f& ip)
     {
         // intersection and point
@@ -54,6 +65,24 @@ namespace
         }
     }
     
+    void print_test_case_closest_point(const vec3f& cp)
+    {
+        // closest point
+        PEN_LOG("\tREQUIRE(require_func(cpp, {(f32)%f, (f32)%f, (f32)%f}));", cp.x, cp.y, cp.z);
+    }
+    
+    void print_test_case_classification(u32 c)
+    {
+        // classification
+        PEN_LOG("\tREQUIRE(c == %i);", c);
+    }
+    
+    void print_test_case_distance(f32 d)
+    {
+        // classification
+        PEN_LOG("\tREQUIRE(require_func(dd, %f));", d);
+    }
+    
     void print_test_case_capsule(const vec3f& cp0, const vec3f& cp1, f32 cr)
     {
         PEN_LOG("\tvec3f cp0 = {(f32)%f, (f32)%f, (f32)%f};", cp0.x, cp0.y, cp0.z);
@@ -61,11 +90,25 @@ namespace
         PEN_LOG("\tf32 cr = (f32)%f;", cr);
     }
     
+    void print_test_case_cone(const vec3f& cp, const vec3f& cv, f32 h, f32 r)
+    {
+        PEN_LOG("\tvec3f cp = {(f32)%f, (f32)%f, (f32)%f};", cp.x, cp.y, cp.z);
+        PEN_LOG("\tvec3f cv = {(f32)%f, (f32)%f, (f32)%f};", cv.x, cv.y, cv.z);
+        PEN_LOG("\tf32 h = (f32)%f;", h);
+        PEN_LOG("\tf32 r = (f32)%f;", r);
+    }
+    
     void print_test_case_cylinder(const vec3f& cy0, const vec3f& cy1, f32 cyr)
     {
         PEN_LOG("\tvec3f cy0 = {(f32)%f, (f32)%f, (f32)%f};", cy0.x, cy0.y, cy0.z);
         PEN_LOG("\tvec3f cy1 = {(f32)%f, (f32)%f, (f32)%f};", cy1.x, cy1.y, cy1.z);
         PEN_LOG("\tf32 cyr = (f32)%f;", cyr);
+    }
+    
+    void print_test_case_overlap(bool overlap)
+    {
+        // overlap
+        PEN_LOG("\tREQUIRE(overlap == bool(%i));", overlap);
     }
 }
 
@@ -739,7 +782,8 @@ void test_ray_vs_capsule(ecs_scene* scene, bool initialise)
         ecs::update_scene(scene, 1.0f / 60.0f);
     }
     
-    bool edge_case = ImGui::Button("Orthogonal Edge Case");
+    ImGui::SameLine();
+    bool edge_case = ImGui::Button("Edge Case");
     if(edge_case)
     {
         ray.origin = capsule.cp1 + normalize(capsule.cp1 - capsule.cp2) * 10.0f;
@@ -796,6 +840,7 @@ void test_ray_vs_capsule(ecs_scene* scene, bool initialise)
         print_test_case_capsule(capsule.cp1, capsule.cp2, capsule.radius);
         PEN_LOG("\tbool i = maths::ray_vs_capsule(r0, rv, cp0, cp1, cr, ip);");
         print_test_case_intersection_point(intersect, ip);
+        
         PEN_LOG("}");
     }
 }
@@ -819,7 +864,8 @@ void test_ray_vs_cylinder(ecs_scene* scene, bool initialise)
         ecs::update_scene(scene, 1.0f / 60.0f);
     }
     
-    bool edge_case = ImGui::Button("Orthogonal Edge Case");
+    ImGui::SameLine();
+    bool edge_case = ImGui::Button("Edge Case");
     if(edge_case)
     {
         ray.origin = cylinder.cp1 + normalize(cylinder.cp1 - cylinder.cp2) * 10.0f;
@@ -877,6 +923,14 @@ void test_point_plane(ecs_scene* scene, bool initialise)
 
     bool randomise = ImGui::Button("Randomise");
     
+    ImGui::SameLine();
+    bool edge_case = ImGui::Button("Edge Case");
+    if(edge_case)
+    {
+        // edge case is that point is on the plane at 0 distance
+        point.point = plane.point;
+    }
+    
     ImGui::Separator();
     ImGui::Text("%s", "orange line / point = closest point on plane");
     ImGui::Separator();
@@ -908,6 +962,18 @@ void test_point_plane(ecs_scene* scene, bool initialise)
     
     // plane
     dbg::add_plane(plane.point, plane.normal);
+    
+    // print test
+    bool gen = ImGui::Button("Gen Test");
+    if(gen)
+    {
+        PEN_LOG("{");
+        print_test_case_plane(plane.point, plane.normal);
+        print_test_case_point(point.point);
+        PEN_LOG("\tu32 c = maths::point_vs_plane(p, x, n);");
+        print_test_case_classification(c);
+        PEN_LOG("}");
+    }
 }
 
 void test_aabb_vs_plane(ecs_scene* scene, bool initialise)
@@ -998,6 +1064,18 @@ void test_capsule_vs_plane(ecs_scene* scene, bool initialise)
     }
 
     dbg::add_plane(plane.point, plane.normal);
+    
+    // print test
+    bool gen = ImGui::Button("Gen Test");
+    if(gen)
+    {
+        PEN_LOG("{");
+        print_test_case_plane(plane.point, plane.normal);
+        print_test_case_capsule(capsule.cp1, capsule.cp2, capsule.radius);
+        PEN_LOG("\tu32 c = maths::capsule_vs_plane(cp0, cp1, cr, x, n);");
+        print_test_case_classification(c);
+        PEN_LOG("}");
+    }
 }
 
 void test_cone_vs_plane(ecs_scene* scene, bool initialise)
@@ -1033,6 +1111,18 @@ void test_cone_vs_plane(ecs_scene* scene, bool initialise)
     scene->draw_call_data[cone.node].v2 = vec4f(classification_colours[c]);
 
     dbg::add_plane(plane.point, plane.normal);
+    
+    // print test
+    bool gen = ImGui::Button("Gen Test");
+    if(gen)
+    {
+        PEN_LOG("{");
+        print_test_case_plane(plane.point, plane.normal);
+        print_test_case_cone(cp, cv, h, r);
+        PEN_LOG("\tu32 c = maths::cone_vs_plane(cp, cv, h, r, x, n);");
+        print_test_case_classification(c);
+        PEN_LOG("}");
+    }
 }
 
 void test_project(ecs_scene* scene, bool initialise)
@@ -1364,6 +1454,18 @@ void test_sphere_vs_capsule(ecs_scene* scene, bool initialise)
     
     for(u32 j = 0; j < 3; ++j)
         scene->draw_call_data[capsule.nodes[j]].v2 = vec4f(col);
+        
+    // print test
+    bool gen = ImGui::Button("Gen Test");
+    if(gen)
+    {
+        PEN_LOG("{");
+        print_test_case_sphere(sphere0.pos, sphere0.radius);
+        print_test_case_capsule(capsule.cp1, capsule.cp2, capsule.radius);
+        PEN_LOG("\tbool overlap = maths::sphere_vs_capsule(sp, sr, cp0, cp1, cr);");
+        print_test_case_overlap(i);
+        PEN_LOG("}");
+    }
 }
 
 void test_sphere_vs_aabb(ecs_scene* scene, bool initialise)
@@ -1591,6 +1693,19 @@ void test_point_sphere(ecs_scene* scene, bool initialise)
     dbg::add_point(point.point, 0.4f, col);
 
     scene->draw_call_data[sphere.node].v2 = vec4f(col);
+    
+    // print test
+    bool gen = ImGui::Button("Gen Test");
+    if(gen)
+    {
+        // point sphere distance
+        PEN_LOG("{");
+        print_test_case_sphere(sphere.pos, sphere.radius);
+        print_test_case_point(point.point);
+        PEN_LOG("\tf32 dd = maths::point_sphere_distance(p, sp, sr);");
+        print_test_case_distance(d);
+        PEN_LOG("}");
+    }
 }
 
 void test_point_cone(ecs_scene* scene, bool initialise)
@@ -1654,6 +1769,26 @@ void test_point_cone(ecs_scene* scene, bool initialise)
     else
     {
         scene->state_flags[cone.node] &= ~e_state::hidden;
+    }
+    
+    // print test
+    bool gen = ImGui::Button("Gen Test");
+    if(gen)
+    {
+        // point sphere distance
+        PEN_LOG("{");
+        print_test_case_cone(cp, cv, h, r);
+        print_test_case_point(point.point);
+        PEN_LOG("\tbool overlap = maths::point_inside_cone(p, cp, cv, h, r);");
+        PEN_LOG("\tvec3f cpp = maths::closest_point_on_cone(p, cp, cv, h, r);");
+        PEN_LOG("\tf32 dd = maths::point_cone_distance(p, cp, cv, h, r);");
+        PEN_LOG("\t// point_cone_distance");
+        print_test_case_distance(d);
+        PEN_LOG("\t// point_inside_cone");
+        print_test_case_overlap(i);
+        PEN_LOG("\t// closest_point_on_cone");
+        print_test_case_closest_point(closest);
+        PEN_LOG("}");
     }
 }
 
@@ -1985,23 +2120,29 @@ void test_polygon(ecs_scene* scene, bool initialise)
 typedef void (*maths_test_function)(ecs_scene*, bool);
 
 // clang-format off
-const c8* test_names[]{
-    "Point / Plane",
-    "Ray Plane Intersect",
+const c8* test_names[] {
     "AABB Plane Classification",
     "Sphere Plane Classification",
     "Capsule Plane Classification",
     "Cone Plane Classification",
+    
     "Project / Unproject",
-    "Point Inside AABB / Closest Point on AABB",
-    "Closest Point on Line / Point Segment Distance",
-    "Closest Point on Ray",
-    "Point Inside Triangle / Point Triangle Distance / Closest Point on Triangle / Get Normal",
+    
+    "Point / Plane",
+    "Point / Sphere",
+    "Point / AABB",
+    "Point / Line",
+    "Point / Ray",
+    "Point / Triangle",
+    "Point / OBB",
+    "Point / Cone",
+    
     "Sphere vs Sphere",
     "Sphere vs Capsule",
     "Sphere vs AABB",
     "AABB vs AABB",
-    "Point / Sphere",
+    
+    "Ray vs Plane",
     "Ray vs AABB",
     "Ray vs OBB",
     "Ray vs Sphere",
@@ -2009,11 +2150,11 @@ const c8* test_names[]{
     "Ray vs Capsule",
     "Ray vs Cylinder",
     "Line vs Line",
-    "Point Inside OBB / Closest Point on OBB",
-    "Point / Cone",
+    
     "AABB vs Frustum",
     "Sphere vs Frustum",
-    "Point Inside Frustum",
+    "Point vs Frustum",
+    
     "Barycentric Coordinates",
     "Convex Hull",
     "Polygon",
@@ -2022,22 +2163,28 @@ const c8* test_names[]{
 };
 
 maths_test_function test_functions[] = {
-    test_point_plane,
-    test_ray_plane_intersect,
     test_aabb_vs_plane,
     test_sphere_vs_plane,
     test_capsule_vs_plane,
     test_cone_vs_plane,
+    
     test_project,
+    
+    test_point_plane,
+    test_point_sphere,
     test_point_aabb,
     test_point_line,
     test_point_ray,
     test_point_triangle,
+    test_point_obb,
+    test_point_cone,
+    
     test_sphere_vs_sphere,
     test_sphere_vs_capsule,
     test_sphere_vs_aabb,
     test_aabb_vs_aabb,
-    test_point_sphere,
+    
+    test_ray_plane_intersect,
     test_ray_vs_aabb,
     test_ray_vs_obb,
     test_ray_vs_sphere,
@@ -2045,11 +2192,11 @@ maths_test_function test_functions[] = {
     test_ray_vs_capsule,
     test_ray_vs_cylinder,
     test_line_vs_line,
-    test_point_obb,
-    test_point_cone,
+    
     test_aabb_vs_frustum,
     test_sphere_vs_frustum,
     test_point_vs_frustum,
+    
     test_barycentric,
     test_convex_hull,
     test_polygon,
