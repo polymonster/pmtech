@@ -37,6 +37,18 @@ namespace
         PEN_LOG("\tvec3f rv = {(f32)%f, (f32)%f, (f32)%f};", rv.x, rv.y, rv.z);
     }
     
+    void print_test_case_line_0(const vec3f& l0, const vec3f& l1)
+    {
+        PEN_LOG("\tvec3f l00 = {(f32)%f, (f32)%f, (f32)%f};", l0.x, l0.y, l0.z);
+        PEN_LOG("\tvec3f l01 = {(f32)%f, (f32)%f, (f32)%f};", l1.x, l1.y, l1.z);
+    }
+    
+    void print_test_case_line_1(const vec3f& l0, const vec3f& l1)
+    {
+        PEN_LOG("\tvec3f l10 = {(f32)%f, (f32)%f, (f32)%f};", l0.x, l0.y, l0.z);
+        PEN_LOG("\tvec3f l11 = {(f32)%f, (f32)%f, (f32)%f};", l1.x, l1.y, l1.z);
+    }
+    
     void print_test_case_sphere(const vec3f& sp, f32 r)
     {
         PEN_LOG("\tvec3f sp = {(f32)%f, (f32)%f, (f32)%f};", sp.x, sp.y, sp.z);
@@ -576,7 +588,7 @@ void test_ray_plane_intersect(ecs_scene* scene, bool initialise)
         ecs::update_scene(scene, 1.0f / 60.0f);
     }
 
-    vec3f ip = maths::ray_plane_intersect(ray.origin, ray.direction, plane.point, plane.normal);
+    vec3f ip = maths::ray_vs_plane(ray.origin, ray.direction, plane.point, plane.normal);
 
     // debug output
     dbg::add_point(ip, 0.3f, vec4f::red());
@@ -1366,7 +1378,7 @@ void test_ray_triangle(ecs_scene* scene, bool initialise)
     }
 
     vec3f ip;
-    bool intersect = maths::ray_triangle_intersect(ray.origin, ray.direction, tri.t0, tri.t1, tri.t2, ip);
+    bool intersect = maths::ray_vs_triangle(ray.origin, ray.direction, tri.t0, tri.t1, tri.t2, ip);
     
     vec4f col = vec4f::green();
     if (intersect)
@@ -1823,6 +1835,56 @@ void test_line_vs_line(ecs_scene* scene, bool initialise)
     dbg::add_line(line1.l1, line1.l2, col);
 }
 
+void test_ray_vs_line_segment(ecs_scene* scene, bool initialise)
+{
+    static debug_line line0;
+    static debug_ray  ray;
+
+    static debug_extents e = {vec3f(-10.0, 0.0, -10.0), vec3f(10.0, 0.0, 10.0)};
+
+    bool randomise = ImGui::Button("Randomise");
+
+    if (initialise || randomise)
+    {
+        ecs::clear_scene(scene);
+
+        add_debug_line(e, scene, line0);
+        add_debug_ray_targeted(e, scene, ray);
+        
+        // flatten
+        ray.direction.y = 0.0f;
+        ray.origin = 0.0f;
+        ray.direction = normalize(ray.direction);
+
+        ecs::update_scene(scene, 1.0f / 60.0f);
+    }
+
+    vec3f ip = vec3f::zero();
+    bool  intersect = maths::ray_vs_line_segment(line0.l1, line0.l2, ray.origin, ray.direction, ip);
+
+    if (intersect)
+        dbg::add_point(ip, 0.3f, vec4f::yellow());
+
+    vec4f col = intersect ? vec4f::red() : vec4f::green();
+
+    dbg::add_line(line0.l1, line0.l2, col);
+    
+    dbg::add_point(ray.origin, 0.3f, vec4f::cyan());
+    dbg::add_line(ray.origin, ray.origin + ray.direction * 100.0f, col);
+    
+    // print test
+    bool gen = ImGui::Button("Gen Test");
+    if(gen)
+    {
+        PEN_LOG("{");
+        print_test_case_ray(ray.origin, ray.direction);
+        print_test_case_line_0(line0.l1, line0.l2);
+        PEN_LOG("\tbool i = maths::ray_vs_line_segment(l00, l01, r0, rv, ip);");
+        print_test_case_intersection_point(intersect, ip);
+        PEN_LOG("}");
+    }
+}
+
 void test_line_segment_between_line_segments(ecs_scene* scene, bool initialise)
 {
     static debug_line line0;
@@ -1841,6 +1903,12 @@ void test_line_segment_between_line_segments(ecs_scene* scene, bool initialise)
 
         ecs::update_scene(scene, 1.0f / 60.0f);
     }
+    
+    ImGui::SameLine();
+    if(ImGui::Button("Edge Case"))
+    {
+        line1.l2 = line1.l1 + (line0.l2 - line0.l1);
+    }
 
     vec3f r0 = vec3f::zero();
     vec3f r1 = vec3f::zero();
@@ -1855,6 +1923,22 @@ void test_line_segment_between_line_segments(ecs_scene* scene, bool initialise)
 
     dbg::add_line(line0.l1, line0.l2, col);
     dbg::add_line(line1.l1, line1.l2, col);
+    
+    // print test
+    bool gen = ImGui::Button("Gen Test");
+    if(gen)
+    {
+        PEN_LOG("{");
+        print_test_case_line_0(line0.l1, line0.l2);
+        print_test_case_line_1(line1.l1, line1.l2);
+        PEN_LOG("\tvec3f r0 = vec3f::zero();");
+        PEN_LOG("\tvec3f r1 = vec3f::zero();");
+        PEN_LOG("\tbool has = maths::shortest_line_segment_between_line_segments(l00, l01, l10, l11, r0, r1);");
+        PEN_LOG("\tREQUIRE(has == bool(%i));", has_line);
+        PEN_LOG("\tif(has) REQUIRE(require_func(r0, {(f32)%f, (f32)%f, (f32)%f}));", r0.x, r0.y, r0.z);
+        PEN_LOG("\tif(has) REQUIRE(require_func(r1, {(f32)%f, (f32)%f, (f32)%f}));", r1.x, r1.y, r1.z);
+        PEN_LOG("}");
+    }
 }
 
 void test_line_segment_between_lines(ecs_scene* scene, bool initialise)
@@ -1875,6 +1959,12 @@ void test_line_segment_between_lines(ecs_scene* scene, bool initialise)
 
         ecs::update_scene(scene, 1.0f / 60.0f);
     }
+    
+    ImGui::SameLine();
+    if(ImGui::Button("Edge Case"))
+    {
+        line1.l2 = line1.l1 + (line0.l2 - line0.l1);
+    }
 
     vec3f r0 = vec3f::zero();
     vec3f r1 = vec3f::zero();
@@ -1892,6 +1982,22 @@ void test_line_segment_between_lines(ecs_scene* scene, bool initialise)
     
     vec3f v2 = normalize(line1.l2 - line1.l1) * 1000.0f;
     dbg::add_line(line1.l1 - v2, line1.l2 + v2, col);
+    
+    // print test
+    bool gen = ImGui::Button("Gen Test");
+    if(gen)
+    {
+        PEN_LOG("{");
+        print_test_case_line_0(line0.l1, line0.l2);
+        print_test_case_line_1(line1.l1, line1.l2);
+        PEN_LOG("\tvec3f r0 = vec3f::zero();");
+        PEN_LOG("\tvec3f r1 = vec3f::zero();");
+        PEN_LOG("\tbool has = maths::shortest_line_segment_between_lines(l00, l01, l10, l11, r0, r1);");
+        PEN_LOG("\tREQUIRE(has == bool(%i));", has_line);
+        PEN_LOG("\tif(has) REQUIRE(require_func(r0, {(f32)%f, (f32)%f, (f32)%f}));", r0.x, r0.y, r0.z);
+        PEN_LOG("\tif(has) REQUIRE(require_func(r1, {(f32)%f, (f32)%f, (f32)%f}));", r1.x, r1.y, r1.z);
+        PEN_LOG("}");
+    }
 }
 
 void test_barycentric(ecs_scene* scene, bool initialise)
@@ -2149,7 +2255,11 @@ const c8* test_names[] {
     "Ray vs Triangle",
     "Ray vs Capsule",
     "Ray vs Cylinder",
+    "Ray vs Line Segment",
+    
     "Line vs Line",
+    "Shortest Line Segment Between Line Segments",
+    "Shortest Line Segment Between Lines",
     
     "AABB vs Frustum",
     "Sphere vs Frustum",
@@ -2158,8 +2268,6 @@ const c8* test_names[] {
     "Barycentric Coordinates",
     "Convex Hull",
     "Polygon",
-    "Shortest Line Segment Between Line Segments",
-    "Shortest Line Segment Between Lines"
 };
 
 maths_test_function test_functions[] = {
@@ -2191,7 +2299,11 @@ maths_test_function test_functions[] = {
     test_ray_triangle,
     test_ray_vs_capsule,
     test_ray_vs_cylinder,
+    test_ray_vs_line_segment,
+    
     test_line_vs_line,
+    test_line_segment_between_line_segments,
+    test_line_segment_between_lines,
     
     test_aabb_vs_frustum,
     test_sphere_vs_frustum,
@@ -2199,9 +2311,7 @@ maths_test_function test_functions[] = {
     
     test_barycentric,
     test_convex_hull,
-    test_polygon,
-    test_line_segment_between_line_segments,
-    test_line_segment_between_lines
+    test_polygon
 };
 // clang-format on
 
