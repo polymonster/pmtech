@@ -1187,8 +1187,11 @@ void test_point_aabb(ecs_scene* scene, bool initialise)
     }
 
     bool inside = maths::point_inside_aabb(aabb.min, aabb.max, point.point);
-
     vec3f cp = maths::closest_point_on_aabb(point.point, aabb.min, aabb.max);
+    f32 d = maths::point_aabb_distance(point.point, aabb.min, aabb.max);
+    
+    ImGui::Text("Point Inside: %s", inside ? "true" : "false");
+    ImGui::Text("Point Distance: %f", d);
 
     vec4f col = inside ? vec4f::red() : vec4f::green();
 
@@ -1223,6 +1226,8 @@ void test_point_obb(ecs_scene* scene, bool initialise)
     vec3f cp = maths::closest_point_on_obb(scene->world_matrices[obb.node], point.point);
 
     vec4f col = inside ? vec4f::red() : vec4f::green();
+    
+    ImGui::Text("Point Inside: %s", inside ? "true" : "false");
 
     dbg::add_obb(scene->world_matrices[obb.node], col);
 
@@ -1326,6 +1331,8 @@ void test_point_triangle(ecs_scene* scene, bool initialise)
     bool inside = maths::point_inside_triangle(point.point, tri.t0, tri.t1, tri.t2);
 
     f32 distance = maths::point_triangle_distance(point.point, tri.t0, tri.t1, tri.t2);
+    
+    ImGui::Text("Point Inside: %s", inside ? "true" : "false");
     ImGui::Text("Distance %f", distance);
 
     vec4f col = inside ? vec4f::red() : vec4f::green();
@@ -1691,6 +1698,7 @@ void test_point_sphere(ecs_scene* scene, bool initialise)
     vec3f cp = maths::closest_point_on_sphere(sphere.pos, sphere.radius, point.point);
     f32 d = maths::point_sphere_distance(point.point, sphere.pos, sphere.radius);
     
+    ImGui::Text("Point Inside: %s", i ? "true" : "false");
     ImGui::Text("Point Distance: %f", d);
 
     // debug output
@@ -1755,7 +1763,8 @@ void test_point_cone(ecs_scene* scene, bool initialise)
     vec3f closest = maths::closest_point_on_cone(point.point, cp, cv, h, r);
     f32 d = maths::point_cone_distance(point.point, cp, cv, h, r);
     
-    ImGui::Text("%s : %f", "Point Cone Distance", d);
+    ImGui::Text("%s : %s", "Point Inside", i ? "true" : "false");
+    ImGui::Text("%s : %f", "Point Distance", d);
     
     dbg::add_point(closest, 0.3f, vec4f::yellow());
     dbg::add_line(point.point, closest, vec4f::yellow());
@@ -2518,6 +2527,8 @@ void maths_test_ui(ecs_scene* scene)
 void example_setup(ecs::ecs_scene* scene, camera& cam)
 {
     dev_ui::enable(true);
+    dev_ui::enable_main_menu_bar(false);
+    
     scene->view_flags &= ~e_scene_view_flags::hide_debug;
 
     // create constant col material

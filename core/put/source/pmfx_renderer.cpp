@@ -3489,16 +3489,20 @@ namespace put
 
         void show_dev_ui()
         {
-            ImGui::BeginMainMenuBar();
-
             static bool open_renderer = false;
-            if (ImGui::Button(ICON_FA_PICTURE_O))
+            
+            if(dev_ui::main_menu_bar_enabled())
             {
-                open_renderer = true;
-            }
-            put::dev_ui::set_tooltip("Pmfx");
+                ImGui::BeginMainMenuBar();
 
-            ImGui::EndMainMenuBar();
+                if (ImGui::Button(ICON_FA_PICTURE_O))
+                {
+                    open_renderer = true;
+                }
+                put::dev_ui::set_tooltip("Pmfx");
+
+                ImGui::EndMainMenuBar();
+            }
 
             static s32 current_render_target = 0;
 

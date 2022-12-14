@@ -61,6 +61,7 @@ namespace
     const u32      s_program_prefs_save_timeout = 60; //frames
     bool           s_enable_rendering = true;
     bool           s_initialised = false;
+    bool           s_enable_main_menu_bar = true;
 
     void create_texture_atlas()
     {
@@ -1441,6 +1442,16 @@ namespace put
         void enable(bool enabled)
         {
             s_enable_rendering = enabled;
+        }
+    
+        void enable_main_menu_bar(bool enable)
+        {
+            s_enable_main_menu_bar = enable;
+        }
+    
+        bool main_menu_bar_enabled()
+        {
+            return s_enable_main_menu_bar;
         }
 
         void update()

@@ -1121,228 +1121,231 @@ namespace put
             // right click context menu
             context_menu_ui(scene);
 
-            ImGui::BeginMainMenuBar();
-
-            if (ImGui::BeginMenu(ICON_FA_LEMON_O))
+            if(dev_ui::main_menu_bar_enabled())
             {
-                if (ImGui::MenuItem("New"))
+                ImGui::BeginMainMenuBar();
+
+                if (ImGui::BeginMenu(ICON_FA_LEMON_O))
                 {
-                    clear_scene(scene);
-                    default_scene(scene);
-                }
-
-                if (ImGui::MenuItem("Open", NULL, &open_open))
-                {
-                    open_merge = false;
-                }
-                if (ImGui::MenuItem("Import", NULL, &open_open))
-                {
-                    open_merge = true;
-                }
-
-                if (ImGui::MenuItem("Save", NULL, &open_save))
-                {
-                    open_save_as = false;
-                }
-
-                if (ImGui::MenuItem("Save As", nullptr, &open_save))
-                {
-                    open_save_as = true;
-                }
-
-                bool co = dev_ui::is_console_open();
-                ImGui::MenuItem("Console", nullptr, &co);
-                dev_ui::show_console(co);
-
-                ImGui::MenuItem("Settings", nullptr, &settings_open);
-                ImGui::MenuItem("Dev", nullptr, &dev_open);
-
-                ImGui::EndMenu();
-            }
-
-            // play pause
-            if (scene->flags & e_scene_flags::pause_update)
-            {
-                if (ImGui::Button(ICON_FA_PLAY))
-                    scene->flags &= (~scene->flags);
-            }
-            else
-            {
-                if (ImGui::Button(ICON_FA_PAUSE))
-                    scene->flags |= e_scene_flags::pause_update;
-            }
-
-            static bool debounce_pause = false;
-            if (shortcut_key(PK_SPACE))
-            {
-                if (!debounce_pause)
-                {
-                    if (!(scene->flags & e_scene_flags::pause_update))
-                        scene->flags |= e_scene_flags::pause_update;
-                    else
-                        scene->flags &= ~e_scene_flags::pause_update;
-
-                    debounce_pause = true;
-                }
-            }
-            else
-            {
-                debounce_pause = false;
-            }
-
-            if (shortcut_key(PK_O))
-            {
-                // reset physics positions
-                for (s32 i = 0; i < scene->num_entities; ++i)
-                {
-                    if (scene->entities[i] & e_cmp::physics)
+                    if (ImGui::MenuItem("New"))
                     {
-                        if (scene->physics_data[i].type != e_physics_type::rigid_body)
-                            continue;
+                        clear_scene(scene);
+                        default_scene(scene);
+                    }
 
-                        vec3f t = scene->physics_data[i].rigid_body.position;
-                        quat  q = scene->physics_data[i].rigid_body.rotation;
+                    if (ImGui::MenuItem("Open", NULL, &open_open))
+                    {
+                        open_merge = false;
+                    }
+                    if (ImGui::MenuItem("Import", NULL, &open_open))
+                    {
+                        open_merge = true;
+                    }
 
-                        physics::set_transform(scene->physics_handles[i], t, q);
+                    if (ImGui::MenuItem("Save", NULL, &open_save))
+                    {
+                        open_save_as = false;
+                    }
 
-                        scene->transforms[i].translation = t;
-                        scene->transforms[i].rotation = q;
+                    if (ImGui::MenuItem("Save As", nullptr, &open_save))
+                    {
+                        open_save_as = true;
+                    }
 
-                        scene->entities[i] |= e_cmp::transform;
+                    bool co = dev_ui::is_console_open();
+                    ImGui::MenuItem("Console", nullptr, &co);
+                    dev_ui::show_console(co);
 
-                        // reset velocity
-                        physics::set_v3(scene->physics_handles[i], vec3f::zero(), physics::e_cmd::set_linear_velocity);
-                        physics::set_v3(scene->physics_handles[i], vec3f::zero(), physics::e_cmd::set_angular_velocity);
+                    ImGui::MenuItem("Settings", nullptr, &settings_open);
+                    ImGui::MenuItem("Dev", nullptr, &dev_open);
+
+                    ImGui::EndMenu();
+                }
+
+                // play pause
+                if (scene->flags & e_scene_flags::pause_update)
+                {
+                    if (ImGui::Button(ICON_FA_PLAY))
+                        scene->flags &= (~scene->flags);
+                }
+                else
+                {
+                    if (ImGui::Button(ICON_FA_PAUSE))
+                        scene->flags |= e_scene_flags::pause_update;
+                }
+
+                static bool debounce_pause = false;
+                if (shortcut_key(PK_SPACE))
+                {
+                    if (!debounce_pause)
+                    {
+                        if (!(scene->flags & e_scene_flags::pause_update))
+                            scene->flags |= e_scene_flags::pause_update;
+                        else
+                            scene->flags &= ~e_scene_flags::pause_update;
+
+                        debounce_pause = true;
                     }
                 }
-            }
-
-            if (ImGui::Button(ICON_FA_FLOPPY_O))
-            {
-                open_save = true;
-                open_save_as = false;
-            }
-            dev_ui::set_tooltip("Save");
-
-            if (ImGui::Button(ICON_FA_FOLDER_OPEN))
-            {
-                open_open = true;
-            }
-            dev_ui::set_tooltip("Open");
-
-            if (ImGui::Button(ICON_FA_SEARCH))
-            {
-                open_scene_browser = true;
-            }
-            dev_ui::set_tooltip("Scene Browser");
-
-            if (ImGui::Button(ICON_FA_EYE))
-            {
-                view_menu = true;
-            }
-            dev_ui::set_tooltip("View Settings");
-
-            if (ImGui::Button(ICON_FA_VIDEO_CAMERA))
-            {
-                open_camera_menu = true;
-            }
-            dev_ui::set_tooltip("Camera Settings");
-
-            if (ImGui::Button(ICON_FA_CUBES))
-            {
-                open_resource_menu = true;
-            }
-            dev_ui::set_tooltip("Resource Browser");
-
-            ImGui::Separator();
-
-            if (ImGui::Button(ICON_FA_UNDO))
-            {
-                undo(scene);
-            }
-            dev_ui::set_tooltip("Undo");
-
-            if (ImGui::Button(ICON_FA_REPEAT))
-            {
-                redo(scene);
-            }
-            dev_ui::set_tooltip("Redo");
-
-            if (ImGui::Button(ICON_FA_FILES_O))
-            {
-                clone_selection_hierarchical(scene, &scene->selection_list, "_cloned");
-            }
-            dev_ui::set_tooltip("Duplicate");
-
-            ImGui::Separator();
-
-            if (ImGui::Button(ICON_FA_LIST))
-            {
-                selection_list = true;
-            }
-            dev_ui::set_tooltip("Selection List");
-
-            // clang-format off
-            static const c8* transform_icons[] = {
-                ICON_FA_MOUSE_POINTER,
-                ICON_FA_ARROWS,
-                ICON_FA_REFRESH,
-                ICON_FA_EXPAND,
-                ICON_FA_HAND_POINTER_O
-            };
-
-            static const c8* transform_tooltip[] = {
-                "Select (Q)",
-                "Translate (W)",
-                "Rotate (E)",
-                "Scale (R)",
-                "Grab Physics (T)"
-            };
-            
-            static u32 widget_shortcut_key[] = {
-                PK_Q,
-                PK_W,
-                PK_E,
-                PK_R,
-                PK_T
-            };
-            // clang-format on
-
-            static s32 num_transform_icons = PEN_ARRAY_SIZE(transform_icons);
-
-            static_assert(PEN_ARRAY_SIZE(transform_tooltip) == PEN_ARRAY_SIZE(transform_icons), "mistmatched elements");
-            static_assert(PEN_ARRAY_SIZE(widget_shortcut_key) == PEN_ARRAY_SIZE(transform_tooltip), "mismatched elements");
-
-            for (s32 i = 0; i < num_transform_icons; ++i)
-            {
-                u32 mode = e_transform_mode::select + i;
-                if (shortcut_key(widget_shortcut_key[i]))
-                    s_transform_mode = (transform_mode)mode;
-
-                if (put::dev_ui::state_button(transform_icons[i], s_transform_mode == mode))
+                else
                 {
-                    if (s_transform_mode == mode)
-                        s_transform_mode = e_transform_mode::none;
-                    else
-                        s_transform_mode = (transform_mode)mode;
+                    debounce_pause = false;
                 }
-                put::dev_ui::set_tooltip(transform_tooltip[i]);
+
+                if (shortcut_key(PK_O))
+                {
+                    // reset physics positions
+                    for (s32 i = 0; i < scene->num_entities; ++i)
+                    {
+                        if (scene->entities[i] & e_cmp::physics)
+                        {
+                            if (scene->physics_data[i].type != e_physics_type::rigid_body)
+                                continue;
+
+                            vec3f t = scene->physics_data[i].rigid_body.position;
+                            quat  q = scene->physics_data[i].rigid_body.rotation;
+
+                            physics::set_transform(scene->physics_handles[i], t, q);
+
+                            scene->transforms[i].translation = t;
+                            scene->transforms[i].rotation = q;
+
+                            scene->entities[i] |= e_cmp::transform;
+
+                            // reset velocity
+                            physics::set_v3(scene->physics_handles[i], vec3f::zero(), physics::e_cmd::set_linear_velocity);
+                            physics::set_v3(scene->physics_handles[i], vec3f::zero(), physics::e_cmd::set_angular_velocity);
+                        }
+                    }
+                }
+
+                if (ImGui::Button(ICON_FA_FLOPPY_O))
+                {
+                    open_save = true;
+                    open_save_as = false;
+                }
+                dev_ui::set_tooltip("Save");
+
+                if (ImGui::Button(ICON_FA_FOLDER_OPEN))
+                {
+                    open_open = true;
+                }
+                dev_ui::set_tooltip("Open");
+
+                if (ImGui::Button(ICON_FA_SEARCH))
+                {
+                    open_scene_browser = true;
+                }
+                dev_ui::set_tooltip("Scene Browser");
+
+                if (ImGui::Button(ICON_FA_EYE))
+                {
+                    view_menu = true;
+                }
+                dev_ui::set_tooltip("View Settings");
+
+                if (ImGui::Button(ICON_FA_VIDEO_CAMERA))
+                {
+                    open_camera_menu = true;
+                }
+                dev_ui::set_tooltip("Camera Settings");
+
+                if (ImGui::Button(ICON_FA_CUBES))
+                {
+                    open_resource_menu = true;
+                }
+                dev_ui::set_tooltip("Resource Browser");
+
+                ImGui::Separator();
+
+                if (ImGui::Button(ICON_FA_UNDO))
+                {
+                    undo(scene);
+                }
+                dev_ui::set_tooltip("Undo");
+
+                if (ImGui::Button(ICON_FA_REPEAT))
+                {
+                    redo(scene);
+                }
+                dev_ui::set_tooltip("Redo");
+
+                if (ImGui::Button(ICON_FA_FILES_O))
+                {
+                    clone_selection_hierarchical(scene, &scene->selection_list, "_cloned");
+                }
+                dev_ui::set_tooltip("Duplicate");
+
+                ImGui::Separator();
+
+                if (ImGui::Button(ICON_FA_LIST))
+                {
+                    selection_list = true;
+                }
+                dev_ui::set_tooltip("Selection List");
+
+                // clang-format off
+                static const c8* transform_icons[] = {
+                    ICON_FA_MOUSE_POINTER,
+                    ICON_FA_ARROWS,
+                    ICON_FA_REFRESH,
+                    ICON_FA_EXPAND,
+                    ICON_FA_HAND_POINTER_O
+                };
+
+                static const c8* transform_tooltip[] = {
+                    "Select (Q)",
+                    "Translate (W)",
+                    "Rotate (E)",
+                    "Scale (R)",
+                    "Grab Physics (T)"
+                };
+                
+                static u32 widget_shortcut_key[] = {
+                    PK_Q,
+                    PK_W,
+                    PK_E,
+                    PK_R,
+                    PK_T
+                };
+                // clang-format on
+
+                static s32 num_transform_icons = PEN_ARRAY_SIZE(transform_icons);
+
+                static_assert(PEN_ARRAY_SIZE(transform_tooltip) == PEN_ARRAY_SIZE(transform_icons), "mistmatched elements");
+                static_assert(PEN_ARRAY_SIZE(widget_shortcut_key) == PEN_ARRAY_SIZE(transform_tooltip), "mismatched elements");
+
+                for (s32 i = 0; i < num_transform_icons; ++i)
+                {
+                    u32 mode = e_transform_mode::select + i;
+                    if (shortcut_key(widget_shortcut_key[i]))
+                        s_transform_mode = (transform_mode)mode;
+
+                    if (put::dev_ui::state_button(transform_icons[i], s_transform_mode == mode))
+                    {
+                        if (s_transform_mode == mode)
+                            s_transform_mode = e_transform_mode::none;
+                        else
+                            s_transform_mode = (transform_mode)mode;
+                    }
+                    put::dev_ui::set_tooltip(transform_tooltip[i]);
+                }
+
+                if (ImGui::Button(ICON_FA_LINK) || shortcut_key(PK_P))
+                {
+                    parent_selection(scene);
+                }
+                put::dev_ui::set_tooltip("Parent (P)");
+
+                if (shortcut_key(PK_I))
+                {
+                    instance_selection(scene);
+                }
+
+                ImGui::Separator();
+
+                ImGui::EndMainMenuBar();
             }
-
-            if (ImGui::Button(ICON_FA_LINK) || shortcut_key(PK_P))
-            {
-                parent_selection(scene);
-            }
-            put::dev_ui::set_tooltip("Parent (P)");
-
-            if (shortcut_key(PK_I))
-            {
-                instance_selection(scene);
-            }
-
-            ImGui::Separator();
-
-            ImGui::EndMainMenuBar();
 
             if (open_open)
             {

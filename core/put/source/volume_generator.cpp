@@ -1528,17 +1528,21 @@ namespace put
 
         void show_dev_ui()
         {
-            // main menu option -------------------------------------------------
-            ImGui::BeginMainMenuBar();
-
             static bool open_vgt = false;
-            if (ImGui::Button(ICON_FA_CUBE))
+            
+            // main menu option -------------------------------------------------
+            if(dev_ui::main_menu_bar_enabled())
             {
-                open_vgt = true;
-            }
-            put::dev_ui::set_tooltip("Volume Generator");
+                ImGui::BeginMainMenuBar();
 
-            ImGui::EndMainMenuBar();
+                if (ImGui::Button(ICON_FA_CUBE))
+                {
+                    open_vgt = true;
+                }
+                put::dev_ui::set_tooltip("Volume Generator");
+
+                ImGui::EndMainMenuBar();
+            }
 
             // volume generator ui -----------------------------------------------
             if (open_vgt)

@@ -74,6 +74,10 @@ namespace put
         void        set_shader(ui_shader shader, u32 cbuffer);
         void        util_init();
         void        enable(bool enabled);
+    
+        // main menu bar
+        void        enable_main_menu_bar(bool enable);
+        bool        main_menu_bar_enabled();
 
         // console
         bool        is_console_open();
