@@ -3,7 +3,7 @@
         jsn: "${pmbuild_dir}/scripts/jsn/jsn"
         premake: "${pmbuild_dir}/bin/mac/premake5"
         texturec: "${pmbuild_dir}/bin/mac/texturec"
-        pmfx: "python3 ${pmbuild_dir}/scripts/pmfx-shader/build_pmfx.py"
+        pmfx: "python3 ${pmbuild_dir}/scripts/pmfx-shader/pmfx.py"
         build_models: "${pmtech_dir}/tools/pmbuild_ext/build_models.py"
         mesh_opt: "${pmtech_dir}/tools/bin/osx/mesh_opt"
     }
@@ -12,7 +12,7 @@
         jsn: "py -3 ${pmbuild_dir}/scripts/jsn/jsn.py"
         premake: "${pmbuild_dir}/bin/windows/premake5.exe"
         texturec: "${pmbuild_dir}/bin/windows/texturec.exe"
-        pmfx: "py -3 ${pmbuild_dir}/scripts/pmfx-shader/build_pmfx.py"
+        pmfx: "py -3 ${pmbuild_dir}/scripts/pmfx-shader/pmfx.py"
         build_models: "${pmtech_dir}/tools/pmbuild_ext/build_models.py"
         mesh_opt: "${pmtech_dir}/tools/bin/win32/mesh_opt.exe"
     }
@@ -21,7 +21,7 @@
         jsn: "${pmbuild_dir}/scripts/jsn/jsn"
         premake: "${pmbuild_dir}/bin/linux/premake5"
         texturec: "${pmbuild_dir}/bin/linux/texturec"
-        pmfx: "python3 ${pmbuild_dir}/scripts/pmfx-shader/build_pmfx.py"
+        pmfx: "python3 ${pmbuild_dir}/scripts/pmfx-shader/pmfx.py"
         build_models: "${pmtech_dir}/tools/pmbuild_ext/build_models.py"
         mesh_opt: "${pmtech_dir}/tools/bin/linux/mesh_opt"
     }

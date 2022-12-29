@@ -111,13 +111,14 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
         
         pmfx: {
             args: [
+                "-v1"
                 "-shader_platform metal"
                 "-metal_sdk macosx"
                 "-i assets/shaders ../assets/shaders"
                 "-o bin/osx/data/pmfx/metal"
                 "-h shader_structs"
                 "-t build/temp/shaders"
-                "-source"
+                "-shader_version 2.2"
             ]
         }
         
@@ -190,6 +191,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
         
         pmfx: {
             args: [
+                "-v1"
                 "-shader_platform glsl"
                 "-shader_version 330"
                 "-i assets/shaders ../assets/shaders"
@@ -242,6 +244,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
         
         pmfx: {
             args: [
+                "-v1"
                 "-shader_platform hlsl"
                 "-shader_version 5_0"
                 "-i assets/shaders ../assets/shaders"
@@ -305,6 +308,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
         
         pmfx: {
             args: [
+                "-v1"
                 "-shader_platform spirv"
                 "-shader_version 420"
                 "-i assets/shaders ../assets/shaders"
@@ -328,6 +332,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
         
         pmfx: {
             args: [
+                "-v1"
                 "-shader_platform glsl"
                 "-shader_version 450"
                 "-i assets/shaders ../assets/shaders"
@@ -364,6 +369,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
         
         pmfx: {
             args: [
+                "-v1"
                 "-shader_platform metal"
                 "-metal_sdk iphoneos"
                 "-i assets/shaders ../assets/shaders"
@@ -445,6 +451,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
         
         pmfx: {
             args: [
+                "-v1"
                 "-shader_platform glsl"
                 "-shader_version 450"
                 "-i assets/shaders ../assets/shaders"
@@ -509,6 +516,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
 
         pmfx: {
             args: [
+                "-v1"
                 "-shader_platform spirv"
                 "-shader_version 450"
                 "-i assets/shaders ../assets/shaders"
@@ -553,6 +561,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
 
         pmfx: {
             args: [
+                "-v1"
                 "-shader_platform gles"
                 "-shader_version 300"
                 "-i assets/shaders ../assets/shaders"
@@ -603,6 +612,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
         }
         pmfx: {
             args: [
+                "-v1"
                 "-shader_platform gles"
                 "-shader_version 300"
                 "-i assets/shaders ../assets/shaders"
