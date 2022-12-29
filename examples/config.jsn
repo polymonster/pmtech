@@ -623,6 +623,5 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
                 "-source"
             ]
         }
-    }
-    
+    }   
 }
