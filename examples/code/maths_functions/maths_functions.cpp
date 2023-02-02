@@ -4,13 +4,6 @@
 using namespace put;
 using namespace ecs;
 
-// TODO: rust
-// ray vs cylinder
-// ray vs capsule (fix up)
-// cone direction inconsistencies
-// cone functions issues
-// point vs plane
-
 #define EASING_FUNC(NAME) \
 { \
     f32 t = 0.0f; \
@@ -66,6 +59,16 @@ namespace
     {
         PEN_LOG("\tvec3f p = {(f32)%f, (f32)%f, (f32)%f};", p.x, p.y, p.z);
     }
+
+    void print_test_case_obb(const mat4f& m)
+    {
+        PEN_LOG("\tmat4f obb = {(f32)%f, (f32)%f, (f32)%f, (f32)%f,\n\t(f32)%f, (f32)%f, (f32)%f, (f32)%f,\n\t(f32)%f, (f32)%f, (f32)%f, (f32)%f,\n\t(f32)%f, (f32)%f, (f32)%f, (f32)%f};",
+            m.m[0], m.m[1], m.m[2], m.m[3],
+            m.m[4], m.m[5], m.m[6], m.m[7],
+            m.m[8], m.m[9], m.m[10], m.m[11],
+            m.m[12], m.m[13], m.m[14], m.m[15]
+        );
+    }
     
     void print_test_case_intersection_point(bool intersect, const vec3f& ip)
     {
@@ -100,6 +103,13 @@ namespace
         PEN_LOG("\tvec3f cp0 = {(f32)%f, (f32)%f, (f32)%f};", cp0.x, cp0.y, cp0.z);
         PEN_LOG("\tvec3f cp1 = {(f32)%f, (f32)%f, (f32)%f};", cp1.x, cp1.y, cp1.z);
         PEN_LOG("\tf32 cr = (f32)%f;", cr);
+    }
+
+    void print_test_case_capsule_2(const vec3f& cp0, const vec3f& cp1, f32 cr)
+    {
+        PEN_LOG("\tvec3f cp2 = {(f32)%f, (f32)%f, (f32)%f};", cp0.x, cp0.y, cp0.z);
+        PEN_LOG("\tvec3f cp3 = {(f32)%f, (f32)%f, (f32)%f};", cp1.x, cp1.y, cp1.z);
+        PEN_LOG("\tf32 cr1 = (f32)%f;", cr);
     }
     
     void print_test_case_cone(const vec3f& cp, const vec3f& cv, f32 h, f32 r)
@@ -153,6 +163,11 @@ struct debug_triangle
     vec3f t0;
     vec3f t1;
     vec3f t2;
+};
+
+struct debug_convex
+{
+    std::vector<vec3f> vertices;
 };
 
 struct debug_line
@@ -372,7 +387,7 @@ void add_debug_sphere(const debug_extents& extents, ecs_scene* scene, debug_sphe
     sphere.node = node;
 }
 
-void add_debug_capsule(const debug_extents& extents, ecs_scene* scene, debug_capsule& capsule)
+void add_debug_capsule(const debug_extents& extents, ecs_scene* scene, debug_capsule& capsule, bool ortho = false)
 {
     geometry_resource* sphere_res = get_geometry_resource(PEN_HASH("sphere"));
     geometry_resource* cyl_res = get_geometry_resource(PEN_HASH("cylinder"));
@@ -382,8 +397,21 @@ void add_debug_capsule(const debug_extents& extents, ecs_scene* scene, debug_cap
     
     vec3f pos = random_vec_range(extents);
     
-    capsule.cp1 = pos - vec3f(0.0f, size.y, 0.0f);
-    capsule.cp2 = pos + vec3f(0.0f, size.y, 0.0f);
+    vec3f rr = random_vec_range(extents);
+    if(ortho)
+    {
+        rr = vec3f::zero();
+    }
+    
+    quat q; mat4 rot_mat;
+    q.euler_angles(rr.x, rr.y, rr.z);
+    q.get_matrix(rot_mat);
+    
+    vec3f axis = rot_mat.get_column(1).xyz * size.y;
+    
+    
+    capsule.cp1 = pos - axis;
+    capsule.cp2 = pos + axis;
     capsule.radius = size.x;
     
     // sp1
@@ -421,6 +449,8 @@ void add_debug_capsule(const debug_extents& extents, ecs_scene* scene, debug_cap
     scene->names[cylinder] = "cylinder";
     
     scene->transforms[cylinder].rotation = quat();
+    scene->transforms[cylinder].rotation.euler_angles(rr.x, rr.y, rr.z);
+    
     scene->transforms[cylinder].scale = vec3f(size.x, size.y, size.x);
     scene->transforms[cylinder].translation = pos;
 
@@ -567,6 +597,30 @@ void add_debug_triangle(const debug_extents& extents, ecs_scene* scene, debug_tr
     tri.t0 = random_vec_range(extents);
     tri.t1 = random_vec_range(extents);
     tri.t2 = random_vec_range(extents);
+}
+
+void add_debug_convex(const debug_extents& extents, ecs_scene* scene, u32 num_verts, debug_convex& convex)
+{
+    u32 node = ecs::get_new_entity(scene);
+    scene->names[node] = "triangle";
+    scene->transforms[node].translation = random_vec_range(extents);
+    scene->entities[node] |= e_cmp::transform;
+    scene->parents[node] = node;
+    
+    std::vector<vec2f> verts;
+    for(u32 i = 0; i < num_verts; ++i)
+    {
+        verts.push_back(random_vec_range(extents).xz);
+    }
+    
+    std::vector<vec2f> hull;
+    maths::convex_hull_from_points(hull, verts);
+    
+    convex.vertices.clear();
+    for(auto& v : hull)
+    {
+        convex.vertices.push_back(vec3f(v.x, 0.0f, v.y));
+    }
 }
 
 void test_ray_plane_intersect(ecs_scene* scene, bool initialise)
@@ -1222,12 +1276,13 @@ void test_point_obb(ecs_scene* scene, bool initialise)
     }
 
     bool inside = maths::point_inside_obb(scene->world_matrices[obb.node], point.point);
-
     vec3f cp = maths::closest_point_on_obb(scene->world_matrices[obb.node], point.point);
+    f32 d = maths::point_obb_distance(point.point, scene->world_matrices[obb.node]);
 
     vec4f col = inside ? vec4f::red() : vec4f::green();
     
     ImGui::Text("Point Inside: %s", inside ? "true" : "false");
+    ImGui::Text("Distance %f", d);
 
     dbg::add_obb(scene->world_matrices[obb.node], col);
 
@@ -1487,6 +1542,221 @@ void test_sphere_vs_capsule(ecs_scene* scene, bool initialise)
     }
 }
 
+void test_capsule_vs_capsule(ecs_scene* scene, bool initialise)
+{
+    static debug_capsule capsule0;
+    static debug_capsule capsule1;
+
+    static debug_extents e = {vec3f(-10.0, -10.0, -10.0), vec3f(10.0, 10.0, 10.0)};
+
+    bool randomise = ImGui::Button("Randomise");
+    bool edge_case = ImGui::Button("Orthogonal Edge Case");
+
+    if (initialise || randomise || edge_case)
+    {
+        ecs::clear_scene(scene);
+
+        add_debug_capsule(e, scene, capsule0, edge_case);
+        add_debug_capsule(e, scene, capsule1, edge_case);
+
+        ecs::update_scene(scene, 1.0f / 60.0f);
+    }
+
+    bool i = maths::capsule_vs_capsule(
+        capsule0.cp1, capsule0.cp2, capsule0.radius,
+        capsule1.cp1, capsule1.cp2, capsule1.radius);
+
+    // debug output
+    vec4f col = vec4f::green();
+    if (i)
+        col = vec4f::red();
+    
+    //
+    for(u32 j = 0; j < 3; ++j)
+        scene->draw_call_data[capsule0.nodes[j]].v2 = vec4f(col);
+    
+    for(u32 j = 0; j < 3; ++j)
+        scene->draw_call_data[capsule1.nodes[j]].v2 = vec4f(col);
+
+    // print test
+    bool gen = ImGui::Button("Gen Test");
+    if(gen)
+    {
+        PEN_LOG("{");
+        print_test_case_capsule(capsule0.cp1, capsule0.cp2, capsule0.radius);
+        print_test_case_capsule_2(capsule1.cp1, capsule1.cp2, capsule1.radius);
+        
+        PEN_LOG("\tbool overlap = maths::capsule_vs_capsule(cp0, cp1, cr, cp2, cp3, cr1);");
+        print_test_case_overlap(i);
+        PEN_LOG("}");
+    }
+}
+
+vec3f furthest_point(const vec3f& dir, const std::vector<vec3f>& vertices)
+{
+    f32 fd = -FLT_MAX;
+    vec3f fv = vertices[0];
+    
+    for(auto& v : vertices)
+    {
+        f32 d = dot(dir, v);
+        if(d > fd)
+        {
+            fv = v;
+            fd = d;
+        }
+    }
+    
+    return fv;
+}
+
+vec3f support_function(const std::vector<vec3f>& convex0, const std::vector<vec3f>& convex1, vec3f dir)
+{
+    vec3f fp0 = furthest_point(dir, convex0);
+    vec3f fp1 = furthest_point(-dir, convex1);
+    vec3f s = fp0 - fp1;
+    
+    return s;
+}
+
+vec3f triple_product(const vec3f& a, const vec3f& b, const vec3f& c)
+{
+    return cross(cross(a, b), c);
+}
+
+bool handle_simplex(std::vector<vec3f>& simplex, vec3f& dir)
+{
+    if(simplex.size() == 2)
+    {
+        vec3f a = simplex[1];
+        vec3f b = simplex[0];
+        
+        vec3f ab = normalize(b - a);
+        vec3f ao = normalize(-a);
+        
+        dir = triple_product(ab, ao, ab);
+        
+        return false;
+    }
+    else if(simplex.size() == 3)
+    {
+        vec3f a = simplex[2];
+        vec3f b = simplex[1];
+        vec3f c = simplex[0];
+        
+        vec3f ab = normalize(b - a);
+        vec3f ac = normalize(c - a);
+        vec3f ao = normalize(-a);
+        
+        vec3f abperp = triple_product(ac, ab, ab);
+        vec3f acperp = triple_product(ab, ac, ac);
+        
+        f32 abao = dot(abperp, ao);
+        f32 acao = dot(acperp, ao);
+        
+        if(abao > 0.0f)
+        {
+            simplex.erase(simplex.begin() + 0);
+            dir = abperp;
+            return false;
+        }
+        else if (acao > 0.0f)
+        {
+            simplex.erase(simplex.begin() + 1);
+            dir = acperp;
+            return false;
+        }
+        return true;
+    }
+    
+    // we shouldnt hit this case, we should always have 2 or 3 points in the simplex
+    assert(0);
+    return false;
+}
+
+bool gjk(const std::vector<vec3f>& convex0, const std::vector<vec3f>& convex1)
+{
+    // implemented following details in this insightful video: https://www.youtube.com/watch?v=ajv46BSqcK4
+    
+    // starting direction vector
+    vec3f dir = normalize(maths::get_convex_hull_centre(convex0) - maths::get_convex_hull_centre(convex1));
+    vec3f support = support_function(convex0, convex1, dir);
+    
+    std::vector<vec3f> simplex;
+    simplex.push_back(support);
+    
+    dir = normalize(-support);
+    for(;;)
+    {
+        vec3f a = support_function(convex0, convex1, dir);
+        if(dot(a, dir) < 0.0f)
+        {
+            return false;
+        }
+        simplex.push_back(a);
+        
+        if(handle_simplex(simplex, dir))
+        {
+            return true;
+        }
+    }
+}
+
+void test_convex_vs_convex(ecs_scene* scene, bool initialise)
+{
+    static debug_extents e0 = {vec3f(-10.0, -10.0, -10.0), vec3f(10.0, 10.0, 10.0)};
+    static debug_extents e1 = {vec3f(-5.0, -5.0, -5.0), vec3f(15.0, 15.0, 15.0)};
+    
+    static debug_convex conv0;
+    static debug_convex conv1;
+
+    bool randomise = ImGui::Button("Randomise");
+
+    if (initialise || randomise)
+    {
+        ecs::clear_scene(scene);
+        
+        add_debug_convex(e0, scene, 6, conv0);
+        add_debug_convex(e1, scene, 8, conv1);
+
+        ecs::update_scene(scene, 1.0f / 60.0f);
+    }
+    
+    static vec2f offset = vec2f::zero();
+    ImGui::SliderFloat2("Translate Shape", (f32*)&offset, -50.0f, 50.0f);
+    
+    std::vector<vec3f> transformed_conv1;
+    
+    // apply translation for debugging
+    for(auto& v : conv1.vertices)
+    {
+        transformed_conv1.push_back(v + vec3f(offset.x, 0.0f, offset.y));
+    }
+    
+    //..
+    bool i = gjk(conv0.vertices, transformed_conv1);
+    
+    // debug output
+    vec4f col = vec4f::green();
+    if (i)
+        col = vec4f::red();
+    
+    // draw
+    u32 s0 = (u32)conv0.vertices.size();
+    for(u32 i = 0; i < s0; ++i)
+    {
+        u32 j = (i + 1) % s0;
+        dbg::add_line(conv0.vertices[i], conv0.vertices[j], col);
+    }
+    
+    u32 s1 = (u32)transformed_conv1.size();
+    for(u32 i = 0; i < s1; ++i)
+    {
+        u32 j = (i + 1) % s1;
+        dbg::add_line(transformed_conv1[i], transformed_conv1[j], col);
+    }
+}
+
 void test_sphere_vs_aabb(ecs_scene* scene, bool initialise)
 {
     static debug_aabb   aabb;
@@ -1515,6 +1785,48 @@ void test_sphere_vs_aabb(ecs_scene* scene, bool initialise)
 
     scene->draw_call_data[sphere.node].v2 = vec4f(col);
     scene->draw_call_data[aabb.node].v2 = vec4f(col);
+}
+
+void test_sphere_vs_obb(ecs_scene* scene, bool initialise)
+{
+    static debug_obb    obb;
+    static debug_sphere sphere;
+
+    static debug_extents e = {vec3f(-10.0, -10.0, -10.0), vec3f(10.0, 10.0, 10.0)};
+
+    bool randomise = ImGui::Button("Randomise");
+
+    if (initialise || randomise)
+    {
+        ecs::clear_scene(scene);
+
+        add_debug_obb(e, scene, obb);
+        add_debug_sphere(e, scene, sphere);
+
+        ecs::update_scene(scene, 1.0f / 60.0f);
+    }
+
+    bool i = maths::sphere_vs_obb(sphere.pos, sphere.radius, scene->world_matrices[obb.node]);
+
+    // debug output
+    vec4f col = vec4f::green();
+    if (i)
+        col = vec4f::red();
+    
+    dbg::add_obb(scene->world_matrices[obb.node], col);
+    scene->draw_call_data[sphere.node].v2 = vec4f(col);
+    scene->draw_call_data[obb.node].v2 = vec4f(col);
+    
+    bool gen = ImGui::Button("Gen Test");
+    if(gen)
+    {
+        PEN_LOG("{");
+        print_test_case_sphere(sphere.pos, sphere.radius);
+        print_test_case_obb(scene->world_matrices[obb.node]);
+        PEN_LOG("\tbool overlap = maths::sphere_vs_obb(sp, sr, obb);");
+        print_test_case_overlap(i);
+        PEN_LOG("}");
+    }
 }
 
 void test_aabb_vs_aabb(ecs_scene* scene, bool initialise)
@@ -2255,7 +2567,10 @@ const c8* test_names[] {
     "Sphere vs Sphere",
     "Sphere vs Capsule",
     "Sphere vs AABB",
+    "Sphere vs OBB",
     "AABB vs AABB",
+    "Capsule vs Capsule",
+    "Convex vs Convex",
     
     "Ray vs Plane",
     "Ray vs AABB",
@@ -2299,7 +2614,10 @@ maths_test_function test_functions[] = {
     test_sphere_vs_sphere,
     test_sphere_vs_capsule,
     test_sphere_vs_aabb,
+    test_sphere_vs_obb,
     test_aabb_vs_aabb,
+    test_capsule_vs_capsule,
+    test_convex_vs_convex,
     
     test_ray_plane_intersect,
     test_ray_vs_aabb,

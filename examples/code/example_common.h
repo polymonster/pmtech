@@ -40,7 +40,7 @@ namespace physics
 
 namespace
 {
-    put::camera          main_camera;
+    put::camera          main_camera = {};
     put::ecs::ecs_scene* main_scene = nullptr;
     pen::job*            p_thread_info = nullptr;
     pen::timer*          frame_timer = nullptr;
