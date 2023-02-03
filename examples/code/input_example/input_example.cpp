@@ -139,7 +139,7 @@ namespace
         put::dbg::add_quad_2f(mouse_pos, mouse_quad_size, vec4f::cyan());
 
         put::dbg::add_text_2f(10.0f, 20.0f, vvp, vec4f(1.0f, 1.0f, 1.0f, 1.0f),
-                              "mouse (%f,%f) | down : left %i, middle %i, right %i: mouse_wheel %i", 
+                              "mouse (%f,%f) | down : left %i, middle %i, right %i: mouse_wheel %f",
                               mouse_pos.x, mouse_pos.y,
                               ms.buttons[PEN_MOUSE_L],
                               ms.buttons[PEN_MOUSE_M], 
