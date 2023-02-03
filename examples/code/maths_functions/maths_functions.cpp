@@ -118,10 +118,30 @@ bool gjk(const std::vector<vec3f>& convex0, const std::vector<vec3f>& convex1)
     }
 }
 
-bool handle_simplex_3d(std::vector<vec3f>& simplex, vec3f& dir)
+vec3f support_function_debug(const std::vector<vec3f>& convex0, const std::vector<vec3f>& convex1, vec3f dir, bool render_debug)
+{
+    vec3f fp0 = furthest_point(dir, convex0);
+    vec3f fp1 = furthest_point(-dir, convex1);
+    vec3f s = fp0 - fp1;
+    
+    if(render_debug)
+    {
+        dbg::add_point(fp0, 0.3f, vec4f::cyan());
+        dbg::add_point(fp1, 0.3f, vec4f::yellow());
+    }
+    
+    return s;
+}
+
+bool handle_simplex_3d(std::vector<vec3f>& simplex, vec3f& dir, bool render_debug)
 {
     if(simplex.size() == 2)
     {
+        if(render_debug)
+        {
+            dbg::add_line(simplex[0], simplex[1]);
+        }
+        
         vec3f a = simplex[1];
         vec3f b = simplex[0];
         
@@ -134,6 +154,13 @@ bool handle_simplex_3d(std::vector<vec3f>& simplex, vec3f& dir)
     }
     else if(simplex.size() == 3)
     {
+        if(render_debug)
+        {
+            dbg::add_line(simplex[0], simplex[1]);
+            dbg::add_line(simplex[1], simplex[2]);
+            dbg::add_line(simplex[2], simplex[0]);
+        }
+        
         vec3f a = simplex[2];
         vec3f b = simplex[1];
         vec3f c = simplex[0];
@@ -154,43 +181,87 @@ bool handle_simplex_3d(std::vector<vec3f>& simplex, vec3f& dir)
     }
     else if(simplex.size() == 4)
     {
-        vec3f da = simplex[0] - simplex[3];
-        vec3f db = simplex[0] - simplex[2];
-        vec3f dc = simplex[0] - simplex[1];
-        vec3f d0 = -simplex[0];
+        vec3f a = simplex[3];
+        vec3f b = simplex[2];
+        vec3f c = simplex[1];
+        vec3f d = simplex[0];
         
-        dbg::add_line(simplex[0], simplex[1]);
-        dbg::add_line(simplex[1], simplex[2]);
-        dbg::add_line(simplex[2], simplex[0]);
+        vec3f centre = (a+b+c+d) * 0.25f;
         
-        dbg::add_line(simplex[0], simplex[3]);
-        dbg::add_line(simplex[1], simplex[3]);
-        dbg::add_line(simplex[2], simplex[3]);
+        vec3f ab = b - a;
+        vec3f ac = c - a;
+        vec3f ad = d - a;
+        vec3f ao = -a;
         
-        vec3f abd = cross(da, db);
-        vec3f bcd = cross(db, dc);
-        vec3f cad = cross(dc, da);
+        vec3f abac = cross(ab, ac);
+        vec3f acad = cross(ac, ad);
+        vec3f adab = cross(ad, ab);
         
-        if(dot(abd, d0) > 0.0f)
+        // flip the normals so they always face outward
+        vec3f centre_abc = (a + b + c) / 3.0f;
+        vec3f centre_acd = (a + c + d) / 3.0f;
+        vec3f centre_adb = (a + d + b) / 3.0f;
+        
+        if(dot(centre - centre_abc, abac) > 0.0f)
+        {
+            abac *= -1.0f;
+        }
+        
+        if(dot(centre - centre_acd, acad) > 0.0f)
+        {
+            acad *= -1.0f;
+        }
+        
+        if(dot(centre - centre_adb, adab) > 0.0f)
+        {
+            adab *= -1.0f;
+        }
+        
+        if(render_debug)
+        {
+            // identifier points
+            dbg::add_point(d, 0.3f, vec4f::red());
+            dbg::add_point(c, 0.3f, vec4f::green());
+            dbg::add_point(b, 0.3f, vec4f::blue());
+            dbg::add_point(a, 0.3f, vec4f::cyan());
+            
+            // tetra itself
+            dbg::add_line(simplex[0], simplex[1]);
+            dbg::add_line(simplex[1], simplex[2]);
+            dbg::add_line(simplex[2], simplex[0]);
+            dbg::add_line(simplex[0], simplex[3]);
+            dbg::add_line(simplex[1], simplex[3]);
+            dbg::add_line(simplex[2], simplex[3]);
+            
+            dbg::add_line(centre_abc, centre_abc + normalize(abac), vec4f::orange());
+            dbg::add_line(centre_acd, centre_acd + normalize(acad), vec4f::red());
+            dbg::add_line(centre_adb, centre_adb + normalize(adab), vec4f::yellow());
+            
+            //
+            dbg::add_line(vec3f::zero(), ao, vec4f::green());
+            dbg::add_line(vec3f::zero(), dir, vec4f::yellow());
+        }
+        
+        if(dot(abac, ao) > 0.0f) // orange
         {
             // erase c
-            simplex.erase(simplex.begin() + 1);
-            dir = abd;
+            simplex.erase(simplex.begin() + 0);
+            dir = abac;
             
             return false;
         }
-        else if(dot(bcd, d0) > 0.0f)
+        else if(dot(acad, ao) > 0.0f) // yellow
         {
             // erase a
-            simplex.erase(simplex.begin() + 3);
-            dir = bcd;
+            simplex.erase(simplex.begin() + 1);
+            dir = acad;
             return false;
         }
-        else if(dot(cad, d0) > 0.0f)
+        else if(dot(adab, ao) > 0.0f) // red
         {
             // erase b
             simplex.erase(simplex.begin() + 2);
-            dir = cad;
+            dir = adab;
             return false;
         }
         
@@ -202,7 +273,7 @@ bool handle_simplex_3d(std::vector<vec3f>& simplex, vec3f& dir)
     return false;
 }
 
-bool gjk_3d(const std::vector<vec3f>& convex0, const std::vector<vec3f>& convex1)
+bool gjk_3d(const std::vector<vec3f>& convex0, const std::vector<vec3f>& convex1, u32 debug_depth)
 {
     // implemented following details in this insightful video: https://www.youtube.com/watch?v=ajv46BSqcK4
     
@@ -213,25 +284,30 @@ bool gjk_3d(const std::vector<vec3f>& convex0, const std::vector<vec3f>& convex1
     std::vector<vec3f> simplex;
     simplex.push_back(support);
     
-    u32 count = 0;
+    u32 depth = 0;
     dir = normalize(-support);
     for(;;)
     {
-        vec3f a = support_function(convex0, convex1, dir);
+        bool render_debug = depth == debug_depth;
+        
+        vec3f a = support_function_debug(convex0, convex1, dir, render_debug);
         if(dot(a, dir) < 0.0f)
         {
+            dbg::add_point(vec3f::zero(), 2.0f, vec4f::red());
             return false;
         }
         simplex.push_back(a);
         
-        if(handle_simplex_3d(simplex, dir))
+        if(handle_simplex_3d(simplex, dir, render_debug))
         {
+            dbg::add_point(vec3f::zero(), 2.0f, vec4f::magenta());
             return true;
         }
         
-        ++count;
-        if(count > 5)
+        ++depth;
+        if(depth > 16)
         {
+            dbg::add_point(vec3f::zero(), 2.0f, vec4f::blue());
             return false;
         }
     }
@@ -1927,6 +2003,9 @@ void test_obb_vs_obb(ecs_scene* scene, bool initialise)
     static vec3f offset = vec3f::zero();
     ImGui::SliderFloat3("Translate Shape", (f32*)&offset, -50.0f, 50.0f);
     
+    static s32 debug_depth = 0;
+    ImGui::InputInt("Debug Depth", &debug_depth);
+    
     std::vector<vec3f> transformed_verts1;
     
     // apply translation for debugging
@@ -1935,7 +2014,7 @@ void test_obb_vs_obb(ecs_scene* scene, bool initialise)
         transformed_verts1.push_back(v + offset);
     }
     
-    bool i = gjk_3d(verts0, transformed_verts1);
+    bool i = gjk_3d(verts0, transformed_verts1, debug_depth);
 
     // debug output
     vec4f col = vec4f::green();
@@ -1946,8 +2025,6 @@ void test_obb_vs_obb(ecs_scene* scene, bool initialise)
         &verts0,
         &transformed_verts1
     };
-    
-    dbg::add_point(vec3f::zero(), 2.0f, vec4f::magenta());
     
     for(u32 j = 0; j < 2; ++j)
     {
