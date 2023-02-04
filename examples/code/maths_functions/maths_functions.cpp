@@ -5,53 +5,11 @@ using namespace put;
 using namespace ecs;
 
 // TODO:
-// add more links in maths to copyright / refs
-
-// tidy gjk and move to maths
-// hull vs hull 2d
-// obb vs obb
-// obb vs aabb
-
 // obb vs obb (test)
 // obb vs aabb (test)
 // hull vs hull 2d (test)
+// more quiles functions
 
-//
-// GJK Wip
-//
-
-/* simplex_3d debug
-if(render_debug)
-{
-    // identifier points
-    dbg::add_point(d, 0.3f, vec4f::red());
-    dbg::add_point(c, 0.3f, vec4f::green());
-    dbg::add_point(b, 0.3f, vec4f::blue());
-    dbg::add_point(a, 0.3f, vec4f::cyan());
-
-    // tetra itself
-    dbg::add_line(simplex[0], simplex[1]);
-    dbg::add_line(simplex[1], simplex[2]);
-    dbg::add_line(simplex[2], simplex[0]);
-    dbg::add_line(simplex[0], simplex[3]);
-    dbg::add_line(simplex[1], simplex[3]);
-    dbg::add_line(simplex[2], simplex[3]);
-
-    dbg::add_line(centre_abc, centre_abc + normalize(abac), vec4f::orange());
-    dbg::add_line(centre_acd, centre_acd + normalize(acad), vec4f::red());
-    dbg::add_line(centre_adb, centre_adb + normalize(adab), vec4f::yellow());
-
-    //
-    dbg::add_line(vec3f::zero(), ao, vec4f::green());
-    dbg::add_line(vec3f::zero(), dir, vec4f::yellow());
-}
-*/
-
-
-
-//
-//
-//
 
 #define EASING_FUNC(NAME) \
 { \
@@ -117,6 +75,12 @@ namespace
             m.m[8], m.m[9], m.m[10], m.m[11],
             m.m[12], m.m[13], m.m[14], m.m[15]
         );
+    }
+
+    void print_test_case_aabb(const vec3f& aabb_min, const vec3f& aabb_max)
+    {
+        PEN_LOG("\tvec3f aabb_min = {(f32)%f, (f32)%f, (f32)%f};", aabb_min.x, aabb_min.y, aabb_min.z);
+        PEN_LOG("\tvec3f aabb_max = {(f32)%f, (f32)%f, (f32)%f};", aabb_max.x, aabb_max.y, aabb_max.z);
     }
     
     void print_test_case_intersection_point(bool intersect, const vec3f& ip)
@@ -1650,6 +1614,13 @@ void test_convex_hull_vs_convex_hull(ecs_scene* scene, bool initialise)
     static debug_convex conv1;
 
     bool randomise = ImGui::Button("Randomise");
+    static bool continuous_rand = false;
+    ImGui::SameLine();
+    ImGui::Checkbox("Continuous Randomise", &continuous_rand);
+    if(continuous_rand)
+    {
+        randomise = true;
+    }
 
     if (initialise || randomise)
     {
@@ -1704,6 +1675,14 @@ void test_aabb_vs_obb(ecs_scene* scene, bool initialise)
     static debug_extents e = {vec3f(-10.0, -10.0, -10.0), vec3f(10.0, 10.0, 10.0)};
 
     bool randomise = ImGui::Button("Randomise");
+    
+    static bool continuous_rand = false;
+    ImGui::SameLine();
+    ImGui::Checkbox("Continuous Randomise", &continuous_rand);
+    if(continuous_rand)
+    {
+        randomise = true;
+    }
 
     static vec3f debug_offset = vec3f::zero();
     if (initialise || randomise)
@@ -1731,6 +1710,17 @@ void test_aabb_vs_obb(ecs_scene* scene, bool initialise)
     
     dbg::add_obb(scene->world_matrices[obb.node], col);
     dbg::add_aabb(aabb.min, aabb.max, col);
+    
+    bool gen = ImGui::Button("Gen Test");
+    if(gen)
+    {
+        PEN_LOG("{");
+        print_test_case_aabb(aabb.min, aabb.max);
+        print_test_case_obb(scene->world_matrices[obb.node]);
+        PEN_LOG("\tbool overlap = maths::aabb_vs_obb(aabb_min, aabb_max, obb);");
+        print_test_case_overlap(i);
+        PEN_LOG("}");
+    }
 }
 
 void test_obb_vs_obb(ecs_scene* scene, bool initialise)
@@ -1741,6 +1731,14 @@ void test_obb_vs_obb(ecs_scene* scene, bool initialise)
     static debug_extents e = {vec3f(-10.0, -10.0, -10.0), vec3f(10.0, 10.0, 10.0)};
 
     bool randomise = ImGui::Button("Randomise");
+    
+    static bool continuous_rand = false;
+    ImGui::SameLine();
+    ImGui::Checkbox("Continuous Randomise", &continuous_rand);
+    if(continuous_rand)
+    {
+        randomise = true;
+    }
 
     static vec3f debug_offset = vec3f::zero();
     if (initialise || randomise)
