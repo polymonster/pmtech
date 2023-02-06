@@ -5,11 +5,329 @@ using namespace put;
 using namespace ecs;
 
 // TODO:
-// obb vs obb (test)
-// obb vs aabb (test)
-// hull vs hull 2d (test)
-// more quiles functions
+// more quilez functions
+// SAT for aabb / obb?
+// publish updated version (wasm)
+//
 
+vec3f furthest_point(const vec3f& dir, const std::vector<vec3f>& vertices)
+{
+    f32 fd = -FLT_MAX;
+    vec3f fv = vertices[0];
+    
+    for(auto& v : vertices)
+    {
+        f32 d = dot(dir, v);
+        if(d > fd)
+        {
+            fv = v;
+            fd = d;
+        }
+    }
+    
+    return fv;
+}
+
+vec3f support_function(const std::vector<vec3f>& convex0, const std::vector<vec3f>& convex1, vec3f dir)
+{
+    vec3f fp0 = furthest_point(dir, convex0);
+    vec3f fp1 = furthest_point(-dir, convex1);
+    vec3f s = fp0 - fp1;
+    
+    return s;
+}
+
+vec3f triple_product(const vec3f& a, const vec3f& b, const vec3f& c)
+{
+    return cross(cross(a, b), c);
+}
+
+vec3f support_function_debug(const std::vector<vec3f>& convex0, const std::vector<vec3f>& convex1, vec3f dir, bool render_debug)
+{
+    vec3f fp0 = furthest_point(dir, convex0);
+    vec3f fp1 = furthest_point(-dir, convex1);
+    vec3f s = fp0 - fp1;
+    
+    if(render_debug)
+    {
+        dbg::add_point(fp0, 0.3f, vec4f::cyan());
+        dbg::add_point(fp1, 0.3f, vec4f::yellow());
+    }
+    
+    return s;
+}
+
+bool handle_simplex_3d(std::vector<vec3f>& simplex, vec3f& dir, bool render_debug)
+{
+    if(simplex.size() == 2)
+    {
+        if(render_debug)
+        {
+            dbg::add_line(simplex[0], simplex[1]);
+        }
+        
+        vec3f a = simplex[1];
+        vec3f b = simplex[0];
+        
+        vec3f ab = normalize(b - a);
+        vec3f ao = normalize(-a);
+        
+        dir = triple_product(ab, ao, ab);
+        
+        return false;
+    }
+    else if(simplex.size() == 3)
+    {
+        if(render_debug)
+        {
+            dbg::add_line(simplex[0], simplex[1]);
+            dbg::add_line(simplex[1], simplex[2]);
+            dbg::add_line(simplex[2], simplex[0]);
+        }
+        
+        vec3f a = simplex[2];
+        vec3f b = simplex[1];
+        vec3f c = simplex[0];
+        
+        vec3f ab = normalize(b - a);
+        vec3f ac = normalize(c - a);
+        vec3f ao = normalize(-a);
+        
+        dir = cross(ac, ab);
+
+        // ensure it points toward the origin
+        if(dot(dir, ao) < 0)
+        {
+            dir *= -1.0f;
+        }
+
+        return false;
+    }
+    else if(simplex.size() == 4)
+    {
+        vec3f a = simplex[3];
+        vec3f b = simplex[2];
+        vec3f c = simplex[1];
+        vec3f d = simplex[0];
+        
+        vec3f centre = (a+b+c+d) * 0.25f;
+        
+        vec3f ab = normalize(b - a);
+        vec3f ac = normalize(c - a);
+        vec3f ad = normalize(d - a);
+        vec3f ao = normalize(-a);
+        
+        vec3f abac = cross(ab, ac);
+        vec3f acad = cross(ac, ad);
+        vec3f adab = cross(ad, ab);
+        
+        // flip the normals so they always face outward
+        vec3f centre_abc = (a + b + c) / 3.0f;
+        vec3f centre_acd = (a + c + d) / 3.0f;
+        vec3f centre_adb = (a + d + b) / 3.0f;
+        
+        if(dot(centre - centre_abc, abac) > 0.0f)
+        {
+            abac *= -1.0f;
+        }
+        
+        if(dot(centre - centre_acd, acad) > 0.0f)
+        {
+            acad *= -1.0f;
+        }
+        
+        if(dot(centre - centre_adb, adab) > 0.0f)
+        {
+            adab *= -1.0f;
+        }
+        
+        if(render_debug)
+        {
+            // identifier points
+            dbg::add_point(d, 0.3f, vec4f::red());
+            dbg::add_point(c, 0.3f, vec4f::green());
+            dbg::add_point(b, 0.3f, vec4f::blue());
+            dbg::add_point(a, 0.3f, vec4f::cyan());
+            
+            // tetra itself
+            dbg::add_line(simplex[0], simplex[1]);
+            dbg::add_line(simplex[1], simplex[2]);
+            dbg::add_line(simplex[2], simplex[0]);
+            dbg::add_line(simplex[0], simplex[3]);
+            dbg::add_line(simplex[1], simplex[3]);
+            dbg::add_line(simplex[2], simplex[3]);
+            
+            dbg::add_line(centre_abc, centre_abc + normalize(abac), vec4f::orange());
+            dbg::add_line(centre_acd, centre_acd + normalize(acad), vec4f::red());
+            dbg::add_line(centre_adb, centre_adb + normalize(adab), vec4f::yellow());
+            
+            //
+            dbg::add_line(vec3f::zero(), ao, vec4f::green());
+            dbg::add_line(vec3f::zero(), dir, vec4f::yellow());
+        }
+        
+        constexpr f32 k_epsilon = 0.0f;
+        
+        if(dot(abac, ao) > k_epsilon) // orange
+        {
+            // erase d
+            simplex.erase(simplex.begin() + 0);
+            dir = abac;
+            
+            return false;
+        }
+        else if(dot(acad, ao) > k_epsilon) // yellow
+        {
+            // erase c
+            simplex.erase(simplex.begin() + 1);
+            dir = acad;
+            return false;
+        }
+        else if(dot(adab, ao) > k_epsilon) // red
+        {
+            // erase b
+            simplex.erase(simplex.begin() + 2);
+            dir = adab;
+            return false;
+        }
+        
+        return true;
+    }
+    
+    // we shouldnt hit this case, we should always have 2 or 3 points in the simplex
+    assert(0);
+    return false;
+}
+
+u32 gjk_3d(const std::vector<vec3f>& convex0, const std::vector<vec3f>& convex1, u32 debug_depth)
+{
+    // implemented following details in this insightful video: https://www.youtube.com/watch?v=ajv46BSqcK4
+    
+    // starting direction vector
+    vec3f dir = normalize(maths::get_convex_hull_centre(convex0) - maths::get_convex_hull_centre(convex1));
+    vec3f support = support_function(convex0, convex1, dir);
+    
+    std::vector<vec3f> simplex;
+    simplex.push_back(support);
+    
+    u32 depth = 0;
+    u32 loops = 0;
+    dir = normalize(-support);
+
+    f32 smallest = FLT_MAX;
+    for(;;)
+    {
+        bool render_debug = depth == debug_depth;
+        
+        vec3f support_dir = dir;
+        if(loops > 0)
+        {
+            support_dir = -support_dir;
+        }
+        
+        vec3f a = support_function_debug(convex0, convex1, support_dir, render_debug);
+        
+        if(render_debug)
+        {
+            dbg::add_line(vec3f::zero(), dir, vec4f::cyan());
+            dbg::add_line(vec3f::zero(), a, vec4f::magenta());
+        }
+        
+        f32 ndp = dot(normalize(a), normalize(dir));
+        f32 dp = dot(a, dir);
+        
+        if(dp < 0.0f)
+        {
+            dbg::add_point(vec3f::zero(), 2.0f, vec4f::red());
+            return 0;
+        }
+        simplex.push_back(a);
+                
+        if(ndp < smallest)
+        {
+            loops = 0;
+            smallest = ndp;
+        }
+        else if(ndp == smallest)
+        {
+            loops++;
+        }
+        
+        if(handle_simplex_3d(simplex, dir, render_debug))
+        {
+            dbg::add_point(vec3f::zero(), 2.0f, vec4f::magenta());
+            return 1;
+        }
+        
+        ++depth;
+        if(depth > 32)
+        {
+            dbg::add_point(vec3f::zero(), 2.0f, vec4f::blue());
+            ImGui::Text("Smallest: %f, Loops: %u", smallest, loops);
+            return 2;
+        }
+    }
+}
+
+u32 obb_vs_obb_debug(const mat4f& obb0, const mat4f& obb1, u32 debug_depth)
+{
+    // this function is for convenience, you can extract vertices and pass to gjk_3d yourself
+    static const vec3f corners[8] = {
+        vec3f(-1.0f, -1.0f, -1.0f),
+        vec3f( 1.0f, -1.0f, -1.0f),
+        vec3f( 1.0f,  1.0f, -1.0f),
+        vec3f(-1.0f,  1.0f, -1.0f),
+        vec3f(-1.0f, -1.0f,  1.0f),
+        vec3f( 1.0f, -1.0f,  1.0f),
+        vec3f( 1.0f,  1.0f,  1.0f),
+        vec3f(-1.0f,  1.0f,  1.0f),
+    };
+    
+    std::vector<vec3f> verts0;
+    std::vector<vec3f> verts1;
+        
+    for(u32 i = 0; i < 8; ++i)
+    {
+        verts0.push_back(obb0.transform_vector(corners[i]));
+        verts1.push_back(obb1.transform_vector(corners[i]));
+    }
+    
+    return gjk_3d(verts0, verts1, debug_depth);
+}
+
+u32 aabb_vs_obb_debug(const vec3f& aabb_min, const vec3f& aabb_max, const mat4f& obb, u32 debug_depth)
+{
+    // this function is for convenience, you can extract vertices and pass to gjk_3d yourself
+    static const vec3f corners[8] = {
+        vec3f(-1.0f, -1.0f, -1.0f),
+        vec3f( 1.0f, -1.0f, -1.0f),
+        vec3f( 1.0f,  1.0f, -1.0f),
+        vec3f(-1.0f,  1.0f, -1.0f),
+        vec3f(-1.0f, -1.0f,  1.0f),
+        vec3f( 1.0f, -1.0f,  1.0f),
+        vec3f( 1.0f,  1.0f,  1.0f),
+        vec3f(-1.0f,  1.0f,  1.0f),
+    };
+    
+    std::vector<vec3f> verts0 = {
+        aabb_min,
+        vec3f(aabb_min.x, aabb_min.y, aabb_max.z),
+        vec3f(aabb_max.x, aabb_min.y, aabb_min.z),
+        vec3f(aabb_max.x, aabb_min.y, aabb_max.z),
+        vec3f(aabb_min.x, aabb_max.y, aabb_min.z),
+        vec3f(aabb_min.x, aabb_max.y, aabb_max.z),
+        vec3f(aabb_max.x, aabb_max.y, aabb_min.z),
+        aabb_max
+    };
+    
+    std::vector<vec3f> verts1;
+    for(u32 i = 0; i < 8; ++i)
+    {
+        verts1.push_back(obb.transform_vector(corners[i]));
+    }
+    
+    return gjk_3d(verts0, verts1, debug_depth);
+}
 
 #define EASING_FUNC(NAME) \
 { \
@@ -67,9 +385,39 @@ namespace
         PEN_LOG("\tvec3f p = {(f32)%f, (f32)%f, (f32)%f};", p.x, p.y, p.z);
     }
 
+    void print_test_case_screen_point(const vec3f& p)
+    {
+        PEN_LOG("\tvec3f sp = {(f32)%f, (f32)%f, (f32)%f};", p.x, p.y, p.z);
+    }
+
+    void print_test_case_viewport(const vec2i& vp)
+    {
+        PEN_LOG("\tvec2i vp = {(s32)%i, (s32)%i};", vp.x, vp.y);
+    }
+
+    void print_test_case_view_proj(const mat4f& m)
+    {
+        PEN_LOG("\tmat4f view_proj = {(f32)%f, (f32)%f, (f32)%f, (f32)%f,\n\t(f32)%f, (f32)%f, (f32)%f, (f32)%f,\n\t(f32)%f, (f32)%f, (f32)%f, (f32)%f,\n\t(f32)%f, (f32)%f, (f32)%f, (f32)%f};",
+            m.m[0], m.m[1], m.m[2], m.m[3],
+            m.m[4], m.m[5], m.m[6], m.m[7],
+            m.m[8], m.m[9], m.m[10], m.m[11],
+            m.m[12], m.m[13], m.m[14], m.m[15]
+        );
+    }
+
     void print_test_case_obb(const mat4f& m)
     {
         PEN_LOG("\tmat4f obb = {(f32)%f, (f32)%f, (f32)%f, (f32)%f,\n\t(f32)%f, (f32)%f, (f32)%f, (f32)%f,\n\t(f32)%f, (f32)%f, (f32)%f, (f32)%f,\n\t(f32)%f, (f32)%f, (f32)%f, (f32)%f};",
+            m.m[0], m.m[1], m.m[2], m.m[3],
+            m.m[4], m.m[5], m.m[6], m.m[7],
+            m.m[8], m.m[9], m.m[10], m.m[11],
+            m.m[12], m.m[13], m.m[14], m.m[15]
+        );
+    }
+
+    void print_test_case_obb2(const mat4f& m)
+    {
+        PEN_LOG("\tmat4f obb2 = {(f32)%f, (f32)%f, (f32)%f, (f32)%f,\n\t(f32)%f, (f32)%f, (f32)%f, (f32)%f,\n\t(f32)%f, (f32)%f, (f32)%f, (f32)%f,\n\t(f32)%f, (f32)%f, (f32)%f, (f32)%f};",
             m.m[0], m.m[1], m.m[2], m.m[3],
             m.m[4], m.m[5], m.m[6], m.m[7],
             m.m[8], m.m[9], m.m[10], m.m[11],
@@ -139,6 +487,26 @@ namespace
         PEN_LOG("\tvec3f cy1 = {(f32)%f, (f32)%f, (f32)%f};", cy1.x, cy1.y, cy1.z);
         PEN_LOG("\tf32 cyr = (f32)%f;", cyr);
     }
+
+    void print_test_case_convex_hull(const std::vector<vec2f>& hull)
+    {
+        PEN_LOG("\tstd::vector<vec2f> hull = {");
+        for(auto& v : hull)
+        {
+            PEN_LOG("\t\t{(f32)%f, (f32)%f},", v.x, v.y);
+        }
+        PEN_LOG("\t};");
+    }
+
+    void print_test_case_convex_hull2(const std::vector<vec2f>& hull)
+    {
+        PEN_LOG("\tstd::vector<vec2f> hull2 = {");
+        for(auto& v : hull)
+        {
+            PEN_LOG("\t\t{(f32)%f, (f32)%f},", v.x, v.y);
+        }
+        PEN_LOG("\t};");
+    }
     
     void print_test_case_overlap(bool overlap)
     {
@@ -178,9 +546,9 @@ struct debug_triangle
     vec3f t2;
 };
 
-struct debug_convex
+struct debug_convex_hull
 {
-    std::vector<vec3f> vertices;
+    std::vector<vec2f> vertices;
 };
 
 struct debug_line
@@ -612,7 +980,7 @@ void add_debug_triangle(const debug_extents& extents, ecs_scene* scene, debug_tr
     tri.t2 = random_vec_range(extents);
 }
 
-void add_debug_convex(const debug_extents& extents, ecs_scene* scene, u32 num_verts, debug_convex& convex)
+void add_debug_convex_hull(const debug_extents& extents, ecs_scene* scene, u32 num_verts, debug_convex_hull& convex)
 {
     u32 node = ecs::get_new_entity(scene);
     scene->names[node] = "triangle";
@@ -632,7 +1000,7 @@ void add_debug_convex(const debug_extents& extents, ecs_scene* scene, u32 num_ve
     convex.vertices.clear();
     for(auto& v : hull)
     {
-        convex.vertices.push_back(vec3f(v.x, 0.0f, v.y));
+        convex.vertices.push_back(v);
     }
 }
 
@@ -1226,12 +1594,29 @@ void test_project(ecs_scene* scene, bool initialise)
 
     mat4  view_proj = main_camera.proj * main_camera.view;
     vec3f screen_point = maths::project_to_sc(point.point, view_proj, vp);
+    vec3f unproj = maths::unproject_sc(screen_point, view_proj, vp);
+    PEN_UNUSED(unproj);
 
-    // vec3f unproj = maths::unproject_sc(screen_point, view_proj, vp);
-
-    dbg::add_point(point.point, 0.5f, vec4f::magenta());
-    dbg::add_point(point.point, 1.0f, vec4f::cyan());
+    //dbg::add_point(point.point, 0.5f, vec4f::magenta());
+    //dbg::add_point(point.point, 1.0f, vec4f::cyan());
+    
     dbg::add_point_2f(screen_point.xy, vec4f::green());
+    dbg::add_point(unproj, 1.0f, vec4f::yellow());
+    
+    // print test
+    bool gen = ImGui::Button("Gen Test");
+    if(gen)
+    {
+        PEN_LOG("{");
+        print_test_case_view_proj(view_proj);
+        print_test_case_point(point.point);
+        print_test_case_viewport(vp);
+        PEN_LOG("\tvec3f screen_point = maths::project_to_sc(p, view_proj, vp);");
+        PEN_LOG("\tvec3f unproj_point = maths::unproject_sc(screen_point * vec3f(1.0f, 1.0f, 2.0f) - vec3f(0.0f, 0.0f, 1.0f), view_proj, vp);");
+        PEN_LOG("\tREQUIRE(require_func(screen_point, {(f32)%f, (f32)%f, (f32)%f}));", screen_point.x, screen_point.y, screen_point.z);
+        PEN_LOG("\tREQUIRE(require_func(unproj_point, {(f32)%f, (f32)%f, (f32)%f}));", point.point.x, point.point.y, point.point.z);
+        PEN_LOG("}");
+    }
 }
 
 void test_point_aabb(ecs_scene* scene, bool initialise)
@@ -1610,8 +1995,8 @@ void test_convex_hull_vs_convex_hull(ecs_scene* scene, bool initialise)
     static debug_extents e0 = {vec3f(-10.0, -10.0, -10.0), vec3f(10.0, 10.0, 10.0)};
     static debug_extents e1 = {vec3f(-5.0, -5.0, -5.0), vec3f(15.0, 15.0, 15.0)};
     
-    static debug_convex conv0;
-    static debug_convex conv1;
+    static debug_convex_hull conv0;
+    static debug_convex_hull conv1;
 
     bool randomise = ImGui::Button("Randomise");
     static bool continuous_rand = false;
@@ -1626,8 +2011,8 @@ void test_convex_hull_vs_convex_hull(ecs_scene* scene, bool initialise)
     {
         ecs::clear_scene(scene);
         
-        add_debug_convex(e0, scene, 6, conv0);
-        add_debug_convex(e1, scene, 8, conv1);
+        add_debug_convex_hull(e0, scene, 6, conv0);
+        add_debug_convex_hull(e1, scene, 8, conv1);
 
         ecs::update_scene(scene, 1.0f / 60.0f);
     }
@@ -1635,16 +2020,15 @@ void test_convex_hull_vs_convex_hull(ecs_scene* scene, bool initialise)
     static vec2f offset = vec2f::zero();
     ImGui::SliderFloat2("Translate Shape", (f32*)&offset, -50.0f, 50.0f);
     
-    std::vector<vec3f> transformed_conv1;
+    std::vector<vec2f> transformed_conv1;
     
     // apply translation for debugging
     for(auto& v : conv1.vertices)
     {
-        transformed_conv1.push_back(v + vec3f(offset.x, 0.0f, offset.y));
+        transformed_conv1.push_back(v + offset);
     }
     
-    //..
-    bool i = maths::gjk_2d(conv0.vertices, transformed_conv1);
+    bool i = maths::convex_hull_vs_convex_hull(conv0.vertices, transformed_conv1);
     
     // debug output
     vec4f col = vec4f::green();
@@ -1656,14 +2040,25 @@ void test_convex_hull_vs_convex_hull(ecs_scene* scene, bool initialise)
     for(u32 i = 0; i < s0; ++i)
     {
         u32 j = (i + 1) % s0;
-        dbg::add_line(conv0.vertices[i], conv0.vertices[j], col);
+        dbg::add_line(vec3f(conv0.vertices[i].x, 0.0f, conv0.vertices[i].y), vec3f(conv0.vertices[j].x, 0.0f, conv0.vertices[j].y), col);
     }
     
     u32 s1 = (u32)transformed_conv1.size();
     for(u32 i = 0; i < s1; ++i)
     {
         u32 j = (i + 1) % s1;
-        dbg::add_line(transformed_conv1[i], transformed_conv1[j], col);
+        dbg::add_line(vec3f(transformed_conv1[i].x, 0.0f, transformed_conv1[i].y), vec3f(transformed_conv1[j].x, 0.0f, transformed_conv1[j].y), col);
+    }
+    
+    bool gen = ImGui::Button("Gen Test");
+    if(gen)
+    {
+        PEN_LOG("{");
+        print_test_case_convex_hull(conv0.vertices);
+        print_test_case_convex_hull2(transformed_conv1);
+        PEN_LOG("\tbool overlap = maths::convex_hull_vs_convex_hull(hull, hull2);");
+        print_test_case_overlap(i);
+        PEN_LOG("}");
     }
 }
 
@@ -1697,12 +2092,25 @@ void test_aabb_vs_obb(ecs_scene* scene, bool initialise)
         debug_offset = scene->transforms[obb.node].translation;
     }
     
-    ImGui::SliderFloat3("Translate Shape", (f32*)&debug_offset, -50.0f, 50.0f);
+    ImGui::SliderFloat3("Translate Shape", (f32*)&debug_offset, -10.0f, 10.0f);
     scene->transforms[obb.node].translation = debug_offset;
     scene->entities[obb.node] |= e_cmp::transform;
     
     bool i = maths::aabb_vs_obb(aabb.min, aabb.max, scene->world_matrices[obb.node]);
-
+    
+    /*
+    static s32 debug_depth = 0;
+    ImGui::InputInt("Debug Depth", &debug_depth);
+    u32 r = aabb_vs_obb_debug(aabb.min, aabb.max, scene->world_matrices[obb.node], debug_depth);
+    
+    bool i = r == 1 ? true : false;
+    
+    if(r == 2)
+    {
+        continuous_rand = false;
+    }
+    */
+    
     // debug output
     vec4f col = vec4f::green();
     if (i)
@@ -1732,9 +2140,12 @@ void test_obb_vs_obb(ecs_scene* scene, bool initialise)
 
     bool randomise = ImGui::Button("Randomise");
     
+    static u32 rcount = 0;
     static bool continuous_rand = false;
     ImGui::SameLine();
     ImGui::Checkbox("Continuous Randomise", &continuous_rand);
+    ImGui::SameLine();
+    ImGui::Text("%u", rcount);
     if(continuous_rand)
     {
         randomise = true;
@@ -1751,11 +2162,24 @@ void test_obb_vs_obb(ecs_scene* scene, bool initialise)
         ecs::update_scene(scene, 1.0f / 60.0f);
         
         debug_offset = scene->transforms[obb1.node].translation;
+        rcount++;
     }
     
-    ImGui::SliderFloat3("Translate Shape", (f32*)&debug_offset, -50.0f, 50.0f);
+    ImGui::SliderFloat3("Translate Shape", (f32*)&debug_offset, -10.0f, 10.0f);
     scene->transforms[obb1.node].translation = debug_offset;
     scene->entities[obb1.node] |= e_cmp::transform;
+    
+    /*
+    static s32 debug_depth = 0;
+    ImGui::InputInt("Debug Depth", &debug_depth);
+    u32 r = obb_vs_obb_debug(scene->world_matrices[obb0.node], scene->world_matrices[obb1.node], debug_depth);
+    
+    bool i = r == 1 ? true : false;
+    if(r == 2)
+    {
+        continuous_rand = false;
+    }
+    */
     
     bool i = maths::obb_vs_obb(scene->world_matrices[obb0.node], scene->world_matrices[obb1.node]);
 
@@ -1766,6 +2190,17 @@ void test_obb_vs_obb(ecs_scene* scene, bool initialise)
     
     dbg::add_obb(scene->world_matrices[obb0.node], col);
     dbg::add_obb(scene->world_matrices[obb1.node], col);
+    
+    bool gen = ImGui::Button("Gen Test");
+    if(gen)
+    {
+        PEN_LOG("{");
+        print_test_case_obb(scene->world_matrices[obb0.node]);
+        print_test_case_obb2(scene->world_matrices[obb1.node]);
+        PEN_LOG("\tbool overlap = maths::obb_vs_obb(obb, obb2);");
+        print_test_case_overlap(i);
+        PEN_LOG("}");
+    }
 }
 
 void test_sphere_vs_aabb(ecs_scene* scene, bool initialise)
@@ -2826,6 +3261,112 @@ void maths_test_ui(ecs_scene* scene)
             
             ImGui::SliderFloat("f", &f, 0.0, 1.0f);
             ImGui::SliderFloat("k", &k, 0.0, 10.0f);
+        }
+        ImGui::PopID();
+        
+        ImGui::Separator();
+        ImGui::PushID("sinc");
+        {
+            static f32 k = 4.5f;
+
+            f32 t = 0.0f;
+            for(u32 i = 0; i < 32; ++i)
+            {
+                points[i] = sinc(t, k);
+                t += 1.0f / 32.0f;
+            }
+            ImGui::PlotLines("sinc", points, 32);
+            
+            ImGui::SliderFloat("k", &k, 0.0, 10.0f);
+        }
+        ImGui::PopID();
+        
+        ImGui::Separator();
+        ImGui::PushID("gain");
+        {
+            static f32 k = 5.0f;
+
+            f32 t = 0.0f;
+            for(u32 i = 0; i < 32; ++i)
+            {
+                points[i] = gain(t, k);
+                t += 1.0f / 32.0f;
+            }
+            ImGui::PlotLines("gain", points, 32);
+            
+            ImGui::SliderFloat("k", &k, 0.0, 10.0f);
+        }
+        ImGui::PopID();
+        
+        ImGui::Separator();
+        ImGui::PushID("almost_identity");
+        {
+            static f32 m = 0.1f;
+            static f32 n = 0.01f;
+
+            f32 t = 0.0f;
+            for(u32 i = 0; i < 32; ++i)
+            {
+                points[i] = almost_identity(t, m, n);
+                t += 1.0f / 32.0f;
+            }
+            ImGui::PlotLines("almost_identity", points, 32);
+            
+            ImGui::SliderFloat("m", &m, 0.0, 10.0f);
+            ImGui::SliderFloat("n", &n, 0.0, 10.0f);
+        }
+        ImGui::PopID();
+        
+        ImGui::Separator();
+        ImGui::PushID("integral_smoothstep");
+        {
+            static f32 t = 5.0f;
+
+            f32 x = 0.0f;
+            for(u32 i = 0; i < 32; ++i)
+            {
+                points[i] = integral_smoothstep(x, t);
+                x += 1.0f / 32.0f;
+            }
+            ImGui::PlotLines("integral_smoothstep", points, 32);
+            
+            ImGui::SliderFloat("t", &t, 0.0, 10.0f);
+        }
+        ImGui::PopID();
+        
+        ImGui::Separator();
+        ImGui::PushID("quad_impulse");
+        {
+            static f32 k = 7.0f;
+
+            f32 x = 0.0f;
+            for(u32 i = 0; i < 32; ++i)
+            {
+                points[i] = quad_impulse(k, x);
+                x += 1.0f / 32.0f;
+            }
+            ImGui::PlotLines("quad_impulse", points, 32);
+            
+            ImGui::SliderFloat("k", &k, 0.0, 10.0f);
+        }
+        ImGui::PopID();
+        
+        ImGui::Separator();
+        ImGui::PushID("poly_impulse");
+        {
+            static f32 k = 7.0f;
+            static f32 n = 4.0f;
+
+            f32 x = 0.0f;
+            for(u32 i = 0; i < 32; ++i)
+            {
+                points[i] = poly_impulse(k, n, x);
+                x += 1.0f / 32.0f;
+            }
+            ImGui::PlotLines("poly_impulse", points, 32);
+            
+            ImGui::SliderFloat("k", &k, 0.0, 10.0f);
+            ImGui::SliderFloat("n", &n, 0.0, 10.0f);
         }
         ImGui::PopID();
     }
