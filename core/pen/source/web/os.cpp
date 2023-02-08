@@ -27,6 +27,10 @@ EM_JS(void, set_title, (const char* title), { document.title = UTF8ToString(titl
 
 using namespace pen;
 
+// urgh global externs
+pen::user_info              pen_user_info;
+pen::window_creation_params pen_window;
+
 void pen_make_gl_context_current()
 {
 }
