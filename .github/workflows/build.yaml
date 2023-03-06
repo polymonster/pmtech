@@ -1,6 +1,5 @@
-
 name: build
-on: [push]
+on: [push, pull_request]
 jobs:
   macos-metal:
     runs-on: macos-latest
@@ -92,6 +91,8 @@ jobs:
           submodules: "recursive"
           lfs: true
       - run: |
+          sudo -E apt-add-repository -y "ppa:ubuntu-toolchain-r"
+          sudo apt-get install libglew-dev
           cd tools
           ../pmbuild linux-editor -libs
           ../pmbuild linux-editor
