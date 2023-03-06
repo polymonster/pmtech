@@ -188,7 +188,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
         
         premake: {
             args: [
-                "%{vs_latest}"
+                "vs2019"
                 "--renderer=dx11"
                 "--platform_dir=win32"
                 "--sdk_version=%{windows_sdk_version}"
