@@ -69,8 +69,8 @@ jobs:
           lfs: true
       - run: |
           cd tools
-          pmbuild mac-editor
-          pmbuild make mac-editor all
+          ../pmbuild mac-editor
+          ../pmbuild make mac-editor all
   windows-editor:
     runs-on: windows-latest
     steps:
@@ -80,8 +80,8 @@ jobs:
           lfs: true
       - run: |
           cd tools
-          pmbuild win32-editor
-          pmbuild make win32-editor all
+          ..\\pmbuild win32-editor
+          ..\\pmbuild make win32-editor all
   linux-editor:
     runs-on: ubuntu-latest
     steps:
@@ -91,5 +91,5 @@ jobs:
           lfs: true
       - run: |
           cd tools
-          pmbuild linux-editor
-          pmbuild make linux-editor all
+          ../pmbuild linux-editor
+          ../pmbuild make linux-editor all
