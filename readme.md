@@ -5,12 +5,12 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Track on https://trello.com/b/05omR9Mj/igneous](https://img.shields.io/badge/track-on_trello-007BC2.svg?logo=trello&logoColor=ffffff&labelColor=026AA7)](https://trello.com/b/ciujzpUT) [![Discord](https://img.shields.io/discord/807665639845789796.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/3yjXwJ8wJC)
 
-Check out the live [WebGL/WebAssembly samples](https://www.polymonster.co.uk/webgl-demos)!
+Check out the live [WebGL/WebAssembly Samples](https://www.polymonster.co.uk/webgl-demos)!
 
 **Supported Platforms**  
 
-- Operating System: Windows (x64), macOS, iOS, Linux (x64), Web Assembly, Android ([wip](https://trello.com/b/ciujzpUT)).
-- Compilers: vs2017+, Clang 6+, Apple LLVM 9+, Gcc 7+, emcc 2.0. 
+- Operating System: Windows (x64), macOS, iOS, Linux (x64), WebAssembly, Android ([wip](https://trello.com/b/ciujzpUT)).
+- Compilers: vs2017+, Clang 6+, Apple LLVM 9+, Gcc 7+, emcc 2.0.  
 - Rendering Backends: Direct3D11, OpenGL3.1+, OpenGLES3+, WebGL 2.0, Metal, Vulkan ([wip](https://trello.com/b/ciujzpUT)).
 - Shader Langauges: HLSL Shader Model 3.0+, GLSL 330+, Metal, SPIR-V.
 
@@ -32,7 +32,7 @@ Check out the live [WebGL/WebAssembly samples](https://www.polymonster.co.uk/web
 **Usage**  
 
 - Take a look at the [Building](https://github.com/polymonster/pmtech/wiki/Building) instructions to get started.  
-- All features in pmtech are demonstarted and unit tested through [examples](https://github.com/polymonster/pmtech/wiki/Examples). 
+- All features in pmtech are demonstrated and unit tested through [examples](https://github.com/polymonster/pmtech/wiki/Examples).  
 
 **Media**  
 
