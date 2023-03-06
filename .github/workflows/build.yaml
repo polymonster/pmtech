@@ -60,3 +60,36 @@ jobs:
           ..\\pmbuild win32-gl -libs
           ..\\pmbuild win32-gl
           ..\\pmbuild make win32-gl all /p:Platform=x64 /p:Configuration=Release
+  macos-editor:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+        with: 
+          submodules: "recursive"
+          lfs: true
+      - run: |
+          cd tools
+          pmbuild mac-editor
+          pmbuild make mac-editor all
+  windows-editor:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+        with: 
+          submodules: "recursive"
+          lfs: true
+      - run: |
+          cd tools
+          pmbuild win32-editor
+          pmbuild make win32-editor all
+  linux-editor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with: 
+          submodules: "recursive"
+          lfs: true
+      - run: |
+          cd tools
+          pmbuild linux-editor
+          pmbuild make linux-editor all

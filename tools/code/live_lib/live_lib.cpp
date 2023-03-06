@@ -248,8 +248,8 @@ struct live_lib
     {
         mr = strip[0].mat;
         
-        vec3f r = normalised(strip[0].end - strip[0].start);
-        vec3f a = normalised(strip[0].start - strip[1].start);
+        vec3f r = normalize(strip[0].end - strip[0].start);
+        vec3f a = normalize(strip[0].start - strip[1].start);
         
         mr = mat::create_axis_swap(r, cross(a, r), a);
         mat4 inv = mat::inverse4x4(mr);
@@ -319,8 +319,8 @@ struct live_lib
         edge* ee = nullptr;
         edge* ej = nullptr;
                         
-        vec3f right = normalised(strip[0].end - strip[0].start);
-        vec3f va = normalised(strip[1].start - strip[0].start);
+        vec3f right = normalize(strip[0].end - strip[0].start);
+        vec3f va = normalize(strip[1].start - strip[0].start);
         vec3f vu = cross(va, right);
         
         mat4 mb = mat::create_rotation(vu, v.y);
@@ -419,16 +419,16 @@ struct live_lib
                         e1.end
                     };
                                         
-                    vec3f t = normalised(e1.end - e1.start);
+                    vec3f t = normalize(e1.end - e1.start);
                     if(mag2(e1.end - e1.start) < 0.0001)
                     {
-                        t = normalised(e2.end - e2.start);
+                        t = normalize(e2.end - e2.start);
                     }
                     
-                    vec3f b = normalised(e2.start - e1.start);
+                    vec3f b = normalize(e2.start - e1.start);
                     if(mag2(e2.start - e1.start) < 0.0001)
                     {
-                        b = normalised(e2.end - e1.end);
+                        b = normalize(e2.end - e1.end);
                     }
 
                     vec3f n = cross(t, b);
@@ -515,9 +515,9 @@ struct live_lib
                 cap_hull[s]
             };
 
-            vec3f qt = normalised(vq[1] - vq[0]);
-            vec3f qb = normalised(vq[1] - vq[2]);
-            vec3f qn = cross(qt, qb); //normalised(maths::get_normal(vq[0], vq[1], vq[2]));
+            vec3f qt = normalize(vq[1] - vq[0]);
+            vec3f qb = normalize(vq[1] - vq[2]);
+            vec3f qn = cross(qt, qb); //normalize(maths::get_normal(vq[0], vq[1], vq[2]));
 
             for(u32 k = 0; k < 6; ++k)
             {
@@ -966,7 +966,7 @@ struct live_lib
 
             if(maths::line_vs_line(hull[i], hull[n], l1, l2, ip))
             {
-                f32 d = abs(dot(normalised(hull[n] - hull[i]), normalised(l2 - l1)));
+                f32 d = abs(dot(normalize(hull[n] - hull[i]), normalize(l2 - l1)));
                 return d < 0.01f;
             }
         }
@@ -987,7 +987,7 @@ struct live_lib
 
             if(maths::line_vs_line(hull[i], hull[n], l1, l2, ip))
             {
-                perp = cross(normalised(hull[n] - hull[i]), vec3f::unit_y());
+                perp = cross(normalize(hull[n] - hull[i]), vec3f::unit_y());
                 return true;
             }
         }
@@ -1056,9 +1056,9 @@ struct live_lib
     
     void curb(edge**& edge_strips, vec3f* hull_points)
     {
-        vec3f right = normalised(hull_points[1] - hull_points[0]);
+        vec3f right = normalize(hull_points[1] - hull_points[0]);
         vec3f up = vec3f::unit_y();
-        vec3f at = normalised(cross(right, up));
+        vec3f at = normalize(cross(right, up));
         
         f32 height = ((f32)(rand()%RAND_MAX) / (f32)RAND_MAX) * 5.0f;
         height = 0.1f;
@@ -1095,7 +1095,7 @@ struct live_lib
             if(i == 0)
                 continue;
             
-            vec3f vl = normalised(vec3f(p3-p2));
+            vec3f vl = normalize(vec3f(p3-p2));
             
             f32 yaw = acos(dot(vl, prev_vl));
             if (std::isnan(yaw))
@@ -1168,9 +1168,9 @@ struct live_lib
     void get_hull_subdivision_extents(road_network& net)
     {
         // basis for hull
-        net.right = normalised(net.inset_hull[1] - net.inset_hull[0]);
+        net.right = normalize(net.inset_hull[1] - net.inset_hull[0]);
         net.up = vec3f::unit_y();
-        net.at = normalised(cross(net.right, net.up));
+        net.at = normalize(cross(net.right, net.up));
                 
         edge e;
         e.start = net.inset_hull[0];
@@ -1180,7 +1180,7 @@ struct live_lib
         // get extents in right axis
         vec3f side_start = e.start - net.right * 1000.0f;
         vec3f side_end = e.start + net.right * 1000.0f;
-        vec3f side_v = normalised(side_end - side_start);
+        vec3f side_v = normalize(side_end - side_start);
 
         f32 mind = FLT_MAX;
         f32 maxd = -FLT_MAX;
@@ -1210,7 +1210,7 @@ struct live_lib
         // get extents in at axis
         vec3f side_perp_start = mincp - net.at * 1000.0f;
         vec3f side_perp_end = mincp + net.at * 1000.0f;
-        vec3f side_perp_v = normalised(side_perp_end - side_perp_start);
+        vec3f side_perp_v = normalize(side_perp_end - side_perp_start);
         
         net.extent_axis_points[1].p1 = mincp;
         maxd = -FLT_MAX;
@@ -1230,8 +1230,8 @@ struct live_lib
         net.extent_axis_length[0] = mag(net.extent_axis_points[0].p2 - net.extent_axis_points[0].p1);
         net.extent_axis_length[1] = mag(net.extent_axis_points[1].p2 - net.extent_axis_points[1].p1);
 
-        net.extent_axis[0] = normalised(net.extent_axis_points[0].p2 - net.extent_axis_points[0].p1);
-        net.extent_axis[1] = normalised(net.extent_axis_points[1].p2 - net.extent_axis_points[1].p1);    
+        net.extent_axis[0] = normalize(net.extent_axis_points[0].p2 - net.extent_axis_points[0].p1);
+        net.extent_axis[1] = normalize(net.extent_axis_points[1].p2 - net.extent_axis_points[1].p1);
     }
 
     void subdivide_as_grid(road_network& net)
@@ -1549,7 +1549,7 @@ struct live_lib
                 // get perp of edge
                 auto& loop = net.valid_sub_hulls[h];
                 u32 n = (i+1)%num_points;
-                vec3f ve = normalised(loop[n] - loop[i]);
+                vec3f ve = normalize(loop[n] - loop[i]);
                 vec3f perp = cross(ve, vec3f::unit_y());
                 f32 pw = net.params.pavement_width;
 
@@ -2086,7 +2086,7 @@ struct live_lib
             vec3f p1 = edge_points[i];
             vec3f p2 = edge_points[n];
                         
-            vec3f vl = normalised(vec3f(p2-p1));
+            vec3f vl = normalize(vec3f(p2-p1));
             
             vec3f perp = cross(vl, vec3f::unit_y());
             
@@ -2125,7 +2125,7 @@ struct live_lib
                     continue;
 
                 // extend slightly to catch difficult intersections
-                vec3f xt = normalised(pn1 - pn0);
+                vec3f xt = normalize(pn1 - pn0);
                 pn0 -= xt * inset;
                 pn1 += xt * inset;
 
