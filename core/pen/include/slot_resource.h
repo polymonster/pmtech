@@ -1,5 +1,5 @@
 // slot_resource.h
-// Copyright 2014 - 2019 Alex Dixon.
+// Copyright 2014 - 2023 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
 // Simple slot resource api can be used to allocate an array slot to a generic opaque resource via a handle.

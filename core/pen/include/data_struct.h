@@ -1,5 +1,5 @@
 // data_struct.h
-// Copyright 2014 - 2019 Alex Dixon.
+// Copyright 2014 - 2023 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
 // Minimalist, thread safe, bloat free data structures.. check description for thread safety, lock / lockless, etc
