@@ -368,45 +368,34 @@ end
 function setup_live_lib( project_name ) 
 	if platform == "win32" then
 		filter {}
-		dependson
-		{
-			"pmtech_editor"
-		}
-		libdirs
-		{
+		libdirs {
 			"bin/win32"
+		}
+		dependson {
+			"pmtech_editor"
 		}
 
 		filter "configurations:Debug"
-		links
-		{
+		links {
 			"pmtech_editor_d.lib"
 		}
 		filter "configurations:Release"
-		links
-		{
+		links {
 			"pmtech_editor.lib"
 		}
 		filter {}
 	elseif platform == "osx" then
 		filter {}
-		linkoptions
-		{
+		linkoptions {
 			"-undefined dynamic_lookup"
 		}
 	elseif platform == "linux" then
 		filter {}
-		linkoptions
-		{
+		linkoptions {
 			"-fPIC",
 			"-export-dynamic"
 		}
 	end
-
-	project ( project_name )
-		setup_product( project_name )
-		kind ( "SharedLib" )
-		language "C++"
 	
 	project "pmtech_editor"
 		filter "configurations:Debug"
@@ -437,4 +426,15 @@ function setup_live_lib( project_name )
 					('LIVE_LIB="\\\"lib' .. project_name .. '.so\\\""')
 				}	
 			end
+
+	project ( project_name )
+		setup_product( project_name )
+		kind ( "SharedLib" )
+		language "C++"
+
+		if platform == "win32" then
+			dependson {
+				"pmtech_editor"
+			}
+		end
 end

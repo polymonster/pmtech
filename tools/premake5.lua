@@ -13,6 +13,7 @@ solution ("pmtech_tools_" .. platform)
 	buildoptions { build_cmd }
 	linkoptions { link_cmd }
 	includedirs { "." }
+	startproject "pmtech_editor"
 		
 -- core libs
 dofile "../core/pen/project.lua"

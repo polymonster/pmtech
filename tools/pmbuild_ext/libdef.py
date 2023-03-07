@@ -9,6 +9,7 @@ import re
 import os
 import subprocess
 import argparse
+import glob
 
 # Define functions which extract a list of symbols from a library using several
 # different tools. We use subprocess.Popen and yield a symbol at a time instead
@@ -17,11 +18,15 @@ import argparse
 # amount of time.
 def dumpbin_get_symbols(lib):
 
-    # total hack adding paths
-    dumps = [
-        "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Professional\\VC\\Tools\\MSVC\\14.16.27023\\bin\\Hostx64\\x64\dumpbin.exe",
-        'C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.28.29333\\bin\\Hostx64\\x64\\dumpbin.exe'
+    dirs = [
+        "C:\\Program Files (x86)\\Microsoft Visual Studio",
+        "C:\\Program Files\\Microsoft Visual Studio"
     ]
+
+    dumps = []
+    for dir in dirs:
+        dumps.extend(glob.glob(os.path.join(dir, "**/dumpbin.exe"), recursive=True))
+    dumps = sorted(dumps)
     
     dumpbin_exe = ""
     for d in dumps:
@@ -30,7 +35,10 @@ def dumpbin_get_symbols(lib):
             break
 
     if not os.path.isfile(dumpbin_exe):
-        print("error: dumpbin utility not found, please reconfigure path\n Path: " + dumpbin_exe)
+        print("error: dumpbin utility not found")
+        print("error: pmtech/tools/pmbuild_ext/libdef.py is looking for dumpbin.exe in:")
+        for d in dirs:
+            print("error: {}".format(d))
         exit(2)
     
     process = subprocess.Popen([dumpbin_exe,'/symbols',lib], bufsize=1,
