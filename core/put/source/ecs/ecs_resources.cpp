@@ -138,11 +138,11 @@ namespace
         contents.num_geometry = *p_u32reader++;
 
         // parse scenes offsets
-        for (s32 i = 0; i < contents.num_scene; ++i)
+        for (u32 i = 0; i < contents.num_scene; ++i)
             contents.scene_offsets.push_back(*p_u32reader++);
 
         // parse material offsets and names
-        for (s32 i = 0; i < contents.num_materials; ++i)
+        for (u32 i = 0; i < contents.num_materials; ++i)
         {
             Str name = read_parsable_string(&p_u32reader);
             contents.material_offsets.push_back(*p_u32reader++);
@@ -150,7 +150,7 @@ namespace
         }
 
         // parse geometry offsets and names
-        for (s32 i = 0; i < contents.num_geometry; ++i)
+        for (u32 i = 0; i < contents.num_geometry; ++i)
         {
             Str name = read_parsable_string(&p_u32reader);
             contents.geometry_offsets.push_back(*p_u32reader++);
@@ -747,14 +747,14 @@ namespace
 
         // collapse redudant hierarchy if the top leve only has one child, we dont need it
         u32 num_root_children = 0;
-        for (s32 i = root + 1; i < root + total_nodes; ++i)
+        for (u32 i = root + 1; i < root + total_nodes; ++i)
             if (scene->parents[i] == root)
                 num_root_children++;
 
         if (num_root_children == 1)
         {
             u32 old_root = root;
-            for (s32 i = root + 1; i < root + total_nodes; ++i)
+            for (u32 i = root + 1; i < root + total_nodes; ++i)
                 if (scene->parents[i] == root)
                 {
                     scene->parents[i] = i;
@@ -774,7 +774,7 @@ namespace
         }
 
         // now we have loaded the whole scene fix up any anim controllers
-        for (s32 i = root; i < root + total_nodes; ++i)
+        for (u32 i = root; i < root + total_nodes; ++i)
         {
             if (scene->entities[i] & e_cmp::sub_geometry)
                 continue;
@@ -1481,7 +1481,7 @@ namespace put
 
             u32 max_frames = 0;
 
-            for (s32 i = 0; i < num_channels; ++i)
+            for (u32 i = 0; i < num_channels; ++i)
             {
                 Str bone_name = read_parsable_string(&p_u32reader);
                 new_animation.channels[i].target = PEN_HASH(bone_name.c_str());
@@ -1500,7 +1500,7 @@ namespace put
 
                 s32 num_rots = 0;
 
-                for (s32 j = 0; j < num_sources; ++j)
+                for (u32 j = 0; j < num_sources; ++j)
                 {
                     u32 sematic = *p_u32reader++;
                     u32 type = *p_u32reader++;
@@ -1642,7 +1642,7 @@ namespace put
                     p_u32reader += num_elements;
                 }
 
-                for (s32 t = 0; t < new_animation.channels[i].num_frames; ++t)
+                for (u32 t = 0; t < new_animation.channels[i].num_frames; ++t)
                 {
                     f32* times = new_animation.channels[i].times;
                     new_animation.length = fmax(times[t], new_animation.length);
@@ -1668,7 +1668,7 @@ namespace put
             memset(soa.info, 0x0, max_frames * sizeof(f32*));
 
             // push channels into horizontal contiguous arrays
-            for (s32 c = 0; c < num_channels; ++c)
+            for (u32 c = 0; c < num_channels; ++c)
             {
                 animation_channel& channel = new_animation.channels[c];
 

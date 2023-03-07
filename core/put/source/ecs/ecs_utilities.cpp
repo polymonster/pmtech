@@ -23,7 +23,7 @@ namespace put
             const u32* p_len = *data;
             u32        name_len = *p_len++;
             c8*        char_reader = (c8*)p_len;
-            for (s32 j = 0; j < name_len; ++j)
+            for (u32 j = 0; j < name_len; ++j)
             {
                 name.append((c8)*char_reader);
                 char_reader += 4;
@@ -41,7 +41,7 @@ namespace put
 
             ifs.read((c8*)&len, sizeof(u32));
 
-            for (s32 i = 0; i < len; ++i)
+            for (u32 i = 0; i < len; ++i)
             {
                 c8 c;
                 ifs.read((c8*)&c, 1);
@@ -122,7 +122,7 @@ namespace put
             }
             
             // allocate new entities
-            for(u32 i = pos; i < pos+num; ++i)
+            for(s32 i = pos; i < pos+num; ++i)
             {
                 scene->ref_slot[i] = allocate_ref(scene, i);
                 scene->entities[i] |= e_cmp::allocated;

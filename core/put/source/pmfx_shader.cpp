@@ -118,7 +118,7 @@ namespace put
 
         const c8* get_shader_name(u32 shader)
         {
-            if (shader >= sb_count(s_pmfx_list))
+            if (shader >= (u32)sb_count(s_pmfx_list))
                 return nullptr;
 
             return s_pmfx_list[shader].filename.c_str();
@@ -126,7 +126,7 @@ namespace put
 
         const c8* get_technique_name(u32 shader, hash_id id_technique)
         {
-            if (shader >= sb_count(s_pmfx_list))
+            if (shader >= (u32)sb_count(s_pmfx_list))
                 return nullptr;
 
             u32 nt = sb_count(s_pmfx_list[shader].techniques);
@@ -139,7 +139,7 @@ namespace put
 
         hash_id get_technique_id(u32 shader, u32 technique_index)
         {
-            if (shader >= sb_count(s_pmfx_list))
+            if (shader >= (u32)sb_count(s_pmfx_list))
                 return 0;
 
             u32 nt = sb_count(s_pmfx_list[shader].techniques);
@@ -162,9 +162,9 @@ namespace put
             // per pmfx constants
             // .. per technique constants go into: material_data(7), todo rename to techhnique_data
 
-            u32       cc = 0;
+            u32 cc = 0;
             pen::json j_cbuffers = j_technique["cbuffers"];
-            for (s32 i = 0; i < j_cbuffers.size(); ++i)
+            for (u32 i = 0; i < j_cbuffers.size(); ++i)
             {
                 pen::json cbuf = j_cbuffers[i];
                 Str       name_str = cbuf["name"].as_str();
@@ -189,7 +189,7 @@ namespace put
 
             const pen::json& j_samplers = j_technique["texture_sampler_bindings"];
 
-            for (s32 i = 0; i < j_samplers.size(); ++i)
+            for (u32 i = 0; i < j_samplers.size(); ++i)
             {
                 pen::json sampler = j_samplers[i];
 
@@ -593,10 +593,10 @@ namespace put
 
         void initialise_constant_defaults(u32 shader, u32 technique_index, f32* data)
         {
-            if (shader >= sb_count(s_pmfx_list))
+            if (shader >= (u32)sb_count(s_pmfx_list))
                 return;
 
-            if (technique_index >= sb_count(s_pmfx_list[shader].techniques))
+            if (technique_index >= (u32)sb_count(s_pmfx_list[shader].techniques))
                 return;
 
             memcpy(data, s_pmfx_list[shader].techniques[technique_index].constant_defaults,
@@ -605,10 +605,10 @@ namespace put
 
         void initialise_sampler_defaults(u32 shader, u32 technique_index, sampler_set& samplers)
         {
-            if (shader >= sb_count(s_pmfx_list))
+            if (shader >= (u32)sb_count(s_pmfx_list))
                 return;
 
-            if (technique_index >= sb_count(s_pmfx_list[shader].techniques))
+            if (technique_index >= (u32)sb_count(s_pmfx_list[shader].techniques))
                 return;
 
             if (pmfx::has_technique_samplers(shader, technique_index))
@@ -634,10 +634,10 @@ namespace put
 
         technique_constant* get_technique_constants(u32 shader, u32 technique_index)
         {
-            if (shader >= sb_count(s_pmfx_list))
+            if (shader >= (u32)sb_count(s_pmfx_list))
                 return nullptr;
 
-            if (technique_index >= sb_count(s_pmfx_list[shader].techniques))
+            if (technique_index >= (u32)sb_count(s_pmfx_list[shader].techniques))
                 return nullptr;
 
             return s_pmfx_list[shader].techniques[technique_index].constants;
@@ -647,7 +647,7 @@ namespace put
         {
             technique_constant* tc = get_technique_constants(shader, technique_index);
 
-            for (u32 i = 0; i < sb_count(tc); ++i)
+            for (u32 i = 0; i < (u32)sb_count(tc); ++i)
             {
                 if (tc[i].id_name == id_constant)
                 {
@@ -660,10 +660,10 @@ namespace put
 
         technique_sampler* get_technique_samplers(u32 shader, u32 technique_index)
         {
-            if (shader >= sb_count(s_pmfx_list))
+            if (shader >= (u32)sb_count(s_pmfx_list))
                 return nullptr;
 
-            if (technique_index >= sb_count(s_pmfx_list[shader].techniques))
+            if (technique_index >= (u32)sb_count(s_pmfx_list[shader].techniques))
                 return nullptr;
 
             return s_pmfx_list[shader].techniques[technique_index].textures;
@@ -673,7 +673,7 @@ namespace put
         {
             technique_sampler* ts = get_technique_samplers(shader, technique_index);
 
-            for (u32 i = 0; i < sb_count(ts); ++i)
+            for (u32 i = 0; i < (u32)sb_count(ts); ++i)
             {
                 if (ts[i].id_name == id_sampler)
                 {
@@ -686,10 +686,10 @@ namespace put
 
         technique_permutation* get_technique_permutations(u32 shader, u32 technique_index)
         {
-            if (shader >= sb_count(s_pmfx_list))
+            if (shader >= (u32)sb_count(s_pmfx_list))
                 return nullptr;
 
-            if (technique_index >= sb_count(s_pmfx_list[shader].techniques))
+            if (technique_index >= (u32)sb_count(s_pmfx_list[shader].techniques))
                 return nullptr;
 
             return s_pmfx_list[shader].techniques[technique_index].permutations;
@@ -697,10 +697,10 @@ namespace put
 
         u32 get_technique_cbuffer_size(u32 shader, u32 technique_index)
         {
-            if (shader >= sb_count(s_pmfx_list))
+            if (shader >= (u32)sb_count(s_pmfx_list))
                 return 0;
 
-            if (technique_index >= sb_count(s_pmfx_list[shader].techniques))
+            if (technique_index >= (u32)sb_count(s_pmfx_list[shader].techniques))
                 return 0;
 
             return s_pmfx_list[shader].techniques[technique_index].technique_constant_size;
@@ -708,7 +708,7 @@ namespace put
 
         void set_technique(u32 shader, u32 technique_index)
         {
-            if (technique_index >= sb_count(s_pmfx_list[shader].techniques))
+            if (technique_index >= (u32)sb_count(s_pmfx_list[shader].techniques))
                 return;
 
             auto& t = s_pmfx_list[shader].techniques[technique_index];
@@ -828,7 +828,7 @@ namespace put
 
             pen::json _techniques = new_pmfx.info["techniques"];
 
-            for (s32 i = 0; i < _techniques.size(); ++i)
+            for (u32 i = 0; i < _techniques.size(); ++i)
             {
                 pen::json      t = _techniques[i];
                 shader_program new_technique = preload_shader_technique(filename, t, new_pmfx.info);
@@ -1160,7 +1160,7 @@ namespace put
                 ImGui::Text("file: %s", put::get_texture_filename(samplers.sb[i].handle).c_str());
 
                 s32 ss_index = -1;
-                for (u32 j = 0; j < sb_count(sampler_state_id_list); ++j)
+                for (u32 j = 0; j < (u32)sb_count(sampler_state_id_list); ++j)
                 {
                     if (sampler_state_id_list[j] == samplers.sb[i].id_sampler_state)
                     {

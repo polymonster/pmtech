@@ -1019,7 +1019,7 @@ namespace put
             if (s_rasteriser_job.current_requested_slice == s_rasteriser_job.current_slice)
                 return;
 
-            if (s_rasteriser_job.current_slice >= s_rasteriser_job.dimension)
+            if (s_rasteriser_job.current_slice >= (s32)s_rasteriser_job.dimension)
             {
                 while (!(s_rasteriser_job.options.rasterise_axes & 1 << (++s_rasteriser_job.current_axis)))
                     if (s_rasteriser_job.current_axis > 5)
@@ -1647,7 +1647,7 @@ namespace put
                         save_location = dev_ui::file_browser(save_dialog_open, dev_ui::e_file_browser_flags::save);
                         if (save_location)
                         {
-                            for (u32 i = 0; i < sb_count(s_generated_volumes); ++i)
+                            for (s32 i = 0; i < sb_count(s_generated_volumes); ++i)
                             {
                                 if (s_generated_volumes[i].scene_node_index == save_index)
                                 {

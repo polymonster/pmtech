@@ -1253,7 +1253,9 @@ namespace put
                     if (InputBuf[0])
                         ExecCommand(InputBuf);
 
-                    strncpy(InputBuf, "", 256);
+                    memset(InputBuf, 0x0, 256);
+
+                    //strncpy(InputBuf, "", 256);
                 }
 
                 // Demonstrate keeping auto focus on the input box

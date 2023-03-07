@@ -349,7 +349,7 @@ namespace put
             s32  last_index = -1;
             for (s32 i = 1; i < selection_size; ++i)
             {
-                if (scene->selection_list[i] < parent)
+                if ((s32)scene->selection_list[i] < parent)
                 {
                     valid = false;
                     break;
@@ -367,7 +367,7 @@ namespace put
                 // list is already contiguous
                 dev_console_log("[parent] selection is contiguous %i to %i size %i", parent, last_index, selection_size);
 
-                for (int i = 0; i < sel_count; ++i)
+                for (u32 i = 0; i < sel_count; ++i)
                     if (scene->parents[i] == scene->selection_list[i])
                         set_entity_parent(scene, parent, i);
             }
@@ -380,7 +380,7 @@ namespace put
                 get_new_entities_append(scene, selection_size, start, end);
 
                 s32 nn = start;
-                for (int i = 0; i < sel_count; ++i)
+                for (u32 i = 0; i < sel_count; ++i)
                     clone_entity(scene, scene->selection_list[i], nn++, start, e_clone_mode::move, vec3f::zero(), "");
             }
 
@@ -422,7 +422,7 @@ namespace put
             else if (valid)
             {
                 s32 existing = -1;
-                for (s32 i = 0; i < sel_count; ++i)
+                for (u32 i = 0; i < sel_count; ++i)
                     if (scene->selection_list[i] == index)
                         existing = i;
 
@@ -478,7 +478,7 @@ namespace put
                 ImGui::Text("Picking Result: %u", s_picking_info.result);
 
                 u32 sel_count = sb_count(scene->selection_list);
-                for (s32 i = 0; i < sel_count; ++i)
+                for (u32 i = 0; i < sel_count; ++i)
                 {
                     s32 ii = scene->selection_list[i];
 
@@ -874,7 +874,7 @@ namespace put
         void update_undo_stack(ecs_scene* scene, f32 dt)
         {
             // resize buffers
-            if (!s_editor_nodes || sb_count(s_editor_nodes) < scene->soa_size)
+            if (!s_editor_nodes || (u32)sb_count(s_editor_nodes) < scene->soa_size)
             {
                 stb__sbgrow(s_editor_nodes, scene->soa_size);
                 stb__sbm(s_editor_nodes) = scene->num_entities;
@@ -2497,7 +2497,7 @@ namespace put
                     u32 num_extensions = sb_count(scene->extensions);
                     ImGui::Text("Extensions: %i", num_extensions);
                     ImGui::Indent();
-                    for (s32 i = 0; i < num_extensions; ++i)
+                    for (u32 i = 0; i < num_extensions; ++i)
                     {
                         ImGui::Text("%s", scene->extensions[i].name.c_str());
                     }
@@ -2774,7 +2774,7 @@ namespace put
                     if (ms.buttons[PEN_MOUSE_L])
                     {
                         vec3f new_pos =
-                            maths::ray_plane_intersect(r0, vr, s_physics_pick_info.pos, view.camera->view.get_row(2).xyz);
+                            maths::ray_vs_plane(r0, vr, s_physics_pick_info.pos, view.camera->view.get_row(2).xyz);
 
                         physics::set_v3(s_physics_pick_info.constraint, new_pos, physics::e_cmd::set_p2p_constraint_pos);
                     }
@@ -2841,7 +2841,7 @@ namespace put
                 static bool selected[3] = {0};
                 for (s32 i = 0; i < 3; ++i)
                 {
-                    vec3f cp = maths::ray_plane_intersect(r0, vr, pos, plane_normals[i]);
+                    vec3f cp = maths::ray_vs_plane(r0, vr, pos, plane_normals[i]);
 
                     if (!ms.buttons[PEN_MOUSE_L])
                     {
@@ -3036,7 +3036,7 @@ namespace put
                     if (i == 1)
                         plane_normal = cross(translation_axis[i], (vec3f)view.camera->view.get_row(0).xyz);
 
-                    axis_pos[i] = maths::ray_plane_intersect(r0, vr, widget_points[0], plane_normal);
+                    axis_pos[i] = maths::ray_vs_plane(r0, vr, widget_points[0], plane_normal);
 
                     if (!ms.buttons[PEN_MOUSE_L])
                         pre_click_axis_pos[i] = axis_pos[i];

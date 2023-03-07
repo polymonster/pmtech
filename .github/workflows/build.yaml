@@ -83,7 +83,7 @@ jobs:
           ..\\pmbuild win32-editor -libs
           ..\\pmbuild win32-editor
           ..\\pmbuild make win32-editor pmtech_editor /p:Platform=x64 /p:Configuration=Release
-          ..\\pmbuild make win32-editor mesh_opt /p:Platform=x64 /p:Configuration=Release
+          ..\\pmbuild make win32-editor all /p:Platform=x64 /p:Configuration=Release
   linux-editor:
     runs-on: ubuntu-latest
     steps:

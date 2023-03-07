@@ -372,7 +372,7 @@ namespace
         tcp.data_size = 0;
 
         // faces / slices / depths
-        for (s32 a = 0; a < tcp.num_arrays; ++a)
+        for (u32 a = 0; a < tcp.num_arrays; ++a)
         {
             // top level
             u32 data_size = calc_level_size(tcp.width, tcp.height, compressed, block_size);

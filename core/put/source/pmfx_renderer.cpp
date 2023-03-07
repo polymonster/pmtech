@@ -949,7 +949,7 @@ namespace put
             {
                 if (blend_state.type() == JSMN_ARRAY)
                 {
-                    for (s32 i = 0; i < blend_state.size(); ++i)
+                    for (u32 i = 0; i < blend_state.size(); ++i)
                     {
                         hash_id hh = PEN_HASH(blend_state[i].as_cstr());
 
@@ -977,7 +977,7 @@ namespace put
             {
                 if (write_mask.type() == JSMN_ARRAY)
                 {
-                    for (s32 i = 0; i < write_mask.size(); ++i)
+                    for (u32 i = 0; i < write_mask.size(); ++i)
                         masks.push_back(write_mask[i].as_u32());
                 }
                 else
@@ -1098,7 +1098,7 @@ namespace put
                     // only parse specific targets in list
                     bool include = false;
                     u32  num_includes = sb_count(include_targets);
-                    for (int j = 0; j < num_includes; ++j)
+                    for (u32 j = 0; j < num_includes; ++j)
                     {
                         // check for existing
                         bool exists = false;
@@ -1521,7 +1521,7 @@ namespace put
 
             // clear mrt
             pen::json clear_mrt = view["clear"];
-            for (s32 m = 0; m < clear_mrt.size(); ++m)
+            for (u32 m = 0; m < clear_mrt.size(); ++m)
             {
                 pen::json jmrt = clear_mrt[m];
 
@@ -1845,7 +1845,7 @@ namespace put
                 // render flags
                 pen::json render_flags = view["render_flags"];
                 new_view.render_flags = 0;
-                for (s32 f = 0; f < render_flags.size(); ++f)
+                for (u32 f = 0; f < render_flags.size(); ++f)
                 {
                     new_view.render_flags |= mode_from_string(render_flags_map, render_flags[f].as_cstr(), 0);
                 }
@@ -1856,7 +1856,7 @@ namespace put
 
                 // scene views
                 pen::json scene_views = view["scene_views"];
-                for (s32 ii = 0; ii < scene_views.size(); ++ii)
+                for (u32 ii = 0; ii < scene_views.size(); ++ii)
                 {
                     hash_id id = scene_views[ii].as_hash_id();
                     bool    found = false;

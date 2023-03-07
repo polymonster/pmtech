@@ -1150,7 +1150,7 @@ namespace put
                     for (u32 j = 0; j < num_joints; ++j)
                         instance.targets[j].q = quat(0.0f, 0.0f, 0.0f);
 
-                    for (s32 c = 0; c < num_channels; ++c)
+                    for (u32 c = 0; c < num_channels; ++c)
                     {
                         anim_sampler& sampler = instance.samplers[c];
                         anim_channel& channel = soa.channels[c];
@@ -1874,7 +1874,7 @@ namespace put
                     s32 joints_offset = ecs::get_index_from_ref(scene, rjr);
                     joints_offset += geom.p_skin->bone_offset;
                     
-                    for (s32 i = 0; i < geom.p_skin->num_joints; ++i)
+                    for (u32 i = 0; i < geom.p_skin->num_joints; ++i)
                         bb[i] = scene->world_matrices[joints_offset + i] * geom.p_skin->joint_bind_matrices[i];
 
                     pen::renderer_update_buffer(geom.p_skin->bone_cbuffer, bb, sizeof(bb));
@@ -1947,7 +1947,7 @@ namespace put
                     s32 joints_offset = ecs::get_index_from_ref(scene, rjr);
                     joints_offset += p_geom->p_skin->bone_offset;
                     
-                    for (s32 i = 0; i < p_geom->p_skin->num_joints; ++i)
+                    for (u32 i = 0; i < p_geom->p_skin->num_joints; ++i)
                     {
                         mat4& joint_matrix = scene->world_matrices[joints_offset + i];
                         mat4& bind_matrix = p_geom->p_skin->joint_bind_matrices[i];
@@ -2305,13 +2305,13 @@ namespace put
             ofs.write((const c8*)&sh, sizeof(scene_header));
 
             // component sizes
-            for (u32 c = 0; c < sh.num_components; ++c)
+            for (s32 c = 0; c < sh.num_components; ++c)
             {
                 ofs.write((const c8*)&scene->get_component_array(c).size, sizeof(u32));
             }
 
             // extensions
-            for (u32 i = 0; i < sh.num_extensions; ++i)
+            for (s32 i = 0; i < sh.num_extensions; ++i)
             {
                 u32 co = get_extension_component_offset(scene, i);
                 write_lookup_string(scene->extensions[i].name.c_str(), ofs);
@@ -2320,7 +2320,7 @@ namespace put
             }
 
             // string lookups
-            for (u32 l = 0; l < sh.num_lookup_strings; ++l)
+            for (s32 l = 0; l < sh.num_lookup_strings; ++l)
             {
                 write_parsable_string(s_lookup_strings[l].name.c_str(), ofs);
                 ofs.write((const c8*)&s_lookup_strings[l].id, sizeof(hash_id));
@@ -2389,14 +2389,14 @@ namespace put
                 clear_scene(scene);
             }
 
-            if (new_num_nodes > scene->soa_size)
+            if (new_num_nodes > (s32)scene->soa_size)
                 resize_scene_buffers(scene, num_nodes);
 
             scene->num_entities = new_num_nodes;
 
             // read component sizes
             u32* component_sizes = nullptr;
-            for (u32 i = 0; i < sh.num_components; ++i)
+            for (s32 i = 0; i < sh.num_components; ++i)
             {
                 u32 size;
                 ifs.read((c8*)&size, sizeof(u32));
@@ -2412,7 +2412,7 @@ namespace put
             };
             ext_components* exts = nullptr;
 
-            for (u32 i = 0; i < sh.num_extensions; ++i)
+            for (s32 i = 0; i < sh.num_extensions; ++i)
             {
                 ext_components ext;
                 ifs.read((c8*)&ext.id, sizeof(hash_id));
@@ -2426,7 +2426,7 @@ namespace put
             sb_free(s_lookup_strings);
             s_lookup_strings = nullptr;
 
-            for (u32 n = 0; n < sh.num_lookup_strings; ++n)
+            for (s32 n = 0; n < sh.num_lookup_strings; ++n)
             {
                 lookup_string ls;
                 ls.name = read_parsable_string(ifs);
@@ -2436,7 +2436,7 @@ namespace put
             }
 
             // rehash extension ids
-            for (u32 i = 0; i < sh.num_extensions; ++i)
+            for (s32 i = 0; i < sh.num_extensions; ++i)
             {
                 exts[i].id = rehash_lookup_string(exts[i].id);
             }
@@ -2476,7 +2476,7 @@ namespace put
             }
 
             // read all components
-            for (u32 i = 0; i < sh.num_components; ++i)
+            for (s32 i = 0; i < sh.num_components; ++i)
             {
                 u32 ri = i; // remap i.. if we have extensions
 
@@ -2486,10 +2486,10 @@ namespace put
                     ri = -1;
 
                     //find extension that maps to this component, allow out of order or missing components
-                    for (u32 e = 0; e < sh.num_extensions; ++e)
+                    for (s32 e = 0; e < sh.num_extensions; ++e)
                     {
-                        u32 ext_i = i - exts[e].start_cmp;
-                        if (i >= exts[e].start_cmp && ext_i < exts[e].num_cmp)
+                        s32 ext_i = i - exts[e].start_cmp;
+                        if (i >= (s32)exts[e].start_cmp && ext_i < (s32)exts[e].num_cmp)
                         {
                             ri = get_extension_component_offset_from_id(scene, exts[e].id) + ext_i;
                             break;
@@ -2526,11 +2526,11 @@ namespace put
             }
 
             // fixup parents for scene import / merge
-            for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
+            for (u32 n = zero_offset; n < zero_offset + num_nodes; ++n)
                 scene->parents[n] += zero_offset;
 
             // read specialisations
-            for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
+            for (u32 n = zero_offset; n < zero_offset + num_nodes; ++n)
             {
                 memset(&scene->names[n], 0x0, sizeof(Str));
                 memset(&scene->geometry_names[n], 0x0, sizeof(Str));
@@ -2542,7 +2542,7 @@ namespace put
             }
 
             // geometry
-            for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
+            for (u32 n = zero_offset; n < zero_offset + num_nodes; ++n)
             {
                 if (scene->entities[n] & e_cmp::geometry)
                 {
@@ -2602,16 +2602,16 @@ namespace put
             }
 
             // instantiate physics
-            for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
+            for (u32 n = zero_offset; n < zero_offset + num_nodes; ++n)
                 if (scene->entities[n] & e_cmp::physics)
                     instantiate_rigid_body(scene, n);
 
-            for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
+            for (u32 n = zero_offset; n < zero_offset + num_nodes; ++n)
                 if (scene->entities[n] & e_cmp::constraint)
                     instantiate_constraint(scene, n);
 
             // animations
-            for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
+            for (u32 n = zero_offset; n < zero_offset + num_nodes; ++n)
             {
                 s32 size;
                 ifs.read((c8*)&size, sizeof(s32));
@@ -2635,7 +2635,7 @@ namespace put
             }
 
             // materials
-            for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
+            for (u32 n = zero_offset; n < zero_offset + num_nodes; ++n)
             {
                 if (!(scene->entities[n] & e_cmp::material))
                     continue;
@@ -2659,7 +2659,7 @@ namespace put
             }
 
             // sdf shadow
-            for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
+            for (u32 n = zero_offset; n < zero_offset + num_nodes; ++n)
             {
                 if (!(scene->entities[n] & e_cmp::sdf_shadow))
                     continue;
@@ -2672,7 +2672,7 @@ namespace put
             }
 
             // sampler binding textures
-            for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
+            for (u32 n = zero_offset; n < zero_offset + num_nodes; ++n)
             {
                 if (!(scene->entities[n] & e_cmp::samplers))
                     continue;
@@ -2705,14 +2705,14 @@ namespace put
                 read_lookup_string(ifs);
 
             // read extensions
-            for (u32 i = 0; i < sh.num_extensions; ++i)
+            for (s32 i = 0; i < sh.num_extensions; ++i)
                 if (scene->extensions[i].funcs.load_func)
                     scene->extensions[i].funcs.load_func(scene->extensions[i], scene);
 
             bake_material_handles();
 
             // light geom
-            for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
+            for (u32 n = zero_offset; n < zero_offset + num_nodes; ++n)
             {
                 if (!(scene->entities[n] & e_cmp::light))
                     continue;
@@ -2721,7 +2721,7 @@ namespace put
             }
 
             // invalidate physics debug cbuffer.. will recreate on demand
-            for (s32 n = zero_offset; n < zero_offset + num_nodes; ++n)
+            for (u32 n = zero_offset; n < zero_offset + num_nodes; ++n)
                 scene->physics_debug_cbuffer[n] = PEN_INVALID_HANDLE;
 
             if (!merge)

@@ -298,7 +298,7 @@ namespace physics
     {
         auto&        om = g_readable_data.output_matrices;
         mat4* const& fb = om._data[om._fb];
-        if (entity_index >= sb_count(fb))
+        if (entity_index >= (u32)sb_count(fb))
             return false;
 
         return true;
