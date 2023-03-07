@@ -235,7 +235,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
         
         premake: {
             args: [
-                "vs2019"
+                "%{vs_latest}"
                 "--renderer=dx11"
                 "--platform_dir=win32"
                 "--sdk_version=%{windows_sdk_version}"
@@ -299,7 +299,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
     {
         premake: {
             args: [
-                "vs2019"
+                "%{vs_latest}"
                 "--renderer=vulkan"
                 "--platform_dir=win32"
                 "--sdk_version=%{windows_sdk_version}"
@@ -323,7 +323,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
     {
         premake: {
             args: [
-                "vs2019"
+                "%{vs_latest}"
                 "--renderer=opengl"
                 "--platform_dir=win32"
                 "--sdk_version=%{windows_sdk_version}"

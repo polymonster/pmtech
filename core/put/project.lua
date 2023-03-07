@@ -75,14 +75,14 @@ project "put"
     	}
     end
 	    
-    configuration "Debug"
+    filter "configurations:Debug"
         defines { "DEBUG" }
         entrypoint "WinMainCRTStartup"
         symbols "On"
         targetdir ("lib/" .. platform_dir .. "/debug")
         targetname "put"
  
-    configuration "Release"
+    filter "configurations:Release"
         defines { "NDEBUG" }
         entrypoint "WinMainCRTStartup"
         optimize "Speed"

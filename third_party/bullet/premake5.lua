@@ -20,20 +20,18 @@ project "bullet_monolithic"
 	kind "StaticLib"
 	language "C++"
 	
-	includedirs
-	{ 
+	includedirs { 
 		"src\\", 
 	}
 	
-	if _ACTION == "vs2017" or _ACTION == "vs2015" or ACTION == "vs2019" then
+	if _ACTION == "vs2017" or _ACTION == "vs2015" or _ACTION == "vs2019" or _ACTION == "vs2022" then
 		systemversion(windows_sdk_version())
 		disablewarnings { "4267", "4305", "4244" }
 	end
 	
 	setup_env()
 	
-	files 
-	{ 
+	files { 
 		"src\\Bullet3Collision\\**.*",
 		"src\\Bullet3Common\\**.*",
 		"src\\Bullet3Dynamics\\**.*", 
@@ -46,7 +44,7 @@ project "bullet_monolithic"
 	
 	includedirs { "include" }
 				
-	configuration "Debug"
+	filter "configurations:Debug"
 		defines { "DEBUG" }
 		entrypoint "WinMainCRTStartup"
 		linkoptions { link_cmd }
@@ -55,7 +53,7 @@ project "bullet_monolithic"
 		targetdir ("lib/" .. platform_dir)
 		targetname "bullet_monolithic_d"
  
-	configuration "Release"
+	filter "configurations:Release"
 		defines { "NDEBUG" }
 		entrypoint "WinMainCRTStartup"
 		optimize "Speed"

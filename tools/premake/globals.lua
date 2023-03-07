@@ -71,9 +71,10 @@ function setup_from_action()
         end
     elseif _ACTION == "android-studio" then 
         build_cmd = { "-std=c++11" }
-    elseif _ACTION == "vs2017" or _ACTION == "vs2019" then
+    elseif _ACTION == "vs2017" or _ACTION == "vs2019" or _ACTION == "vs2022" then
         platform_dir = "win32" 
         build_cmd = "/Ob1 /arch:AVX2 /arch:AVX " -- use force inline and avx
+        disablewarnings { "4267", "4305", "4244" }
     end
     
     platform = platform_dir

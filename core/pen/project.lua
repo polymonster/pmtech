@@ -119,14 +119,14 @@ project "pen"
 		}
     end
             
-    configuration "Release"
+    filter "configurations:Release"
         defines { "NDEBUG" }
         entrypoint "WinMainCRTStartup"
         optimize "Speed"
         targetdir ("lib/" .. platform_dir .. "/release")
         targetname "pen"
         
-    configuration "Debug"
+    filter "configurations:Debug"
         defines { "DEBUG" }
         entrypoint "WinMainCRTStartup"
         symbols "On"

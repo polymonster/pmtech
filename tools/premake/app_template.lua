@@ -1,13 +1,13 @@
 local s_project_name
 
 local function add_pmtech_links()
-	configuration "Debug"
+	filter "configurations:Debug"
 		links { "put", "pen" }
 
-	configuration "Release"
+	filter "configurations:Release"
 		links {  "put", "pen" }
 	
-	configuration {}
+	filter {}
 end
 
 local function setup_osx()
@@ -31,15 +31,15 @@ local function setup_osx()
 	
 	if _ACTION == "xcode4" then
 	install_name_tool = "cd ../../bin/osx && install_name_tool -add_rpath @executable_path/../../.. "
-	configuration "Debug"
+	filter "configurations:Debug"
 		postbuildcommands {
 			install_name_tool .. s_project_name .. "_d.app/Contents/MacOS/" .. s_project_name .. "_d" .. " || true"
 		}
-	configuration "Release"
+	filter "configurations:Release"
 		postbuildcommands {
 			install_name_tool .. s_project_name .. ".app/Contents/MacOS/" .. s_project_name .. " || true"
 		}
-	configuration {}
+	filter {}
 	end
 end
 
@@ -170,7 +170,7 @@ local function setup_web()
 		io.close(file)
 	end
 	
-	configuration "Debug"
+	filter "configurations:Debug"
 		buildoptions { 
 			"-g4", 
 			"-s STACK_OVERFLOW_CHECK=1", 
@@ -185,7 +185,7 @@ local function setup_web()
 			"-s DETERMINISTIC=1" 
 		}
 	
-	configuration {}
+	filter {}
 	targetextension (".html")
 	links { "pen", "put" }
 end
@@ -212,13 +212,13 @@ local function setup_bullet()
 		(pmtech_dir .. "third_party/bullet/lib/" .. platform_dir)
 	}
 	
-	configuration "Debug"
+	filter "configurations:Debug"
 		links { "bullet_monolithic_d" }
 	
-	configuration "Release"
+	filter "configurations:Release"
 		links { "bullet_monolithic" }
 	
-	configuration {}
+	filter {}
 end
 
 local function setup_fmod()
@@ -277,12 +277,12 @@ function create_dll(project_name, source_directory, root_directory)
 		targetdir (root_directory .. "/bin/" .. platform_dir)
 		debugdir (root_directory .. "/bin/" .. platform_dir)
 					
-		configuration "Release"
+		filter "configurations:Release"
 			defines { "NDEBUG" }
 			optimize "Speed"
 			targetname (project_name)
 	
-		configuration "Debug"
+		filter "configurations:Debug"
 			defines { "DEBUG" }
 			symbols "On"
 			targetname (project_name .. "_d")
@@ -334,7 +334,7 @@ function create_binary(project_name, source_directory, root_directory, binary_ty
 		targetdir (root_directory .. "/bin/" .. platform_dir)
 		debugdir (root_directory .. "/bin/" .. platform_dir)
 					
-		configuration "Release"
+		filter "configurations:Release"
 			defines { "NDEBUG" }
 			entrypoint "WinMainCRTStartup"
 			optimize "Speed"
@@ -345,7 +345,7 @@ function create_binary(project_name, source_directory, root_directory, binary_ty
 				pmtech_dir .. "core/put/lib/" .. platform_dir .. "/release",
 			}
 	
-		configuration "Debug"
+		filter "configurations:Debug"
 			defines { "DEBUG" }
 			entrypoint "WinMainCRTStartup"
 			symbols "On"
@@ -367,7 +367,7 @@ end
 
 function setup_live_lib( project_name ) 
 	if platform == "win32" then
-		configuration {}
+		filter {}
 		dependson
 		{
 			"pmtech_editor"
@@ -376,25 +376,26 @@ function setup_live_lib( project_name )
 		{
 			"bin/win32"
 		}
-		configuration {"Debug"}
-			links
-			{
-				"pmtech_editor_d.lib"
-			}
-		configuration {"Release"}
-			links
-			{
-				"pmtech_editor.lib"
-			}
-		configuration {}
+
+		filter "configurations:Debug"
+		links
+		{
+			"pmtech_editor_d.lib"
+		}
+		filter "configurations:Release"
+		links
+		{
+			"pmtech_editor.lib"
+		}
+		filter {}
 	elseif platform == "osx" then
-		configuration {}
+		filter {}
 		linkoptions
 		{
 			"-undefined dynamic_lookup"
 		}
 	elseif platform == "linux" then
-		configuration {}
+		filter {}
 		linkoptions
 		{
 			"-fPIC",
@@ -408,7 +409,7 @@ function setup_live_lib( project_name )
 		language "C++"
 	
 	project "pmtech_editor"
-		configuration { "Debug" }
+		filter "configurations:Debug"
 			if platform == "osx" then
 				defines {
 					('LIVE_LIB="\\\"lib' .. project_name .. '_d.dylib\\\""')
@@ -422,7 +423,7 @@ function setup_live_lib( project_name )
 					('LIVE_LIB="\\\"lib' .. project_name .. '_d.so\\\""')
 				}	
 			end
-		configuration { "Release" }
+		filter "configurations:Release"
 			if platform == "osx" then
 				defines {
 					('LIVE_LIB="\\\"lib' .. project_name .. '.dylib\\\""')
