@@ -304,8 +304,8 @@ namespace put
         static app_console* sp_dev_console;
 
         void render(ImDrawData* draw_data);
-
-        bool init()
+        
+        bool init(ImGuiStyle& style)
         {
             pen::memory_zero(&s_imgui_rs, sizeof(s_imgui_rs));
 
@@ -342,6 +342,16 @@ namespace put
 
             create_render_states();
 
+            style.ScaleAllSizes(DEV_UI_SCALE);
+
+            dev_ui::util_init();
+            s_initialised = true;
+
+            return true;
+        }
+
+        ImGuiStyle& default_pmtech_style()
+        {
             ImGuiStyle& style = ImGui::GetStyle();
             style.Alpha = 1.0;
             style.ChildWindowRounding = 3;
@@ -349,8 +359,6 @@ namespace put
             style.GrabRounding = 1;
             style.GrabMinSize = 20;
             style.FrameRounding = 3;
-
-            // ImVec4 debug = ImVec4(1.0f, 0.0f, 1.0f, 1.00f);
 
             ImVec4 zero = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
 
@@ -424,15 +432,9 @@ namespace put
             style.Colors[ImGuiCol_PlotHistogram] = accent;
             style.Colors[ImGuiCol_PlotHistogramHovered] = accent_light;
             style.Colors[ImGuiCol_ModalWindowDarkening] = ImVec4(0.04f, 0.10f, 0.09f, 0.51f);
-
-            style.ScaleAllSizes(DEV_UI_SCALE);
-
-            dev_ui::util_init();
-            s_initialised = true;
-
-            return true;
+            return style;
         }
-
+        
         void shutdown()
         {
             ImGui::Shutdown();

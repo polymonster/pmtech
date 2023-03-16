@@ -42,6 +42,92 @@ namespace
     u32                s_raster_state_cull_back = 0;
     u32                s_default_depth_stencil_state = 0;
 
+    ImGuiStyle &custom_theme(){
+        ImGuiStyle &style = ImGui::GetStyle();
+        style.Alpha = 1.0;
+        style.ChildWindowRounding = 3;
+        style.WindowRounding = 1;
+        style.GrabRounding = 1;
+        style.GrabMinSize = 20;
+        style.FrameRounding = 3;
+
+        // ImVec4 debug = ImVec4(1.0f, 0.0f, 1.0f, 1.00f);
+
+        ImVec4 zero = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
+
+        ImVec4 text_light = ImVec4(0.8f, 0.8f, 0.8f, 1.00f);
+        ImVec4 text_dark = ImVec4(0.4f, 0.4f, 0.4f, 1.00f);
+        ImVec4 window_bg = ImVec4(0.10f, 0.10f, 0.10f, 1.00f);
+
+        ImVec4 foreground = ImVec4(0.6f, 0.6f, 0.6f, 1.0f);
+        ImVec4 foreground_light = ImVec4(0.7f, 0.7f, 0.7f, 1.0f);
+        ImVec4 foreground_dark = ImVec4(0.20f, 0.22f, 0.23f, 1.00f);
+        ImVec4 foreground_dark_highlight = ImVec4(0.19f, 0.19f, 0.19f, 0.54f);
+        ImVec4 foreground_inactive = ImVec4(0.00f, 0.00f, 0.00f, 1.00f);
+
+        ImVec4 accent = ImVec4(0.00f, 0.65f, 0.65f, 0.46f);
+        ImVec4 accent_light = ImVec4(0.00f, 0.75f, 0.75f, 0.46f);
+
+        style.Colors[ImGuiCol_Text] = text_light;
+        style.Colors[ImGuiCol_TextDisabled] = text_dark;
+
+        style.Colors[ImGuiCol_FrameBg] = foreground_inactive;
+        style.Colors[ImGuiCol_FrameBgHovered] = foreground_dark_highlight;
+        style.Colors[ImGuiCol_FrameBgActive] = foreground_dark;
+
+        style.Colors[ImGuiCol_TitleBg] = foreground_inactive;
+        style.Colors[ImGuiCol_TitleBgCollapsed] = foreground_inactive;
+        style.Colors[ImGuiCol_TitleBgActive] = foreground_dark;
+
+        style.Colors[ImGuiCol_WindowBg] = window_bg;
+        style.Colors[ImGuiCol_ChildWindowBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+
+        style.Colors[ImGuiCol_Border] = foreground;
+        style.Colors[ImGuiCol_BorderShadow] = zero;
+
+        style.Colors[ImGuiCol_MenuBarBg] = foreground_dark;
+
+        style.Colors[ImGuiCol_ScrollbarBg] = foreground_dark;
+        style.Colors[ImGuiCol_ScrollbarGrab] = foreground;
+        style.Colors[ImGuiCol_ScrollbarGrabHovered] = foreground_light;
+        style.Colors[ImGuiCol_ScrollbarGrabActive] = foreground_light;
+
+        style.Colors[ImGuiCol_ResizeGrip] = foreground_dark;
+        style.Colors[ImGuiCol_ResizeGripHovered] = foreground_light;
+        style.Colors[ImGuiCol_ResizeGripActive] = foreground;
+
+        style.Colors[ImGuiCol_SliderGrab] = foreground_light;
+        style.Colors[ImGuiCol_SliderGrabActive] = foreground;
+
+        style.Colors[ImGuiCol_ComboBg] = foreground_dark;
+        style.Colors[ImGuiCol_CheckMark] = foreground_light;
+
+        style.Colors[ImGuiCol_Button] = ImVec4(0.05f, 0.05f, 0.05f, 0.54f);
+        style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0.19f, 0.19f, 0.19f, 0.54f);
+        style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.20f, 0.22f, 0.23f, 1.00f);
+
+        style.Colors[ImGuiCol_Header] = foreground_dark;
+        style.Colors[ImGuiCol_HeaderHovered] = foreground_dark_highlight;
+        style.Colors[ImGuiCol_HeaderActive] = foreground;
+
+        style.Colors[ImGuiCol_Column] = foreground_dark;
+        style.Colors[ImGuiCol_ColumnHovered] = foreground_light;
+        style.Colors[ImGuiCol_ColumnActive] = foreground;
+
+        style.Colors[ImGuiCol_TextSelectedBg] = foreground_dark_highlight;
+
+        style.Colors[ImGuiCol_CloseButton] = ImVec4(0.8f, 0.4f, 0.4f, 1.0f);
+        style.Colors[ImGuiCol_CloseButtonHovered] = ImVec4(0.9f, 0.45f, 0.45f, 1.0f);
+        style.Colors[ImGuiCol_CloseButtonActive] = ImVec4(0.9f, 0.45f, 0.45f, 1.0f);
+
+        style.Colors[ImGuiCol_PlotLines] = accent;
+        style.Colors[ImGuiCol_PlotLinesHovered] = accent_light;
+        style.Colors[ImGuiCol_PlotHistogram] = accent;
+        style.Colors[ImGuiCol_PlotHistogramHovered] = accent_light;
+        style.Colors[ImGuiCol_ModalWindowDarkening] = ImVec4(0.04f, 0.10f, 0.09f, 0.51f);
+        return style;
+    }
+
     void* user_setup(void* params)
     {
         // unpack the params passed to the thread and signal to the engine it ok to proceed
@@ -75,9 +161,9 @@ namespace
         depth_stencil_params.depth_func = PEN_COMPARISON_ALWAYS;
 
         s_default_depth_stencil_state = pen::renderer_create_depth_stencil_state(depth_stencil_params);
-
+        
         // init systems
-        put::dev_ui::init();
+        put::dev_ui::init(custom_theme());
 
         // we call user_update once per frame
         pen_main_loop(user_update);
