@@ -251,7 +251,6 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
                 "-o bin/win32/data/pmfx/hlsl"
                 "-h shader_structs"
                 "-t build/temp/shaders"
-                "-source"
             ]
         }
         
