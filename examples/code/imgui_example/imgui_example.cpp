@@ -42,7 +42,8 @@ namespace
     u32                s_raster_state_cull_back = 0;
     u32                s_default_depth_stencil_state = 0;
 
-    ImGuiStyle &custom_theme(){
+    ImGuiStyle& custom_theme()
+    {
         ImGuiStyle &style = ImGui::GetStyle();
         style.Alpha = 1.0;
         style.ChildWindowRounding = 3;
