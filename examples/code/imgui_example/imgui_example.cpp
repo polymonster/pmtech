@@ -52,8 +52,6 @@ namespace
         style.GrabMinSize = 20;
         style.FrameRounding = 3;
 
-        // ImVec4 debug = ImVec4(1.0f, 0.0f, 1.0f, 1.00f);
-
         ImVec4 zero = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
 
         ImVec4 text_light = ImVec4(0.8f, 0.8f, 0.8f, 1.00f);
