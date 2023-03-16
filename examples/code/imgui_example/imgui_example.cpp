@@ -42,7 +42,8 @@ namespace
     u32                s_raster_state_cull_back = 0;
     u32                s_default_depth_stencil_state = 0;
 
-    ImGuiStyle &custom_theme(){
+    ImGuiStyle& custom_theme()
+    {
         ImGuiStyle &style = ImGui::GetStyle();
         style.Alpha = 1.0;
         style.ChildWindowRounding = 3;
@@ -50,8 +51,6 @@ namespace
         style.GrabRounding = 1;
         style.GrabMinSize = 20;
         style.FrameRounding = 3;
-
-        // ImVec4 debug = ImVec4(1.0f, 0.0f, 1.0f, 1.00f);
 
         ImVec4 zero = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
 
