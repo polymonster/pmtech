@@ -24,8 +24,8 @@ namespace pen
     pen_creation_params pen_entry(int argc, char** argv)
     {
         pen::pen_creation_params p;
-        p.window_width = 1280;
-        p.window_height = 720;
+        p.window_width = 1280.0f;
+        p.window_height = 720.0f;
         p.window_title = "imgui_example";
         p.window_sample_count = 4;
         p.user_thread_function = user_setup;
@@ -46,7 +46,7 @@ namespace
     {
         ImGuiStyle &style = ImGui::GetStyle();
         style.Alpha = 1.0;
-        style.ChildWindowRounding = 3;
+        style.ChildRounding = 3;
         style.WindowRounding = 1;
         style.GrabRounding = 1;
         style.GrabMinSize = 20;
@@ -79,7 +79,7 @@ namespace
         style.Colors[ImGuiCol_TitleBgActive] = foreground_dark;
 
         style.Colors[ImGuiCol_WindowBg] = window_bg;
-        style.Colors[ImGuiCol_ChildWindowBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+        style.Colors[ImGuiCol_ChildBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
 
         style.Colors[ImGuiCol_Border] = foreground;
         style.Colors[ImGuiCol_BorderShadow] = zero;
@@ -98,7 +98,7 @@ namespace
         style.Colors[ImGuiCol_SliderGrab] = foreground_light;
         style.Colors[ImGuiCol_SliderGrabActive] = foreground;
 
-        style.Colors[ImGuiCol_ComboBg] = foreground_dark;
+        // style.Colors[ImGuiCol_ComboBg] = foreground_dark;
         style.Colors[ImGuiCol_CheckMark] = foreground_light;
 
         style.Colors[ImGuiCol_Button] = ImVec4(0.05f, 0.05f, 0.05f, 0.54f);
@@ -109,21 +109,21 @@ namespace
         style.Colors[ImGuiCol_HeaderHovered] = foreground_dark_highlight;
         style.Colors[ImGuiCol_HeaderActive] = foreground;
 
-        style.Colors[ImGuiCol_Column] = foreground_dark;
-        style.Colors[ImGuiCol_ColumnHovered] = foreground_light;
-        style.Colors[ImGuiCol_ColumnActive] = foreground;
+        // style.Colors[ImGuiCol_Column] = foreground_dark;
+        // style.Colors[ImGuiCol_ColumnHovered] = foreground_light;
+        // style.Colors[ImGuiCol_ColumnActive] = foreground;
 
         style.Colors[ImGuiCol_TextSelectedBg] = foreground_dark_highlight;
 
-        style.Colors[ImGuiCol_CloseButton] = ImVec4(0.8f, 0.4f, 0.4f, 1.0f);
-        style.Colors[ImGuiCol_CloseButtonHovered] = ImVec4(0.9f, 0.45f, 0.45f, 1.0f);
-        style.Colors[ImGuiCol_CloseButtonActive] = ImVec4(0.9f, 0.45f, 0.45f, 1.0f);
+        // style.Colors[ImGuiCol_CloseButton] = ImVec4(0.8f, 0.4f, 0.4f, 1.0f);
+        // style.Colors[ImGuiCol_CloseButtonHovered] = ImVec4(0.9f, 0.45f, 0.45f, 1.0f);
+        // style.Colors[ImGuiCol_CloseButtonActive] = ImVec4(0.9f, 0.45f, 0.45f, 1.0f);
 
         style.Colors[ImGuiCol_PlotLines] = accent;
         style.Colors[ImGuiCol_PlotLinesHovered] = accent_light;
         style.Colors[ImGuiCol_PlotHistogram] = accent;
         style.Colors[ImGuiCol_PlotHistogramHovered] = accent_light;
-        style.Colors[ImGuiCol_ModalWindowDarkening] = ImVec4(0.04f, 0.10f, 0.09f, 0.51f);
+        // style.Colors[ImGuiCol_ModalWindowDarkening] = ImVec4(0.04f, 0.10f, 0.09f, 0.51f);
         return style;
     }
 
@@ -160,8 +160,10 @@ namespace
         depth_stencil_params.depth_func = PEN_COMPARISON_ALWAYS;
 
         s_default_depth_stencil_state = pen::renderer_create_depth_stencil_state(depth_stencil_params);
-        
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
         // init systems
+        put::dev_ui::enable(true);
         put::dev_ui::init(custom_theme());
 
         // we call user_update once per frame
@@ -176,6 +178,7 @@ namespace
         pen::renderer_release_raster_state(s_raster_state_cull_back);
 
         pen::semaphore_post(s_thread_info->p_sem_terminated, 1);
+        ImGui::DestroyContext();
     }
 
     loop_t user_update()
@@ -189,61 +192,92 @@ namespace
         pen::renderer_clear(s_clear_state_grey);
         pen::renderer_set_raster_state(s_raster_state_cull_back);
         pen::renderer_set_depth_stencil_state(s_default_depth_stencil_state);
+        ImGuiIO& io = ImGui::GetIO();
+        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
         put::dev_ui::new_frame();
-
+        
         ImGui::Text("Hello World");
 
         static f32 renderer_time = 0.0f;
-
-        static bool show_test_window = true;
+        bool show_demo_window = true;
         static bool show_another_window = false;
         ImVec4      clear_col = ImColor(114, 144, 154);
+        static bool opt_fullscreen = true;
+        static bool opt_padding = false;
+        static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
 
-        // 1. Show a simple window
-        // Tip: if we don't call ImGui::Begin()/ImGui::End() the widgets appears in a window automatically called "Debug"
+        // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
+        // because it would be confusing to have two docking targets within each others.
+        ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+        if (opt_fullscreen)
         {
-            static float f = 0.0f;
-            ImGui::Text("Hello, world!");
-            ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
-            ImGui::ColorEdit3("clear color", (float*)&clear_col);
-            if (ImGui::Button("Test Window"))
-                show_test_window ^= 1;
-            if (ImGui::Button("Another Window"))
-                show_another_window ^= 1;
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate,
-                        ImGui::GetIO().Framerate);
+            const ImGuiViewport* viewport = ImGui::GetMainViewport();
+            ImGui::SetNextWindowPos(viewport->WorkPos);
+            ImGui::SetNextWindowSize(viewport->WorkSize);
+            ImGui::SetNextWindowViewport(viewport->ID);
 
-            ImGui::Text("Imgui render implementation time : %f", renderer_time);
+            window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+            window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+        }
+        else
+        {
+            dockspace_flags &= ~ImGuiDockNodeFlags_PassthruCentralNode;
         }
 
-        // 2. Show another simple window, this time using an explicit Begin/End pair
-        if (show_another_window)
-        {
-            ImGui::SetNextWindowSize(ImVec2(200, 100), ImGuiSetCond_FirstUseEver);
-            ImGui::Begin("Another Window", &show_another_window);
-            ImGui::Text("Hello");
-            ImGui::End();
-        }
+        // When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
+        // and handle the pass-thru hole, so we ask Begin() to not render a background.
+        // if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
+        //     window_flags |= ImGuiWindowFlags_NoBackground;
 
-        // 3. Show the ImGui test window. Most of the sample code is in ImGui::ShowTestWindow()
-        if (show_test_window)
-        {
-            ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiSetCond_FirstUseEver); // Normally user code doesn't need/want to
-                                                                                 // call it because positions are saved in
-                                                                                 // .ini file anyway. Here we just want to
-                                                                                 // make the demo initial state a bit more
-                                                                                 // friendly!
-            ImGui::ShowTestWindow(&show_test_window);
-        }
+        // Important: note that we proceed even if Begin() returns false (aka window is collapsed).
+        // This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
+        // all active windows docked into it will lose their parent and become undocked.
+        // We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
+        // any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
+  
+        ImGui::Begin("DockSpace Demo", nullptr, window_flags);
 
+        // Submit the DockSpace
+
+        if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
+        {
+            ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+            ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+        }
+        if (ImGui::BeginMenuBar())
+        {
+            if (ImGui::BeginMenu("Options"))
+            {
+                // Disabling fullscreen would allow the window to be moved to the front of other windows,
+                // which we can't undo at the moment without finer window depth/z control.
+                ImGui::MenuItem("Fullscreen", NULL, &opt_fullscreen);
+                ImGui::MenuItem("Padding", NULL, &opt_padding);
+                ImGui::Separator();
+
+                if (ImGui::MenuItem("Flag: NoSplit",                "", (dockspace_flags & ImGuiDockNodeFlags_NoSplit) != 0))                 { dockspace_flags ^= ImGuiDockNodeFlags_NoSplit; }
+                if (ImGui::MenuItem("Flag: NoResize",               "", (dockspace_flags & ImGuiDockNodeFlags_NoResize) != 0))                { dockspace_flags ^= ImGuiDockNodeFlags_NoResize; }
+                if (ImGui::MenuItem("Flag: NoDockingInCentralNode", "", (dockspace_flags & ImGuiDockNodeFlags_NoDockingInCentralNode) != 0))  { dockspace_flags ^= ImGuiDockNodeFlags_NoDockingInCentralNode; }
+                if (ImGui::MenuItem("Flag: AutoHideTabBar",         "", (dockspace_flags & ImGuiDockNodeFlags_AutoHideTabBar) != 0))          { dockspace_flags ^= ImGuiDockNodeFlags_AutoHideTabBar; }
+                if (ImGui::MenuItem("Flag: PassthruCentralNode",    "", (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode) != 0, opt_fullscreen)) { dockspace_flags ^= ImGuiDockNodeFlags_PassthruCentralNode; }
+                ImGui::Separator();
+                ImGui::EndMenu();
+            }
+            ImGui::EndMenuBar();
+           
+        }
+        ImGui::Begin("Test");
+        ImGui::Text("Test");
+        ImGui::End();
+        ImGui::End();
+        put::dev_ui::render();
         static pen::timer* timer = pen::timer_create();
         pen::timer_start(timer);
 
-        put::dev_ui::render();
-
         renderer_time = pen::timer_elapsed_ms(timer);
-
+        put::dev_ui::render(ImGui::GetDrawData());
+        
+        ImGui::EndFrame();
         // present
         pen::renderer_present();
         pen::renderer_consume_cmd_buffer();
@@ -256,5 +290,6 @@ namespace
         }
 
         pen_main_loop_continue();
+
     }
 } // namespace

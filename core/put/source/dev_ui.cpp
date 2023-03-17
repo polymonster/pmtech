@@ -329,8 +329,8 @@ namespace put
             io.KeyMap[ImGuiKey_X] = PK_X;
             io.KeyMap[ImGuiKey_Y] = PK_Y;
             io.KeyMap[ImGuiKey_Z] = PK_Z;
-
-            io.RenderDrawListsFn = render;
+            
+            // io.RenderDrawListFn = render;
 
             io.ImeWindowHandle = pen::window_get_primary_display_handle();
 
@@ -354,7 +354,7 @@ namespace put
         {
             ImGuiStyle& style = ImGui::GetStyle();
             style.Alpha = 1.0;
-            style.ChildWindowRounding = 3;
+            style.ChildRounding = 3;
             style.WindowRounding = 3;
             style.GrabRounding = 1;
             style.GrabMinSize = 20;
@@ -387,7 +387,7 @@ namespace put
             style.Colors[ImGuiCol_TitleBgActive] = foreground_dark;
 
             style.Colors[ImGuiCol_WindowBg] = window_bg;
-            style.Colors[ImGuiCol_ChildWindowBg] = zero;
+            style.Colors[ImGuiCol_ChildBg] = zero;
 
             style.Colors[ImGuiCol_Border] = foreground;
             style.Colors[ImGuiCol_BorderShadow] = zero;
@@ -406,7 +406,7 @@ namespace put
             style.Colors[ImGuiCol_SliderGrab] = foreground_light;
             style.Colors[ImGuiCol_SliderGrabActive] = foreground;
 
-            style.Colors[ImGuiCol_ComboBg] = foreground_dark;
+            style.Colors[ImGuiCol_DockingEmptyBg] = foreground_dark;
             style.Colors[ImGuiCol_CheckMark] = foreground_light;
 
             style.Colors[ImGuiCol_Button] = ImVec4(0.00f, 0.65f, 0.65f, 0.46f);
@@ -417,21 +417,21 @@ namespace put
             style.Colors[ImGuiCol_HeaderHovered] = foreground_dark_highlight;
             style.Colors[ImGuiCol_HeaderActive] = foreground;
 
-            style.Colors[ImGuiCol_Column] = foreground_dark;
-            style.Colors[ImGuiCol_ColumnHovered] = foreground_light;
-            style.Colors[ImGuiCol_ColumnActive] = foreground;
+            // style.Colors[ImGuiCol_Column] = foreground_dark;
+            // style.Colors[ImGuiCol_ColumnHovered] = foreground_light;
+            // style.Colors[ImGuiCol_ColumnActive] = foreground;
 
             style.Colors[ImGuiCol_TextSelectedBg] = foreground_dark_highlight;
 
-            style.Colors[ImGuiCol_CloseButton] = ImVec4(0.8f, 0.4f, 0.4f, 1.0f);
-            style.Colors[ImGuiCol_CloseButtonHovered] = ImVec4(0.9f, 0.45f, 0.45f, 1.0f);
-            style.Colors[ImGuiCol_CloseButtonActive] = ImVec4(0.9f, 0.45f, 0.45f, 1.0f);
+            // style.Colors[ImGuiCol_CloseButton] = ImVec4(0.8f, 0.4f, 0.4f, 1.0f);
+            // style.Colors[ImGuiCol_CloseButtonHovered] = ImVec4(0.9f, 0.45f, 0.45f, 1.0f);
+            // style.Colors[ImGuiCol_CloseButtonActive] = ImVec4(0.9f, 0.45f, 0.45f, 1.0f);
 
             style.Colors[ImGuiCol_PlotLines] = accent;
             style.Colors[ImGuiCol_PlotLinesHovered] = accent_light;
             style.Colors[ImGuiCol_PlotHistogram] = accent;
             style.Colors[ImGuiCol_PlotHistogramHovered] = accent_light;
-            style.Colors[ImGuiCol_ModalWindowDarkening] = ImVec4(0.04f, 0.10f, 0.09f, 0.51f);
+            // style.Colors[ImGuiCol_ModalWindowDarkening] = ImVec4(0.04f, 0.10f, 0.09f, 0.51f);
             return style;
         }
         
@@ -456,7 +456,6 @@ namespace put
             pen::renderer_set_raster_state(s_imgui_rs.raster_state);
             pen::renderer_set_blend_state(s_imgui_rs.blend_state);
             pen::renderer_set_depth_stencil_state(s_imgui_rs.depth_stencil_state);
-
             pmfx::set_technique(s_imgui_rs.imgui_shader, 0);
 
             int vtx_offset = 0;
@@ -556,7 +555,7 @@ namespace put
             // Hide OS mouse cursor if ImGui is drawing it
             if (io.MouseDrawCursor)
                 pen::input_show_cursor(false);
-
+            
             ImGui::NewFrame();
 
             put::dev_ui::update();
@@ -833,7 +832,7 @@ namespace put
                 ImGuiButtonFlags button_flags = 0;
                 if (selected_path == "")
                 {
-                    button_flags |= ImGuiButtonFlags_Disabled;
+                    button_flags |= ImGuiButtonFlags_None;
                 }
 
                 if (flags & e_file_browser_flags::save)
@@ -1198,7 +1197,7 @@ namespace put
                 ImGui::PopStyleVar();
                 ImGui::Separator();
 
-                ImGui::BeginChild("ScrollingRegion", ImVec2(0, -ImGui::GetItemsLineHeightWithSpacing()), false,
+                ImGui::BeginChild("ScrollingRegion", ImVec2(0, -ImGui::GetTextLineHeightWithSpacing()), false,
                                   ImGuiWindowFlags_HorizontalScrollbar);
                 if (ImGui::BeginPopupContextWindow())
                 {
@@ -1233,7 +1232,7 @@ namespace put
                     ImGui::LogFinish();
 
                 if (ScrollToBottom)
-                    ImGui::SetScrollHere();
+                    ImGui::SetScrollHereY();
 
                 ScrollToBottom = false;
                 ImGui::PopStyleVar();
@@ -1262,7 +1261,7 @@ namespace put
 
                 // Demonstrate keeping auto focus on the input box
                 if (ImGui::IsItemHovered() ||
-                    (ImGui::IsRootWindowOrAnyChildFocused() && !ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0)))
+                    (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows) && !ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0)))
                     ImGui::SetKeyboardFocusHere(-1); // Auto focus previous widget
 
                 ImGui::End();
@@ -1272,14 +1271,14 @@ namespace put
             {
             }
 
-            static int TextEditCallbackStub(ImGuiTextEditCallbackData* data) // In C++11 you are better off using lambdas for
+            static int TextEditCallbackStub(ImGuiInputTextCallbackData* data) // In C++11 you are better off using lambdas for
                                                                              // this sort of forwarding callbacks
             {
                 app_console* console = (app_console*)data->UserData;
                 return console->TextEditCallback(data);
             }
 
-            int TextEditCallback(ImGuiTextEditCallbackData* data)
+            int TextEditCallback(ImGuiInputTextCallbackData* data)
             {
                 // AddLog("cursor: %d, selection: %d-%d", data->CursorPos, data->SelectionStart, data->SelectionEnd);
                 switch (data->EventFlag)

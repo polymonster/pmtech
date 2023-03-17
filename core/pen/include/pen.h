@@ -46,8 +46,8 @@ namespace pen
 
     struct pen_creation_params
     {
-        volatile u32     window_width = 1280;
-        volatile u32     window_height = 720;
+        volatile f32     window_width = 1280.0f;
+        volatile f32     window_height = 720.0f;
         u32              window_sample_count = 1;
         const c8*        window_title = "pen_app";
         pen_create_flags flags = e_pen_create_flags::renderer;
