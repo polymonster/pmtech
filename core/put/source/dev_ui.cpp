@@ -329,8 +329,6 @@ namespace put
             io.KeyMap[ImGuiKey_X] = PK_X;
             io.KeyMap[ImGuiKey_Y] = PK_Y;
             io.KeyMap[ImGuiKey_Z] = PK_Z;
-            
-            // io.RenderDrawListFn = render;
 
             io.ImeWindowHandle = pen::window_get_primary_display_handle();
 
