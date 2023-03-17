@@ -64,8 +64,8 @@ namespace put
             };
         }
         typedef e_ui_shader::ui_shader_t ui_shader;
-
-        bool        init();
+        ImGuiStyle& default_pmtech_style();
+        bool        init(ImGuiStyle& style = default_pmtech_style());
         void        shutdown();
         void        render();
         void        update();
