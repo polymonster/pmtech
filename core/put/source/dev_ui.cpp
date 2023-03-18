@@ -415,21 +415,21 @@ namespace put
             style.Colors[ImGuiCol_HeaderHovered] = foreground_dark_highlight;
             style.Colors[ImGuiCol_HeaderActive] = foreground;
 
-            // style.Colors[ImGuiCol_Column] = foreground_dark;
-            // style.Colors[ImGuiCol_ColumnHovered] = foreground_light;
-            // style.Colors[ImGuiCol_ColumnActive] = foreground;
+            style.Colors[ImGuiCol_Separator] = foreground_dark;
+            style.Colors[ImGuiCol_SeparatorHovered] = foreground_light;
+            style.Colors[ImGuiCol_SeparatorActive] = foreground;
 
             style.Colors[ImGuiCol_TextSelectedBg] = foreground_dark_highlight;
 
-            // style.Colors[ImGuiCol_CloseButton] = ImVec4(0.8f, 0.4f, 0.4f, 1.0f);
-            // style.Colors[ImGuiCol_CloseButtonHovered] = ImVec4(0.9f, 0.45f, 0.45f, 1.0f);
-            // style.Colors[ImGuiCol_CloseButtonActive] = ImVec4(0.9f, 0.45f, 0.45f, 1.0f);
+            style.Colors[ImGuiCol_Button] = ImVec4(0.8f, 0.4f, 0.4f, 1.0f);
+            style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0.9f, 0.45f, 0.45f, 1.0f);
+            style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.9f, 0.45f, 0.45f, 1.0f);
 
             style.Colors[ImGuiCol_PlotLines] = accent;
             style.Colors[ImGuiCol_PlotLinesHovered] = accent_light;
             style.Colors[ImGuiCol_PlotHistogram] = accent;
             style.Colors[ImGuiCol_PlotHistogramHovered] = accent_light;
-            // style.Colors[ImGuiCol_ModalWindowDarkening] = ImVec4(0.04f, 0.10f, 0.09f, 0.51f);
+            style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.04f, 0.10f, 0.09f, 0.51f);
             return style;
         }
         
