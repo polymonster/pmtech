@@ -710,9 +710,12 @@ class playback_deck
             }
         }
 
-        ImGui::SameLine();
-        ImGui::Text("%s", file);
-
+        if (file)
+        {
+            ImGui::SameLine();
+            ImGui::Text("%s", file);
+        }
+        
         // update states
         pen_error err = put::audio_channel_get_state(channel_index, &channel_state);
 

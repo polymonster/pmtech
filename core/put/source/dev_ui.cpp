@@ -303,10 +303,20 @@ namespace put
         struct app_console;
         static app_console* sp_dev_console;
 
-        void render(ImDrawData* draw_data);
+        void create_context()
+        {
+            static bool s_created = false;
+            if (!s_created)
+            {
+                IMGUI_CHECKVERSION();
+                ImGui::CreateContext();
+            }
+        }
         
         bool init(ImGuiStyle& style)
         {
+            create_context();
+
             pen::memory_zero(&s_imgui_rs, sizeof(s_imgui_rs));
 
             ImGuiIO& io = ImGui::GetIO();
@@ -350,6 +360,8 @@ namespace put
 
         ImGuiStyle& default_pmtech_style()
         {
+            create_context();
+
             ImGuiStyle& style = ImGui::GetStyle();
             style.Alpha = 1.0;
             style.ChildRounding = 3;
@@ -407,7 +419,7 @@ namespace put
             style.Colors[ImGuiCol_DockingEmptyBg] = foreground_dark;
             style.Colors[ImGuiCol_CheckMark] = foreground_light;
 
-            style.Colors[ImGuiCol_Button] = ImVec4(0.00f, 0.65f, 0.65f, 0.46f);
+            style.Colors[ImGuiCol_Button] = accent;
             style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0.01f, 1.00f, 1.00f, 0.43f);
             style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.00f, 1.00f, 1.00f, 0.62f);
 
@@ -421,15 +433,12 @@ namespace put
 
             style.Colors[ImGuiCol_TextSelectedBg] = foreground_dark_highlight;
 
-            style.Colors[ImGuiCol_Button] = ImVec4(0.8f, 0.4f, 0.4f, 1.0f);
-            style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0.9f, 0.45f, 0.45f, 1.0f);
-            style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.9f, 0.45f, 0.45f, 1.0f);
-
             style.Colors[ImGuiCol_PlotLines] = accent;
             style.Colors[ImGuiCol_PlotLinesHovered] = accent_light;
             style.Colors[ImGuiCol_PlotHistogram] = accent;
             style.Colors[ImGuiCol_PlotHistogramHovered] = accent_light;
             style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.04f, 0.10f, 0.09f, 0.51f);
+
             return style;
         }
         
@@ -438,7 +447,7 @@ namespace put
             ImGui::Shutdown();
         }
 
-        void render(ImDrawData* draw_data)
+        void render_draw_data(ImDrawData* draw_data)
         {
             const ImGuiIO& io = ImGui::GetIO();
 
@@ -579,7 +588,12 @@ namespace put
         void render()
         {
             if (s_enable_rendering)
+            {
                 ImGui::Render();
+                put::dev_ui::render_draw_data(ImGui::GetDrawData());
+            }
+                
+            ImGui::EndFrame();
         }
 
         void load_program_preferences()
