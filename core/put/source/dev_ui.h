@@ -68,6 +68,7 @@ namespace put
         bool        init(ImGuiStyle& style = default_pmtech_style());
         void        shutdown();
         void        render();
+        void        render(ImDrawData *draw_data);
         void        update();
         void        new_frame();
         io_capture  want_capture();

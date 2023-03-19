@@ -956,7 +956,7 @@ void audio_player_update()
     }
 
     bool open = true;
-    ImGui::SetNextWindowSize(ImVec2(1000, 400), ImGuiSetCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(1000, 400), ImGuiCond_FirstUseEver);
     ImGui::Begin("Player", &open);
 
     ImGui::Columns(num_decks + 1, "decks");

@@ -34,7 +34,6 @@ namespace
 
     hash_id id_widgets[] = {PEN_HASH("slider"), PEN_HASH("input"), PEN_HASH("colour")};
     static_assert(PEN_ARRAY_SIZE(id_widgets) == e_constant_widget::COUNT, "mismatched array size");
-
     struct pmfx_shader
     {
         hash_id         id_filename = 0;
@@ -1067,7 +1066,7 @@ namespace put
                             tc[i].widget = e_constant_widget::slider;
                         }
                         ImGui::SameLine();
-                        rv |= ImGui::InputFloatN(tc[i].name.c_str(), f, tc[i].num_elements, 3, 0);
+                        rv |= ImGui::InputScalarN(tc[i].name.c_str(), ImGuiDataType_Float, &f, tc[i].num_elements, (void*)3, 0);
                         break;
                     case e_constant_widget::slider:
                         if (ImGui::Button(ICON_FA_PENCIL))
@@ -1075,8 +1074,8 @@ namespace put
                             tc[i].widget = e_constant_widget::input;
                         }
                         ImGui::SameLine();
-                        rv |= ImGui::SliderFloatN(tc[i].name.c_str(), f, tc[i].num_elements, tc[i].min, tc[i].max, "%.3f",
-                                                  1.0f);
+                        rv |= ImGui::SliderScalarN(tc[i].name.c_str(), ImGuiDataType_Float, &f, tc[i].num_elements, &tc[i].min, &tc[i].max, "%.3f",
+                                                  ImGuiSliderFlags_None);
                         break;
                     case e_constant_widget::colour:
 
