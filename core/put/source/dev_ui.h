@@ -64,6 +64,8 @@ namespace put
             };
         }
         typedef e_ui_shader::ui_shader_t ui_shader;
+        
+        void        create_context();
         ImGuiStyle& default_pmtech_style();
         bool        init(ImGuiStyle& style = default_pmtech_style());
         void        shutdown();
@@ -74,6 +76,7 @@ namespace put
         void        set_shader(ui_shader shader, u32 cbuffer);
         void        util_init();
         void        enable(bool enabled);
+        
     
         // main menu bar
         void        enable_main_menu_bar(bool enable);

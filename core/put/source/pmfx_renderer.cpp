@@ -3523,7 +3523,7 @@ namespace put
                         }
                     }
 
-                    ImGui::Combo("", &current_render_target, (const c8* const*)&s_render_target_names[0],
+                    ImGui::Combo("##rt", &current_render_target, (const c8* const*)&s_render_target_names[0],
                                  (s32)s_render_target_names.size(), 10);
 
                     static s32 display_ratio = 3;

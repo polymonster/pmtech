@@ -1026,7 +1026,7 @@ namespace put
                 ImGui::OpenPopupEx(cm_id, false);
             }
 
-            if (ImGui::BeginPopupEx(cm_id, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize))
+            if (ImGui::BeginPopupEx(cm_id, ImGuiWindowFlags_AlwaysAutoResize))
             {
                 if (sb_count(scene->selection_list) == 1)
                 {
