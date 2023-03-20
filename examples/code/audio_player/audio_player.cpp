@@ -994,4 +994,6 @@ void audio_player_update()
     ImGui::Columns(1);
 
     ImGui::End();
+
+    put::audio_consume_command_buffer();
 }
