@@ -10,6 +10,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
     }
     
     post_build_order: [
+        notorize
         pmbuild_config
         vscode
     ]
@@ -129,7 +130,6 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
             ]
         }
         
-        
         make: {
             toolchain: "xcodebuild"
             workspace: "pmtech_examples_osx.xcworkspace"
@@ -176,6 +176,13 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
                 "cd ../third_party && ../pmbuild bullet-mac"
                 "cd ../third_party && ../pmbuild make bullet-mac all -configuration Release -quiet"
                 "cd ../third_party && ../pmbuild make bullet-mac all -configuration Debug -quiet"
+            ]
+        }
+
+        notorize: {
+            type: shell
+            commands: [
+                "xattr -r -d com.apple.quarantine bin/osx/libfmod.dylib"
             ]
         }
     }
