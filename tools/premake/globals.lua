@@ -65,7 +65,14 @@ function setup_curl()
         links {
             "libcurl",
             "libssl",
-            "libcrypto"
+            "libcrypto",
+            -- win32 libs required for curl
+            "ws2_32",
+            "gdi32",
+            "advapi32",
+            "crypt32",
+            "user32"
+
         }
     else
         links {

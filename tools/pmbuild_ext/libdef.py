@@ -135,6 +135,7 @@ if __name__ == '__main__':
     symbols = dict()
 
     for lib in libs:
+        print(f"----------------------------------------------------{lib}")
         lib_symbols = extract_symbols(lib)
 
         for k,v in list(lib_symbols.items()):
