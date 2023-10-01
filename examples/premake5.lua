@@ -6,25 +6,25 @@ dofile "../tools/premake/app_template.lua"
 
 -- Solution
 solution ("pmtech_examples_" .. platform)
-    location ("build/" .. platform_dir ) 
+    location ("build/" .. platform_dir )
     configurations { "Debug", "Release" }
     startproject "empty_project"
     buildoptions { build_cmd }
     linkoptions { link_cmd }
-    
+
     -- to include shader_structs/
     includedirs
     {
         "."
     }
-    
--- Engine Project   
+
+-- Engine Project
 dofile "../core/pen/project.lua"
 
--- Toolkit Project  
+-- Toolkit Project
 dofile "../core/put/project.lua"
 
--- Example projects 
+-- Example projects
 -- ( project name, current script dir, )
 create_app_example( "empty_project", script_path() ) -- hide
 create_app_example( "clear", script_path() )
@@ -72,7 +72,7 @@ create_app_example( "stencil_shadows", script_path() )
 create_app_example( "compute_demo", script_path() ) -- hide
 create_app_example( "global_illumination", script_path() )
 create_app_example( "game", script_path() ) -- hide
-create_app_example( "curl", script_path() ) -- hide
+create_app_example( "curl_example", script_path() ) -- hide
 
 -- currently web audio is not implemented
 if platform ~= "web" then
