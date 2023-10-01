@@ -37,17 +37,51 @@ function script_path()
 end
 
 function windows_sdk_version()
-	if sdk_version ~= "" then
-		return sdk_version
-	end
-	return "10.0.16299.0"
+    if sdk_version ~= "" then
+        return sdk_version
+    end
+    return "10.0.16299.0"
 end
+
+function setup_curl()
+    -- includes
+    includedirs {
+        ("../../third_party/libcurl/include")
+    }
+
+    -- lib dirs
+    libdirs {
+        ("../../third_party/libcurl/lib/" .. platform)
+    }
+
+    -- links
+    if platform == "ios" then
+        links {
+            "curl",
+            "Security.framework",
+            "z"
+        }
+    elseif platform == "win32" then
+        links {
+            "libcurl",
+            "libssl",
+            "libcrypto"
+        }
+    else
+        links {
+            "curl",
+            "ssl",
+            "crypto" -- crypto must follow 'ssl' for single pass linkers
+        }
+    end
+end
+
 
 function setup_from_action()
     if _ACTION == "gmake" then
-    	if platform_dir == "web" then
-    		build_cmd = "-std=c++11 -s WASM=1 -s INITIAL_MEMORY=1024MB -s DETERMINISTIC=0 -s PTHREAD_POOL_SIZE=8"
-    		link_cmd = "-s --shared-memory -s WASM=1 -s FULL_ES3=1 -s MIN_WEBGL_VERSION=2 -s MAX_WEBGL_VERSION=2 -s PTHREAD_POOL_SIZE=8 -s INITIAL_MEMORY=1024MB --shell-file ../../../core/template/web/shell.html"    		
+        if platform_dir == "web" then
+            build_cmd = "-std=c++11 -s WASM=1 -s INITIAL_MEMORY=1024MB -s DETERMINISTIC=0 -s PTHREAD_POOL_SIZE=8"
+            link_cmd = "-s --shared-memory -s WASM=1 -s FULL_ES3=1 -s MIN_WEBGL_VERSION=2 -s MAX_WEBGL_VERSION=2 -s PTHREAD_POOL_SIZE=8 -s INITIAL_MEMORY=1024MB --shell-file ../../../core/template/web/shell.html"            
         elseif platform_dir == "linux" then
             build_cmd = "-std=c++11 -mfma -mavx -mavx2 -msse2"
         else -- macos
@@ -78,26 +112,29 @@ function setup_from_action()
     end
     
     platform = platform_dir
-	
+    
     if platform == "win32" then
         shared_libs_dir = ("../../" .. pmtech_dir .. '/third_party/shared_libs/' .. platform_dir)
     elseif platform == "osx"  then
         shared_libs_dir = ( '"' .. "../../" .. pmtech_dir .. '/third_party/shared_libs/' .. platform_dir .. '/"' )
     end
-	
-	print("platform: " .. platform)
-	print("renderer: " .. renderer_dir)
-	print("pmtech dir: " .. pmtech_dir)
-	print("sdk version: " .. windows_sdk_version())
+    
+    -- link curl for url fetching
+    setup_curl()
+    
+    print("platform: " .. platform)
+    print("renderer: " .. renderer_dir)
+    print("pmtech dir: " .. pmtech_dir)
+    print("sdk version: " .. windows_sdk_version())
     
 end
 
 -- setup product
 function setup_product_ios(name)
-	bundle_name = ("com.pmtech") 
-	xcodebuildsettings {
-		["PRODUCT_BUNDLE_IDENTIFIER"] = bundle_name
-	}
+    bundle_name = ("com.pmtech") 
+    xcodebuildsettings {
+        ["PRODUCT_BUNDLE_IDENTIFIER"] = bundle_name
+    }
 end
 
 function setup_product(name)
@@ -107,30 +144,30 @@ end
 
 -- setup env - inserts architecture, platform and sdk settings
 function setup_env_ios()
-	xcodebuildsettings {
-		["ARCHS"] = "$(ARCHS_STANDARD)",
-		["SDKROOT"] = "iphoneos"
-	}
-	if _OPTIONS["teamid"] then
-		xcodebuildsettings {
-			["DEVELOPMENT_TEAM"] = _OPTIONS["teamid"]
-		}
-	end
+    xcodebuildsettings {
+        ["ARCHS"] = "$(ARCHS_STANDARD)",
+        ["SDKROOT"] = "iphoneos"
+    }
+    if _OPTIONS["teamid"] then
+        xcodebuildsettings {
+            ["DEVELOPMENT_TEAM"] = _OPTIONS["teamid"]
+        }
+    end
 end
 
 function setup_env_osx()
-	xcodebuildsettings {
-		["MACOSX_DEPLOYMENT_TARGET"] = "10.13"
-	}
-	architecture "x64"
+    xcodebuildsettings {
+        ["MACOSX_DEPLOYMENT_TARGET"] = "10.13"
+    }
+    architecture "x64"
 end
 
 function setup_env_win32()
-	architecture "x64"
+    architecture "x64"
 end
 
 function setup_env_linux()
-	architecture "x64"
+    architecture "x64"
 end
 
 function setup_env()
@@ -143,11 +180,11 @@ end
 
 -- setup platform defines - inserts platform defines for porting macros
 function setup_platform_defines()
-	defines
-	{
-		("PEN_PLATFORM_" .. string.upper(platform)),
+    defines
+    {
+        ("PEN_PLATFORM_" .. string.upper(platform)),
         ("PEN_RENDERER_" .. string.upper(renderer_dir))
-	}
+    }
 end
 
 -- entry

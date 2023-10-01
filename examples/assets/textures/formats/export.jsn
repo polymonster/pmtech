@@ -1,45 +1,65 @@
 {
-    texturec:
-    {
-        "-t": "RGBA8",
-        "--mips": true
+    texturec: {
+        -t: RGBA8
+        --mips: true
         
-        rules:
-        {
-            texfmt_rgb8:
-            {
+        rules: {
+            bc1: {
                 files: [
-                    "texfmt_rgb8.png",
+                    "**/texfmt_bc1.png"
                 ]
-                
-                "-t": "RGBA8"
+                -t: BC1
+            }
+
+            bc1n: {
+                files: [
+                    "**/texfmt_bc1n.png"
+                ]
+                -t: BC1
+                --normal: true
             }
             
-            bc1:
-            {
+            bc2: {
                 files: [
-                    "texfmt_bc1.png"
+                    "**/texfmt_bc2.png"
                 ]
-                
-                "-t": "BC1"
+                -t: BC2
             }
             
-            bc2:
-            {
+            bc3: {
                 files: [
-                    "texfmt_bc2.png"
+                    "**/texfmt_bc3.png"
                 ]
-                
-                "-t": "BC2"
+                -t: BC3
+            }
+
+            bc3n: {
+                files: [
+                    "**/texfmt_bc3n.png"
+                ]
+                -t: BC3
+                --normal: true
+            }
+
+            bc4: {
+                files: [
+                    "**/texfmt_bc4.png"
+                ]
+                -t: BC4
             }
             
-            bc3:
-            {
+            bc5: {
                 files: [
-                    "texfmt_bc3.png"
+                    "**/texfmt_bc5.png"
                 ]
-                
-                "-t": "BC3"
+                -t: BC5
+            }
+
+            lumi: {
+                files: [
+                    "**/texfmt_lumi.png"
+                ]
+                -t: A8
             }
         }
     }
