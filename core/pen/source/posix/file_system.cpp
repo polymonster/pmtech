@@ -291,6 +291,7 @@ namespace pen
     pen_error filesystem_getmtime(const c8* filename, u32& mtime_out)
     {
         struct stat stat_res;
+        memset(&stat_res, 0x0, sizeof(stat_res));
 
         stat(filename, &stat_res);
 
