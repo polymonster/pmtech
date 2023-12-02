@@ -822,6 +822,37 @@ namespace pen
     {
         return s_ctx.pen_user_info;
     }
+
+    Str os_get_persistent_data_directory()
+    {
+        @autoreleasepool {
+            NSString* dir = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0];
+            return dir.UTF8String;
+        }
+    }
+
+    void os_create_directory(const Str& dir)
+    {
+        @autoreleasepool {
+            NSFileManager* manager = [NSFileManager defaultManager];
+            NSString* path = [NSString stringWithUTF8String:dir.c_str()];
+            NSError* err = nil;
+            [manager createDirectoryAtPath:path withIntermediateDirectories:YES attributes:nil error:&err];
+        }
+    }
+
+    void os_open_url(const Str& url)
+    {
+        @autoreleasepool {
+            NSString* path = [NSString stringWithUTF8String:url.c_str()];
+            [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:path]];
+        }
+    }
+
+    void os_ignore_slient()
+    {
+        // stub
+    }
 }
 
 //

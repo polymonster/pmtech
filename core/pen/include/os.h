@@ -41,6 +41,11 @@ namespace pen
     void             os_show_cursor(bool show);
     const Str        os_path_for_resource(const c8* filename);
     const user_info& os_get_user_info();
+    Str              os_get_persistent_data_directory();
+    void             os_create_directory(const Str& dir);
+    void             os_open_url(const Str& url);
+    void             os_ignore_slient();
+    f32              os_get_status_bar_portrait_height();
 
     // music
     struct music_item

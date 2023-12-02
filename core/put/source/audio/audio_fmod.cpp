@@ -9,6 +9,7 @@
 #include "memory.h"
 #include "os.h"
 #include "slot_resource.h"
+#include "timer.h"
 
 #include "fmod.hpp"
 
@@ -259,8 +260,14 @@ namespace put
 
         _audio_resources[resource_slot].assigned_flag |= 0xff;
         _audio_resources[resource_slot].type = AUDIO_RESOURCE_SOUND;
+        
+        Str resovled_name = filename;
+        if(filename[0] != '/')
+        {
+            resovled_name = pen::os_path_for_resource(filename);
+        }
 
-        FMOD_RESULT result = _sound_system->createSound(pen::os_path_for_resource(filename).c_str(), FMOD_DEFAULT, NULL,
+        FMOD_RESULT result = _sound_system->createSound(resovled_name.c_str(), FMOD_DEFAULT, NULL,
                                                         (FMOD::Sound**)&_audio_resources[resource_slot].resource);
 
         PEN_ASSERT(result == FMOD_OK);

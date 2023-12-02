@@ -151,7 +151,6 @@ namespace put
         if (!_shutdown.load())
         {
             pen::semaphore_post(_audio_job_thread_info->p_sem_consume, 1);
-            pen::semaphore_wait(_audio_job_thread_info->p_sem_continue);
         }
     }
 

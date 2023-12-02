@@ -1,10 +1,10 @@
 --add extension options
-newoption 
+newoption
 {
    trigger     = "renderer",
    value       = "API",
    description = "Choose a renderer",
-   allowed = 
+   allowed =
    {
       { "opengl", "OpenGL (macOS, linux, Android)" },
       { "dx11",  "DirectX 11 (Windows only)" },
@@ -13,33 +13,33 @@ newoption
    }
 }
 
-newoption 
+newoption
 {
    trigger     = "sdk_version",
    value       = "version",
    description = "Specify operating system SDK",
 }
 
-newoption 
+newoption
 {
    trigger     = "platform_dir",
    value       = "dir",
    description = "specify platform specifc src folder",
 }
 
-newoption 
+newoption
 {
    trigger     = "toolset",
    value       = "value",
    description = "specify toolset (clang, gcc)",
 }
 
-newoption 
+newoption
 {
    trigger     = "xcode_target",
    value       = "TARGET",
    description = "Choose an xcode build target",
-   allowed = 
+   allowed =
    {
       { "osx", "OSX" },
       { "ios",  "iOS" },
@@ -49,13 +49,20 @@ newoption
 newoption
 {
 	trigger     = "teamid",
-	value	    = "id",
+	value	      = "id",
 	description = "development team id for apple developers"
 }
 
-newoption 
+newoption
 {
    trigger     = "pmtech_dir",
    value       = "dir",
    description = "specify location of pmtech in relation to project"
+}
+
+newoption
+{
+   trigger     = "plist",
+   value       = "filepath",
+   description = "specify filepath to plist"
 }

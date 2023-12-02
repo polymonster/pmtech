@@ -384,4 +384,45 @@ namespace pen
     {
         pen::memory_free(item.pcm_data);
     }
+
+    Str os_get_persistent_data_directory()
+    {
+        @autoreleasepool {
+            NSString* dir = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0];
+            return dir.UTF8String;
+        }
+    }
+
+    void os_create_directory(const Str& dir)
+    {
+        @autoreleasepool {
+            NSFileManager* manager = [NSFileManager defaultManager];
+            NSString* path = [NSString stringWithUTF8String:dir.c_str()];
+            NSError* err = nil;
+            [manager createDirectoryAtPath:path withIntermediateDirectories:YES attributes:nil error:&err];
+        }
+    }
+
+    void os_open_url(const Str& url)
+    {
+        @autoreleasepool {
+            NSString* path = [NSString stringWithUTF8String:url.c_str()];
+            [[UIApplication sharedApplication] openURL:[NSURL URLWithString:path]];
+        }
+    }
+
+    void os_ignore_slient()
+    {
+        @autoreleasepool {
+            [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:nil];
+            [[AVAudioSession sharedInstance] setActive:YES error:nil];
+        }
+    }
+
+    f32 os_get_status_bar_portrait_height()
+    {
+        CGFloat h = [[[UIApplication sharedApplication] windows].firstObject windowScene].statusBarManager.statusBarFrame.size.height;
+        CGFloat s = [[UIScreen mainScreen] scale];
+        return (f32)h*s;
+    }
 }
