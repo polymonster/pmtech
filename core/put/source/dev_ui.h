@@ -14,6 +14,13 @@
 
 #define IMG(I) (void*)(intptr_t) I
 
+#if PEN_PLATFORM_IOS
+#define DEV_UI_SCALE 3
+#else
+#define DEV_UI_SCALE 1
+#endif
+
+
 namespace put
 {
     namespace dev_ui
@@ -67,7 +74,7 @@ namespace put
         
         void        create_context();
         ImGuiStyle& default_pmtech_style();
-        bool        init(ImGuiStyle& style = default_pmtech_style());
+        bool        init(ImGuiStyle& style = default_pmtech_style(), f32 font_pixel_size = 14.0f * DEV_UI_SCALE);
         void        shutdown();
         void        render();
         void        update();

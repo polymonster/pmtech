@@ -853,6 +853,11 @@ namespace pen
     {
         // stub
     }
+
+    f32 os_get_status_bar_portrait_height()
+    {
+        return 0.0f;
+    }
 }
 
 //

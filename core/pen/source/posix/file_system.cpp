@@ -222,7 +222,6 @@ namespace pen
 
         if (num_items == 0)
         {
-
             return PEN_ERR_FILE_NOT_FOUND;
         }
 
@@ -298,6 +297,14 @@ namespace pen
         mtime_out = get_mtime(stat_res);
 
         return PEN_ERR_OK;
+    }
+
+    size_t filesystem_getsize(const c8* filename)
+    {
+        struct stat stat_res;
+        memset(&stat_res, 0x0, sizeof(stat_res));
+        stat(filename, &stat_res);
+        return stat_res.st_size;
     }
 
     const c8* filesystem_get_user_directory()

@@ -21,12 +21,6 @@
 
 #include <fstream>
 
-#if PEN_PLATFORM_IOS
-#define DEV_UI_SCALE 3
-#else
-#define DEV_UI_SCALE 1
-#endif
-
 using namespace pen;
 using namespace put;
 
@@ -63,17 +57,17 @@ namespace
     bool           s_initialised = false;
     bool           s_enable_main_menu_bar = true;
 
-    void create_texture_atlas()
+    void create_texture_atlas(float pixel_size)
     {
         ImGuiIO&  io = ImGui::GetIO();
         const Str cousine_reg = pen::os_path_for_resource("data/fonts/cousine-regular.ttf");
-        io.Fonts->AddFontFromFileTTF(cousine_reg.c_str(), 14 * DEV_UI_SCALE);
+        io.Fonts->AddFontFromFileTTF(cousine_reg.c_str(), pixel_size);
 
         ImFontConfig config;
         config.MergeMode = true;
         static const ImWchar icon_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
         const Str            font_awesome = pen::os_path_for_resource("data/fonts/fontawesome-webfont.ttf");
-        io.Fonts->AddFontFromFileTTF(font_awesome.c_str(), 14 * DEV_UI_SCALE, &config, icon_ranges);
+        io.Fonts->AddFontFromFileTTF(font_awesome.c_str(), pixel_size, &config, icon_ranges);
 
         // Build texture atlas
         unsigned char* pixels;
@@ -313,7 +307,7 @@ namespace put
             }
         }
         
-        bool init(ImGuiStyle& style)
+        bool init(ImGuiStyle& style, float font_pixel_size)
         {
             create_context();
 
@@ -346,7 +340,7 @@ namespace put
             s_imgui_rs.imgui_shader = pmfx::load_shader("imgui");
             s_imgui_rs.imgui_ex_shader = pmfx::load_shader("imgui_ex");
 
-            create_texture_atlas();
+            create_texture_atlas(font_pixel_size);
 
             create_render_states();
 
