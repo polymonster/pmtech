@@ -42,6 +42,7 @@ namespace pen
     const Str        os_path_for_resource(const c8* filename);
     const user_info& os_get_user_info();
     Str              os_get_persistent_data_directory();
+    Str              os_get_cache_data_directory();
     void             os_create_directory(const Str& dir);
     void             os_open_url(const Str& url);
     void             os_ignore_slient();

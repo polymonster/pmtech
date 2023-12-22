@@ -393,6 +393,14 @@ namespace pen
         }
     }
 
+    Str os_get_cache_data_directory()
+    {
+        @autoreleasepool {
+            NSString* dir = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) objectAtIndex:0];
+            return dir.UTF8String;
+        }
+    }
+
     void os_create_directory(const Str& dir)
     {
         @autoreleasepool {
