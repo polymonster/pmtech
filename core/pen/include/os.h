@@ -47,6 +47,7 @@ namespace pen
     void             os_open_url(const Str& url);
     void             os_ignore_slient();
     f32              os_get_status_bar_portrait_height();
+    void             os_haptic_selection_feedback();
 
     // music
     struct music_item

@@ -433,4 +433,14 @@ namespace pen
         CGFloat s = [[UIScreen mainScreen] scale];
         return (f32)h*s;
     }
+
+    void os_haptic_selection_feedback()
+    {
+        @autoreleasepool {
+            auto generator = [[UISelectionFeedbackGenerator alloc] init];
+            [generator prepare];
+            [generator selectionChanged];
+            [generator release];
+        }
+    }
 }
