@@ -29,6 +29,7 @@
 #import <AVFoundation/AVAudioFile.h>
 #import <AVFoundation/AVAudioSession.h>
 #import <MediaPlayer/MPMediaQuery.h>
+#import <MediaPlayer/MPNowPlayingInfoCenter.h>
 
 // the last 2 global externs \o/
 pen::user_info              pen_user_info;
@@ -427,6 +428,22 @@ namespace pen
         }
     }
 
+    void os_enable_background_audio()
+    {
+        AVAudioSession *session = [AVAudioSession sharedInstance];
+        double rate = 24000.0; // This should match System::setSoftwareFormat 'samplerate' which defaults to 24000
+        s32 blockSize = 512; // This should match System::setDSPBufferSize 'bufferlength' which defaults to 512
+
+        BOOL success = [session setPreferredSampleRate:rate error:nil];
+        PEN_ASSERT(success);
+
+        success = [session setPreferredIOBufferDuration:blockSize / rate error:nil];
+        PEN_ASSERT(success);
+
+        success = [session setActive:TRUE error:nil];
+        PEN_ASSERT(success);
+    }
+
     f32 os_get_status_bar_portrait_height()
     {
         CGFloat h = [[[UIApplication sharedApplication] windows].firstObject windowScene].statusBarManager.statusBarFrame.size.height;
@@ -441,6 +458,28 @@ namespace pen
             [generator prepare];
             [generator selectionChanged];
             [generator release];
+        }
+    }
+
+    void music_enable_remote_control()
+    {
+        [[UIApplication sharedApplication] beginReceivingRemoteControlEvents];
+    }
+
+    void music_set_now_playing(const Str& artist, const Str& album, const Str& track)
+    {
+        @autoreleasepool {
+            NSString* nsartist = [NSString stringWithUTF8String:artist.c_str()];
+            NSString* nsalbum = [NSString stringWithUTF8String:album.c_str()];
+            NSString* nstrack = [NSString stringWithUTF8String:track.c_str()];
+            
+            NSMutableDictionary* info = [[NSMutableDictionary alloc] init];
+            [info setObject:nstrack forKey:MPMediaItemPropertyTitle];
+            [info setObject:nsalbum forKey:MPMediaItemPropertyAlbumTitle];
+            [info setObject:nsartist forKey:MPMediaItemPropertyArtist];
+            
+            [[MPNowPlayingInfoCenter defaultCenter] setNowPlayingInfo:info];
+            [info release];
         }
     }
 }

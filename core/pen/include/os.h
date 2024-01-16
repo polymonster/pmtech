@@ -46,6 +46,7 @@ namespace pen
     void             os_create_directory(const Str& dir);
     void             os_open_url(const Str& url);
     void             os_ignore_slient();
+    void             os_enable_background_audio();
     f32              os_get_status_bar_portrait_height();
     void             os_haptic_selection_feedback();
 
@@ -70,5 +71,7 @@ namespace pen
     const music_item* music_get_items(); // returns stretchy buffer use sb_count for num items
     music_file        music_open_file(const music_item& item);
     void              music_close_file(const music_file& file);
+    void              music_enable_remote_control();
+    void              music_set_now_playing(const Str& artist, const Str& album, const Str& track);
 
 } // namespace pen
