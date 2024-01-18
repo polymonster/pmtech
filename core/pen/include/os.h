@@ -73,5 +73,6 @@ namespace pen
     void              music_close_file(const music_file& file);
     void              music_enable_remote_control();
     void              music_set_now_playing(const Str& artist, const Str& album, const Str& track);
+    void              music_set_now_playing_artwork(void* data, u32 w, u32 h, u32 bpp, u32 row_pitch);
 
 } // namespace pen

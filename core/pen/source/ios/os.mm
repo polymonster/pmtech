@@ -482,4 +482,32 @@ namespace pen
             [info release];
         }
     }
+
+    void music_set_now_playing_artwork(void* data, u32 w, u32 h, u32 bpp, u32 row_pitch)
+    {
+        @autoreleasepool {
+            CGColorSpaceRef space = CGColorSpaceCreateDeviceRGB();
+            auto bmp = CGBitmapContextCreate(
+                data, (size_t)w, (size_t)h, (size_t)bpp, (size_t)row_pitch, space, kCGImageAlphaPremultipliedLast | kCGBitmapByteOrderDefault);
+            
+            CFRelease(space);
+            
+            CGImageRef cgimg = CGBitmapContextCreateImage(bmp);
+            CGContextRelease(bmp);
+            
+            UIImage* uiimg = [UIImage imageWithCGImage:cgimg];
+            CGImageRelease(cgimg);
+            
+            MPMediaItemArtwork* artwork = [[MPMediaItemArtwork alloc] initWithImage: uiimg];
+            NSDictionary* info = [[MPNowPlayingInfoCenter defaultCenter] nowPlayingInfo];
+            
+            NSMutableDictionary* mut_info = [[NSMutableDictionary alloc] init];
+            [mut_info setObject:info[MPMediaItemPropertyTitle] forKey:MPMediaItemPropertyTitle];
+            [mut_info setObject:info[MPMediaItemPropertyAlbumTitle] forKey:MPMediaItemPropertyAlbumTitle];
+            [mut_info setObject:info[MPMediaItemPropertyArtist] forKey:MPMediaItemPropertyArtist];
+            [mut_info setObject:artwork forKey:MPMediaItemPropertyArtwork];
+            
+            [[MPNowPlayingInfoCenter defaultCenter] setNowPlayingInfo:mut_info];
+        }
+    }
 }
