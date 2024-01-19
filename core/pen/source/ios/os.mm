@@ -412,6 +412,16 @@ namespace pen
         }
     }
 
+    bool os_delete_directory(const Str& filename)
+    {
+        bool ret = false;
+        @autoreleasepool {
+            NSFileManager* manager = [NSFileManager defaultManager];
+            ret = [manager removeItemAtPath:[NSString stringWithUTF8String:filename.c_str()] error:nil];
+        }
+        return ret;
+    }
+
     void os_open_url(const Str& url)
     {
         @autoreleasepool {
@@ -509,5 +519,9 @@ namespace pen
             
             [[MPNowPlayingInfoCenter defaultCenter] setNowPlayingInfo:mut_info];
         }
+    }
+
+    void music_set_now_playing_position() {
+        
     }
 }

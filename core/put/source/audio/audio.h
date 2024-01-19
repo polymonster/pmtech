@@ -53,7 +53,8 @@ namespace put
 
     struct audio_sound_file_info
     {
-        u32 length_ms;
+        u32 error = 0;
+        u32 length_ms = 0;
     };
 
     struct audio_channel_state

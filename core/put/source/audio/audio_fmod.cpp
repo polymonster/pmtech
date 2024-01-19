@@ -31,12 +31,10 @@ namespace
 
     struct audio_resource_allocation
     {
-        void* resource;
-        u32   num_dsp = 0;
-
+        void*               resource;
+        u32                 num_dsp = 0;
         audio_resource_type type;
-
-        std::atomic<u8> assigned_flag;
+        std::atomic<u8>     assigned_flag;
     };
 
     struct resource_state
@@ -270,13 +268,14 @@ namespace put
         FMOD_RESULT result = _sound_system->createSound(resovled_name.c_str(), FMOD_DEFAULT, NULL,
                                                         (FMOD::Sound**)&_audio_resources[resource_slot].resource);
 
-        PEN_ASSERT(result == FMOD_OK);
-
         // populate sound info
-        FMOD::Sound* new_sound = (FMOD::Sound*)_audio_resources[resource_slot].resource;
-
-        new_sound->getLength(&_sound_file_info[resource_slot].length_ms, FMOD_TIMEUNIT_MS);
-
+        _sound_file_info[resource_slot].error = result;
+        if(result == FMOD_OK)
+        {
+            FMOD::Sound* new_sound = (FMOD::Sound*)_audio_resources[resource_slot].resource;
+            FMOD_RESULT ms_result = new_sound->getLength(&_sound_file_info[resource_slot].length_ms, FMOD_TIMEUNIT_MS);
+            PEN_LOG("FMOD TIMEMS %i", ms_result);
+        }
         _sound_file_info_ready[resource_slot] = true;
 
         return resource_slot;
@@ -301,11 +300,15 @@ namespace put
 
         FMOD_RESULT result = _sound_system->createSound((const char*)music.pcm_data, FMOD_OPENRAW | FMOD_OPENMEMORY_POINT,
                                                         &exinfo, (FMOD::Sound**)&_audio_resources[resource_slot].resource);
-        PEN_ASSERT(result == FMOD_OK);
-
+        
         // populate sound info
-        FMOD::Sound* new_sound = (FMOD::Sound*)_audio_resources[resource_slot].resource;
-        new_sound->getLength(&_sound_file_info[resource_slot].length_ms, FMOD_TIMEUNIT_MS);
+        _sound_file_info[resource_slot].error = result;
+        if(result == FMOD_OK)
+        {
+            FMOD::Sound* new_sound = (FMOD::Sound*)_audio_resources[resource_slot].resource;
+            FMOD_RESULT ms_result = new_sound->getLength(&_sound_file_info[resource_slot].length_ms, FMOD_TIMEUNIT_MS);
+            PEN_LOG("FMOD TIMEMS %i", ms_result);
+        }
         _sound_file_info_ready[resource_slot] = true;
 
         return resource_slot;
@@ -320,10 +323,22 @@ namespace put
         _audio_resources[resource_slot].assigned_flag |= 0xff;
         _audio_resources[resource_slot].type = AUDIO_RESOURCE_SOUND;
 
-        FMOD_RESULT result = _sound_system->createStream(filename, FMOD_LOOP_NORMAL | FMOD_2D, 0,
-                                                         (FMOD::Sound**)&_audio_resources[resource_slot].resource);
-
-        PEN_ASSERT(result == FMOD_OK);
+        FMOD_RESULT result = _sound_system->createStream(
+            filename, 
+            FMOD_LOOP_OFF | FMOD_2D | FMOD_IGNORETAGS | FMOD_MPEGSEARCH, 
+            0,
+            (FMOD::Sound**)&_audio_resources[resource_slot].resource
+        );
+        
+        // populate sound info
+        _sound_file_info[resource_slot].error = result;
+        if(result == FMOD_OK)
+        {
+            FMOD::Sound* new_sound = (FMOD::Sound*)_audio_resources[resource_slot].resource;
+            FMOD_RESULT ms_result = new_sound->getLength(&_sound_file_info[resource_slot].length_ms, FMOD_TIMEUNIT_MS);
+            PEN_LOG("FMOD TIMEMS %i", ms_result);
+        }
+        _sound_file_info_ready[resource_slot] = true;
 
         return resource_slot;
     }
@@ -359,8 +374,6 @@ namespace put
 
         result = _sound_system->playSound((FMOD::Sound*)_audio_resources[sound_index].resource, 0, false,
                                           (FMOD::Channel**)&_audio_resources[resource_slot].resource);
-
-        PEN_ASSERT(result == FMOD_OK);
 
         return resource_slot;
     }

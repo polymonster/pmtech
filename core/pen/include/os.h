@@ -44,6 +44,7 @@ namespace pen
     Str              os_get_persistent_data_directory();
     Str              os_get_cache_data_directory();
     void             os_create_directory(const Str& dir);
+    bool             os_delete_directory(const Str& filename);
     void             os_open_url(const Str& url);
     void             os_ignore_slient();
     void             os_enable_background_audio();
@@ -74,5 +75,6 @@ namespace pen
     void              music_enable_remote_control();
     void              music_set_now_playing(const Str& artist, const Str& album, const Str& track);
     void              music_set_now_playing_artwork(void* data, u32 w, u32 h, u32 bpp, u32 row_pitch);
+    void              music_set_now_playing_position();
 
 } // namespace pen
