@@ -274,7 +274,6 @@ namespace put
         {
             FMOD::Sound* new_sound = (FMOD::Sound*)_audio_resources[resource_slot].resource;
             FMOD_RESULT ms_result = new_sound->getLength(&_sound_file_info[resource_slot].length_ms, FMOD_TIMEUNIT_MS);
-            PEN_LOG("FMOD TIMEMS %i", ms_result);
         }
         _sound_file_info_ready[resource_slot] = true;
 
@@ -307,7 +306,6 @@ namespace put
         {
             FMOD::Sound* new_sound = (FMOD::Sound*)_audio_resources[resource_slot].resource;
             FMOD_RESULT ms_result = new_sound->getLength(&_sound_file_info[resource_slot].length_ms, FMOD_TIMEUNIT_MS);
-            PEN_LOG("FMOD TIMEMS %i", ms_result);
         }
         _sound_file_info_ready[resource_slot] = true;
 
@@ -336,7 +334,6 @@ namespace put
         {
             FMOD::Sound* new_sound = (FMOD::Sound*)_audio_resources[resource_slot].resource;
             FMOD_RESULT ms_result = new_sound->getLength(&_sound_file_info[resource_slot].length_ms, FMOD_TIMEUNIT_MS);
-            PEN_LOG("FMOD TIMEMS %i", ms_result);
         }
         _sound_file_info_ready[resource_slot] = true;
 
@@ -483,6 +480,7 @@ namespace put
 
         result = p_chan->setChannelGroup(p_group);
 
+        // TODO:
         PEN_ASSERT(result == FMOD_OK);
     }
 

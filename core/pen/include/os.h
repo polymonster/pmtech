@@ -50,6 +50,8 @@ namespace pen
     void             os_enable_background_audio();
     f32              os_get_status_bar_portrait_height();
     void             os_haptic_selection_feedback();
+    void             os_init_on_screen_keyboard();
+    void             os_show_on_screen_keyboard(bool show);
 
     // music
     struct music_item
@@ -75,6 +77,6 @@ namespace pen
     void              music_enable_remote_control();
     void              music_set_now_playing(const Str& artist, const Str& album, const Str& track);
     void              music_set_now_playing_artwork(void* data, u32 w, u32 h, u32 bpp, u32 row_pitch);
-    void              music_set_now_playing_position();
+    void              music_set_now_playing_time_info(u32 position_ms, u32 duration_ms);
 
 } // namespace pen

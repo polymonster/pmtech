@@ -30,6 +30,8 @@
 #import <AVFoundation/AVAudioSession.h>
 #import <MediaPlayer/MPMediaQuery.h>
 #import <MediaPlayer/MPNowPlayingInfoCenter.h>
+#import <MediaPlayer/MPRemoteCommandCenter.h>
+#import <MediaPlayer/MPRemoteCommand.h>
 
 // the last 2 global externs \o/
 pen::user_info              pen_user_info;
@@ -45,22 +47,39 @@ pen::window_creation_params pen_window;
 - (BOOL)prefersHomeIndicatorAutoHidden;
 @end
 
+@interface pen_text_field_delegate : NSObject<UITextFieldDelegate>
+- (BOOL)textField:(UITextField*)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString*)string;
+@end
+
+@interface pen_text_field : UITextField
+- (void)deleteBackward;
+@end
+
 @interface                                        pen_app_delegate : UIResponder <UIApplicationDelegate>
 @property(strong, nonatomic) UIWindow*            window;
 @property(strong, nonatomic) MTKView*             mtk_view;
 @property(strong, nonatomic) pen_mtk_renderer*    mtk_renderer;
 @property(strong, nonatomic) pen_view_controller* view_controller;
+
+// remote commands
+-(MPRemoteCommandHandlerStatus)play;
+-(MPRemoteCommandHandlerStatus)pause;
+-(MPRemoteCommandHandlerStatus)prev;
+-(MPRemoteCommandHandlerStatus)next;
 @end
 
 namespace
 {
     struct os_context
     {
-        CGRect                   wframe;
-        CGSize                   wsize;
-        f32                      wscale;
-        pen_app_delegate*        app_delegate;
-        pen::pen_creation_params creation_params;
+        CGRect                   wframe = {};
+        CGSize                   wsize = {};
+        f32                      wscale = 1.0f;
+        pen_app_delegate*        app_delegate = nullptr;
+        pen::pen_creation_params creation_params = {};
+        pen_text_field_delegate* text_field_delegate = nullptr;
+        pen_text_field*          text_field = nullptr;
+        bool                     show_on_screen_keyboard = false;
     };
     os_context s_context;
 
@@ -68,6 +87,22 @@ namespace
     {
         // updates pen window size
         pen::_renderer_resize_backbuffer(s_context.wsize.width, s_context.wsize.height);
+    }
+
+    void update_on_screen_keyboard() 
+    {
+        static bool s_open = false;
+        
+        if(s_context.show_on_screen_keyboard && !s_open)
+        {
+            [s_context.text_field becomeFirstResponder];
+            s_open = true;
+        }
+        else if(!s_context.show_on_screen_keyboard && s_open)
+        {
+            [s_context.text_field resignFirstResponder];
+            s_open = false;
+        }
     }
 }
 
@@ -113,9 +148,29 @@ namespace
         [self.view_controller setView:self.mtk_view];
         [self.window setRootViewController:self.view_controller];
         self.view_controller.view.multipleTouchEnabled = YES;
+        
+        // enable support for osk input
+        pen::os_init_on_screen_keyboard();
 
         return YES;
     }
+}
+
+-(MPRemoteCommandHandlerStatus)play {
+    PEN_LOG("Press Play!");
+    return MPRemoteCommandHandlerStatusSuccess;
+}
+-(MPRemoteCommandHandlerStatus)pause {
+    PEN_LOG("Press Pause!");
+    return MPRemoteCommandHandlerStatusSuccess;
+}
+-(MPRemoteCommandHandlerStatus)prev {
+    PEN_LOG("Press Prev!");
+    return MPRemoteCommandHandlerStatusSuccess;
+}
+-(MPRemoteCommandHandlerStatus)next {
+    PEN_LOG("Press Next!");
+    return MPRemoteCommandHandlerStatusSuccess;
 }
 @end
 
@@ -220,6 +275,35 @@ namespace
 }
 @end
 
+@implementation pen_text_field_delegate
+- (BOOL)textField:(UITextField*)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString*)string
+{
+    // Special case for enter in order to pass to ImGui so it can handle it how it wants.
+    if([string isEqualToString: @"\n"]) {
+        s_context.show_on_screen_keyboard = false;
+        return YES;
+    }
+    
+    pen::input_add_unicode_input([string UTF8String]);
+    return YES;
+}
+- (void)textFieldDidDelete
+{
+    pen::input_set_key_down(PK_BACK);
+}
+@end
+
+@implementation pen_text_field
+- (void)deleteBackward
+{
+    [super deleteBackward];
+    if([self.delegate respondsToSelector:@selector(textFieldDidDelete)])
+    {
+        [(pen_text_field_delegate*)self.delegate textFieldDidDelete];
+    }
+}
+@end
+
 int main(int argc, char* argv[])
 {
     NSString* str = NSStringFromClass([pen_app_delegate class]);
@@ -264,6 +348,8 @@ namespace pen
 
             thread_started = true;
         }
+        
+        update_on_screen_keyboard();
 
         return true;
     }
@@ -471,9 +557,31 @@ namespace pen
         }
     }
 
+    void os_init_on_screen_keyboard()
+    {
+        s_context.text_field_delegate = [[pen_text_field_delegate alloc] init];
+        s_context.text_field = [[pen_text_field alloc] init];
+        s_context.text_field.hidden = YES;
+        s_context.text_field.autocorrectionType = UITextAutocorrectionTypeNo;
+        s_context.text_field.autocapitalizationType = UITextAutocapitalizationTypeNone;
+        s_context.text_field.spellCheckingType = UITextSpellCheckingTypeNo;
+        s_context.text_field.delegate = s_context.text_field_delegate;
+        [s_context.app_delegate.window addSubview:s_context.text_field];
+    }
+
+    void os_show_on_screen_keyboard(bool show)
+    {
+        s_context.show_on_screen_keyboard = show;
+    }
+
     void music_enable_remote_control()
     {
         [[UIApplication sharedApplication] beginReceivingRemoteControlEvents];
+        
+        MPRemoteCommandCenter *commandCenter = [MPRemoteCommandCenter sharedCommandCenter];
+        
+        [commandCenter.pauseCommand addTarget:s_context.app_delegate action:@selector(pause)];
+        //[commandCenter.pauseCommand addTarget:self action:@selector(pauseAudio)];
     }
 
     void music_set_now_playing(const Str& artist, const Str& album, const Str& track)
@@ -509,19 +617,31 @@ namespace pen
             CGImageRelease(cgimg);
             
             MPMediaItemArtwork* artwork = [[MPMediaItemArtwork alloc] initWithImage: uiimg];
-            NSDictionary* info = [[MPNowPlayingInfoCenter defaultCenter] nowPlayingInfo];
             
-            NSMutableDictionary* mut_info = [[NSMutableDictionary alloc] init];
-            [mut_info setObject:info[MPMediaItemPropertyTitle] forKey:MPMediaItemPropertyTitle];
-            [mut_info setObject:info[MPMediaItemPropertyAlbumTitle] forKey:MPMediaItemPropertyAlbumTitle];
-            [mut_info setObject:info[MPMediaItemPropertyArtist] forKey:MPMediaItemPropertyArtist];
-            [mut_info setObject:artwork forKey:MPMediaItemPropertyArtwork];
+            NSMutableDictionary* info = [NSMutableDictionary dictionaryWithDictionary:
+                [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo];
             
-            [[MPNowPlayingInfoCenter defaultCenter] setNowPlayingInfo:mut_info];
+            [info setObject:artwork forKey:MPMediaItemPropertyArtwork];
+            
+            [[MPNowPlayingInfoCenter defaultCenter] setNowPlayingInfo:info];
         }
     }
 
-    void music_set_now_playing_position() {
-        
+    void music_set_now_playing_time_info(u32 position_ms, u32 duration_ms)
+    {
+        @autoreleasepool {
+            NSMutableDictionary* info = [NSMutableDictionary dictionaryWithDictionary:
+                                         [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo];
+            
+            auto duration_s = (double)duration_ms / 1000.0;
+            NSString* nsdur = [NSString stringWithUTF8String:std::to_string(duration_s).c_str()];
+            [info setObject:nsdur forKey:MPMediaItemPropertyPlaybackDuration];
+            
+            auto pos_s = (double)position_ms / 1000.0;
+            NSString* npos = [NSString stringWithUTF8String:std::to_string(pos_s).c_str()];
+            [info setObject:npos forKey:MPNowPlayingInfoPropertyElapsedPlaybackTime];
+            
+            [[MPNowPlayingInfoCenter defaultCenter] setNowPlayingInfo:info];
+        }
     }
 }
