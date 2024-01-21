@@ -32,6 +32,7 @@
 #import <MediaPlayer/MPNowPlayingInfoCenter.h>
 #import <MediaPlayer/MPRemoteCommandCenter.h>
 #import <MediaPlayer/MPRemoteCommand.h>
+#import <Security/Security.h>
 
 // the last 2 global externs \o/
 pen::user_info              pen_user_info;
@@ -572,6 +573,98 @@ namespace pen
     void os_show_on_screen_keyboard(bool show)
     {
         s_context.show_on_screen_keyboard = show;
+    }
+
+    bool os_set_keychain_item(const Str& identifier, const Str& key, const Str& value)
+    {
+        @autoreleasepool {
+            Str concatid = identifier;
+            concatid.appendf(".%s", key.c_str());
+            
+            NSString* nsid = [NSString stringWithUTF8String:concatid.c_str()];
+            NSString* nsvalue = [NSString stringWithUTF8String:value.c_str()];
+            NSData* tag = [nsid dataUsingEncoding:NSUTF8StringEncoding];
+            NSData* data = [nsvalue dataUsingEncoding:NSUTF8StringEncoding];
+            
+            NSDictionary* addquery = @{
+                (NSString*)kSecClass: (NSString*)kSecClassGenericPassword,
+                (NSString*)kSecAttrAccount: tag,
+                (NSString*)kSecValueData: data,
+            };
+            
+            OSStatus status = SecItemAdd((__bridge CFDictionaryRef)addquery, nullptr);
+            if (status == errSecDuplicateItem) 
+            {
+                NSDictionary* searchquery = @{
+                    (NSString*)kSecClass: (NSString*)kSecClassGenericPassword,
+                    (__bridge id)kSecAttrAccount : tag,
+                    (__bridge id)kSecMatchLimit : (__bridge id)kSecMatchLimitOne,
+                    (__bridge id)kSecReturnAttributes : (__bridge id)kCFBooleanTrue,
+                    (__bridge id)kSecReturnData : (__bridge id)kCFBooleanTrue
+                };
+                
+                CFTypeRef item = nullptr;
+                if (SecItemCopyMatching((__bridge CFDictionaryRef)searchquery, &item) == errSecSuccess) 
+                {
+                    NSMutableDictionary* update_dict = (__bridge NSMutableDictionary *)item;
+                    [update_dict addEntriesFromDictionary:addquery];
+                    [update_dict removeObjectForKey:(__bridge id)kSecClass];
+                    
+                    NSDictionary* updatequery = @{
+                        (NSString*)kSecClass: (NSString*)kSecClassGenericPassword,
+                        (NSString*)kSecAttrAccount: tag,
+                    };
+
+                    status = SecItemUpdate((__bridge CFDictionaryRef)updatequery,
+                                           (__bridge CFDictionaryRef)update_dict);
+                    
+                    if(status < errSecSuccess)
+                    {
+                        return false;
+                    }
+                }
+            }
+            else if(status != errSecSuccess)
+            {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+        
+
+    Str os_get_keychain_item(const Str& identifier, const Str& key)
+    {
+        @autoreleasepool {
+            Str concatid = identifier;
+            concatid.appendf(".%s", key.c_str());
+            
+            NSString* nsid = [NSString stringWithUTF8String:concatid.c_str()];
+            NSData* tag = [nsid dataUsingEncoding:NSUTF8StringEncoding];
+            
+            NSDictionary* getquery = @{
+                (NSString*)kSecClass: (NSString*)kSecClassGenericPassword,
+                (NSString*)kSecAttrAccount: tag,
+                (NSString*)kSecReturnData: @YES,
+            };
+            
+            CFTypeRef item = nullptr;
+            OSStatus status = SecItemCopyMatching((__bridge CFDictionaryRef)getquery, &item);
+            
+            if(status == errSecSuccess)
+            {
+                CFDataRef nsitem = (CFDataRef)item;
+                NSData* ddd = (__bridge NSData*)nsitem;
+                
+                NSString* result_str = [[NSString alloc] initWithData:ddd encoding:NSUTF8StringEncoding];
+                const c8* cstr = [result_str UTF8String];
+                
+                return Str(cstr);
+            }
+        }
+        
+        return "";
     }
 
     void music_enable_remote_control()

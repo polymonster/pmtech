@@ -52,6 +52,8 @@ namespace pen
     void             os_haptic_selection_feedback();
     void             os_init_on_screen_keyboard();
     void             os_show_on_screen_keyboard(bool show);
+    bool             os_set_keychain_item(const Str& identifier, const Str& key, const Str& value);
+    Str              os_get_keychain_item(const Str& identifier, const Str& key);
 
     // music
     struct music_item
