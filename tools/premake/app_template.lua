@@ -143,6 +143,11 @@ local function setup_ios()
 		{
 			_OPTIONS["plist"]
 		}
+
+		files
+		{
+			(pmtech_dir .. "/core/template/ios/Base.lproj/**.*"),
+		}
 	else
 		files
 		{
