@@ -133,10 +133,6 @@ local function setup_ios()
 		"fmod_iphoneos"
 	}
 
-	linkoptions {
-		"-ld_classic"
-	}
-
 	files
 	{
 		"bin/ios/data"
