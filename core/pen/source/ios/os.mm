@@ -81,6 +81,7 @@ namespace
         pen_text_field_delegate* text_field_delegate = nullptr;
         pen_text_field*          text_field = nullptr;
         bool                     show_on_screen_keyboard = false;
+        pen::music_player_remote music_remote;
     };
     os_context s_context;
 
@@ -104,6 +105,18 @@ namespace
             [s_context.text_field resignFirstResponder];
             s_open = false;
         }
+    }
+
+    void enable_remote_control_internal()
+    {
+        [[UIApplication sharedApplication] beginReceivingRemoteControlEvents];
+        
+        MPRemoteCommandCenter *commandCenter = [MPRemoteCommandCenter sharedCommandCenter];
+        
+        [commandCenter.pauseCommand addTarget:s_context.app_delegate action:@selector(pause)];
+        [commandCenter.playCommand addTarget:s_context.app_delegate action:@selector(play)];
+        [commandCenter.nextTrackCommand addTarget:s_context.app_delegate action:@selector(next)];
+        [commandCenter.previousTrackCommand addTarget:s_context.app_delegate action:@selector(prev)];
     }
 }
 
@@ -158,20 +171,39 @@ namespace
 }
 
 -(MPRemoteCommandHandlerStatus)play {
-    PEN_LOG("Press Play!");
-    return MPRemoteCommandHandlerStatusSuccess;
+    if(s_context.music_remote.pause)
+    {
+        s_context.music_remote.pause(false);
+        return MPRemoteCommandHandlerStatusSuccess;
+    }
+    return MPRemoteCommandHandlerStatusNoSuchContent;
 }
+
 -(MPRemoteCommandHandlerStatus)pause {
-    PEN_LOG("Press Pause!");
-    return MPRemoteCommandHandlerStatusSuccess;
+    if(s_context.music_remote.pause)
+    {
+        s_context.music_remote.pause(true);
+        return MPRemoteCommandHandlerStatusSuccess;
+    }
+    return MPRemoteCommandHandlerStatusNoSuchContent;
 }
+
 -(MPRemoteCommandHandlerStatus)prev {
-    PEN_LOG("Press Prev!");
-    return MPRemoteCommandHandlerStatusSuccess;
+    if(s_context.music_remote.next)
+    {
+        s_context.music_remote.next(true);
+        return MPRemoteCommandHandlerStatusSuccess;
+    }
+    return MPRemoteCommandHandlerStatusNoSuchContent;
 }
+
 -(MPRemoteCommandHandlerStatus)next {
-    PEN_LOG("Press Next!");
-    return MPRemoteCommandHandlerStatusSuccess;
+    if(s_context.music_remote.next)
+    {
+        s_context.music_remote.next(false);
+        return MPRemoteCommandHandlerStatusSuccess;
+    }
+    return MPRemoteCommandHandlerStatusNoSuchContent;
 }
 @end
 
@@ -351,6 +383,26 @@ namespace pen
         }
         
         update_on_screen_keyboard();
+        
+        // init audio player main thread
+        static bool music_remote_init = true;
+        if(music_remote_init)
+        {
+            // next and prev
+            if(s_context.music_remote.pause && s_context.music_remote.next) {
+                enable_remote_control_internal();
+                music_remote_init = false;
+            }
+            
+            // tick
+            if(s_context.music_remote.tick) {
+                [NSTimer scheduledTimerWithTimeInterval:1 repeats:YES block:^(NSTimer * _Nonnull timer) {
+                    if([[UIApplication sharedApplication] applicationState] == UIApplicationStateBackground) {
+                        s_context.music_remote.tick();
+                    }
+                }];
+            }
+        }
 
         return true;
     }
@@ -667,14 +719,9 @@ namespace pen
         return "";
     }
 
-    void music_enable_remote_control()
+    void music_enable_remote_control(const music_player_remote& fns)
     {
-        [[UIApplication sharedApplication] beginReceivingRemoteControlEvents];
-        
-        MPRemoteCommandCenter *commandCenter = [MPRemoteCommandCenter sharedCommandCenter];
-        
-        [commandCenter.pauseCommand addTarget:s_context.app_delegate action:@selector(pause)];
-        //[commandCenter.pauseCommand addTarget:self action:@selector(pauseAudio)];
+        s_context.music_remote = fns;
     }
 
     void music_set_now_playing(const Str& artist, const Str& album, const Str& track)
@@ -736,5 +783,9 @@ namespace pen
             
             [[MPNowPlayingInfoCenter defaultCenter] setNowPlayingInfo:info];
         }
+    }
+
+    bool os_is_backgrounded() {
+        return [[UIApplication sharedApplication] applicationState] == UIApplicationStateBackground;
     }
 }

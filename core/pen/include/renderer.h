@@ -441,6 +441,7 @@ namespace pen
     void       renderer_release_sampler(u32 sampler);
     void       renderer_release_depth_stencil_state(u32 depth_stencil_state);
     void       renderer_consume_cmd_buffer();
+    void       renderer_consume_cmd_buffer_non_blocking();
     void       renderer_update_queries();
     void       renderer_get_present_time(f32& cpu_ms, f32& gpu_ms);
 

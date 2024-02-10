@@ -560,6 +560,23 @@ namespace pen
 #endif
     }
 
+    void renderer_consume_cmd_buffer_non_blocking()
+    {
+        for (;;)
+        {
+            renderer_cmd* cmd = _ctx->cmd_buffer.check();
+            if(cmd) {
+                cmd = _ctx->cmd_buffer.get();
+                if (cmd)
+                    exec_cmd(*cmd);
+            }
+            else
+            {
+                break;
+            }
+        }
+    }
+
     void new_frame_internal()
     {
         // free slots we have now deleted the resources for

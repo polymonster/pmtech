@@ -54,7 +54,8 @@ namespace pen
     void             os_show_on_screen_keyboard(bool show);
     bool             os_set_keychain_item(const Str& identifier, const Str& key, const Str& value);
     Str              os_get_keychain_item(const Str& identifier, const Str& key);
-
+    bool             os_is_backgrounded();
+    
     // music
     struct music_item
     {
@@ -63,6 +64,12 @@ namespace pen
         Str   track;
         f64   duration;
         void* internal;
+    };
+
+    struct music_player_remote {
+        void (*pause)(bool) = nullptr;
+        void (*next)(bool) = nullptr;
+        void (*tick)(void) = nullptr;
     };
 
     struct music_file
@@ -76,7 +83,7 @@ namespace pen
     const music_item* music_get_items(); // returns stretchy buffer use sb_count for num items
     music_file        music_open_file(const music_item& item);
     void              music_close_file(const music_file& file);
-    void              music_enable_remote_control();
+    void              music_enable_remote_control(const music_player_remote& fns);
     void              music_set_now_playing(const Str& artist, const Str& album, const Str& track);
     void              music_set_now_playing_artwork(void* data, u32 w, u32 h, u32 bpp, u32 row_pitch);
     void              music_set_now_playing_time_info(u32 position_ms, u32 duration_ms);
