@@ -70,6 +70,7 @@ namespace pen
         void (*pause)(bool) = nullptr;
         void (*next)(bool) = nullptr;
         void (*tick)(void) = nullptr;
+        void (*like)(void) = nullptr;
     };
 
     struct music_file

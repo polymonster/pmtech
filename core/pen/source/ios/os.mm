@@ -67,6 +67,7 @@ pen::window_creation_params pen_window;
 -(MPRemoteCommandHandlerStatus)pause;
 -(MPRemoteCommandHandlerStatus)prev;
 -(MPRemoteCommandHandlerStatus)next;
+-(MPRemoteCommandHandlerStatus)like;
 @end
 
 namespace
@@ -117,6 +118,7 @@ namespace
         [commandCenter.playCommand addTarget:s_context.app_delegate action:@selector(play)];
         [commandCenter.nextTrackCommand addTarget:s_context.app_delegate action:@selector(next)];
         [commandCenter.previousTrackCommand addTarget:s_context.app_delegate action:@selector(prev)];
+        [commandCenter.likeCommand addTarget:s_context.app_delegate action:@selector(like)];
     }
 }
 
@@ -201,6 +203,15 @@ namespace
     if(s_context.music_remote.next)
     {
         s_context.music_remote.next(false);
+        return MPRemoteCommandHandlerStatusSuccess;
+    }
+    return MPRemoteCommandHandlerStatusNoSuchContent;
+}
+
+-(MPRemoteCommandHandlerStatus)like {
+    if(s_context.music_remote.like)
+    {
+        s_context.music_remote.like();
         return MPRemoteCommandHandlerStatusSuccess;
     }
     return MPRemoteCommandHandlerStatusNoSuchContent;
