@@ -55,6 +55,7 @@ namespace pen
     bool             os_set_keychain_item(const Str& identifier, const Str& key, const Str& value);
     Str              os_get_keychain_item(const Str& identifier, const Str& key);
     bool             os_is_backgrounded();
+    void             os_register_background_callback(void (*callback)(bool));
     
     // music
     struct music_item

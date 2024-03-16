@@ -83,6 +83,7 @@ namespace
         pen_text_field*          text_field = nullptr;
         bool                     show_on_screen_keyboard = false;
         pen::music_player_remote music_remote;
+        void                    (*background_callback)(bool) = nullptr;
     };
     os_context s_context;
 
@@ -169,6 +170,24 @@ namespace
         pen::os_init_on_screen_keyboard();
 
         return YES;
+    }
+}
+
+- (void)applicationWillResignActive:(UIApplication *)app
+{
+    // pairs with applicationDidBecomeActive
+    if(s_context.background_callback)
+    {
+        s_context.background_callback(true);
+    }
+}
+
+- (void)applicationDidBecomeActive:(UIApplication *)app
+{
+    // pairs with applicationWillResignActive
+    if(s_context.background_callback)
+    {
+        s_context.background_callback(true);
     }
 }
 
@@ -798,5 +817,10 @@ namespace pen
 
     bool os_is_backgrounded() {
         return [[UIApplication sharedApplication] applicationState] == UIApplicationStateBackground;
+    }
+
+    void os_register_background_callback(void (*callback)(bool))
+    {
+        s_context.background_callback = callback;
     }
 }
