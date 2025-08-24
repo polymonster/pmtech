@@ -595,7 +595,11 @@ namespace pen
     {
         @autoreleasepool {
             NSString* path = [NSString stringWithUTF8String:url.c_str()];
-            [[UIApplication sharedApplication] openURL:[NSURL URLWithString:path]];
+            [[UIApplication sharedApplication] openURL:[NSURL URLWithString:path] options:@{} completionHandler:^(BOOL success) {
+                if (!success) {
+                    PEN_LOG("os_open_url failed to open: %s", url.c_str());
+                }
+            }];
         }
     }
 
