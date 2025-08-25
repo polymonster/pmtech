@@ -9,7 +9,7 @@ if platform == "win32" then
             "dir"
 		}
 		linkoptions {
-		  "/DEF:\"pmtech_d.def"
+		  "/DEF:\"pmtech_d.def\""
 		}
 	filter "configurations:Release"
 		prebuildcommands
@@ -18,7 +18,6 @@ if platform == "win32" then
             "dir"
 		}
 		linkoptions {
-		  "/DEF:\"pmtech.def"
+		  "/DEF:\"pmtech.def\""
 		}
 end
-	
