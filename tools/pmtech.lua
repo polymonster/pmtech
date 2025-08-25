@@ -6,7 +6,6 @@ if platform == "win32" then
 		prebuildcommands
 		{
 			"py -3 ../../../tools/pmbuild_ext/libdef.py ../../../core/put/lib/win32/debug/put.lib ../../../core/pen/lib/win32/debug/pen.lib -o pmtech_d.def",
-            "dir"
 		}
 		linkoptions {
 		  "/DEF:\"pmtech_d.def\""
@@ -15,7 +14,6 @@ if platform == "win32" then
 		prebuildcommands
 		{
 			"py -3 ../../../tools/pmbuild_ext/libdef.py ../../../core/put/lib/win32/release/put.lib ../../../core/pen/lib/win32/release/pen.lib -o pmtech.def",
-            "dir"
 		}
 		linkoptions {
 		  "/DEF:\"pmtech.def\""
