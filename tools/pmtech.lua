@@ -8,15 +8,14 @@ if platform == "win32" then
 			"py -3 ../../../tools/pmbuild_ext/libdef.py ../../../core/put/lib/win32/debug/put.lib ../../../core/pen/lib/win32/debug/pen.lib -o pmtech_d.def",
 		}
 		linkoptions {
-		  "/DEF:\"pmtech_d.def"
+		  "/DEF:\"pmtech_d.def\""
 		}
 	filter "configurations:Release"
 		prebuildcommands
 		{
-			"py -3 ../../../tools/pmbuild_ext/libdef.py ../../../core/put/lib/win32/release/put.lib ../../../core/pen/lib/win32/release/pen.lib -o pmtech.def"
+			"py -3 ../../../tools/pmbuild_ext/libdef.py ../../../core/put/lib/win32/release/put.lib ../../../core/pen/lib/win32/release/pen.lib -o pmtech.def",
 		}
 		linkoptions {
-		  "/DEF:\"pmtech.def"
+		  "/DEF:\"pmtech.def\""
 		}
 end
-	
