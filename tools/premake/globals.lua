@@ -107,7 +107,7 @@ function setup_from_action()
             build_cmd = "-std=c++11 -stdlib=libc++"
             link_cmd = "-stdlib=libc++"
         else
-            build_cmd = "-std=c++11 -stdlib=libc++ -mfma -mavx -mavx2 -msse2"
+            build_cmd = "-std=c++11 -stdlib=libc++"
             link_cmd = "-stdlib=libc++"
         end
     elseif _ACTION == "android-studio" then
