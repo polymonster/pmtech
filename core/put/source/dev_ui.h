@@ -20,6 +20,7 @@
 #define DEV_UI_SCALE 1
 #endif
 
+#include <vector>
 
 namespace put
 {
@@ -71,10 +72,30 @@ namespace put
             };
         }
         typedef e_ui_shader::ui_shader_t ui_shader;
+    
+        struct font_options
+        {
+            Str name = "";
+            f32 pixel_size = 14.0f * DEV_UI_SCALE;
+            ImWchar range_min = 0;
+            ImWchar range_max = 0;
+            bool merge = false;
+            
+            font_options(Str _name, f32 _pixel_size, ImWchar _range_min, ImWchar _range_max, bool _merge):
+                name(_name),
+                pixel_size(_pixel_size),
+                range_min(_range_min),
+                range_max(_range_max),
+                merge(_merge)
+            {
+                
+            }
+        };
         
         void        create_context();
         ImGuiStyle& default_pmtech_style();
         bool        init(ImGuiStyle& style = default_pmtech_style(), f32 font_pixel_size = 14.0f * DEV_UI_SCALE);
+        bool        init_ex(const std::vector<font_options>& fonts, ImGuiStyle& style = default_pmtech_style());
         void        shutdown();
         void        render();
         void        update();

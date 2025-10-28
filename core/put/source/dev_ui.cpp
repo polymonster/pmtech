@@ -57,21 +57,33 @@ namespace
     bool           s_initialised = false;
     bool           s_enable_main_menu_bar = true;
 
-    void create_texture_atlas(float pixel_size)
+    void create_texture_atlas(const std::vector<dev_ui::font_options>& fonts)
     {
         ImGuiIO&  io = ImGui::GetIO();
         ImFontConfig config;
-        config.MergeMode = true;
         
-        const Str cousine_reg = pen::os_path_for_resource("data/fonts/cousine-regular.ttf");
-        io.Fonts->AddFontFromFileTTF(cousine_reg.c_str(), pixel_size);
+        std::vector<ImWchar*> ranges;
         
-        static const ImWchar ex_ranges[] = {0x2013, 0x2019, 0};
-        io.Fonts->AddFontFromFileTTF(cousine_reg.c_str(), pixel_size, &config, ex_ranges);
+        for(auto& font : fonts)
+        {
+            const Str font_path = pen::os_path_for_resource(font.name.c_str());
+            config.MergeMode = font.merge;
+            
+            if(font.range_min != 0 && font.range_max != 0)
+            {
+                ImWchar* range = new ImWchar[3];
+                range[0] = font.range_min;
+                range[1] = font.range_max;
+                range[2] = 0;
 
-        static const ImWchar icon_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
-        const Str            font_awesome = pen::os_path_for_resource("data/fonts/fontawesome-webfont.ttf");
-        io.Fonts->AddFontFromFileTTF(font_awesome.c_str(), pixel_size, &config, icon_ranges);
+                io.Fonts->AddFontFromFileTTF(font_path.c_str(), font.pixel_size, &config, range);
+                ranges.push_back(range);
+            }
+            else
+            {
+                io.Fonts->AddFontFromFileTTF(font_path.c_str(), font.pixel_size, &config);
+            }
+        }
 
         // Build texture atlas
         unsigned char* pixels;
@@ -100,6 +112,13 @@ namespace
         s_imgui_rs.font_texture = pen::renderer_create_texture(tcp);
 
         io.Fonts->TexID = IMG(s_imgui_rs.font_texture);
+        
+        //clean up
+        for(auto range : ranges)
+        {
+            delete[] range;
+        }
+        ranges.clear();
     }
 
     void update_dynamic_buffers(ImDrawData* draw_data)
@@ -313,6 +332,16 @@ namespace put
         
         bool init(ImGuiStyle& style, float font_pixel_size)
         {
+            std::vector<font_options> fonts;
+            fonts.push_back({"data/fonts/cousine-regular.ttf", font_pixel_size, 0, 0, false});
+            fonts.push_back({"data/fonts/cousine-regular.ttf", font_pixel_size, 0x2013, 0x2019, true});
+            fonts.push_back({"data/fonts/fontawesome-webfont.ttf", font_pixel_size, ICON_MIN_FA, ICON_MAX_FA, true});
+             
+            return init_ex(fonts, style);
+        }
+    
+        bool init_ex(const std::vector<font_options>& fonts, ImGuiStyle& style)
+        {
             create_context();
 
             pen::memory_zero(&s_imgui_rs, sizeof(s_imgui_rs));
@@ -344,7 +373,7 @@ namespace put
             s_imgui_rs.imgui_shader = pmfx::load_shader("imgui");
             s_imgui_rs.imgui_ex_shader = pmfx::load_shader("imgui_ex");
 
-            create_texture_atlas(font_pixel_size);
+            create_texture_atlas(fonts);
 
             create_render_states();
 
