@@ -88,15 +88,15 @@ function setup_from_action()
     if _ACTION == "gmake" then
         if platform_dir == "web" then
             build_cmd = "-std=c++11 -s WASM=1 -s INITIAL_MEMORY=1024MB -s DETERMINISTIC=0 -s PTHREAD_POOL_SIZE=8"
-            link_cmd = "-s --shared-memory -s WASM=1 -s FULL_ES3=1 -s MIN_WEBGL_VERSION=2 -s MAX_WEBGL_VERSION=2 -s PTHREAD_POOL_SIZE=8 -s INITIAL_MEMORY=1024MB --shell-file ../../../core/template/web/shell.html"            
+            link_cmd = "-s --shared-memory -s WASM=1 -s FULL_ES3=1 -s MIN_WEBGL_VERSION=2 -s MAX_WEBGL_VERSION=2 -s PTHREAD_POOL_SIZE=8 -s INITIAL_MEMORY=1024MB --shell-file ../../../core/template/web/shell.html"
         elseif platform_dir == "linux" then
             build_cmd = "-std=c++11 -mfma -mavx -mavx2 -msse2"
         else -- macos
-            build_cmd = "-std=c++11 -stdlib=libc++ -mfma -mavx -mavx2 -msse2"
+            build_cmd = "-std=c++11 -stdlib=libc++"
             link_cmd = "-stdlib=libc++"
         end
-    elseif _ACTION == "xcode4" then 
-        platform_dir = "osx" 
+    elseif _ACTION == "xcode4" then
+        platform_dir = "osx"
         if not renderer_dir then
             renderer_dir = "opengl"
         end
@@ -107,38 +107,38 @@ function setup_from_action()
             build_cmd = "-std=c++11 -stdlib=libc++"
             link_cmd = "-stdlib=libc++"
         else
-            build_cmd = "-std=c++11 -stdlib=libc++ -mfma -mavx -mavx2 -msse2"
+            build_cmd = "-std=c++11 -stdlib=libc++"
             link_cmd = "-stdlib=libc++"
         end
-    elseif _ACTION == "android-studio" then 
+    elseif _ACTION == "android-studio" then
         build_cmd = { "-std=c++11" }
     elseif _ACTION == "vs2017" or _ACTION == "vs2019" or _ACTION == "vs2022" then
-        platform_dir = "win32" 
+        platform_dir = "win32"
         build_cmd = "/Ob1 /arch:AVX2 /arch:AVX " -- use force inline and avx
         disablewarnings { "4267", "4305", "4244" }
     end
-    
+
     platform = platform_dir
-    
+
     if platform == "win32" then
         shared_libs_dir = ("../../" .. pmtech_dir .. '/third_party/shared_libs/' .. platform_dir)
     elseif platform == "osx"  then
         shared_libs_dir = ( '"' .. "../../" .. pmtech_dir .. '/third_party/shared_libs/' .. platform_dir .. '/"' )
     end
-    
+
     -- link curl for url fetching
     setup_curl()
-    
+
     print("platform: " .. platform)
     print("renderer: " .. renderer_dir)
     print("pmtech dir: " .. pmtech_dir)
     print("sdk version: " .. windows_sdk_version())
-    
+
 end
 
 -- setup product
 function setup_product_ios(name)
-    bundle_name = ("com.pmtech") 
+    bundle_name = ("com.pmtech")
     xcodebuildsettings {
         ["PRODUCT_BUNDLE_IDENTIFIER"] = bundle_name
     }
