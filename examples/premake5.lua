@@ -18,6 +18,29 @@ solution ("pmtech_examples_" .. platform)
         "."
     }
 
+    if platform == "android" then
+        androidnamespace "com.pmtech.examples"
+        androidabis { "armeabi-v7a", "arm64-v8a" }
+        gradleversion "com.android.tools.build:gradle:8.2.2"
+        gradlewrapper {
+            "distributionUrl=https\\://services.gradle.org/distributions/gradle-8.6-all.zip"
+        }
+        androidrepositories {
+            "google()",
+            "mavenCentral()"
+        }
+        androiddependencies {
+            "com.android.support:appcompat-v7:+",
+            "com.android.support:support-v4:25.0.0",
+            "com.android.support:design:25.0.0"
+        }
+        gradleproperties {
+            "org.gradle.jvmargs=-Xmx4608m --add-exports=java.base/sun.nio.ch=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED",
+            "org.gradle.parallel=true",
+            "org.gradle.daemon=true"
+        }
+    end
+
 -- Engine Project
 dofile "../core/pen/project.lua"
 
