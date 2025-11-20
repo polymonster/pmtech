@@ -50,9 +50,17 @@ function setup_curl()
     }
 
     -- lib dirs
-    libdirs {
-        ("../../third_party/libcurl/lib/" .. platform)
-    }
+
+    if platform == "android" then
+        libdirs {
+            ("../../third_party/libcurl/lib/android/${ANDROID_ABI}/")
+        }
+    else
+        libdirs {
+            ("../../third_party/libcurl/lib/" .. platform)
+        }
+
+    end
 
     -- links
     if platform == "ios" then
@@ -73,6 +81,19 @@ function setup_curl()
             "crypt32",
             "user32"
 
+        }
+    elseif platform == "android" then
+        links {
+            "atomic",
+            "android",
+
+            "curl",
+            "ssl",
+            "crypto",
+
+            "GLESv3",
+            "EGL",
+            "log",
         }
     else
         links {

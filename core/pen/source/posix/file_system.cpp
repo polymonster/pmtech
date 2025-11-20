@@ -37,7 +37,7 @@
 #else
 #define WRITE_FILE_DEPENDENCIES(fn)
 #endif
-
+#if 0
 namespace
 {
     // utility function to output file dependencies use by a pmtech app to trim data sizes in wasm .data bundles
@@ -343,3 +343,4 @@ namespace pen
         return 0;
     }
 } // namespace pen
+#endif
