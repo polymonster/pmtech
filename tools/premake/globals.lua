@@ -164,7 +164,11 @@ function setup_from_action()
 
     -- link curl for url fetching
     setup_curl()
-    setup_fmod_android()
+
+    -- android fmod links
+    if platform == "android" then
+        setup_fmod_android()
+    end
 
     print("platform: " .. platform)
     print("renderer: " .. renderer_dir)
