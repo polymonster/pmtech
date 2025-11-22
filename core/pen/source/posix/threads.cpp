@@ -108,11 +108,17 @@ namespace pen
     {
         pen::semaphore* new_semaphore = (pen::semaphore*)pen::memory_alloc(sizeof(pen::semaphore));
 
+#ifndef PEN_PLATFORM_ANDROID
         c8 name_buf[32];
         pen::string_format(&name_buf[0], 32, "sem%i%i", semaphone_index++, window_get_id());
 
         sem_unlink(name_buf);
         new_semaphore->handle = sem_open(name_buf, O_CREAT, 0, 0);
+#else
+        new_semaphore->handle = (sem_t*)malloc(sizeof(sem_t));
+        memset(new_semaphore->handle, 0x0, sizeof(sem_t));
+        sem_init(new_semaphore->handle, 0, 0);
+#endif
 
         assert(!(new_semaphore->handle == (void*)-1));
         return new_semaphore;

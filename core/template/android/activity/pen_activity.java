@@ -49,6 +49,8 @@ class VideoSurfaceTexture extends SurfaceTexture
 // new graphics api agnostic implementation of android surface to support native egl and vulkan
 class SurfaceWrapper extends SurfaceView implements SurfaceHolder.Callback, SurfaceTexture.OnFrameAvailableListener {
 
+	public static native void surface_created(Surface surface, int window_width, int window_height, int display_width, int display_height, int orientation, long app_ptr);
+	public static native void render(SurfaceWrapper caller);
     /*
     public static native void render(SurfaceWrapper caller);
     public static native long fwEntry();
@@ -97,7 +99,7 @@ class SurfaceWrapper extends SurfaceView implements SurfaceHolder.Callback, Surf
     {
         Log.d("PMTECH", "onDraw");
 
-        // render(this);
+        render(this);
         invalidate();
     }
 
@@ -105,20 +107,23 @@ class SurfaceWrapper extends SurfaceView implements SurfaceHolder.Callback, Surf
     public void surfaceCreated(SurfaceHolder holder)
     {
         Log.d("PMTECH", "surfaceCreated");
+
         /*
-        setWillNotDraw(false);
         if(appPtr == 0) {
-        
+
         }
-        Surface surf = holder.getSurface();
-        onSurfaceCreated(surf, m_windowWidth, m_windowHeight, m_displayWidth, m_displayHeight, orientation, appPtr); // creates entry point and stuff
         */
+
+        setWillNotDraw(false);
+        Surface surf = holder.getSurface();
+        surface_created(surf, m_windowWidth, m_windowHeight, m_displayWidth, m_displayHeight, orientation, appPtr); // creates entry point and stuff
     }
 
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height)
     {
         Log.d("PMTECH", "surfaceChanged");
+
         // m_touchHeight = height;
         //onSurfaceChanged(width, height);
     }
@@ -288,6 +293,10 @@ public class pen_activity extends Activity {
         set_immersive_mode();
 
         android.view.SurfaceView view = new SurfaceWrapper(this);
+
+        // device dims
+
+        setContentView(view);
 
 		entry();
 
