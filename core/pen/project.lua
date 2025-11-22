@@ -82,8 +82,8 @@ project "pen"
     setup_env()
     setup_platform_defines()
     setup_platform()
-    location ("build/" .. platform_dir)
     kind "StaticLib"
+    location ("build/" .. platform_dir)
     language "C++"
 
     files

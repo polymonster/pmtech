@@ -104,6 +104,21 @@ function setup_curl()
     end
 end
 
+function setup_fmod_android()
+    links
+    {
+        "fmod",
+        "fmod.jar"
+    }
+    libdirs
+    {
+        "../../third_party/fmod/lib/android/${ANDROID_ABI}"
+    }
+    archivedirs
+    {
+        "../../third_party/fmod/lib/android"
+    }
+end
 
 function setup_from_action()
     if _ACTION == "gmake" then
@@ -149,6 +164,7 @@ function setup_from_action()
 
     -- link curl for url fetching
     setup_curl()
+    setup_fmod_android()
 
     print("platform: " .. platform)
     print("renderer: " .. renderer_dir)

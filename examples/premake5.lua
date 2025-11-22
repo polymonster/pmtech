@@ -19,6 +19,7 @@ solution ("pmtech_examples_" .. platform)
     }
 
     if platform == "android" then
+        system "linux"
         defines {
             "PEN_PLATFORM_ANDROID"
         }

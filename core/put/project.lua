@@ -6,7 +6,7 @@ if _ACTION == "vs2017" or _ACTION == "vs2015" then
     bullet_lib_dir = _ACTION
 end
 
--- Project    
+-- Project
 project "put"
     setup_env()
     setup_platform_defines()
@@ -15,11 +15,12 @@ project "put"
     language "C++"
 
     libdirs
-    { 
+    {
         "../pen/lib/" .. platform_dir,
+
         "../../third_party/bullet/lib/" .. bullet_lib_dir,
     }
-    
+
     -- need to refactor renderer defs to remove this
     if platform_dir == "win32" and renderer_dir == "opengl" then
         includedirs
@@ -27,34 +28,49 @@ project "put"
             "../../third_party/glew/include"
         }
     end
-    
+
     includedirs
     {
         "source",
-        
+
         "../pen/include/",
-        "../pen/include/common", 
+        "../pen/include/common",
         "../pen/include/" .. platform_dir,
         "../pen/include/" .. renderer_dir,
-          
+
         "../../third_party",
         "../../third_party/fmod/inc",
+
         "../../third_party/bullet/src/",
+
         "../../third_party/imgui",
         "../../third_party/sdf_gen",
         "../../third_party/meshoptimizer"
     }
-    
+
     if _ACTION == "vs2017" or _ACTION == "vs2015" then
         systemversion(windows_sdk_version())
         disablewarnings { "4800", "4305", "4018", "4244", "4267", "4996" }
     end
-                    
-    files 
-    { 
-        "source/**.cpp",
-        "source/**.h", 
-        
+
+    files
+    {
+        "source/*.cpp",
+        "source/*.h",
+
+        "source/audio/*.cpp",
+        "source/audio/*.h",
+
+        "source/curl/*.cpp",
+        "source/curl/*.h",
+
+        "source/ecs/*.cpp",
+        "source/ecs/*.h",
+
+        "source/physics/physics_stub.cpp",
+        "source/physics/physics.cpp",
+        "source/physics/physics.h",
+
         "../../third_party/imgui/*.cpp",
         "../../third_party/imgui/*.h",
         "../../third_party/sdf_gen/*.h",
@@ -63,25 +79,25 @@ project "put"
         "../../third_party/bussik/*.cpp",
         "../../third_party/meshoptimizer/*.cpp",
         "../../third_party/meshoptimizer/*.h",
-        
+
         "../../third_party/maths/*.h"
     }
     includedirs { "include" }
-    
+
     if platform_dir == "web" then
     	excludes
     	{
     		"source/audio/**.*"
     	}
     end
-	    
+
     filter "configurations:Debug"
         defines { "DEBUG" }
         entrypoint "WinMainCRTStartup"
         symbols "On"
         targetdir ("lib/" .. platform_dir .. "/debug")
         targetname "put"
- 
+
     filter "configurations:Release"
         defines { "NDEBUG" }
         entrypoint "WinMainCRTStartup"
