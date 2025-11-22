@@ -37,7 +37,7 @@
 #else
 #define WRITE_FILE_DEPENDENCIES(fn)
 #endif
-#if 0
+
 namespace
 {
     // utility function to output file dependencies use by a pmtech app to trim data sizes in wasm .data bundles
@@ -145,7 +145,7 @@ namespace pen
     }
 
     static bool s_show_hidden = false;
-    
+
     void filesystem_toggle_hidden_files()
     {
         s_show_hidden = !s_show_hidden;
@@ -343,4 +343,3 @@ namespace pen
         return 0;
     }
 } // namespace pen
-#endif
