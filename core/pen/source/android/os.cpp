@@ -10,14 +10,17 @@
 #include <stdio.h>
 
 // need to copy example/src/main/jniLibs (fmod)
-// need to copy fmod.jar and add it as impl in gradle
-// call c++ from java
+// inject strings for other samples res/values
 
 // BLOG NOTES:
 // - gradle version, always changing
 // - depracated maven etc
 // - trying to link .so vs .a
 // - No implementation found for void cc.pmtech.pen_activity.entry() (tried Java_cc_pmtech_pen_1activity_entry and Java_cc_pmtech_pen_1activity_entry__) - is the library loaded, e.g. System.loadLibrary?
+
+// DONE:
+// call c++ from java
+// need to copy fmod.jar and add it as impl in gradle
 
 // global externs
 pen::user_info              pen_user_info;
