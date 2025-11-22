@@ -5,24 +5,30 @@ import android.os.Bundle;
 import android.view.KeyEvent;
 import android.util.Log;
 
-public class pen_activity extends Activity{
+/*
+class SurfaceWrapper extends SurfaceView
+        implements SurfaceHolder.Callback, SurfaceTexture.OnFrameAvailableListener{
+*/
 
-    //public static native int ploop();
+public class pen_activity extends Activity {
+
+	public static native void entry();
 
 	static {
-		System.loadLibrary("pen");
-		System.loadLibrary("put");
+		System.loadLibrary("basic_triangle");
 	}
 
 	@Override
 	protected void onCreate(Bundle arg0) {
-		Log.d("hello world", "test");
+		Log.d("PMTECH", "hello world");
 
-		//ploop();
+		// create surface
+
+		entry();
 
 		super.onCreate(arg0);
 	}
-	
+
 	@Override
 	protected void onResume() {
 		super.onResume();
@@ -35,12 +41,12 @@ public class pen_activity extends Activity{
 	protected void onDestroy() {
 		super.onDestroy();
 	}
-	
+
 	@Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
 		return false;
     }
-    
+
     @Override
     public boolean onKeyUp(int keyCode, KeyEvent event) {
 		return false;

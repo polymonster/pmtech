@@ -1246,7 +1246,7 @@ namespace pen
             char* info_log_buf = (char*)memory_alloc(info_log_length + 1);
 
             CHECK_CALL(glGetShaderInfoLog(res.handle, info_log_length, NULL, &info_log_buf[0]));
-            PEN_LOG(info_log_buf);
+            PEN_LOG("%s", info_log_buf);
         }
     }
 
