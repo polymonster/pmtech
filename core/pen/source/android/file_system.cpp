@@ -1,5 +1,5 @@
 // file_system.cpp
-// Copyright 2014 - 2023 Alex Dixon.
+// Copyright 2014 - 2025 Alex Dixon.
 // License: https://github.com/polymonster/pmtech/blob/master/license.md
 
 #include "file_system.h"
@@ -15,10 +15,12 @@ namespace pen
         return false;
     }
 
+    /*
     pen_error filesystem_read_file_to_buffer(const c8* filename, void** p_buffer, u32& buffer_size)
     {
         return PEN_ERR_FILE_NOT_FOUND;
     }
+    */
 
     pen_error filesystem_enum_volumes(fs_tree_node& results)
     {

@@ -275,6 +275,7 @@ class SurfaceWrapper extends SurfaceView implements SurfaceHolder.Callback, Surf
 public class pen_activity extends Activity {
 
 	public static native void entry();
+    public static native void register_asset_manager(AssetManager asset_manager);
 
     void set_immersive_mode()
     {
@@ -290,15 +291,15 @@ public class pen_activity extends Activity {
         Log.d("PMTECH", lib);
         System.loadLibrary(lib);
 
+        entry();
+
+        // register asset manager
+        register_asset_manager(getApplicationContext().getAssets());
+
+        // setup view / surface
         set_immersive_mode();
-
         android.view.SurfaceView view = new SurfaceWrapper(this);
-
-        // device dims
-
         setContentView(view);
-
-		entry();
 
 		super.onCreate(arg0);
 	}

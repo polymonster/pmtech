@@ -5,6 +5,7 @@
 #include "os.h"
 
 #include "threads.h"
+#include "renderer.h"
 
 #include <jni.h>
 #include <stdio.h>
@@ -18,10 +19,12 @@
 
 // need to copy example/src/main/jniLibs (fmod)
 // inject strings for other samples res/values
+// viewport and window sizes
+// filesystem functions into os?
 
 // BLOG NOTES:
 // - gradle version, always changing
-// - depracated maven etc
+// - deprecated maven etc
 // - trying to link .so vs .a
 // - EGL_NONE, array terminator.
 // - No implementation found for void cc.pmtech.pen_activity.entry() (tried Java_cc_pmtech_pen_1activity_entry and Java_cc_pmtech_pen_1activity_entry__) - is the library loaded, e.g. System.loadLibrary?
@@ -29,10 +32,36 @@
 // DONE:
 // call c++ from java
 // need to copy fmod.jar and add it as impl in gradle
+// build shaders
+// setup assetdirs
+// asset manager
+
+#define PEN_JNIFUNC(ret, actname, funcname) extern "C" JNIEXPORT ret JNICALL Java_cc_pmtech_##actname##_##funcname
 
 // global externs
 pen::user_info              pen_user_info;
 pen::window_creation_params pen_window;
+
+namespace
+{
+    struct egl_context
+    {
+        EGLContext ctx;
+        EGLSurface surface;
+        EGLDisplay display;
+    };
+    egl_context s_egl_context;
+
+    struct android_context
+    {
+        JavaVM*         m_java_vm = nullptr;
+        AAssetManager*  m_asset_manager = nullptr;
+        ANativeWindow*  m_window = nullptr;
+        jclass          m_surface_wrapper_class;
+        jobject         m_surface_wrapper_object;
+    };
+    android_context s_android_context;
+}
 
 void pen_make_gl_context_current()
 {
@@ -41,19 +70,23 @@ void pen_make_gl_context_current()
 
 void pen_gl_swap_buffers()
 {
-
+    eglSwapBuffers(s_egl_context.display, s_egl_context.surface);
 }
-
-#define PEN_JNIFUNC(ret, actname, funcname) extern "C" JNIEXPORT ret JNICALL Java_cc_pmtech_##actname##_##funcname
 
 PEN_JNIFUNC(void, pen_1activity, entry)(JNIEnv* env, jclass thiz)
 {
     PEN_LOG("hello print %i\n", 69);
 }
 
+PEN_JNIFUNC(void, pen_1activity, register_1asset_1manager)(JNIEnv* env, jclass thiz, jobject asset_manager)
+{
+    s_android_context.m_asset_manager = AAssetManager_fromJava(env, asset_manager);
+}
+
 PEN_JNIFUNC(void, SurfaceWrapper, render)(JNIEnv* env, jclass thiz, jobject caller)
 {
-    PEN_LOG("render%i\n", 79);
+    pen::os_update();
+    pen::renderer_dispatch();
 }
 
 PEN_JNIFUNC(void, SurfaceWrapper, surface_1created)(JNIEnv* env, jclass thiz, jobject surface, int window_width, int window_height, int device_width, int device_height, int orientation, long app_ptr)
@@ -96,37 +129,17 @@ PEN_JNIFUNC(void, SurfaceWrapper, surface_1created)(JNIEnv* env, jclass thiz, jo
     );
     PEN_ASSERT(res == EGL_TRUE);
 
-    eglSwapBuffers(display, egl_surface);
+    s_egl_context.ctx = context;
+    s_egl_context.display = display;
+    s_egl_context.surface = egl_surface;
 
-    // TODO: call user_setup
+    // user setup
     pen::pen_creation_params params = pen::pen_entry(0, nullptr);
 
+    // init renderer
+    pen::renderer_init(nullptr, false, params.max_renderer_commands);
+
     pen::jobs_create_job(params.user_thread_function, 1024 * 1024, params.user_data, pen::e_thread_start_flags::detached);
-
-    /*
-    // for get elapsed time
-    s_startTime = getElapsedTimeMs();
-
-    s_context.m_windowWidth = windowWidth;
-    s_context.m_windowHeight = windowHeight;
-
-    if(s_context.m_device.m_window)
-        ANativeWindow_release(s_context.m_device.m_window);
-    s_context.m_device.m_window = ANativeWindow_fromSurface(env, surface);
-    s_context.m_device.m_surfaceWrapperClass = thiz;
-
-    fw::gfx::createMainContext((fw::gfx::Device)&s_context.m_device);
-
-    fw::AppConfig::get()->setupSystemInfo();
-
-    if (!s_context.m_app && appPtr != 0)
-    {
-        FW_LOG_CONSOLE("Surface created with width=%d, height=%d\n", s_context.m_windowWidth, s_context.m_windowHeight);
-
-        s_context.m_app = (App*)((intptr_t)appPtr);
-        s_context.m_app->setup();
-    }
-    */
 }
 
 namespace pen
@@ -209,6 +222,45 @@ namespace pen
     bool input_redo_pressed()
     {
         return false;
+    }
+
+    pen_error filesystem_read_file_to_buffer(const c8* filename, void** p_buffer, u32& buffer_size)
+    {
+        AAsset* asset = AAssetManager_open(s_android_context.m_asset_manager, filename, AASSET_MODE_STREAMING);
+
+        if(asset)
+        {
+            off64_t length = AAsset_getLength64(asset) + 1;
+            void* buf = pen::memory_alloc(length);
+
+            AAsset_read(asset, buf, length - 1);
+            AAsset_close(asset);
+            u8* eof = (u8*)(buf) + (length - 1);
+            *eof = '\0';
+
+            buffer_size = length;
+            *p_buffer = buf;
+        }
+        else
+        {
+            // check for abs files
+            FILE* file = fopen(filename, "rb");
+            if (file)
+            {
+                fseek(file, 0L, SEEK_END);
+                size_t size = (u32)ftell(file);
+                fseek(file, 0L, SEEK_SET);
+                void* buf = pen::memory_alloc(size + 1);
+                ((c8*)buf)[size] = '\0';
+                fread(buf, 1, size, file);
+                fclose(file);
+
+                buffer_size = size;
+                *p_buffer = buf;
+            }
+        }
+
+        return PEN_ERR_OK;
     }
 
 } // namespace pen

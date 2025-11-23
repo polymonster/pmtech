@@ -43,6 +43,9 @@ solution ("pmtech_examples_" .. platform)
             "org.gradle.parallel=true",
             "org.gradle.daemon=true"
         }
+        assetdirs {
+            "bin/android/assets",
+        }
     end
 
 -- Engine Project
