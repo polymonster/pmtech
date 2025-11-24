@@ -256,7 +256,11 @@ local function setup_fmod()
 end
 
 function setup_modules()
-	setup_bullet()
+	if platform == "android" then
+		-- stub physics
+	else
+		setup_bullet()
+	end
 	setup_fmod()
 end
 
@@ -328,6 +332,28 @@ function android_strings(project_name, root_directory)
 	file:close()
 end
 
+function project_build_dir(project_name, root_directory, platform)
+	return (
+		root_directory ..
+		"build/" ..
+		"/" ..
+		platform ..
+		"/" ..
+		project_name
+	)
+end
+
+function copydir(src, dst)
+    os.mkdir(dst)
+    for _, file in ipairs(os.matchfiles(src .. "/**")) do
+        local rel = path.getrelative(src, file)
+        local target = path.join(dst, rel)
+        os.mkdir(path.getdirectory(target))
+        os.copyfile(file, target)
+    end
+end
+
+
 function create_binary(project_name, source_directory, root_directory, binary_type)
 	s_project_name = project_name
 	project ( project_name )
@@ -337,9 +363,16 @@ function create_binary(project_name, source_directory, root_directory, binary_ty
 
 		if platform == "android" then
 			android_strings(project_name, root_directory)
-			postbuildcommands {
-				 "'cp', '-R', '../../../../third_party/fmod/lib/android/.', 'src/main/jniLibs'"
-			}
+			if os.host() == "windows" then
+				copydir(
+					"../third_party/fmod/lib/android", 
+					project_build_dir(project_name, root_directory, platform) .. "/src/main/jniLibs"
+				)
+			else
+				postbuildcommands {
+					"'cp', '-R', '../../../../third_party/fmod/lib/android/.', 'src/main/jniLibs'"
+				}
+			end
 		end
 
 		if binary_type ~= "SharedLib" then

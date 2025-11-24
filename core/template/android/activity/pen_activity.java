@@ -89,8 +89,6 @@ class SurfaceWrapper extends SurfaceView implements SurfaceHolder.Callback, Surf
     {
         super(context);
 
-        Log.d("PMTECH", "SurfaceWrapper");
-
         getHolder().addCallback(this);
         m_context = context;
     }
@@ -98,8 +96,6 @@ class SurfaceWrapper extends SurfaceView implements SurfaceHolder.Callback, Surf
     @Override
     protected void onDraw(Canvas canvas)
     {
-        Log.d("PMTECH", "onDraw");
-
         render(this);
         invalidate();
     }
@@ -107,8 +103,6 @@ class SurfaceWrapper extends SurfaceView implements SurfaceHolder.Callback, Surf
     @Override
     public void surfaceCreated(SurfaceHolder holder)
     {
-        Log.d("PMTECH", "surfaceCreated");
-
         setWillNotDraw(false);
         Surface surf = holder.getSurface();
         surface_created(surf, m_window_width, m_window_height, m_display_width, m_display_height, orientation, appPtr); // creates entry point and stuff
@@ -120,8 +114,7 @@ class SurfaceWrapper extends SurfaceView implements SurfaceHolder.Callback, Surf
         Log.d("PMTECH", "surfaceChanged");
 
         // m_touchHeight = height;
-        //onSurfaceChanged(width, height);
-
+        // onSurfaceChanged(width, height);
     }
 
     @Override

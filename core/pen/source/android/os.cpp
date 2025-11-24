@@ -19,10 +19,11 @@
 
 // viewport and window sizes
 // filesystem functions into os?
+// windows debug info?
 
 // BLOG NOTES:
-// - gradle version, always changing
-// - deprecated maven etc
+// - gradle version, always changing, sdk etc bs bs bs
+// - deprecated jcenter etc
 // - trying to link .so vs .a
 // - EGL_NONE, array terminator.
 // - No implementation found for void cc.pmtech.pen_activity.entry() (tried Java_cc_pmtech_pen_1activity_entry and Java_cc_pmtech_pen_1activity_entry__) - is the library loaded, e.g. System.loadLibrary?
@@ -35,6 +36,7 @@
 // asset manager
 // need to copy example/src/main/jniLibs (fmod)
 // inject strings for other samples res/values
+// windows setup
 
 #define PEN_JNIFUNC(ret, actname, funcname) extern "C" JNIEXPORT ret JNICALL Java_cc_pmtech_##actname##_##funcname
 
@@ -82,7 +84,7 @@ void pen_gl_swap_buffers()
 
 PEN_JNIFUNC(void, pen_1activity, entry)(JNIEnv* env, jclass thiz)
 {
-    PEN_LOG("hello print %i\n", 69);
+    // stubbed but left for extension later
 }
 
 PEN_JNIFUNC(void, pen_1activity, register_1asset_1manager)(JNIEnv* env, jclass thiz, jobject asset_manager)

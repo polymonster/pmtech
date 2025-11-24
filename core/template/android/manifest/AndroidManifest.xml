@@ -6,6 +6,8 @@
         android:label="pmtech">
         <activity
             android:name="cc.pmtech.pen_activity"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+            android:exported="true"
             android:label="pmtech_activity"
             android:configChanges="orientation|screenSize">
             <intent-filter>

@@ -26,6 +26,8 @@ solution ("pmtech_examples_" .. platform)
         androidnamespace "com.pmtech.examples"
         androidabis { "armeabi-v7a", "arm64-v8a" }
         gradleversion "com.android.tools.build:gradle:8.2.2"
+        androidsdkversion "34"
+        androidminsdkversion "21"
         gradlewrapper {
             "distributionUrl=https\\://services.gradle.org/distributions/gradle-8.6-all.zip"
         }
@@ -34,14 +36,15 @@ solution ("pmtech_examples_" .. platform)
             "mavenCentral()"
         }
         androiddependencies {
-            --"com.android.support:appcompat-v7:+",
-            --"com.android.support:support-v4:25.0.0",
-            --"com.android.support:design:25.0.0"
+            "androidx.appcompat:appcompat:1.7.0",
+            "com.google.android.material:material:1.12.0"
         }
         gradleproperties {
             "org.gradle.jvmargs=-Xmx4608m --add-exports=java.base/sun.nio.ch=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED",
             "org.gradle.parallel=true",
-            "org.gradle.daemon=true"
+            "org.gradle.daemon=true",
+            "android.useAndroidX=true",
+            "android.enableJetifier=true"
         }
         assetdirs {
             "bin/android/assets",

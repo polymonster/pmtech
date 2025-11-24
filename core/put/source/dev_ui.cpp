@@ -63,15 +63,20 @@ namespace
         ImFontConfig config;
         config.MergeMode = true;
         
-        const Str cousine_reg = pen::os_path_for_resource("data/fonts/cousine-regular.ttf");
-        io.Fonts->AddFontFromFileTTF(cousine_reg.c_str(), pixel_size);
-        
+        // cousine
+        void* cousine_reg;
+        u32 cousine_reg_size;
+        filesystem_read_file_to_buffer("data/fonts/cousine-regular.ttf", &cousine_reg, cousine_reg_size);
+        io.Fonts->AddFontFromMemoryTTF(cousine_reg, cousine_reg_size, pixel_size);
         static const ImWchar ex_ranges[] = {0x2013, 0x2019, 0};
-        io.Fonts->AddFontFromFileTTF(cousine_reg.c_str(), pixel_size, &config, ex_ranges);
+        io.Fonts->AddFontFromMemoryTTF(cousine_reg, cousine_reg_size, pixel_size, &config, ex_ranges);
 
+        // font awsome
+        void* font_awesome;
+        u32 font_awesome_size;
+        filesystem_read_file_to_buffer("data/fonts/fontawesome-webfont.ttf", &font_awesome, font_awesome_size);
         static const ImWchar icon_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
-        const Str            font_awesome = pen::os_path_for_resource("data/fonts/fontawesome-webfont.ttf");
-        io.Fonts->AddFontFromFileTTF(font_awesome.c_str(), pixel_size, &config, icon_ranges);
+        io.Fonts->AddFontFromMemoryTTF(font_awesome, font_awesome_size, pixel_size, &config, icon_ranges);
 
         // Build texture atlas
         unsigned char* pixels;
