@@ -4,6 +4,7 @@ import com.pmtech.examples.R;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.view.KeyEvent;
 import android.util.Log;
 
@@ -72,13 +73,13 @@ class SurfaceWrapper extends SurfaceView implements SurfaceHolder.Callback, Surf
     public static native void onTouchDoubleTap(int id, float x, float y, float pressure);
     */
 
-    public int m_displayWidth;   // size in pixels of the physical device's screen
-    public int m_displayHeight;
-    public int m_windowWidth;    // size in pixels of the renderable area
-    public int m_windowHeight;
+    public int m_display_width;   // size in pixels of the physical device's screen
+    public int m_display_height;
+    public int m_window_width;    // size in pixels of the renderable area
+    public int m_window_height;
 
-    public int orientation;     // orientation of device at startup
-    public int visibility; // TODO: do we need this any more?
+    public int orientation; // orientation of device at startup
+    public int visibility;
 
     private static long appPtr = 0;
 
@@ -108,15 +109,9 @@ class SurfaceWrapper extends SurfaceView implements SurfaceHolder.Callback, Surf
     {
         Log.d("PMTECH", "surfaceCreated");
 
-        /*
-        if(appPtr == 0) {
-
-        }
-        */
-
         setWillNotDraw(false);
         Surface surf = holder.getSurface();
-        surface_created(surf, m_windowWidth, m_windowHeight, m_displayWidth, m_displayHeight, orientation, appPtr); // creates entry point and stuff
+        surface_created(surf, m_window_width, m_window_height, m_display_width, m_display_height, orientation, appPtr); // creates entry point and stuff
     }
 
     @Override
@@ -126,6 +121,7 @@ class SurfaceWrapper extends SurfaceView implements SurfaceHolder.Callback, Surf
 
         // m_touchHeight = height;
         //onSurfaceChanged(width, height);
+
     }
 
     @Override
@@ -298,7 +294,14 @@ public class pen_activity extends Activity {
 
         // setup view / surface
         set_immersive_mode();
-        android.view.SurfaceView view = new SurfaceWrapper(this);
+        SurfaceWrapper view = new SurfaceWrapper(this);
+
+        DisplayMetrics metrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(metrics);
+
+        view.m_window_width = metrics.widthPixels;
+        view.m_window_height = metrics.heightPixels;
+
         setContentView(view);
 
 		super.onCreate(arg0);

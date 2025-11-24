@@ -158,10 +158,9 @@ namespace
         // set render targets to backbuffer
         pen::renderer_set_targets(PEN_BACK_BUFFER_COLOUR, PEN_BACK_BUFFER_DEPTH);
 
-        // TODO: setup viewport sizes android
         // clear screen
-        // pen::viewport vp = {0.0f, 0.0f, PEN_BACK_BUFFER_RATIO, 1.0f, 0.0f, 1.0f};
-        pen::viewport vp = {0.0f, 0.0f, 1024, 1024, 0.0f, 1.0f};
+        pen::viewport vp = {0.0f, 0.0f, PEN_BACK_BUFFER_RATIO, 1.0f, 0.0f, 1.0f};
+        //pen::viewport vp = {0.0f, 0.0f, 1024, 1024, 0.0f, 1.0f};
 
         pen::renderer_set_viewport(vp);
         pen::renderer_set_raster_state(s_raster_state);

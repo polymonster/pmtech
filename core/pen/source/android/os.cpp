@@ -17,8 +17,6 @@
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 
-// need to copy example/src/main/jniLibs (fmod)
-// inject strings for other samples res/values
 // viewport and window sizes
 // filesystem functions into os?
 
@@ -35,6 +33,8 @@
 // build shaders
 // setup assetdirs
 // asset manager
+// need to copy example/src/main/jniLibs (fmod)
+// inject strings for other samples res/values
 
 #define PEN_JNIFUNC(ret, actname, funcname) extern "C" JNIEXPORT ret JNICALL Java_cc_pmtech_##actname##_##funcname
 
@@ -61,6 +61,13 @@ namespace
         jobject         m_surface_wrapper_object;
     };
     android_context s_android_context;
+
+    struct pmtech_context
+    {
+        pen::window_frame           window;
+        pen::pen_creation_params    params;
+    };
+    pmtech_context s_pmtech_context;
 }
 
 void pen_make_gl_context_current()
@@ -91,6 +98,12 @@ PEN_JNIFUNC(void, SurfaceWrapper, render)(JNIEnv* env, jclass thiz, jobject call
 
 PEN_JNIFUNC(void, SurfaceWrapper, surface_1created)(JNIEnv* env, jclass thiz, jobject surface, int window_width, int window_height, int device_width, int device_height, int orientation, long app_ptr)
 {
+    // set window info
+    s_pmtech_context.window.x = 0;
+    s_pmtech_context.window.y = 0;
+    s_pmtech_context.window.width = window_width;
+    s_pmtech_context.window.height = window_height;
+
     auto window = ANativeWindow_fromSurface(env, surface);
 
     EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
@@ -134,12 +147,14 @@ PEN_JNIFUNC(void, SurfaceWrapper, surface_1created)(JNIEnv* env, jclass thiz, jo
     s_egl_context.surface = egl_surface;
 
     // user setup
-    pen::pen_creation_params params = pen::pen_entry(0, nullptr);
+    s_pmtech_context.params = pen::pen_entry(0, nullptr);
 
     // init renderer
-    pen::renderer_init(nullptr, false, params.max_renderer_commands);
+    pen::renderer_init(nullptr, false, s_pmtech_context.params.max_renderer_commands);
 
-    pen::jobs_create_job(params.user_thread_function, 1024 * 1024, params.user_data, pen::e_thread_start_flags::detached);
+    pen::jobs_create_job(s_pmtech_context.params.user_thread_function,
+                         1024 * 1024, s_pmtech_context.params.user_data,
+                         pen::e_thread_start_flags::detached);
 }
 
 namespace pen
@@ -156,7 +171,7 @@ namespace pen
 
     const c8* window_get_title()
     {
-        return "pmtech_window";
+        return s_pmtech_context.params.window_title;
     }
 
     void* window_get_primary_display_handle()
@@ -166,32 +181,34 @@ namespace pen
 
     void window_get_frame(window_frame& f)
     {
-
+        f = s_pmtech_context.window;
     }
 
     void window_set_frame(const window_frame& f)
     {
-
+        s_pmtech_context.window = f;
     }
 
     void window_get_size(s32& width, s32& height)
     {
-
+        width = s_pmtech_context.window.width;
+        height = s_pmtech_context.window.height;
     }
 
     void window_set_size(s32 width, s32 height)
     {
-
+        s_pmtech_context.window.width = width;
+        s_pmtech_context.window.height = height;
     }
 
     f32 window_get_aspect()
     {
-        return 0.0f;
+        return (f32)s_pmtech_context.window.width / (f32)s_pmtech_context.window.height;
     }
 
     const Str os_path_for_resource(const c8* filename)
     {
-        return "todo";
+        return filename;
     }
 
     bool os_update()

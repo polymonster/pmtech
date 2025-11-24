@@ -311,12 +311,36 @@ function create_dll(project_name, source_directory, root_directory)
 			targetname (project_name .. "_d")
 end
 
+function android_strings(project_name, root_directory)
+	local strings = (
+		"<resources>\n" ..
+		"<string name=\"app_name\">" .. project_name .. "</string>\n" ..
+		"</resources>"
+	)
+	local file = io.open(
+		root_directory ..
+		"build/android/" ..
+		project_name ..
+		"/src/main/res/values/strings.xml",
+		"wb"
+	)
+	file:write(strings)
+	file:close()
+end
+
 function create_binary(project_name, source_directory, root_directory, binary_type)
 	s_project_name = project_name
 	project ( project_name )
 		setup_product( project_name )
 		kind ( binary_type )
 		language "C++"
+
+		if platform == "android" then
+			android_strings(project_name, root_directory)
+			postbuildcommands {
+				 "'cp', '-R', '../../../../third_party/fmod/lib/android/.', 'src/main/jniLibs'"
+			}
+		end
 
 		if binary_type ~= "SharedLib" then
 			dependson { "pen", "put" }
