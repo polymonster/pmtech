@@ -363,9 +363,9 @@ function create_binary(project_name, source_directory, root_directory, binary_ty
 
 		if platform == "android" then
 			android_strings(project_name, root_directory)
-			if os.host() == "windows" then
+			if os.get() == "windows" then
 				copydir(
-					"../third_party/fmod/lib/android", 
+					"../third_party/fmod/lib/android",
 					project_build_dir(project_name, root_directory, platform) .. "/src/main/jniLibs"
 				)
 			else
