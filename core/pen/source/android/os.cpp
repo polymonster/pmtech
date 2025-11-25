@@ -6,6 +6,7 @@
 
 #include "threads.h"
 #include "renderer.h"
+#include "timer.h"
 
 #include <jni.h>
 #include <stdio.h>
@@ -27,6 +28,13 @@
 // - trying to link .so vs .a
 // - EGL_NONE, array terminator.
 // - No implementation found for void cc.pmtech.pen_activity.entry() (tried Java_cc_pmtech_pen_1activity_entry and Java_cc_pmtech_pen_1activity_entry__) - is the library loaded, e.g. System.loadLibrary?
+// - 50gb+ sdk install
+// - random sdk manager --licenses
+// - FMOD
+// - Could not create task ':app:processDebugResources'.
+// Cannot use @TaskAction annotation on method IncrementalTask.taskAction$gradle_core() because interface org.gradle.api.tasks.incremental.IncrementalTaskInputs is not a valid parameter to an action method.
+// DEBUGGER INTERMITTENT HANG AND FAIL
+
 
 // DONE:
 // call c++ from java
@@ -43,6 +51,11 @@
 // global externs
 pen::user_info              pen_user_info;
 pen::window_creation_params pen_window;
+
+JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved)
+{
+    return JNI_VERSION_1_6;
+}
 
 namespace
 {
@@ -85,6 +98,7 @@ void pen_gl_swap_buffers()
 PEN_JNIFUNC(void, pen_1activity, entry)(JNIEnv* env, jclass thiz)
 {
     // stubbed but left for extension later
+    pen::timer_system_intialise();
 }
 
 PEN_JNIFUNC(void, pen_1activity, register_1asset_1manager)(JNIEnv* env, jclass thiz, jobject asset_manager)
@@ -210,7 +224,10 @@ namespace pen
 
     const Str os_path_for_resource(const c8* filename)
     {
-        return filename;
+        Str prefix ="file:///android_asset/";
+        prefix.append(filename);
+
+        return prefix;
     }
 
     bool os_update()

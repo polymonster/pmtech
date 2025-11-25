@@ -107,7 +107,7 @@ end
 function setup_fmod_android()
     links
     {
-        "fmod",
+        "fmodL",
         "fmod.jar"
     }
     libdirs

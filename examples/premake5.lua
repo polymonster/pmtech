@@ -27,6 +27,7 @@ solution ("pmtech_examples_" .. platform)
         androidabis { "armeabi-v7a", "arm64-v8a" }
         gradleversion "com.android.tools.build:gradle:8.2.2"
         androidsdkversion "34"
+        androidndkversion "25.1.8937393"
         androidminsdkversion "21"
         gradlewrapper {
             "distributionUrl=https\\://services.gradle.org/distributions/gradle-8.6-all.zip"

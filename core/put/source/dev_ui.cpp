@@ -555,7 +555,7 @@ namespace put
             // set delta time
             f64        cur_time = pen::get_time_ms();
             static f64 prev_time = cur_time;
-            io.DeltaTime = (f32)max((cur_time - prev_time) / 1000.0, 0.0);
+            io.DeltaTime = (f32)max((cur_time - prev_time) / 1000.0, 0.0001);
             prev_time = cur_time;
 
             s32 w, h;

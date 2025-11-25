@@ -36,6 +36,7 @@ import android.view.GestureDetector;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 
+import org.fmod.FMOD;
 
 class VideoSurfaceTexture extends SurfaceTexture
 {
@@ -273,12 +274,19 @@ public class pen_activity extends Activity {
         getWindow().getDecorView().setSystemUiVisibility(vis);
     }
 
-	@Override
+    private native void initFMOD(Activity activity);
+
+    @Override
 	protected void onCreate(Bundle arg0) {
         // load lib
         String lib = getString(R.string.app_name);
         Log.d("PMTECH", lib);
         System.loadLibrary(lib);
+
+        System.loadLibrary("fmod");
+
+        initFMOD(this);
+        FMOD.init(this);
 
         entry();
 
@@ -304,14 +312,19 @@ public class pen_activity extends Activity {
 	protected void onResume() {
 		super.onResume();
 	}
+
 	@Override
 	protected void onPause() {
 		super.onPause();
 	}
+
 	@Override
-	protected void onDestroy() {
-		super.onDestroy();
-	}
+	protected void onDestroy()
+    {
+        super.onDestroy();
+        FMOD.close();
+
+    }
 
 	@Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {

@@ -13,6 +13,31 @@
 
 #include "fmod.hpp"
 
+#if PEN_PLATFORM_ANDROID
+#include "fmod_android.h"
+
+static JNIEnv* s_jni_env = nullptr;
+static JavaVM* s_jvm = nullptr;
+
+extern "C" JNIEXPORT void JNICALL
+Java_cc_pmtech_pen_1activity_initFMOD(JNIEnv* env, jobject thiz, jobject activity)
+{
+    s_jni_env = env;
+    env->GetJavaVM(&s_jvm);
+    FMOD_RESULT result = FMOD_Android_JNI_Init(s_jvm, activity);
+}
+
+void attach_current_thread()
+{
+    if (s_jvm->AttachCurrentThread(&s_jni_env, nullptr) != JNI_OK) {
+        // handle error
+    }
+}
+
+#else
+void attach_current_thread() { }
+#endif
+
 using namespace put;
 
 namespace
@@ -48,7 +73,7 @@ namespace
         };
     };
 
-    FMOD::System*                              _sound_system;
+    FMOD::System*                              _sound_system = nullptr;
     pen::res_pool<audio_resource_allocation>   _audio_resources;
     pen::multi_array_buffer<resource_state, 2> _resource_states;
     pen::res_pool<std::atomic<bool>>           _sound_file_info_ready;
@@ -59,22 +84,25 @@ namespace put
 {
     void direct::audio_system_initialise()
     {
+        // for android
+        attach_current_thread();
+
         // init fmod
         FMOD_RESULT result;
+        FMOD::Debug_Initialize(FMOD_DEBUG_LEVEL_LOG, FMOD_DEBUG_MODE_TTY, nullptr);
 
         result = FMOD::System_Create(&_sound_system);
+        PEN_ASSERT(result == FMOD_OK);
 
         static const u32 max_channels = 32;
         result = _sound_system->init(max_channels, FMOD_INIT_NORMAL, NULL);
+        PEN_ASSERT(result == FMOD_OK);
 
         static u32 reserved = 128;
-
         _audio_resources.init(reserved);
         _sound_file_info_ready.init(reserved);
         _sound_file_info.init(reserved);
         _resource_states.init(reserved);
-
-        PEN_ASSERT(result == FMOD_OK);
     }
 
     void direct::audio_system_shutdown()
