@@ -7,10 +7,9 @@
 #include "threads.h"
 #include "renderer.h"
 #include "timer.h"
+#include "input.h"
 
 #include <jni.h>
-#include <stdio.h>
-
 #include <android/asset_manager.h>
 #include <android/asset_manager_jni.h>
 #include <android/native_window_jni.h>
@@ -55,6 +54,14 @@ pen::window_creation_params pen_window;
 JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved)
 {
     return JNI_VERSION_1_6;
+}
+
+extern void audio_init_fmod_android(JNIEnv* env, jobject thiz, jobject activity);
+
+extern "C" JNIEXPORT void JNICALL
+Java_cc_pmtech_pen_1activity_initFMOD(JNIEnv* env, jobject thiz, jobject activity)
+{
+    audio_init_fmod_android(env, thiz, activity);
 }
 
 namespace
@@ -171,6 +178,38 @@ PEN_JNIFUNC(void, SurfaceWrapper, surface_1created)(JNIEnv* env, jclass thiz, jo
     pen::jobs_create_job(s_pmtech_context.params.user_thread_function,
                          1024 * 1024, s_pmtech_context.params.user_data,
                          pen::e_thread_start_flags::detached);
+}
+
+
+PEN_JNIFUNC(void, SurfaceWrapper, surface_1changed)(JNIEnv* env, jclass thiz, int width, int height)
+{
+    s_pmtech_context.window.width = width;
+    s_pmtech_context.window.height = height;
+}
+
+PEN_JNIFUNC(void, SurfaceWrapper, on_1touch_1down)(JNIEnv* env, jclass thiz, int id, float x, float y, float pressure,
+    float majoraxis, float minoraxis, float angle)
+{
+    pen::input_set_mouse_down(PEN_MOUSE_L);
+    pen::input_set_mouse_pos(x, y);
+}
+
+PEN_JNIFUNC(void, SurfaceWrapper, on_1touch_1moved)(JNIEnv* env, jclass thiz, int id, float x, float y, float pressure,
+    float majoraxis, float minoraxis, float angle)
+{
+    pen::input_set_mouse_pos(x, y);
+}
+
+PEN_JNIFUNC(void, SurfaceWrapper, on_1touch_1up)(JNIEnv* env, jclass thiz, int id, float x, float y, float pressure,
+    float majoraxis, float minoraxis, float angle)
+{
+    pen::input_set_mouse_up(PEN_MOUSE_L);
+    pen::input_set_mouse_pos(x, y);
+}
+
+PEN_JNIFUNC(void, SurfaceWrapper, on_1touch_1cancelled)(JNIEnv* env, jclass thiz, int id, float x, float y)
+{
+    pen::input_set_mouse_up(PEN_MOUSE_L);
 }
 
 namespace pen

@@ -49,41 +49,24 @@ class VideoSurfaceTexture extends SurfaceTexture
 };
 
 // new graphics api agnostic implementation of android surface to support native egl and vulkan
-class SurfaceWrapper extends SurfaceView implements SurfaceHolder.Callback, SurfaceTexture.OnFrameAvailableListener {
+class SurfaceWrapper extends SurfaceView implements SurfaceHolder.Callback {
 
 	public static native void surface_created(Surface surface, int window_width, int window_height, int display_width, int display_height, int orientation, long app_ptr);
+    public static native void surface_changed(int width, int height);
 	public static native void render(SurfaceWrapper caller);
-    /*
-    public static native void render(SurfaceWrapper caller);
-    public static native long fwEntry();
-    public static native void onSurfaceCreated(Surface surface, int windowWidth, int windowHeight, int displayWidth, int displayHeight, int orientation, long appPtr);
-    public static native void onSurfaceChanged(int width, int height);
-    public static native void surfaceTextureUpdated(long playerPointer);
-
-    public static native void onTouchDown(int id, float x, float y, float pressure,
-                                          float majoraxis, float minoraxis, float angle);
-
-    public static native void onTouchUp(int id, float x, float y, float pressure,
-                                        float majoraxis, float minoraxis, float angle);
-
-    public static native void onTouchMoved(int id, float x, float y, float pressure,
-                                           float majoraxis, float minoraxis, float angle);
-
-    public static native void onTouchCancelled(int id, float x, float y);
-
-    public static native void onTouchDoubleTap(int id, float x, float y, float pressure);
-    */
+    public static native void on_touch_down(int id, float x, float y, float pressure, float majoraxis, float minoraxis, float angle);
+    public static native void on_touch_up(int id, float x, float y, float pressure, float majoraxis, float minoraxis, float angle);
+    public static native void on_touch_moved(int id, float x, float y, float pressure, float majoraxis, float minoraxis, float angle);
+    public static native void on_touch_cancelled(int id, float x, float y);
 
     public int m_display_width;   // size in pixels of the physical device's screen
     public int m_display_height;
     public int m_window_width;    // size in pixels of the renderable area
     public int m_window_height;
-
     public int orientation; // orientation of device at startup
     public int visibility;
 
-    private static long appPtr = 0;
-
+    private static long app_ptr = 0;
     private Context m_context;
 
     public SurfaceWrapper(Context context)
@@ -105,17 +88,15 @@ class SurfaceWrapper extends SurfaceView implements SurfaceHolder.Callback, Surf
     public void surfaceCreated(SurfaceHolder holder)
     {
         setWillNotDraw(false);
+
         Surface surf = holder.getSurface();
-        surface_created(surf, m_window_width, m_window_height, m_display_width, m_display_height, orientation, appPtr); // creates entry point and stuff
+        surface_created(surf, m_window_width, m_window_height, m_display_width, m_display_height, orientation, app_ptr);
     }
 
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height)
     {
-        Log.d("PMTECH", "surfaceChanged");
-
-        // m_touchHeight = height;
-        // onSurfaceChanged(width, height);
+        surface_changed(width, height);
     }
 
     @Override
@@ -124,15 +105,56 @@ class SurfaceWrapper extends SurfaceView implements SurfaceHolder.Callback, Surf
 
     }
 
-    synchronized public void onFrameAvailable(SurfaceTexture texture)
+    @Override
+    public boolean onTouchEvent(MotionEvent event)
     {
-        /*
-        VideoSurfaceTexture videoTexture = (VideoSurfaceTexture)texture;
-        if(videoTexture.m_playerPointer != 0)
+        final int action = event.getActionMasked();
+        final int pointerIndex = event.getActionIndex();
+        final int pointerId = event.getPointerId(pointerIndex);
+
+        switch(action)
         {
-            surfaceTextureUpdated(videoTexture.m_playerPointer);
+            case MotionEvent.ACTION_MOVE:
+                for(int j=0; j<event.getPointerCount(); j++)
+                {
+                    on_touch_moved(event.getPointerId(j),
+                            event.getX(j),
+                            event.getY(j),
+                            event.getPressure(j),
+                            event.getTouchMajor(j),
+                            event.getTouchMinor(j),
+                            event.getOrientation(j));
+                }
+                break;
+
+            case MotionEvent.ACTION_POINTER_UP:
+            case MotionEvent.ACTION_UP:
+                on_touch_up(pointerId,
+                        event.getX(pointerIndex),
+                        event.getY(pointerIndex),
+                        event.getPressure(pointerIndex),
+                        event.getTouchMajor(pointerIndex),
+                        event.getTouchMinor(pointerIndex),
+                        event.getOrientation(pointerIndex));
+                break;
+
+            case MotionEvent.ACTION_POINTER_DOWN:
+            case MotionEvent.ACTION_DOWN:
+                on_touch_down(pointerId,
+                        event.getX(pointerIndex),
+                        event.getY(pointerIndex),
+                        event.getPressure(pointerIndex),
+                        event.getTouchMajor(pointerIndex),
+                        event.getTouchMinor(pointerIndex),
+                        event.getOrientation(pointerIndex));
+                break;
+
+            case MotionEvent.ACTION_CANCEL:
+                on_touch_cancelled(pointerId, event.getX(), event.getY());
+                break;
         }
-        */
+
+        return true;
     }
 
     public enum e_vibrationType
@@ -178,70 +200,6 @@ class SurfaceWrapper extends SurfaceView implements SurfaceHolder.Callback, Surf
             vibrator.vibrate(vibrationEffect);
         }
         */
-    }
-
-    public float m_touchHeight;
-    public float m_touchTop;
-    public float m_touchBottom;
-
-    public float adjustY(float y)
-    {
-        float fac = m_touchHeight / (m_touchBottom-m_touchTop);
-        return y*fac + m_touchTop;
-    }
-
-    @Override
-    public boolean onTouchEvent(MotionEvent event)
-    {
-        /*
-        final int action = event.getActionMasked();
-        final int pointerIndex = event.getActionIndex();
-        final int pointerId = event.getPointerId(pointerIndex);
-
-        m_touchTop = getTop();
-        m_touchBottom = getBottom();
-
-        switch(action)
-        {
-            case MotionEvent.ACTION_MOVE:
-                for(int j=0; j<event.getPointerCount(); j++)
-                {
-                    onTouchMoved(event.getPointerId(j),
-                            event.getX(j),
-                            adjustY(event.getY(j)),
-                            event.getPressure(j),
-                            event.getTouchMajor(j),
-                            event.getTouchMinor(j),
-                            event.getOrientation(j));
-                }
-                break;
-
-            case MotionEvent.ACTION_POINTER_UP:
-            case MotionEvent.ACTION_UP:
-                onTouchUp(pointerId,
-                        event.getX(pointerIndex), adjustY(event.getY(pointerIndex)),
-                        event.getPressure(pointerIndex),
-                        event.getTouchMajor(pointerIndex), event.getTouchMinor(pointerIndex),
-                        event.getOrientation(pointerIndex));
-                break;
-
-            case MotionEvent.ACTION_POINTER_DOWN:
-            case MotionEvent.ACTION_DOWN:
-                onTouchDown(pointerId,
-                        event.getX(pointerIndex), adjustY(event.getY(pointerIndex)),
-                        event.getPressure(pointerIndex),
-                        event.getTouchMajor(pointerIndex), event.getTouchMinor(pointerIndex),
-                        event.getOrientation(pointerIndex));
-                break;
-
-            case MotionEvent.ACTION_CANCEL:
-                onTouchCancelled(pointerId,
-                        event.getX(), adjustY(event.getY()));
-                break;
-        }
-        */
-
-        return true;
     }
 
     public boolean isNetworkConnected()

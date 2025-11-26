@@ -14,28 +14,27 @@
 #include "fmod.hpp"
 
 #if PEN_PLATFORM_ANDROID
+
 #include "fmod_android.h"
 
 static JNIEnv* s_jni_env = nullptr;
 static JavaVM* s_jvm = nullptr;
 
-extern "C" JNIEXPORT void JNICALL
-Java_cc_pmtech_pen_1activity_initFMOD(JNIEnv* env, jobject thiz, jobject activity)
+void audio_init_fmod_android(JNIEnv* env, jobject thiz, jobject activity)
 {
     s_jni_env = env;
     env->GetJavaVM(&s_jvm);
     FMOD_RESULT result = FMOD_Android_JNI_Init(s_jvm, activity);
 }
 
-void attach_current_thread()
+void audio_attach_current_thread()
 {
     if (s_jvm->AttachCurrentThread(&s_jni_env, nullptr) != JNI_OK) {
         // handle error
     }
 }
-
 #else
-void attach_current_thread() { }
+void audio_attach_current_thread() { }
 #endif
 
 using namespace put;
@@ -85,7 +84,7 @@ namespace put
     void direct::audio_system_initialise()
     {
         // for android
-        attach_current_thread();
+        audio_attach_current_thread();
 
         // init fmod
         FMOD_RESULT result;
