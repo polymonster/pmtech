@@ -17,9 +17,9 @@
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 
-// viewport and window sizes
-// filesystem functions into os?
-// windows debug info?
+// filesystem functions
+// openURL etc
+// sort out fmod version
 
 // BLOG NOTES:
 // - gradle version, always changing, sdk etc bs bs bs
@@ -33,7 +33,7 @@
 // - Could not create task ':app:processDebugResources'.
 // Cannot use @TaskAction annotation on method IncrementalTask.taskAction$gradle_core() because interface org.gradle.api.tasks.incremental.IncrementalTaskInputs is not a valid parameter to an action method.
 // DEBUGGER INTERMITTENT HANG AND FAIL
-
+// DEBUG INFO works better with device
 
 // DONE:
 // call c++ from java
@@ -44,6 +44,10 @@
 // need to copy example/src/main/jniLibs (fmod)
 // inject strings for other samples res/values
 // windows setup
+// viewport and window sizes
+// touch input events
+// orientation changes
+// debug info? on device
 
 #define PEN_JNIFUNC(ret, actname, funcname) extern "C" JNIEXPORT ret JNICALL Java_cc_pmtech_##actname##_##funcname
 
