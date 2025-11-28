@@ -74,9 +74,13 @@ namespace put
     };
 
     // Threading
-
     void* audio_thread_function(void* params);
     void  audio_consume_command_buffer();
+
+    // Control
+    void audio_reinit();
+    void audio_suspend();
+    void audio_resume();
 
     // Creation
     u32  audio_create_stream(const c8* filename);
@@ -119,6 +123,10 @@ namespace put
         void audio_system_initialise();
         void audio_system_shutdown();
         void audio_system_update();
+    
+        void audio_reinit();
+        void audio_suspend();
+        void audio_resume();
 
         // Creation
         u32 audio_create_stream(const c8* filename, u32 resource_slot);

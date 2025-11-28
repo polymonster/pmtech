@@ -47,7 +47,7 @@ namespace pen
     bool             os_delete_directory(const Str& filename);
     void             os_open_url(const Str& url);
     void             os_ignore_slient();
-    void             os_enable_background_audio();
+    void             os_enable_background_audio(bool enabled);
     f32              os_get_status_bar_portrait_height();
     void             os_haptic_selection_feedback();
     void             os_init_on_screen_keyboard();
@@ -56,6 +56,7 @@ namespace pen
     Str              os_get_keychain_item(const Str& identifier, const Str& key);
     bool             os_is_backgrounded();
     void             os_register_background_callback(void (*callback)(bool));
+    bool             os_require_audio_reinit(bool reset);
     
     // music
     struct music_item

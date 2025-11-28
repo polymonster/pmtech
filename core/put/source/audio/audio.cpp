@@ -23,6 +23,9 @@ namespace
     {
         enum cmd_t
         {
+            reinit,
+            suspend,
+            resume,
             create_stream,
             create_sound,
             create_sound_music,
@@ -88,6 +91,15 @@ namespace put
     {
         switch (cmd.command_index)
         {
+            case e_cmd::reinit:
+                direct::audio_reinit();
+                break;
+            case e_cmd::suspend:
+                direct::audio_suspend();
+                break;
+            case e_cmd::resume:
+                direct::audio_resume();
+                break;
             case e_cmd::create_stream:
                 direct::audio_create_stream(cmd.filename, cmd.resource_slot);
                 pen::memory_free(cmd.filename);
@@ -228,6 +240,27 @@ namespace put
         create_file_command(filename, e_cmd::create_stream, res);
 
         return res;
+    }
+
+    void audio_reinit()
+    {
+        audio_cmd ac;
+        ac.command_index = e_cmd::reinit;
+        _cmd_buffer.put(ac);
+    }
+
+    void audio_suspend()
+    {
+        audio_cmd ac;
+        ac.command_index = e_cmd::suspend;
+        _cmd_buffer.put(ac);
+    }
+
+    void audio_resume()
+    {
+        audio_cmd ac;
+        ac.command_index = e_cmd::resume;
+        _cmd_buffer.put(ac);
     }
 
     u32 audio_create_sound(const c8* filename)
