@@ -8,20 +8,11 @@
 #include "pen.h"
 #include "pen_string.h"
 
+#include <sys/stat.h>
+
+
 namespace pen
 {
-    bool filesystem_file_exists(const c8* filename)
-    {
-        return false;
-    }
-
-    /*
-    pen_error filesystem_read_file_to_buffer(const c8* filename, void** p_buffer, u32& buffer_size)
-    {
-        return PEN_ERR_FILE_NOT_FOUND;
-    }
-    */
-
     pen_error filesystem_enum_volumes(fs_tree_node& results)
     {
         return PEN_ERR_OK;
@@ -29,7 +20,7 @@ namespace pen
 
     void filesystem_toggle_hidden_files()
     {
-
+        // stub
     }
 
     bool match_file(struct dirent* ent, s32 num_wildcards, va_list wildcards)
@@ -54,17 +45,13 @@ namespace pen
 
     pen_error filesystem_getmtime(const c8* filename, u32& mtime_out)
     {
-        return PEN_ERR_OK;
-    }
+        struct stat st;
+        if (stat(filename, &st) == 0) {
+            mtime_out = (u32)st.st_mtime; // modification time
+            return PEN_ERR_OK;
+        }
 
-    size_t filesystem_getsize(const c8* filename)
-    {
-        return 0;
-    }
-
-    const c8* filesystem_get_user_directory()
-    {
-        return nullptr;
+        return PEN_ERR_FILE_NOT_FOUND;
     }
 
     const c8** filesystem_get_user_directory(s32& directory_depth)

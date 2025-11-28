@@ -17,9 +17,9 @@
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 
+// setup diig android build
 // filesystem functions
 // openURL etc
-// sort out fmod version
 
 // BLOG NOTES:
 // - gradle version, always changing, sdk etc bs bs bs
@@ -48,6 +48,7 @@
 // touch input events
 // orientation changes
 // debug info? on device
+// sort out fmod version
 
 #define PEN_JNIFUNC(ret, actname, funcname) extern "C" JNIEXPORT ret JNICALL Java_cc_pmtech_##actname##_##funcname
 
@@ -92,6 +93,7 @@ namespace
     {
         pen::window_frame           window;
         pen::pen_creation_params    params;
+        Str                         user_dir;
     };
     pmtech_context s_pmtech_context;
 }
@@ -115,6 +117,13 @@ PEN_JNIFUNC(void, pen_1activity, entry)(JNIEnv* env, jclass thiz)
 PEN_JNIFUNC(void, pen_1activity, register_1asset_1manager)(JNIEnv* env, jclass thiz, jobject asset_manager)
 {
     s_android_context.m_asset_manager = AAssetManager_fromJava(env, asset_manager);
+}
+
+
+PEN_JNIFUNC(void, pen_1activity, set_1persistent_1data_1dir)(JNIEnv* env, jobject thiz, jstring cache_dir)
+{
+    jboolean iscopy;
+    s_pmtech_context.user_dir = env->GetStringUTFChars(cache_dir, &iscopy);
 }
 
 PEN_JNIFUNC(void, SurfaceWrapper, render)(JNIEnv* env, jclass thiz, jobject caller)
@@ -301,6 +310,38 @@ namespace pen
     bool input_redo_pressed()
     {
         return false;
+    }
+
+    const c8* filesystem_get_user_directory()
+    {
+        return s_pmtech_context.user_dir.c_str();
+    }
+
+    bool filesystem_file_exists(const c8* filename)
+    {
+        AAsset* asset = AAssetManager_open(s_android_context.m_asset_manager, filename, AASSET_MODE_STREAMING);
+        
+        if(asset)
+        {
+            AAsset_close(asset);
+            return true;
+        }
+
+        return false;
+    }
+
+    size_t filesystem_getsize(const c8* filename)
+    {
+        AAsset* asset = AAssetManager_open(s_android_context.m_asset_manager, filename, AASSET_MODE_STREAMING);
+        if(asset)
+        {
+            off64_t length = AAsset_getLength64(asset);
+            AAsset_close(asset);
+
+            return length;
+        }
+
+        return 0;
     }
 
     pen_error filesystem_read_file_to_buffer(const c8* filename, void** p_buffer, u32& buffer_size)

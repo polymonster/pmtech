@@ -224,6 +224,7 @@ public class pen_activity extends Activity {
 
 	public static native void entry();
     public static native void register_asset_manager(AssetManager asset_manager);
+    public static native void set_persistent_data_dir(String cache_dir);
 
     void set_immersive_mode()
     {
@@ -249,6 +250,7 @@ public class pen_activity extends Activity {
         entry();
 
         // register asset manager
+        set_persistent_data_dir(this.getCacheDir().getPath());
         register_asset_manager(getApplicationContext().getAssets());
 
         // setup view / surface
