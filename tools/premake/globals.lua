@@ -90,6 +90,7 @@ function setup_curl()
             "curl",
             "ssl",
             "crypto",
+            "z",
 
             "GLESv3",
             "EGL",

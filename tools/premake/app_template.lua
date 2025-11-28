@@ -362,17 +362,10 @@ function create_binary(project_name, source_directory, root_directory, binary_ty
 		language "C++"
 
 		if platform == "android" then
-			android_strings(project_name, root_directory)
-			if os.get() == "windows" then
-				copydir(
-					"../third_party/fmod/lib/android",
-					project_build_dir(project_name, root_directory, platform) .. "/src/main/jniLibs"
-				)
-			else
-				postbuildcommands {
-					"'cp', '-R', '../../../../third_party/fmod/lib/android/.', 'src/main/jniLibs'"
-				}
-			end
+			copydir(
+				(pmtech_dir .. "/third_party/fmod/lib/android"),
+				project_build_dir(project_name, root_directory, platform) .. "/src/main/jniLibs"
+			)
 		end
 
 		if binary_type ~= "SharedLib" then

@@ -17,6 +17,14 @@
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 
+#undef stdin
+#undef stdout
+#undef stderr
+
+FILE* stdin = NULL;
+FILE* stdout = NULL;
+FILE* stderr = NULL;
+
 // setup diig android build
 // filesystem functions
 // openURL etc
@@ -294,7 +302,7 @@ namespace pen
 
     void os_set_cursor_pos(u32 client_x, u32 client_y)
     {
-
+        
     }
 
     const user_info& os_get_user_info()
@@ -311,6 +319,125 @@ namespace pen
     {
         return false;
     }
+
+    Str os_get_persistent_data_directory()
+    {
+
+    }
+
+    Str os_get_cache_data_directory()
+    {
+
+    }
+    
+    void os_create_directory(const Str& dir)
+    {
+
+    }
+
+    bool os_delete_directory(const Str& filename)
+    {
+
+    }
+
+    void os_open_url(const Str& url)
+    {
+
+    }
+
+    void os_ignore_slient()
+    {
+
+    }
+
+    void os_enable_background_audio(bool enabled)
+    {
+
+    }
+
+    f32 os_get_status_bar_portrait_height()
+    {
+
+    }
+
+    void os_haptic_selection_feedback()
+    {
+
+    }
+
+    void os_init_on_screen_keyboard()
+    {
+
+    }
+
+    void os_show_on_screen_keyboard(bool show)
+    {
+
+    }
+
+    bool os_set_keychain_item(const Str& identifier, const Str& key, const Str& value)
+    {
+
+    }
+
+    Str os_get_keychain_item(const Str& identifier, const Str& key)
+    {
+
+    }
+
+    bool os_is_backgrounded()
+    {
+
+    }
+
+    void os_register_background_callback(void (*callback)(bool))
+    {
+
+    }
+
+    bool os_require_audio_reinit(bool reset)
+    {
+        
+    }
+
+    // music
+
+    const music_item* music_get_items()
+    {
+
+    }
+
+    music_file music_open_file(const music_item& item)
+    {
+
+    }
+
+    void music_close_file(const music_file& file)
+    {
+        
+    }
+
+    void music_enable_remote_control(const music_player_remote& fns)
+    {
+        
+    }
+
+    void music_set_now_playing(const Str& artist, const Str& album, const Str& track)
+    {
+        
+    }
+
+    void music_set_now_playing_artwork(void* data, u32 w, u32 h, u32 bpp, u32 row_pitch)
+    {
+        
+    }
+
+    void music_set_now_playing_time_info(u32 position_ms, u32 duration_ms)
+    {
+        
+    }
+
+    // filesystem 
 
     const c8* filesystem_get_user_directory()
     {
