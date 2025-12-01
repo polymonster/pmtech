@@ -66,7 +66,7 @@ namespace
         
         for(auto& font : fonts)
         {
-            const Str font_path = pen::os_path_for_resource(font.name.c_str());
+            const Str font_path = font.name.c_str(); //pen::os_path_for_resource(font.name.c_str());
             config.MergeMode = font.merge;
             
             if(font.range_min != 0 && font.range_max != 0)
