@@ -84,6 +84,8 @@ namespace
         bool                     show_on_screen_keyboard = false;
         pen::music_player_remote music_remote;
         void                    (*background_callback)(bool) = nullptr;
+        bool                     background_audio = true;
+        bool                     require_audio_reinit = false;
     };
     os_context s_context;
 
@@ -178,16 +180,32 @@ namespace
     // pairs with applicationDidBecomeActive
     if(s_context.background_callback)
     {
+        if(!s_context.background_audio)
+        {
+            AVAudioSession *session = [AVAudioSession sharedInstance];
+            [session setActive:NO error:nil];
+            [session setCategory:AVAudioSessionCategoryPlayback error:nil];
+        }
+        
         s_context.background_callback(true);
     }
 }
 
 - (void)applicationDidBecomeActive:(UIApplication *)app
 {
+    if([[AVAudioSession sharedInstance] isOtherAudioPlaying] == 1)
+    {
+        s_context.require_audio_reinit = true;
+    }
+    
+    AVAudioSession *session = [AVAudioSession sharedInstance];
+    [session setActive:YES error:nil];
+    [session setCategory:AVAudioSessionCategoryPlayback error:nil];
+    
     // pairs with applicationWillResignActive
     if(s_context.background_callback)
     {
-        s_context.background_callback(true);
+        s_context.background_callback(false);
     }
 }
 
@@ -611,8 +629,10 @@ namespace pen
         }
     }
 
-    void os_enable_background_audio()
+    void os_enable_background_audio(bool enable)
     {
+        s_context.background_audio = enable;
+        
         AVAudioSession *session = [AVAudioSession sharedInstance];
         double rate = 24000.0; // This should match System::setSoftwareFormat 'samplerate' which defaults to 24000
         s32 blockSize = 512; // This should match System::setDSPBufferSize 'bufferlength' which defaults to 512
@@ -826,5 +846,17 @@ namespace pen
     void os_register_background_callback(void (*callback)(bool))
     {
         s_context.background_callback = callback;
+    }
+
+    bool os_require_audio_reinit(bool reset)
+    {
+        bool res = s_context.require_audio_reinit;
+        
+        if(reset)
+        {
+            s_context.require_audio_reinit = false;
+        }
+        
+        return res;
     }
 }

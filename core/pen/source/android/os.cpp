@@ -17,9 +17,18 @@
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 
-// setup diig android build
+#undef stdin
+#undef stdout
+#undef stderr
+
+FILE* stdin = NULL;
+FILE* stdout = NULL;
+FILE* stderr = NULL;
+
+// generate or create a wrapper for pen_activity + new manifest
 // filesystem functions
 // openURL etc
+// OSK
 
 // BLOG NOTES:
 // - gradle version, always changing, sdk etc bs bs bs
@@ -34,6 +43,7 @@
 // Cannot use @TaskAction annotation on method IncrementalTask.taskAction$gradle_core() because interface org.gradle.api.tasks.incremental.IncrementalTaskInputs is not a valid parameter to an action method.
 // DEBUGGER INTERMITTENT HANG AND FAIL
 // DEBUG INFO works better with device
+// horrors of getting jvm methods, name mangling etc
 
 // DONE:
 // call c++ from java
@@ -49,6 +59,7 @@
 // orientation changes
 // debug info? on device
 // sort out fmod version
+// setup diig android build
 
 #define PEN_JNIFUNC(ret, actname, funcname) extern "C" JNIEXPORT ret JNICALL Java_cc_pmtech_##actname##_##funcname
 
@@ -56,18 +67,7 @@
 pen::user_info              pen_user_info;
 pen::window_creation_params pen_window;
 
-JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved)
-{
-    return JNI_VERSION_1_6;
-}
-
 extern void audio_init_fmod_android(JNIEnv* env, jobject thiz, jobject activity);
-
-extern "C" JNIEXPORT void JNICALL
-Java_cc_pmtech_pen_1activity_initFMOD(JNIEnv* env, jobject thiz, jobject activity)
-{
-    audio_init_fmod_android(env, thiz, activity);
-}
 
 namespace
 {
@@ -86,6 +86,8 @@ namespace
         ANativeWindow*  m_window = nullptr;
         jclass          m_surface_wrapper_class;
         jobject         m_surface_wrapper_object;
+        jobject         m_activity_object;
+        jclass          m_activity_class;
     };
     android_context s_android_context;
 
@@ -94,8 +96,39 @@ namespace
         pen::window_frame           window;
         pen::pen_creation_params    params;
         Str                         user_dir;
+        bool                        keyboard_visible = false;
     };
     pmtech_context s_pmtech_context;
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_cc_pmtech_pen_1activity_init(JNIEnv* env, jobject thiz, jobject activity)
+{
+    s_android_context.m_activity_object = env->NewGlobalRef((jobject)activity);
+    s_android_context.m_activity_class = (jclass)env->NewGlobalRef(env->GetObjectClass(s_android_context.m_activity_object));
+
+    audio_init_fmod_android(env, thiz, activity);
+}
+
+PEN_JNIFUNC(void, pen_1activity, native_1on_1key_1down)(JNIEnv* env, jclass thiz,int key_code, int unicode_char)
+{
+    int a = 0;
+}
+
+PEN_JNIFUNC(void, pen_1activity, native_1on_1key_1up)(JNIEnv* env, jclass thiz, int key_code)
+{
+    int a = 0;
+}
+
+PEN_JNIFUNC(void, pen_1activity, native_1back_1button_1pressed)(JNIEnv* env, jclass thiz)
+{
+    int a = 0;
+}
+
+JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved)
+{
+    s_android_context.m_java_vm = vm;
+    return JNI_VERSION_1_6;
 }
 
 void pen_make_gl_context_current()
@@ -227,6 +260,39 @@ PEN_JNIFUNC(void, SurfaceWrapper, on_1touch_1cancelled)(JNIEnv* env, jclass thiz
 
 namespace pen
 {
+    JNIEnv* get_jni_env()
+    {
+        if (!s_android_context.m_java_vm)
+            return nullptr;
+
+        JNIEnv* env;
+        int status = s_android_context.m_java_vm->GetEnv((void**)&env, JNI_VERSION_1_4);
+        if (status == JNI_EDETACHED)
+        {
+            if (s_android_context.m_java_vm->AttachCurrentThread(&env, nullptr) != 0)
+                return nullptr;
+        }
+        else if (status != JNI_OK)
+        {
+            return nullptr;
+        }
+        return env;
+    }
+
+    void get_jni_data(void*& vm, void*& env, void*& instance)
+    {
+        /*
+        JNIEnv* env = get_jni_env();
+        if(env)
+        {
+            jmethodID idGetInstance = env->GetStaticMethodID(s_context.m_device.m_activityClass, "getInstance", "()Landroid/app/Activity;");
+            instance = env->CallStaticObjectMethod(s_context.m_device.m_activityClass, idGetInstance);
+            vm = getJavaVM();
+            env = (void*)env;
+        }
+        */
+    }
+
     u32 window_init(void* params)
     {
         return 0;
@@ -294,7 +360,7 @@ namespace pen
 
     void os_set_cursor_pos(u32 client_x, u32 client_y)
     {
-
+        
     }
 
     const user_info& os_get_user_info()
@@ -311,6 +377,144 @@ namespace pen
     {
         return false;
     }
+
+    Str os_get_persistent_data_directory()
+    {
+        return "";
+    }
+
+    Str os_get_cache_data_directory()
+    {
+        return "";
+    }
+    
+    void os_create_directory(const Str& dir)
+    {
+
+    }
+
+    bool os_delete_directory(const Str& filename)
+    {
+
+    }
+
+    void os_open_url(const Str& url)
+    {
+
+    }
+
+    void os_ignore_slient()
+    {
+
+    }
+
+    void os_enable_background_audio(bool enabled)
+    {
+
+    }
+
+    f32 os_get_status_bar_portrait_height()
+    {
+        auto env= get_jni_env();
+
+        if(env)
+        {
+            jmethodID method = env->GetMethodID(s_android_context.m_activity_class, "getStatusBarHeight", "()I");
+            int res = env->CallIntMethod(s_android_context.m_activity_object, method);
+            return (f32)res;
+        }
+
+        return 0.0f;
+    }
+
+    void os_haptic_selection_feedback()
+    {
+
+    }
+
+    void os_init_on_screen_keyboard()
+    {
+        // ??
+    }
+
+    void os_show_on_screen_keyboard(bool show)
+    {
+        if(s_pmtech_context.keyboard_visible == show)
+            return;
+
+        auto env = get_jni_env();
+        if(env)
+        {
+            jmethodID method = env->GetStaticMethodID(s_android_context.m_activity_class, "showKeyboard", "(Z)V");
+            env->CallStaticVoidMethod(s_android_context.m_activity_class, method, show);
+
+            s_pmtech_context.keyboard_visible = show;
+        }
+    }
+
+    bool os_set_keychain_item(const Str& identifier, const Str& key, const Str& value)
+    {
+        return false;
+    }
+
+    Str os_get_keychain_item(const Str& identifier, const Str& key)
+    {
+        return "";
+    }
+
+    bool os_is_backgrounded()
+    {
+        return false;
+    }
+
+    void os_register_background_callback(void (*callback)(bool))
+    {
+
+    }
+
+    bool os_require_audio_reinit(bool reset)
+    {
+        return false;
+    }
+
+    // music
+
+    const music_item* music_get_items()
+    {
+        return nullptr;
+    }
+
+    music_file music_open_file(const music_item& item)
+    {
+        return {};
+    }
+
+    void music_close_file(const music_file& file)
+    {
+        
+    }
+
+    void music_enable_remote_control(const music_player_remote& fns)
+    {
+        
+    }
+
+    void music_set_now_playing(const Str& artist, const Str& album, const Str& track)
+    {
+        
+    }
+
+    void music_set_now_playing_artwork(void* data, u32 w, u32 h, u32 bpp, u32 row_pitch)
+    {
+        
+    }
+
+    void music_set_now_playing_time_info(u32 position_ms, u32 duration_ms)
+    {
+        
+    }
+
+    // filesystem 
 
     const c8* filesystem_get_user_directory()
     {

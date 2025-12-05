@@ -113,6 +113,22 @@ namespace put
         _sound_system->release();
     }
 
+    void direct::audio_reinit()
+    {
+        _sound_system->close();
+        _sound_system->init(32, FMOD_INIT_NORMAL, nullptr);
+    }
+
+    void direct::audio_suspend()
+    {
+        _sound_system->mixerSuspend();
+    }
+
+    void direct::audio_resume()
+    {
+        _sound_system->mixerResume();
+    }
+
     void update_channel_state(u32 resource_index)
     {
         _resource_states.grow(resource_index);
@@ -134,6 +150,15 @@ namespace put
 
         bool playing = false;
         channel->isPlaying(&playing);
+        
+        bool muted = false;
+        channel->getMute(&muted);
+        
+        float volume = 0.0;
+        channel->getVolume(&volume);
+        
+        bool is_virtual = false;
+        channel->isVirtual(&is_virtual);
 
         if (!playing)
         {
@@ -230,7 +255,10 @@ namespace put
 
     void direct::audio_system_update()
     {
-        _sound_system->update();
+        FMOD_RESULT result = _sound_system->update();
+        if (result != FMOD_OK) {
+            printf("FMOD update error: %d\n", result);
+        }
 
         for (s32 i = 0; i < _audio_resources._capacity; ++i)
         {
