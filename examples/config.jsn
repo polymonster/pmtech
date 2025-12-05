@@ -614,6 +614,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
                 "--renderer=opengl"
                 "--platform_dir=android"
                 "--pmtech_dir=../"
+                "--android_app_activity=../core/template/android/activity/pmtech_examples_app_activity.java"
             ]
         }
         pmfx: {

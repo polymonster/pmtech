@@ -172,15 +172,29 @@ local function setup_ios()
 end
 
 local function setup_android()
+	system "linux"
+	defines {
+		"PEN_PLATFORM_ANDROID"
+	}
+	androidabis { "armeabi-v7a", "arm64-v8a" }
+
+	-- allow user specified manifest
+	if _OPTIONS["android_manifest"] then
+		files
+		{
+			_OPTIONS["android_manifest"] 
+		}
+	else
+		files
+		{
+			pmtech_dir .. "/core/template/android/manifest/**.*"
+		}
+	end
+		
+	-- core pmtech engine activity
 	files
 	{
-		pmtech_dir .. "/core/template/android/manifest/**.*",
-		pmtech_dir .. "/core/template/android/activity/**.*"
-	}
-
-	androidabis
-	{
-		"armeabi-v7a", "x86"
+		pmtech_dir .. "/core/template/android/activity/pen_activity.java"
 	}
 end
 
@@ -362,6 +376,18 @@ function create_binary(project_name, source_directory, root_directory, binary_ty
 		language "C++"
 
 		if platform == "android" then
+			-- write project name as string
+			android_strings(project_name, root_directory)
+
+			-- add app activity
+			if _OPTIONS["android_app_activity"] then
+				files
+				{
+					_OPTIONS["android_app_activity"]
+				}
+			end
+
+			-- copy libs
 			copydir(
 				(pmtech_dir .. "/third_party/fmod/lib/android"),
 				project_build_dir(project_name, root_directory, platform) .. "/src/main/jniLibs"
