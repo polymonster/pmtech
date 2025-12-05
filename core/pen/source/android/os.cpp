@@ -104,6 +104,9 @@ namespace
 extern "C" JNIEXPORT void JNICALL
 Java_cc_pmtech_pen_1activity_init(JNIEnv* env, jobject thiz, jobject activity)
 {
+    // stubbed but left for extension later
+    pen::timer_system_intialise();
+
     s_android_context.m_activity_object = env->NewGlobalRef((jobject)activity);
     s_android_context.m_activity_class = (jclass)env->NewGlobalRef(env->GetObjectClass(s_android_context.m_activity_object));
 
@@ -139,12 +142,6 @@ void pen_make_gl_context_current()
 void pen_gl_swap_buffers()
 {
     eglSwapBuffers(s_egl_context.display, s_egl_context.surface);
-}
-
-PEN_JNIFUNC(void, pen_1activity, entry)(JNIEnv* env, jclass thiz)
-{
-    // stubbed but left for extension later
-    pen::timer_system_intialise();
 }
 
 PEN_JNIFUNC(void, pen_1activity, register_1asset_1manager)(JNIEnv* env, jclass thiz, jobject asset_manager)

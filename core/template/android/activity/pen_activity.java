@@ -231,7 +231,7 @@ public class pen_activity extends Activity {
         getWindow().getDecorView().setSystemUiVisibility(vis);
     }
 
-    private native void initFMOD(Activity activity);
+    private native void init(Activity activity);
 
     protected void loadLibs(String name) {
         System.loadLibrary(name);
@@ -240,11 +240,8 @@ public class pen_activity extends Activity {
 
     @Override
 	protected void onCreate(Bundle arg0) {
-
-        initFMOD(this);
+        init(this);
         FMOD.init(this);
-
-        entry();
 
         // register asset manager
         set_persistent_data_dir(this.getCacheDir().getPath());
