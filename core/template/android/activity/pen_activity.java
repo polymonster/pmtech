@@ -1,6 +1,6 @@
 package cc.pmtech;
 
-import com.pmtech.examples.R;
+import com.pmtech.diig.R;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -225,6 +225,15 @@ public class pen_activity extends Activity {
 	public static native void entry();
     public static native void register_asset_manager(AssetManager asset_manager);
     public static native void set_persistent_data_dir(String cache_dir);
+    public static native void native_on_key_down(int key_code, int unicode_char);
+    public static native void native_on_key_up(int key_code);
+    public static native void native_back_button_pressed();
+    private native void init(Activity activity);
+
+    private static SurfaceWrapper m_surfaceView;
+    private static Activity m_instance;
+
+    private static Context m_context;
 
     void set_immersive_mode()
     {
@@ -233,7 +242,14 @@ public class pen_activity extends Activity {
         getWindow().getDecorView().setSystemUiVisibility(vis);
     }
 
-    private native void initFMOD(Activity activity);
+    public int getStatusBarHeight() {
+        int result = 0;
+        int resourceId = this.getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            result = this.getResources().getDimensionPixelSize(resourceId);
+        }
+        return result;
+    }
 
     @Override
 	protected void onCreate(Bundle arg0) {
@@ -244,7 +260,7 @@ public class pen_activity extends Activity {
 
         System.loadLibrary("fmod");
 
-        initFMOD(this);
+        init(this);
         FMOD.init(this);
 
         entry();
@@ -255,15 +271,15 @@ public class pen_activity extends Activity {
 
         // setup view / surface
         set_immersive_mode();
-        SurfaceWrapper view = new SurfaceWrapper(this);
+        m_surfaceView = new SurfaceWrapper(this);
 
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
 
-        view.m_window_width = metrics.widthPixels;
-        view.m_window_height = metrics.heightPixels;
+        m_surfaceView.m_window_width = metrics.widthPixels;
+        m_surfaceView.m_window_height = metrics.heightPixels;
 
-        setContentView(view);
+        setContentView(m_surfaceView);
 
 		super.onCreate(arg0);
 	}
@@ -283,16 +299,55 @@ public class pen_activity extends Activity {
     {
         super.onDestroy();
         FMOD.close();
-
-    }
-
-	@Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-		return false;
     }
 
     @Override
-    public boolean onKeyUp(int keyCode, KeyEvent event) {
-		return false;
+    public boolean onKeyDown(int keyCode, KeyEvent event)
+    {
+        switch(event.getKeyCode())
+        {
+            case android.view.KeyEvent.KEYCODE_BACK:
+                native_back_button_pressed();
+                return true;
+            default:
+                native_on_key_down(keyCode, event.getUnicodeChar());
+                return false;
+        }
+    }
+
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event)
+    {
+        native_on_key_up(keyCode);
+        return false;
+    }
+
+    @Override
+    public void onBackPressed()
+    {
+        native_back_button_pressed();
+    }
+
+    public static void showKeyboard(boolean show)
+    {
+        View view = m_surfaceView;
+
+        Context context = view.getContext();
+        if(show)
+        {
+            InputMethodManager mgr = (InputMethodManager)context.getSystemService(Context.INPUT_METHOD_SERVICE);
+            mgr.toggleSoftInput(InputMethodManager.SHOW_FORCED,0);
+        }
+        else
+        {
+            InputMethodManager mgr = (InputMethodManager)context.getSystemService(Context.INPUT_METHOD_SERVICE);
+            mgr.toggleSoftInput(InputMethodManager.HIDE_IMPLICIT_ONLY,0);
+        }
+    }
+
+    public static void openURL(String url)
+    {
+        Intent webIntent = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url));
+        m_instance.startActivity(webIntent);
     }
 }
