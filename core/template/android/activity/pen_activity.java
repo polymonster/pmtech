@@ -1,7 +1,5 @@
 package cc.pmtech;
 
-import com.pmtech.examples.R;
-
 import android.app.Activity;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
@@ -235,14 +233,13 @@ public class pen_activity extends Activity {
 
     private native void initFMOD(Activity activity);
 
+    protected void loadLibs(String name) {
+        System.loadLibrary(name);
+        System.loadLibrary("fmod");
+    }
+
     @Override
 	protected void onCreate(Bundle arg0) {
-        // load lib
-        String lib = getString(R.string.app_name);
-        Log.d("PMTECH", lib);
-        System.loadLibrary(lib);
-
-        System.loadLibrary("fmod");
 
         initFMOD(this);
         FMOD.init(this);

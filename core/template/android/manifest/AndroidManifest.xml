@@ -5,10 +5,10 @@
         android:allowBackup="true"
         android:label="pmtech">
         <activity
-            android:name="cc.pmtech.pen_activity"
+            android:name="pmtech.app.android.pmtech_app_activity"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar"
             android:exported="true"
-            android:label="pmtech_activity"
+            android:label="pmtech_app_activity"
             android:configChanges="orientation|screenSize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

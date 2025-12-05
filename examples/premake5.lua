@@ -19,12 +19,7 @@ solution ("pmtech_examples_" .. platform)
     }
 
     if platform == "android" then
-        system "linux"
-        defines {
-            "PEN_PLATFORM_ANDROID"
-        }
         androidnamespace "com.pmtech.examples"
-        androidabis { "armeabi-v7a", "arm64-v8a" }
         gradleversion "com.android.tools.build:gradle:8.2.2"
         androidsdkversion "34"
         androidndkversion "25.1.8937393"
