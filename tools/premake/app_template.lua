@@ -385,6 +385,8 @@ function create_binary(project_name, source_directory, root_directory, binary_ty
 				{
 					_OPTIONS["android_app_activity"]
 				}
+			else
+				error("You must specify --android_app_activity=<path-to-your-activity.java> for this project to work")
 			end
 
 			-- copy libs
