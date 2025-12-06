@@ -219,8 +219,6 @@ class SurfaceWrapper extends SurfaceView implements SurfaceHolder.Callback {
 }
 
 public class pen_activity extends Activity {
-
-	public static native void entry();
     public static native void register_asset_manager(AssetManager asset_manager);
     public static native void set_persistent_data_dir(String cache_dir);
     public static native void native_on_key_down(int key_code, int unicode_char);
@@ -259,8 +257,6 @@ public class pen_activity extends Activity {
 
         init(this);
         FMOD.init(this);
-
-        entry();
 
         // register asset manager
         set_persistent_data_dir(this.getCacheDir().getPath());
