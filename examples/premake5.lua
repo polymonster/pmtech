@@ -33,7 +33,7 @@ solution ("pmtech_examples_" .. platform)
         }
         androiddependencies {
             "androidx.appcompat:appcompat:1.7.0",
-            "com.google.android.material:material:1.12.0"
+            "com.google.android.material:material:1.12.0",
             "androidx.security:security-crypto:1.1.0-alpha06"
         }
         gradleproperties {

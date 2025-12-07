@@ -262,6 +262,8 @@ public class pen_activity extends Activity {
     @Override
 	protected void onCreate(Bundle arg0) {
 
+        m_instance = this;
+
         init(this);
         FMOD.init(this);
         initCredentials();
@@ -363,8 +365,10 @@ public class pen_activity extends Activity {
 
     public static void openURL(String url)
     {
-        Intent web_intent = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url));
-        m_instance.startActivity(web_intent);
+        m_instance.runOnUiThread(() -> {
+            Intent webIntent = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url));
+            m_instance.startActivity(webIntent);
+        });
     }
 
     public static void createDirectory(String strdir)
