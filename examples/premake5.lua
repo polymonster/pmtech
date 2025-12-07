@@ -34,6 +34,7 @@ solution ("pmtech_examples_" .. platform)
         androiddependencies {
             "androidx.appcompat:appcompat:1.7.0",
             "com.google.android.material:material:1.12.0"
+            "androidx.security:security-crypto:1.1.0-alpha06"
         }
         gradleproperties {
             "org.gradle.jvmargs=-Xmx4608m --add-exports=java.base/sun.nio.ch=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED",

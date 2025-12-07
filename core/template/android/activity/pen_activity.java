@@ -1,19 +1,15 @@
 package cc.pmtech;
 
+import java.io.File;
+
 import android.app.Activity;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.KeyEvent;
-import android.util.Log;
 
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
-import android.content.res.Configuration;
-import android.graphics.SurfaceTexture;
-import android.graphics.Canvas;
-
 import android.graphics.SurfaceTexture;
 import android.graphics.Canvas;
 
@@ -22,31 +18,24 @@ import static android.view.View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
 import static android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
 import static android.view.View.SYSTEM_UI_FLAG_LOW_PROFILE;
 
-import android.view.KeyEvent;
-import android.view.OrientationEventListener;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.MotionEvent;
-import android.view.Display;
-import android.view.GestureDetector;
-import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
+
+import androidx.security.crypto.EncryptedSharedPreferences;
+import android.content.SharedPreferences;
+import androidx.security.crypto.MasterKey;
+
+import android.widget.EditText;
+import android.text.InputType;
+import android.view.inputmethod.EditorInfo;
 
 import org.fmod.FMOD;
 
-class VideoSurfaceTexture extends SurfaceTexture
-{
-    VideoSurfaceTexture(int name)
-    {
-        super(name);
-    }
-
-    public long m_playerPointer = 0;
-};
-
-// new graphics api agnostic implementation of android surface to support native egl and vulkan
+// new graphics api agnostic implementation of android surface to support native egl
 class SurfaceWrapper extends SurfaceView implements SurfaceHolder.Callback {
 
 	public static native void surface_created(Surface surface, int window_width, int window_height, int display_width, int display_height, int orientation, long app_ptr);
@@ -174,7 +163,7 @@ class SurfaceWrapper extends SurfaceView implements SurfaceHolder.Callback {
         {
             case VIBRATION_CHOICE_SELECTED:
                 VibrationEffect vibrationEffect;
-                vibrationEffect =  VibrationEffect.createOneShot(16, VibrationEffect.DEFAULT_AMPLITUDE);
+                vibrationEffect = VibrationEffect.createOneShot(16, VibrationEffect.DEFAULT_AMPLITUDE);
                 vibrator.cancel();
                 vibrator.vibrate(vibrationEffect);
                 break;
@@ -220,7 +209,8 @@ class SurfaceWrapper extends SurfaceView implements SurfaceHolder.Callback {
 
 public class pen_activity extends Activity {
     public static native void register_asset_manager(AssetManager asset_manager);
-    public static native void set_persistent_data_dir(String cache_dir);
+    public static native void set_persistent_data_dir(String persistent_data_dir);
+    public static native void set_cache_dir(String cache_dir);
     public static native void native_on_key_down(int key_code, int unicode_char);
     public static native void native_on_key_up(int key_code);
     public static native void native_back_button_pressed();
@@ -228,15 +218,10 @@ public class pen_activity extends Activity {
 
     private static SurfaceWrapper m_surfaceView;
     private static Activity m_instance;
-
     private static Context m_context;
-
-    void set_immersive_mode()
-    {
-        int vis = SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
-        vis |= SYSTEM_UI_FLAG_LOW_PROFILE | SYSTEM_UI_FLAG_HIDE_NAVIGATION | SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
-        getWindow().getDecorView().setSystemUiVisibility(vis);
-    }
+    private MasterKey m_masterKey;
+    private SharedPreferences m_sharedPrefs;
+    private boolean m_canUseSharedPrefs;
 
     public int getStatusBarHeight() {
         int result = 0;
@@ -244,7 +229,7 @@ public class pen_activity extends Activity {
         if (resourceId > 0) {
             result = this.getResources().getDimensionPixelSize(resourceId);
         }
-        return result;
+        return (int)((float)result * 0.25f);
     }
 
     protected void loadLibs(String name) {
@@ -252,18 +237,41 @@ public class pen_activity extends Activity {
         System.loadLibrary("fmod");
     }
 
+    void initCredentials()
+    {
+        try {
+            m_masterKey = new MasterKey.Builder(this)
+                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                .build();
+
+            m_sharedPrefs = EncryptedSharedPreferences.create(
+                    this,
+                    "diig_shared_prefs",
+                    m_masterKey,
+                    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            );
+
+            m_canUseSharedPrefs = true;
+        }
+        catch (Exception e) {
+            m_canUseSharedPrefs = false;
+        }
+    }
+
     @Override
 	protected void onCreate(Bundle arg0) {
 
         init(this);
         FMOD.init(this);
+        initCredentials();
 
         // register asset manager
-        set_persistent_data_dir(this.getCacheDir().getPath());
+        set_persistent_data_dir(this.getFilesDir().getPath());
+        set_cache_dir(this.getCacheDir().getPath());
         register_asset_manager(getApplicationContext().getAssets());
 
         // setup view / surface
-        set_immersive_mode();
         m_surfaceView = new SurfaceWrapper(this);
 
         DisplayMetrics metrics = new DisplayMetrics();
@@ -286,6 +294,11 @@ public class pen_activity extends Activity {
 	protected void onPause() {
 		super.onPause();
 	}
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+    }
 
 	@Override
 	protected void onDestroy()
@@ -326,6 +339,16 @@ public class pen_activity extends Activity {
         View view = m_surfaceView;
 
         Context context = view.getContext();
+
+        EditText field = new EditText(context);
+        field.setInputType(
+            InputType.TYPE_CLASS_TEXT |
+            InputType.TYPE_TEXT_VARIATION_PASSWORD |
+            InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+        );
+        field.setImeOptions(EditorInfo.IME_ACTION_DONE);
+        field.requestFocus();
+
         if(show)
         {
             InputMethodManager mgr = (InputMethodManager)context.getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -340,7 +363,49 @@ public class pen_activity extends Activity {
 
     public static void openURL(String url)
     {
-        Intent webIntent = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url));
-        m_instance.startActivity(webIntent);
+        Intent web_intent = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url));
+        m_instance.startActivity(web_intent);
+    }
+
+    public static void createDirectory(String strdir)
+    {
+        File dir = new File(strdir);
+        if (!dir.exists()) {
+            dir.mkdirs(); 
+        }
+    }
+
+    public static void deleteDirectory(String strdir) {
+        File dir = new File(strdir);
+        if (dir.isDirectory()) {
+            File[] children = dir.listFiles();
+            if (children != null) {
+                for (File child : children) {
+                    deleteDirectory(child.toString());
+                }
+            }
+        }
+        dir.delete();
+    }
+
+    public boolean setCredential(String key, String value)
+    {
+        if(m_canUseSharedPrefs)
+        {
+            m_sharedPrefs.edit().putString(key, value).apply();
+            return true;
+        }
+
+        return false;
+    }
+
+    public String getCredential(String key)
+    {
+        if(m_canUseSharedPrefs)
+        {
+            return m_sharedPrefs.getString(key, "");
+        }
+
+        return "";
     }
 }
