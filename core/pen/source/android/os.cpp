@@ -32,10 +32,9 @@ FILE* stdin = NULL;
 FILE* stdout = NULL;
 FILE* stderr = NULL;
 
-// filesystem enum
-// keychain / creds
-// google play
 // backgrounding
+// google play
+
 // audio modes (pause / background etc)
 // vibrate
 
@@ -73,6 +72,8 @@ FILE* stderr = NULL;
 // OSK
 // openURL
 // filesystem functions
+// keychain / creds
+// filesystem enum (dirent)
 
 #define PEN_JNIFUNC(ret, actname, funcname) extern "C" JNIEXPORT ret JNICALL Java_cc_pmtech_##actname##_##funcname
 
