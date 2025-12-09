@@ -32,11 +32,8 @@ FILE* stdin = NULL;
 FILE* stdout = NULL;
 FILE* stderr = NULL;
 
-// backgrounding
 // google play
-
-// audio modes (pause / background etc)
-// vibrate
+// legacy packaging
 
 // BLOG NOTES:
 // - gradle version, always changing, sdk etc bs bs bs
@@ -52,6 +49,10 @@ FILE* stderr = NULL;
 // DEBUGGER INTERMITTENT HANG AND FAIL
 // DEBUG INFO works better with device
 // horrors of getting jvm methods, name mangling etc
+
+// ONHOLD
+// backgrounding
+// audio modes (pause / background etc)
 
 // DONE:
 // call c++ from java
@@ -74,6 +75,7 @@ FILE* stderr = NULL;
 // filesystem functions
 // keychain / creds
 // filesystem enum (dirent)
+// vibrate
 
 #define PEN_JNIFUNC(ret, actname, funcname) extern "C" JNIEXPORT ret JNICALL Java_cc_pmtech_##actname##_##funcname
 
@@ -582,18 +584,17 @@ namespace pen
 
     void os_ignore_slient()
     {
-
+        // stub
     }
 
     void os_enable_background_audio(bool enabled)
     {
-
+        // stub
     }
 
     f32 os_get_status_bar_portrait_height()
     {
-        auto env= get_jni_env();
-
+        auto env = get_jni_env();
         if(env)
         {
             jmethodID method = env->GetMethodID(s_android_context.m_activity_class, "getStatusBarHeight", "()I");
@@ -606,7 +607,12 @@ namespace pen
 
     void os_haptic_selection_feedback()
     {
-
+        auto env = get_jni_env();
+        if(env)
+        {
+            jmethodID method = env->GetMethodID(s_android_context.m_activity_class, "triggerVibration", "()V");
+            env->CallVoidMethod(s_android_context.m_activity_object, method);
+        }
     }
 
     void os_init_on_screen_keyboard()

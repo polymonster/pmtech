@@ -32,6 +32,8 @@ import androidx.security.crypto.MasterKey;
 import android.widget.EditText;
 import android.text.InputType;
 import android.view.inputmethod.EditorInfo;
+import android.os.Vibrator;
+import android.os.VibrationEffect;
 
 import org.fmod.FMOD;
 
@@ -143,68 +145,6 @@ class SurfaceWrapper extends SurfaceView implements SurfaceHolder.Callback {
 
         return true;
     }
-
-    public enum e_vibrationType
-    {
-        VIBRATION_CHOICE_BEGIN,
-        VIBRATION_CHOICE_SELECTED,
-        VIBRATION_CHOICE_ENDED,
-        VIBRATION_CHOICE_CANCEL
-    }
-
-    public void triggerVibration(int vibrationType)
-    {
-        /*
-        e_vibrationType vibration = e_vibrationType.values()[vibrationType];
-
-        Vibrator vibrator = (Vibrator)m_context.getSystemService(Context.VIBRATOR_SERVICE);
-
-        switch(vibration)
-        {
-            case VIBRATION_CHOICE_SELECTED:
-                VibrationEffect vibrationEffect;
-                vibrationEffect = VibrationEffect.createOneShot(16, VibrationEffect.DEFAULT_AMPLITUDE);
-                vibrator.cancel();
-                vibrator.vibrate(vibrationEffect);
-                break;
-            default:
-                break;
-        }
-        */
-    }
-
-    public void triggerVibration(float amplitude, float duration)
-    {
-        /*
-        Vibrator vibrator = (Vibrator)m_context.getSystemService(Context.VIBRATOR_SERVICE);
-
-        VibrationEffect vibrationEffect;
-        int effectAmplitude = (int) (amplitude * 255);
-        if(effectAmplitude > 0)
-        {
-            long effectDuration = duration > 0 ? (long) (duration * 1000) : 16;
-            vibrationEffect = VibrationEffect.createOneShot(effectDuration, effectAmplitude);
-            vibrator.vibrate(vibrationEffect);
-        }
-        */
-    }
-
-    public boolean isNetworkConnected()
-    {
-        /*
-        ConnectivityManager connectivity = (ConnectivityManager)m_context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        if(connectivity != null)
-        {
-            NetworkInfo networkInfo = connectivity.getActiveNetworkInfo();
-            if(networkInfo != null)
-            {
-                return networkInfo.isConnected();
-            }
-        }
-        */
-
-        return false;
-    }
 }
 
 public class pen_activity extends Activity {
@@ -229,7 +169,7 @@ public class pen_activity extends Activity {
         if (resourceId > 0) {
             result = this.getResources().getDimensionPixelSize(resourceId);
         }
-        return (int)((float)result * 0.25f);
+        return (int)((float)result);
     }
 
     protected void loadLibs(String name) {
@@ -263,6 +203,10 @@ public class pen_activity extends Activity {
 	protected void onCreate(Bundle arg0) {
 
         m_instance = this;
+        m_context = this;
+
+        getWindow().setDecorFitsSystemWindows(false);
+        getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
 
         init(this);
         FMOD.init(this);
@@ -415,5 +359,13 @@ public class pen_activity extends Activity {
         }
 
         return "";
+    }
+
+    public void triggerVibration()
+    {
+        Vibrator vibrator = (Vibrator)m_context.getSystemService(Context.VIBRATOR_SERVICE);
+        VibrationEffect effect = VibrationEffect.createOneShot(16, VibrationEffect.DEFAULT_AMPLITUDE);
+        vibrator.cancel();
+        vibrator.vibrate(effect);
     }
 }
