@@ -295,6 +295,10 @@ public class pen_activity extends Activity {
 	@Override
 	protected void onPause() {
 		super.onPause();
+        
+        // kill the process when app is backgrounded
+        android.os.Process.killProcess(android.os.Process.myPid());
+        System.exit(0);
 	}
 
     @Override
