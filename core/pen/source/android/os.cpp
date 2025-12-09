@@ -313,7 +313,6 @@ PEN_JNIFUNC(void, pen_1activity, register_1asset_1manager)(JNIEnv* env, jclass t
     s_android_context.m_asset_manager = AAssetManager_fromJava(env, asset_manager);
 }
 
-
 PEN_JNIFUNC(void, pen_1activity, set_1persistent_1data_1dir)(JNIEnv* env, jobject thiz, jstring persistent_data_dir)
 {
     jboolean iscopy;
@@ -382,15 +381,21 @@ PEN_JNIFUNC(void, SurfaceWrapper, surface_1created)(JNIEnv* env, jclass thiz, jo
     s_egl_context.display = display;
     s_egl_context.surface = egl_surface;
 
-    // user setup
-    s_pmtech_context.params = pen::pen_entry(0, nullptr);
+    static bool setup = true;
+    if(setup)
+    {
+        // user setup
+        s_pmtech_context.params = pen::pen_entry(0, nullptr);
 
-    // init renderer
-    pen::renderer_init(nullptr, false, s_pmtech_context.params.max_renderer_commands);
+        // init renderer
+        pen::renderer_init(nullptr, false, s_pmtech_context.params.max_renderer_commands);
 
-    pen::jobs_create_job(s_pmtech_context.params.user_thread_function,
-                         1024 * 1024, s_pmtech_context.params.user_data,
-                         pen::e_thread_start_flags::detached);
+        pen::jobs_create_job(s_pmtech_context.params.user_thread_function,
+            1024 * 1024, s_pmtech_context.params.user_data,
+            pen::e_thread_start_flags::detached);
+
+        setup = false;
+    }
 }
 
 
