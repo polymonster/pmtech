@@ -49,6 +49,8 @@ FILE* stderr = NULL;
 // DEBUGGER INTERMITTENT HANG AND FAIL
 // DEBUG INFO works better with device
 // horrors of getting jvm methods, name mangling etc
+// applicationId not in manifest
+// install gradle. to build
 
 // ONHOLD
 // backgrounding
