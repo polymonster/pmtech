@@ -207,6 +207,7 @@ public class pen_activity extends Activity {
 
         getWindow().setDecorFitsSystemWindows(false);
         getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         init(this);
         FMOD.init(this);

@@ -51,6 +51,8 @@ FILE* stderr = NULL;
 // horrors of getting jvm methods, name mangling etc
 // applicationId not in manifest
 // install gradle. to build
+// API access service account hell
+// https://help.radio.co/en/articles/6232140-how-to-get-your-google-play-json-key
 
 // ONHOLD
 // backgrounding
