@@ -3,13 +3,18 @@ package cc.pmtech;
 import java.io.File;
 
 import android.app.Activity;
-import android.os.Bundle;
+
 import android.util.DisplayMetrics;
-import android.view.KeyEvent;
+
+import android.os.Bundle;
+import android.os.Vibrator;
+import android.os.VibrationEffect;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.AssetManager;
+
 import android.graphics.SurfaceTexture;
 import android.graphics.Canvas;
 
@@ -18,22 +23,21 @@ import static android.view.View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
 import static android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
 import static android.view.View.SYSTEM_UI_FLAG_LOW_PROFILE;
 
+import android.view.KeyEvent;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.MotionEvent;
 import android.view.inputmethod.InputMethodManager;
+import android.view.WindowManager;
+import android.view.inputmethod.EditorInfo;
 
 import androidx.security.crypto.EncryptedSharedPreferences;
-import android.content.SharedPreferences;
 import androidx.security.crypto.MasterKey;
 
 import android.widget.EditText;
 import android.text.InputType;
-import android.view.inputmethod.EditorInfo;
-import android.os.Vibrator;
-import android.os.VibrationEffect;
 
 import org.fmod.FMOD;
 
