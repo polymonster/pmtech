@@ -69,6 +69,7 @@ namespace
             audio_fft_spectrum* fft_spectrum;
             audio_eq_state      eq_state;
             f32                 gain_value;
+            f32                 buffered_percentage;
         };
     };
 
@@ -253,6 +254,28 @@ namespace put
         gain_dsp->getParameterFloat(FMOD_DSP_CHANNELMIX_GAIN_CH0, &rs.gain_value, nullptr, 0);
     }
 
+    void update_buffered_percentage(u32 resource_index)
+    {
+        _resource_states.grow(resource_index);
+        resource_state& rs = _resource_states.backbuffer()[resource_index];
+
+        FMOD::Sound* sound = (FMOD::Sound*)_audio_resources[resource_index].resource;
+        
+        FMOD_OPENSTATE open_state;
+        unsigned int percent_buffered = 0;
+        bool starving = false;
+        sound->getOpenState(&open_state, &percent_buffered, &starving, nullptr);
+        
+        if(open_state == FMOD_OPENSTATE_READY)
+        {
+            rs.buffered_percentage = 11.0f; //(f32)percent_buffered;
+        }
+        else
+        {
+            rs.buffered_percentage = 0.0f;
+        }
+    }
+
     void direct::audio_system_update()
     {
         FMOD_RESULT result = _sound_system->update();
@@ -266,6 +289,12 @@ namespace put
             {
                 switch (_audio_resources[i].type)
                 {
+                    case AUDIO_RESOURCE_SOUND:
+                    {
+                        update_buffered_percentage(i);
+                    }
+                    break;
+                        
                     case AUDIO_RESOURCE_CHANNEL:
                     {
                         update_channel_state(i);
@@ -367,6 +396,37 @@ namespace put
         return resource_slot;
     }
 
+    u32 direct::audio_create_sound_url(const c8* url, u32 resource_slot)
+    {
+        _audio_resources.grow(resource_slot);
+        _sound_file_info.grow(resource_slot);
+        _sound_file_info_ready.grow(resource_slot);
+
+        _audio_resources[resource_slot].assigned_flag |= 0xff;
+        _audio_resources[resource_slot].type = AUDIO_RESOURCE_SOUND;
+        
+        // 2. Begin streaming from URL (non-blocking)
+        FMOD_RESULT result = _sound_system->createSound(
+            url,
+            FMOD_CREATESTREAM | FMOD_NONBLOCKING,
+            nullptr,
+            (FMOD::Sound**)&_audio_resources[resource_slot].resource
+        );
+
+        // populate sound info
+        _sound_file_info[resource_slot].error = result;
+        if(result == FMOD_OK)
+        {
+            FMOD::Sound* new_sound = (FMOD::Sound*)_audio_resources[resource_slot].resource;
+            FMOD_RESULT ms_result = new_sound->getLength(&_sound_file_info[resource_slot].length_ms, FMOD_TIMEUNIT_MS);
+        }
+        _sound_file_info_ready[resource_slot] = true;
+        
+        _sound_system->update();
+
+        return resource_slot;
+    }
+
     u32 direct::audio_create_stream(const c8* filename, u32 resource_slot)
     {
         _audio_resources.grow(resource_slot);
@@ -423,10 +483,13 @@ namespace put
         _audio_resources[resource_slot].type = AUDIO_RESOURCE_CHANNEL;
 
         FMOD_RESULT result;
-
-        result = _sound_system->playSound((FMOD::Sound*)_audio_resources[sound_index].resource, 0, false,
-                                          (FMOD::Channel**)&_audio_resources[resource_slot].resource);
-
+        
+        FMOD::Sound* sound = (FMOD::Sound*)_audio_resources[sound_index].resource;
+        
+        result = _sound_system->playSound(sound, 0, false,
+            (FMOD::Channel**)&_audio_resources[resource_slot].resource);
+        
+        PEN_ASSERT(result == FMOD_OK);
         return resource_slot;
     }
 
@@ -621,6 +684,22 @@ namespace put
         }
 
         return PEN_ERR_NOT_READY;
+    }
+
+    f32 audio_sound_get_buffered_percentage(u32 resource_index)
+    {
+        if (_audio_resources[resource_index].assigned_flag)
+        {
+            if (_audio_resources[resource_index].type == AUDIO_RESOURCE_SOUND)
+            {
+                const resource_state& rs = _resource_states.frontbuffer()[resource_index];
+                return rs.buffered_percentage;
+            }
+
+            return PEN_ERR_FAILED;
+        }
+        
+        return 0.0f;
     }
 
     pen_error audio_channel_get_sound_file_info(const u32 sound_index, audio_sound_file_info* info)

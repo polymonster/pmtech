@@ -86,6 +86,7 @@ namespace put
     u32  audio_create_stream(const c8* filename);
     u32  audio_create_sound(const c8* filename);
     u32  audio_create_sound(const pen::music_file& music);
+    u32  audio_create_sound_url(const c8* url);
     u32  audio_create_channel_for_sound(const u32 sound_index);
     u32  audio_create_channel_group();
     void audio_release_resource(u32 index);
@@ -114,6 +115,7 @@ namespace put
     pen_error audio_dsp_get_spectrum(const u32 spectrum_dsp, audio_fft_spectrum* spectrum);
     pen_error audio_dsp_get_three_band_eq(const u32 eq_dsp, audio_eq_state* eq_state);
     pen_error audio_dsp_get_gain(const u32 dsp_index, f32* gain);
+    f32       audio_sound_get_buffered_percentage(u32 resource_index);
 
     namespace direct
     {
@@ -132,6 +134,7 @@ namespace put
         u32 audio_create_stream(const c8* filename, u32 resource_slot);
         u32 audio_create_sound(const c8* filename, u32 resource_slot);
         u32 audio_create_sound(const pen::music_file& music, u32 resource_slot);
+        u32 audio_create_sound_url(const c8* url, u32 resource_slot);
         u32 audio_create_channel_for_sound(u32 sound_index, u32 resource_slot);
         u32 audio_create_channel_group(u32 resource_slot);
         u32 audio_release_resource(u32 index);

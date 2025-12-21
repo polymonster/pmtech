@@ -29,6 +29,7 @@ namespace
             create_stream,
             create_sound,
             create_sound_music,
+            create_sound_url,
             create_group,
             create_channel_for_sound,
             release_resource,
@@ -42,7 +43,8 @@ namespace
             group_set_pitch,
             group_set_volume,
             dsp_set_three_band_eq,
-            dsp_set_gain
+            dsp_set_gain,
+            sound_get_buffered_percentage
         };
     }
 
@@ -110,6 +112,9 @@ namespace put
                 break;
             case e_cmd::create_sound_music:
                 direct::audio_create_sound(cmd.music, cmd.resource_slot);
+                break;
+            case e_cmd::create_sound_url:
+                direct::audio_create_sound_url(cmd.filename, cmd.resource_slot);
                 break;
             case e_cmd::create_group:
                 direct::audio_create_channel_group(cmd.resource_slot);
@@ -283,6 +288,15 @@ namespace put
         ac.resource_slot = res;
 
         _cmd_buffer.put(ac);
+
+        return res;
+    }
+
+    u32 audio_create_sound_url(const c8* filename)
+    {
+        u32 res = pen::slot_resources_get_next(&_audio_slot_resources);
+
+        create_file_command(filename, e_cmd::create_sound_url, res);
 
         return res;
     }
