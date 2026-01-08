@@ -816,4 +816,45 @@ namespace pen
         return PEN_ERR_OK;
     }
 
+    Str os_get_clipboard_string()
+    {
+        auto env = get_jni_env();
+        if(env)
+        {
+            jmethodID method = env->GetMethodID(s_android_context.m_activity_class, "getClipboardString", "()Ljava/lang/String;");
+            auto result = (jstring)env->CallObjectMethod(s_android_context.m_activity_object, method);
+
+            const char* result_cstr = env->GetStringUTFChars(result, nullptr);
+            Str return_result = result_cstr;
+
+            env->ReleaseStringUTFChars(result, result_cstr);
+
+            return return_result;
+        }
+
+        return "";
+    }
+
+    void os_clear_clipboard_string()
+    {
+        auto env = get_jni_env();
+        if(env)
+        {
+            jmethodID method = env->GetMethodID(s_android_context.m_activity_class, "clearClipboardString", "()V");
+            env->CallVoidMethod(s_android_context.m_activity_object, method);
+        }
+    }
+
+    void os_enable_paste_popup(bool enable)
+    {
+        auto env = get_jni_env();
+        if(env)
+        {
+            jboolean jenable = enable;
+
+            jmethodID method = env->GetMethodID(s_android_context.m_activity_class, "enablePaste", "(Z)V");
+            env->CallVoidMethod(s_android_context.m_activity_object, method, jenable);
+        }
+    }
+
 } // namespace pen

@@ -14,14 +14,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.AssetManager;
+import android.content.ClipboardManager;
+import android.content.ClipData;
 
-import android.graphics.SurfaceTexture;
 import android.graphics.Canvas;
-
-import static android.view.View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
-import static android.view.View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
-import static android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
-import static android.view.View.SYSTEM_UI_FLAG_LOW_PROFILE;
 
 import android.view.KeyEvent;
 import android.view.Surface;
@@ -32,18 +28,22 @@ import android.view.MotionEvent;
 import android.view.inputmethod.InputMethodManager;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
+import android.view.MenuItem;
+import android.view.ViewGroup;
 
 import androidx.security.crypto.EncryptedSharedPreferences;
 import androidx.security.crypto.MasterKey;
 
+import android.widget.FrameLayout;
+import android.widget.PopupMenu;
 import android.widget.EditText;
 import android.text.InputType;
 
 import org.fmod.FMOD;
 
 // new graphics api agnostic implementation of android surface to support native egl
-class SurfaceWrapper extends SurfaceView implements SurfaceHolder.Callback {
-
+class SurfaceWrapper extends SurfaceView implements SurfaceHolder.Callback
+{
 	public static native void surface_created(Surface surface, int window_width, int window_height, int display_width, int display_height, int orientation, long app_ptr);
     public static native void surface_changed(int width, int height);
 	public static native void render(SurfaceWrapper caller);
@@ -147,9 +147,10 @@ class SurfaceWrapper extends SurfaceView implements SurfaceHolder.Callback {
                 break;
         }
 
-        return true;
+        return super.onTouchEvent(event);
     }
 }
+
 
 public class pen_activity extends Activity {
     public static native void register_asset_manager(AssetManager asset_manager);
@@ -166,6 +167,54 @@ public class pen_activity extends Activity {
     private MasterKey m_masterKey;
     private SharedPreferences m_sharedPrefs;
     private boolean m_canUseSharedPrefs;
+
+    public String clipboard_string = "";
+    public boolean paste_enabled = false;
+    final float[] lastTouch = new float[2];
+
+    private void showPastePopup(View parent, int x, int y) {
+
+        // Create a temporary anchor view at the touch point
+        View anchor = new View(parent.getContext());
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(1, 1);
+        params.leftMargin = x;
+        params.topMargin = y;
+
+        ViewGroup root = (ViewGroup) parent.getRootView();
+        root.addView(anchor, params);
+
+        PopupMenu popup = new PopupMenu(parent.getContext(), anchor);
+        popup.getMenu().add("Paste");
+
+        popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+
+                ClipboardManager clipboard =
+                        (ClipboardManager) parent.getContext()
+                                .getSystemService(Context.CLIPBOARD_SERVICE);
+
+                if (clipboard != null && clipboard.hasPrimaryClip()) {
+                    CharSequence text =
+                            clipboard.getPrimaryClip().getItemAt(0).getText();
+                    if (text != null) {
+                        clipboard_string = text.toString();
+                    }
+                }
+
+                return true;
+            }
+        });
+
+        popup.setOnDismissListener(new PopupMenu.OnDismissListener() {
+            @Override
+            public void onDismiss(PopupMenu menu) {
+                root.removeView(anchor);
+            }
+        });
+
+        popup.show();
+    }
 
     public int getStatusBarHeight() {
         int result = 0;
@@ -224,6 +273,28 @@ public class pen_activity extends Activity {
 
         // setup view / surface
         m_surfaceView = new SurfaceWrapper(this);
+
+        // paste menu on long click
+        m_surfaceView.setLongClickable(true);
+
+        m_surfaceView.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                    lastTouch[0] = event.getX();
+                    lastTouch[1] = event.getY();
+                }
+                return false; // IMPORTANT: do not block long-press detection
+            }
+        });
+
+        m_surfaceView.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                showPastePopup(v, (int)lastTouch[0], (int)lastTouch[1]);
+                return true;
+            }
+        });
 
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
@@ -372,5 +443,20 @@ public class pen_activity extends Activity {
         VibrationEffect effect = VibrationEffect.createOneShot(16, VibrationEffect.DEFAULT_AMPLITUDE);
         vibrator.cancel();
         vibrator.vibrate(effect);
+    }
+
+    public void enablePaste(boolean enable)
+    {
+        paste_enabled = enable;
+    }
+
+    public String getClipboardString()
+    {
+        return clipboard_string;
+    }
+
+    void clearClipboardString()
+    {
+        clipboard_string = "";
     }
 }
