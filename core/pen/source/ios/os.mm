@@ -44,6 +44,8 @@ pen::window_creation_params pen_window;
 @end
 
 @interface pen_view_controller : UIViewController
+@property(strong, nonatomic) MTKView* mtk_view;
+
 - (void)viewWasDoubleTapped:(id)sender;
 - (BOOL)prefersHomeIndicatorAutoHidden;
 @end
@@ -86,6 +88,8 @@ namespace
         void                    (*background_callback)(bool) = nullptr;
         bool                     background_audio = true;
         bool                     require_audio_reinit = false;
+        Str                      clipboard = "";
+        bool                     enable_paste_popup = false;
     };
     os_context s_context;
 
@@ -162,6 +166,7 @@ namespace
 
         // create view controller
         self.view_controller = [[pen_view_controller alloc] initWithNibName:nil bundle:nil];
+        self.view_controller.mtk_view = self.mtk_view;
 
         // hook up
         [self.view_controller setView:self.mtk_view];
@@ -170,6 +175,10 @@ namespace
         
         // enable support for osk input
         pen::os_init_on_screen_keyboard();
+        
+        // long press gesture for paste menu
+        UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self.view_controller action:@selector(handleLongPress:)];
+        [self.mtk_view addGestureRecognizer:longPress];
 
         return YES;
     }
@@ -354,6 +363,51 @@ namespace
 {
     [self handleTouch:touches withEvent:event];
 }
+
+- (UIRectEdge)preferredScreenEdgesDeferringSystemGestures {
+    // Choose the edges you want to defer
+    return UIRectEdgeAll;   // or UIRectEdgeBottom, etc.
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+    [super viewDidAppear:animated];
+    [self setNeedsUpdateOfScreenEdgesDeferringSystemGestures];
+}
+
+- (BOOL)canBecomeFirstResponder {
+    return YES;
+}
+
+- (BOOL)canPerformAction:(SEL)action withSender:(id)sender {
+    if (action == @selector(paste:)) {
+        // Only enable if there is something to paste
+        return [UIPasteboard generalPasteboard].hasStrings;
+    }
+    return NO;
+}
+
+- (void)paste:(id)sender {
+    UIPasteboard *pb = [UIPasteboard generalPasteboard];
+    NSString *text = pb.string;
+    s_context.clipboard = text.UTF8String;
+}
+
+- (void)handleLongPress:(UILongPressGestureRecognizer *)gesture
+{
+    // prevent popup
+    if (!s_context.enable_paste_popup || gesture.state != UIGestureRecognizerStateBegan)
+        return;
+
+    // Make the VC first responder
+    [self becomeFirstResponder];
+
+    CGPoint p = [gesture locationInView:self.mtk_view];
+    CGRect targetRect = CGRectMake(p.x, p.y, 1, 1);
+
+    UIMenuController *menu = [UIMenuController sharedMenuController];
+    [menu showMenuFromView:self.mtk_view rect:targetRect];
+}
+
 @end
 
 @implementation pen_text_field_delegate
@@ -858,5 +912,20 @@ namespace pen
         }
         
         return res;
+    }
+
+    Str os_get_clipboard_string()
+    {
+        return s_context.clipboard;
+    }
+
+    void os_clear_clipboard_string()
+    {
+        s_context.clipboard = "";
+    }
+
+    void os_enable_paste_popup(bool enable)
+    {
+        s_context.enable_paste_popup = enable;
     }
 }
