@@ -60,6 +60,7 @@ namespace pen
     Str              os_get_clipboard_string();
     void             os_clear_clipboard_string();
     void             os_enable_paste_popup(bool enable);
+    bool             os_tapped();
     
     // music
     struct music_item
