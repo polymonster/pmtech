@@ -90,6 +90,7 @@ namespace
         bool                     require_audio_reinit = false;
         Str                      clipboard = "";
         bool                     enable_paste_popup = false;
+        bool                     tapped = false;
     };
     os_context s_context;
 
@@ -177,8 +178,11 @@ namespace
         pen::os_init_on_screen_keyboard();
         
         // long press gesture for paste menu
-        UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self.view_controller action:@selector(handleLongPress:)];
-        [self.mtk_view addGestureRecognizer:longPress];
+        UILongPressGestureRecognizer *long_press = [[UILongPressGestureRecognizer alloc] initWithTarget:self.view_controller action:@selector(handleLongPress:)];
+        [self.mtk_view addGestureRecognizer:long_press];
+        
+        UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self.view_controller action:@selector(viewWasTapped:)];
+        [self.mtk_view addGestureRecognizer:tap];
 
         return YES;
     }
@@ -289,6 +293,7 @@ namespace
 @implementation pen_view_controller
 - (void)viewWasTapped:(id)sender
 {
+    s_context.tapped = true;
 }
 
 - (void)viewWasDoubleTapped:(id)sender
@@ -927,5 +932,12 @@ namespace pen
     void os_enable_paste_popup(bool enable)
     {
         s_context.enable_paste_popup = enable;
+    }
+
+    bool os_tapped()
+    {
+        bool res = s_context.tapped;
+        s_context.tapped = false; // consume
+        return res;
     }
 }
