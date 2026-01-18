@@ -15,7 +15,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.AssetManager;
 import android.content.ClipboardManager;
-import android.content.ClipData;
+
 
 import android.graphics.Canvas;
 
@@ -30,6 +30,7 @@ import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.view.MenuItem;
 import android.view.ViewGroup;
+import android.view.GestureDetector;
 
 import androidx.security.crypto.EncryptedSharedPreferences;
 import androidx.security.crypto.MasterKey;
@@ -168,6 +169,7 @@ public class pen_activity extends Activity {
     private SharedPreferences m_sharedPrefs;
     private boolean m_canUseSharedPrefs;
 
+    public boolean tapped = false;
     public String clipboard_string = "";
     public boolean paste_enabled = false;
     final float[] lastTouch = new float[2];
@@ -261,6 +263,7 @@ public class pen_activity extends Activity {
         getWindow().setDecorFitsSystemWindows(false);
         getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
 
         init(this);
         FMOD.init(this);
@@ -277,6 +280,16 @@ public class pen_activity extends Activity {
         // paste menu on long click
         m_surfaceView.setLongClickable(true);
 
+        GestureDetector gestureDetector = new GestureDetector(m_context,
+            new GestureDetector.SimpleOnGestureListener() {
+                @Override
+                public boolean onSingleTapConfirmed(MotionEvent e) {
+                    tapped = true;
+                    return true;
+                }
+            }
+        );
+
         m_surfaceView.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -284,6 +297,7 @@ public class pen_activity extends Activity {
                     lastTouch[0] = event.getX();
                     lastTouch[1] = event.getY();
                 }
+                gestureDetector.onTouchEvent(event);
                 return false; // IMPORTANT: do not block long-press detection
             }
         });
@@ -291,6 +305,9 @@ public class pen_activity extends Activity {
         m_surfaceView.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
+                if(!paste_enabled)
+                    return false;
+
                 showPastePopup(v, (int)lastTouch[0], (int)lastTouch[1]);
                 return true;
             }
@@ -315,7 +332,7 @@ public class pen_activity extends Activity {
 	@Override
 	protected void onPause() {
 		super.onPause();
-        
+
         // kill the process when app is backgrounded
         android.os.Process.killProcess(android.os.Process.myPid());
         System.exit(0);
@@ -399,7 +416,7 @@ public class pen_activity extends Activity {
     {
         File dir = new File(strdir);
         if (!dir.exists()) {
-            dir.mkdirs(); 
+            dir.mkdirs();
         }
     }
 
@@ -458,5 +475,12 @@ public class pen_activity extends Activity {
     void clearClipboardString()
     {
         clipboard_string = "";
+    }
+
+    boolean wasTapped()
+    {
+        boolean res = tapped;
+        tapped = false;
+        return res;
     }
 }

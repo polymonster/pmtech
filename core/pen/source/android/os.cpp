@@ -857,4 +857,14 @@ namespace pen
         }
     }
 
+    bool os_tapped()
+    {
+        auto env = get_jni_env();
+        if(env)
+        {
+            jmethodID method = env->GetMethodID(s_android_context.m_activity_class, "wasTapped", "()Z");
+            return env->CallBooleanMethod(s_android_context.m_activity_object, method);
+        }
+    }
+
 } // namespace pen
