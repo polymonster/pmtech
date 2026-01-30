@@ -44,9 +44,16 @@ namespace
             group_set_volume,
             dsp_set_three_band_eq,
             dsp_set_gain,
-            sound_get_buffered_percentage
+            sound_get_buffered_percentage,
+            create_waveform
         };
     }
+
+    struct waveform_params
+    {
+        c8* filename;
+        u32 resolution;
+    };
 
     struct set_valuei
     {
@@ -72,12 +79,13 @@ namespace
         u32 resource_slot;
 
         union {
-            c8*           filename;
-            u32           resource_index;
-            ::set_valuei  set_valuei;
-            ::set_valuef  set_valuef;
-            ::set_value3f set_value3f;
-            music_file    music;
+            c8*               filename;
+            u32               resource_index;
+            ::set_valuei      set_valuei;
+            ::set_valuef      set_valuef;
+            ::set_value3f     set_value3f;
+            music_file        music;
+            ::waveform_params waveform;
         };
     };
 
@@ -159,6 +167,10 @@ namespace put
             case e_cmd::dsp_set_three_band_eq:
                 direct::audio_dsp_set_three_band_eq(cmd.set_value3f.resource_index, cmd.set_value3f.value[0],
                                                     cmd.set_value3f.value[1], cmd.set_value3f.value[2]);
+                break;
+            case e_cmd::create_waveform:
+                direct::audio_create_waveform(cmd.waveform.filename, cmd.waveform.resolution, cmd.resource_slot);
+                pen::memory_free(cmd.waveform.filename);
                 break;
         }
     }
@@ -308,6 +320,27 @@ namespace put
         u32 res = pen::slot_resources_get_next(&_audio_slot_resources);
 
         ac.command_index = e_cmd::create_group;
+        ac.resource_slot = res;
+
+        _cmd_buffer.put(ac);
+
+        return res;
+    }
+
+    u32 audio_create_waveform(const c8* filename, u32 resolution)
+    {
+        audio_cmd ac;
+
+        u32 res = pen::slot_resources_get_next(&_audio_slot_resources);
+
+        // allocate filename and copy
+        u32 filename_length = pen::string_length(filename);
+        ac.waveform.filename = (c8*)pen::memory_alloc(filename_length + 1);
+        ac.waveform.filename[filename_length] = 0x00;
+        memcpy(ac.waveform.filename, filename, filename_length);
+
+        ac.waveform.resolution = resolution;
+        ac.command_index = e_cmd::create_waveform;
         ac.resource_slot = res;
 
         _cmd_buffer.put(ac);

@@ -13,6 +13,12 @@
 
 #include "fmod.hpp"
 
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <queue>
+#include <cmath>
+
 #if PEN_PLATFORM_ANDROID
 
 #include "fmod_android.h"
@@ -50,7 +56,8 @@ namespace
         AUDIO_RESOURCE_DSP_FFT,
         AUDIO_RESOURCE_DSP_EQ,
         AUDIO_RESOURCE_DSP_GAIN,
-        AUDIO_RESOURCE_DSP
+        AUDIO_RESOURCE_DSP,
+        AUDIO_RESOURCE_WAVEFORM
     };
 
     struct audio_resource_allocation
@@ -73,11 +80,210 @@ namespace
         };
     };
 
+    struct waveform_load_request
+    {
+        Str filename;
+        u32 resolution;
+        u32 resource_slot;
+    };
+
     FMOD::System*                              _sound_system = nullptr;
     pen::res_pool<audio_resource_allocation>   _audio_resources;
     pen::multi_array_buffer<resource_state, 2> _resource_states;
     pen::res_pool<std::atomic<bool>>           _sound_file_info_ready;
     pen::res_pool<audio_sound_file_info>       _sound_file_info;
+    pen::res_pool<audio_waveform_data>         _waveform_data;
+
+    // Waveform worker thread
+    std::thread                         _waveform_worker;
+    std::mutex                          _waveform_mutex;
+    std::condition_variable             _waveform_cv;
+    std::queue<waveform_load_request>   _waveform_queue;
+    std::atomic<bool>                   _waveform_worker_running{false};
+
+    void waveform_worker_thread_func()
+    {
+        // for android
+        audio_attach_current_thread();
+
+        // Create a dedicated FMOD system for this worker
+        FMOD::System* worker_system = nullptr;
+        FMOD_RESULT result = FMOD::System_Create(&worker_system);
+        if (result != FMOD_OK)
+        {
+            return;
+        }
+
+        result = worker_system->init(1, FMOD_INIT_NORMAL, nullptr);
+        if (result != FMOD_OK)
+        {
+            worker_system->release();
+            return;
+        }
+
+        while (_waveform_worker_running.load())
+        {
+            waveform_load_request request;
+            {
+                std::unique_lock<std::mutex> lock(_waveform_mutex);
+                _waveform_cv.wait(lock, [] {
+                    return !_waveform_queue.empty() || !_waveform_worker_running.load();
+                });
+
+                if (!_waveform_worker_running.load() && _waveform_queue.empty())
+                    break;
+
+                if (_waveform_queue.empty())
+                    continue;
+
+                request = _waveform_queue.front();
+                _waveform_queue.pop();
+            }
+
+            // Process the request
+            u32 resource_slot = request.resource_slot;
+            u32 resolution = request.resolution;
+
+            // Load the sound with FMOD_CREATESAMPLE to decode all PCM data into memory
+            FMOD::Sound* sound = nullptr;
+            result = worker_system->createSound(
+                request.filename.c_str(),
+                FMOD_CREATESAMPLE,
+                nullptr,
+                &sound
+            );
+
+            if (result != FMOD_OK || sound == nullptr)
+            {
+                _waveform_data[resource_slot].state = e_waveform_state::error;
+                continue;
+            }
+
+            // Get sound properties
+            u32 length_ms = 0;
+            u32 length_pcm = 0;
+            s32 num_channels = 0;
+            s32 bits = 0;
+            f32 sample_rate = 0;
+            FMOD_SOUND_FORMAT format;
+            FMOD_SOUND_TYPE sound_type;
+
+            sound->getLength(&length_ms, FMOD_TIMEUNIT_MS);
+            sound->getLength(&length_pcm, FMOD_TIMEUNIT_PCM);
+            sound->getFormat(&sound_type, &format, &num_channels, &bits);
+            sound->getDefaults(&sample_rate, nullptr);
+
+            if (length_pcm == 0 || num_channels == 0)
+            {
+                sound->release();
+                _waveform_data[resource_slot].state = e_waveform_state::error;
+                continue;
+            }
+
+            // Lock the sound data to access PCM
+            void* ptr1 = nullptr;
+            void* ptr2 = nullptr;
+            u32 len1 = 0;
+            u32 len2 = 0;
+            result = sound->lock(0, length_pcm * num_channels * (bits / 8), &ptr1, &ptr2, &len1, &len2);
+
+            if (result != FMOD_OK || ptr1 == nullptr)
+            {
+                sound->release();
+                _waveform_data[resource_slot].state = e_waveform_state::error;
+                continue;
+            }
+
+            // Allocate bucket storage (min/max pairs)
+            f32* buckets = (f32*)pen::memory_alloc(resolution * 2 * sizeof(f32));
+
+            // Calculate samples per bucket
+            u32 samples_per_bucket = length_pcm / resolution;
+            if (samples_per_bucket == 0) samples_per_bucket = 1;
+
+            // Process PCM data into buckets
+            for (u32 bucket = 0; bucket < resolution; ++bucket)
+            {
+                f32 min_val = 1.0f;
+                f32 max_val = -1.0f;
+
+                u32 start_sample = bucket * samples_per_bucket;
+                u32 end_sample = (bucket + 1) * samples_per_bucket;
+                if (end_sample > length_pcm) end_sample = length_pcm;
+
+                for (u32 sample = start_sample; sample < end_sample; ++sample)
+                {
+                    f32 sample_value = 0.0f;
+
+                    // Convert based on format
+                    if (format == FMOD_SOUND_FORMAT_PCM16)
+                    {
+                        s16* data = (s16*)ptr1;
+                        for (s32 ch = 0; ch < num_channels; ++ch)
+                        {
+                            sample_value += (f32)data[sample * num_channels + ch] / 32768.0f;
+                        }
+                        sample_value /= (f32)num_channels;
+                    }
+                    else if (format == FMOD_SOUND_FORMAT_PCMFLOAT)
+                    {
+                        f32* data = (f32*)ptr1;
+                        for (s32 ch = 0; ch < num_channels; ++ch)
+                        {
+                            sample_value += data[sample * num_channels + ch];
+                        }
+                        sample_value /= (f32)num_channels;
+                    }
+                    else if (format == FMOD_SOUND_FORMAT_PCM8)
+                    {
+                        s8* data = (s8*)ptr1;
+                        for (s32 ch = 0; ch < num_channels; ++ch)
+                        {
+                            sample_value += (f32)data[sample * num_channels + ch] / 128.0f;
+                        }
+                        sample_value /= (f32)num_channels;
+                    }
+                    else if (format == FMOD_SOUND_FORMAT_PCM24)
+                    {
+                        u8* data = (u8*)ptr1;
+                        for (s32 ch = 0; ch < num_channels; ++ch)
+                        {
+                            u32 offset = (sample * num_channels + ch) * 3;
+                            s32 value = (data[offset] | (data[offset + 1] << 8) | (data[offset + 2] << 16));
+                            if (value & 0x800000) value |= 0xFF000000; // Sign extend
+                            sample_value += (f32)value / 8388608.0f;
+                        }
+                        sample_value /= (f32)num_channels;
+                    }
+                    else if (format == FMOD_SOUND_FORMAT_PCM32)
+                    {
+                        s32* data = (s32*)ptr1;
+                        for (s32 ch = 0; ch < num_channels; ++ch)
+                        {
+                            sample_value += (f32)data[sample * num_channels + ch] / 2147483648.0f;
+                        }
+                        sample_value /= (f32)num_channels;
+                    }
+
+                    if (sample_value < min_val) min_val = sample_value;
+                    if (sample_value > max_val) max_val = sample_value;
+                }
+
+                buckets[bucket * 2] = min_val;
+                buckets[bucket * 2 + 1] = max_val;
+            }
+
+            sound->unlock(ptr1, ptr2, len1, len2);
+            sound->release();
+
+            // Store the results
+            _waveform_data[resource_slot].buckets = buckets;
+            _waveform_data[resource_slot].length_ms = length_ms;
+            _waveform_data[resource_slot].state = e_waveform_state::ready;
+        }
+
+        worker_system->release();
+    }
 } // namespace
 
 namespace put
@@ -103,10 +309,21 @@ namespace put
         _sound_file_info_ready.init(reserved);
         _sound_file_info.init(reserved);
         _resource_states.init(reserved);
+        _waveform_data.init(reserved);
+
+        // Start waveform worker thread
+        _waveform_worker_running = true;
+        _waveform_worker = std::thread(waveform_worker_thread_func);
     }
 
     void direct::audio_system_shutdown()
     {
+        // Stop waveform worker thread
+        _waveform_worker_running = false;
+        _waveform_cv.notify_all();
+        if (_waveform_worker.joinable())
+            _waveform_worker.join();
+
         for (s32 i = 0; i < _audio_resources._capacity; ++i)
             if (_audio_resources[i].assigned_flag)
                 direct::audio_release_resource(i);
@@ -473,6 +690,38 @@ namespace put
         return resource_slot;
     }
 
+    u32 direct::audio_create_waveform(const c8* filename, u32 resolution, u32 resource_slot)
+    {
+        _audio_resources.grow(resource_slot);
+        _waveform_data.grow(resource_slot);
+
+        _audio_resources[resource_slot].assigned_flag |= 0xff;
+        _audio_resources[resource_slot].type = AUDIO_RESOURCE_WAVEFORM;
+        _audio_resources[resource_slot].resource = nullptr;
+
+        // Initialize waveform data as loading
+        _waveform_data[resource_slot].buckets = nullptr;
+        _waveform_data[resource_slot].resolution = resolution;
+        _waveform_data[resource_slot].length_ms = 0;
+        _waveform_data[resource_slot].state = e_waveform_state::loading;
+
+        // Resolve the filename
+        Str resolved_name = filename;
+        if (filename[0] != '/')
+        {
+            resolved_name = pen::os_path_for_resource(filename);
+        }
+
+        // Queue the request for the worker thread
+        {
+            std::lock_guard<std::mutex> lock(_waveform_mutex);
+            _waveform_queue.push({resolved_name, resolution, resource_slot});
+        }
+        _waveform_cv.notify_one();
+
+        return resource_slot;
+    }
+
     u32 direct::audio_create_channel_for_sound(u32 sound_index, u32 resource_slot)
     {
         _audio_resources.grow(resource_slot);
@@ -483,12 +732,12 @@ namespace put
         _audio_resources[resource_slot].type = AUDIO_RESOURCE_CHANNEL;
 
         FMOD_RESULT result;
-        
+
         FMOD::Sound* sound = (FMOD::Sound*)_audio_resources[sound_index].resource;
-        
+
         result = _sound_system->playSound(sound, 0, false,
             (FMOD::Channel**)&_audio_resources[resource_slot].resource);
-        
+
         PEN_ASSERT(result == FMOD_OK);
         return resource_slot;
     }
@@ -578,6 +827,16 @@ namespace put
                 case AUDIO_RESOURCE_SOUND:
                 {
                     ((FMOD::Sound*)p_res)->release();
+                }
+                break;
+
+                case AUDIO_RESOURCE_WAVEFORM:
+                {
+                    if (_waveform_data[index].buckets != nullptr)
+                    {
+                        pen::memory_free(_waveform_data[index].buckets);
+                        _waveform_data[index].buckets = nullptr;
+                    }
                 }
                 break;
 
@@ -789,6 +1048,22 @@ namespace put
 
                 *gain = rs.gain_value;
 
+                return PEN_ERR_OK;
+            }
+
+            return PEN_ERR_FAILED;
+        }
+
+        return PEN_ERR_NOT_READY;
+    }
+
+    pen_error audio_waveform_get_data(const u32 waveform_index, audio_waveform_data* data)
+    {
+        if (_audio_resources[waveform_index].assigned_flag)
+        {
+            if (_audio_resources[waveform_index].type == AUDIO_RESOURCE_WAVEFORM)
+            {
+                *data = _waveform_data[waveform_index];
                 return PEN_ERR_OK;
             }
 
