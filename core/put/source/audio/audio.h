@@ -21,6 +21,7 @@ namespace put
     {
         enum audio_play_state_t
         {
+            not_initialised,
             not_playing,
             playing,
             paused
@@ -88,6 +89,7 @@ namespace put
     {
         f32*           buckets = nullptr;       // min/max pairs for each bucket (size = resolution * 2)
         u32            resolution = 0;          // number of buckets
+        u32            buckets_loaded = 0;      // number of buckets processed so far (for progressive loading)
         u32            length_ms = 0;           // total length in milliseconds
         waveform_state state = e_waveform_state::loading;
     };

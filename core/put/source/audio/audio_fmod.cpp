@@ -17,6 +17,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <queue>
+#include <chrono>
 #include <cmath>
 
 #if PEN_PLATFORM_ANDROID
@@ -41,6 +42,22 @@ void audio_attach_current_thread()
 }
 #else
 void audio_attach_current_thread() { }
+#endif
+
+#if PEN_PLATFORM_IOS
+void audio_system_platform_init(FMOD::System* system)
+{
+    // Configure for iOS
+    system->setStreamBufferSize(65536, FMOD_TIMEUNIT_RAWBYTES);
+    
+    FMOD_ADVANCEDSETTINGS adv_settings;
+    memset(&adv_settings, 0, sizeof(FMOD_ADVANCEDSETTINGS));
+    adv_settings.cbSize = sizeof(FMOD_ADVANCEDSETTINGS);
+    adv_settings.defaultDecodeBufferSize = 4096; // Increase decode buffer
+    system->setAdvancedSettings(&adv_settings);
+}
+#else
+void audio_system_platform_init(FMOD::System* system) { }
 #endif
 
 using namespace put;
@@ -85,6 +102,7 @@ namespace
         Str filename;
         u32 resolution;
         u32 resource_slot;
+        bool valid = false;
     };
 
     FMOD::System*                              _sound_system = nullptr;
@@ -98,7 +116,8 @@ namespace
     std::thread                         _waveform_worker;
     std::mutex                          _waveform_mutex;
     std::condition_variable             _waveform_cv;
-    std::queue<waveform_load_request>   _waveform_queue;
+    waveform_load_request               _waveform_pending_request;  // Single pending request (newest wins)
+    std::atomic<bool>                   _waveform_cancel{false};    // Cancel flag for in-progress work
     std::atomic<bool>                   _waveform_worker_running{false};
 
     void waveform_worker_thread_func()
@@ -113,6 +132,8 @@ namespace
         {
             return;
         }
+        
+        audio_system_platform_init(_sound_system);
 
         result = worker_system->init(1, FMOD_INIT_NORMAL, nullptr);
         if (result != FMOD_OK)
@@ -127,28 +148,30 @@ namespace
             {
                 std::unique_lock<std::mutex> lock(_waveform_mutex);
                 _waveform_cv.wait(lock, [] {
-                    return !_waveform_queue.empty() || !_waveform_worker_running.load();
+                    return _waveform_pending_request.valid || !_waveform_worker_running.load();
                 });
 
-                if (!_waveform_worker_running.load() && _waveform_queue.empty())
+                if (!_waveform_worker_running.load() && !_waveform_pending_request.valid)
                     break;
 
-                if (_waveform_queue.empty())
+                if (!_waveform_pending_request.valid)
                     continue;
 
-                request = _waveform_queue.front();
-                _waveform_queue.pop();
+                // Take the pending request and clear it
+                request = _waveform_pending_request;
+                _waveform_pending_request.valid = false;
+                _waveform_cancel = false;  // Reset cancel flag for this new request
             }
 
             // Process the request
             u32 resource_slot = request.resource_slot;
             u32 resolution = request.resolution;
 
-            // Load the sound with FMOD_CREATESAMPLE to decode all PCM data into memory
+            // Load the sound with FMOD_NONBLOCKING so we can check cancellation during load
             FMOD::Sound* sound = nullptr;
             result = worker_system->createSound(
                 request.filename.c_str(),
-                FMOD_CREATESAMPLE,
+                FMOD_CREATESAMPLE | FMOD_NONBLOCKING,
                 nullptr,
                 &sound
             );
@@ -156,6 +179,46 @@ namespace
             if (result != FMOD_OK || sound == nullptr)
             {
                 _waveform_data[resource_slot].state = e_waveform_state::error;
+                continue;
+            }
+
+            // Poll for sound to finish loading, checking cancellation
+            bool load_cancelled = false;
+            for (;;)
+            {
+                if (_waveform_cancel.load())
+                {
+                    load_cancelled = true;
+                    break;
+                }
+
+                FMOD_OPENSTATE open_state;
+                result = sound->getOpenState(&open_state, nullptr, nullptr, nullptr);
+
+                if (result != FMOD_OK)
+                {
+                    load_cancelled = true;
+                    break;
+                }
+
+                if (open_state == FMOD_OPENSTATE_READY)
+                    break;
+
+                if (open_state == FMOD_OPENSTATE_ERROR)
+                {
+                    load_cancelled = true;
+                    break;
+                }
+
+                // Sleep briefly to avoid spinning
+                std::this_thread::sleep_for(std::chrono::milliseconds(5));
+            }
+
+            if (load_cancelled)
+            {
+                sound->release();
+                if (!_waveform_cancel.load())
+                    _waveform_data[resource_slot].state = e_waveform_state::error;
                 continue;
             }
 
@@ -201,84 +264,164 @@ namespace
             u32 samples_per_bucket = length_pcm / resolution;
             if (samples_per_bucket == 0) samples_per_bucket = 1;
 
-            // Process PCM data into buckets
-            for (u32 bucket = 0; bucket < resolution; ++bucket)
+            // Sample stride for faster processing - we don't need every sample for min/max
+            constexpr u32 sample_stride = 16;
+
+            // Pre-compute reciprocal for channel averaging
+            f32 inv_num_channels = 1.0f / (f32)num_channels;
+
+            // Set up waveform data early for progressive rendering
+            // Renderer can start drawing as soon as buckets_loaded > 0
+            _waveform_data[resource_slot].buckets = buckets;
+            _waveform_data[resource_slot].length_ms = length_ms;
+            _waveform_data[resource_slot].buckets_loaded = 0;
+
+            // Process PCM data into buckets with format-specific loops hoisted outside
+            bool cancelled = false;
+
+            if (format == FMOD_SOUND_FORMAT_PCM16)
             {
-                f32 min_val = 1.0f;
-                f32 max_val = -1.0f;
-
-                u32 start_sample = bucket * samples_per_bucket;
-                u32 end_sample = (bucket + 1) * samples_per_bucket;
-                if (end_sample > length_pcm) end_sample = length_pcm;
-
-                for (u32 sample = start_sample; sample < end_sample; ++sample)
+                s16* data = (s16*)ptr1;
+                constexpr f32 inv_scale = 1.0f / 32768.0f;
+                for (u32 bucket = 0; bucket < resolution; ++bucket)
                 {
-                    f32 sample_value = 0.0f;
-
-                    // Convert based on format
-                    if (format == FMOD_SOUND_FORMAT_PCM16)
+                    if ((bucket & 63) == 0 && _waveform_cancel.load()) { cancelled = true; break; }
+                    f32 min_val = 1.0f, max_val = -1.0f;
+                    u32 start_sample = bucket * samples_per_bucket;
+                    u32 end_sample = (bucket + 1) * samples_per_bucket;
+                    if (end_sample > length_pcm) end_sample = length_pcm;
+                    for (u32 sample = start_sample; sample < end_sample; sample += sample_stride)
                     {
-                        s16* data = (s16*)ptr1;
+                        f32 sample_value = 0.0f;
                         for (s32 ch = 0; ch < num_channels; ++ch)
-                        {
-                            sample_value += (f32)data[sample * num_channels + ch] / 32768.0f;
-                        }
-                        sample_value /= (f32)num_channels;
+                            sample_value += (f32)data[sample * num_channels + ch];
+                        sample_value *= inv_scale * inv_num_channels;
+                        if (sample_value < min_val) min_val = sample_value;
+                        if (sample_value > max_val) max_val = sample_value;
                     }
-                    else if (format == FMOD_SOUND_FORMAT_PCMFLOAT)
+                    buckets[bucket * 2] = min_val;
+                    buckets[bucket * 2 + 1] = max_val;
+                    _waveform_data[resource_slot].buckets_loaded = bucket + 1;
+                }
+            }
+            else if (format == FMOD_SOUND_FORMAT_PCMFLOAT)
+            {
+                f32* data = (f32*)ptr1;
+                for (u32 bucket = 0; bucket < resolution; ++bucket)
+                {
+                    if ((bucket & 63) == 0 && _waveform_cancel.load()) { cancelled = true; break; }
+                    f32 min_val = 1.0f, max_val = -1.0f;
+                    u32 start_sample = bucket * samples_per_bucket;
+                    u32 end_sample = (bucket + 1) * samples_per_bucket;
+                    if (end_sample > length_pcm) end_sample = length_pcm;
+                    for (u32 sample = start_sample; sample < end_sample; sample += sample_stride)
                     {
-                        f32* data = (f32*)ptr1;
+                        f32 sample_value = 0.0f;
                         for (s32 ch = 0; ch < num_channels; ++ch)
-                        {
                             sample_value += data[sample * num_channels + ch];
-                        }
-                        sample_value /= (f32)num_channels;
+                        sample_value *= inv_num_channels;
+                        if (sample_value < min_val) min_val = sample_value;
+                        if (sample_value > max_val) max_val = sample_value;
                     }
-                    else if (format == FMOD_SOUND_FORMAT_PCM8)
+                    buckets[bucket * 2] = min_val;
+                    buckets[bucket * 2 + 1] = max_val;
+                    _waveform_data[resource_slot].buckets_loaded = bucket + 1;
+                }
+            }
+            else if (format == FMOD_SOUND_FORMAT_PCM8)
+            {
+                s8* data = (s8*)ptr1;
+                constexpr f32 inv_scale = 1.0f / 128.0f;
+                for (u32 bucket = 0; bucket < resolution; ++bucket)
+                {
+                    if ((bucket & 63) == 0 && _waveform_cancel.load()) { cancelled = true; break; }
+                    f32 min_val = 1.0f, max_val = -1.0f;
+                    u32 start_sample = bucket * samples_per_bucket;
+                    u32 end_sample = (bucket + 1) * samples_per_bucket;
+                    if (end_sample > length_pcm) end_sample = length_pcm;
+                    for (u32 sample = start_sample; sample < end_sample; sample += sample_stride)
                     {
-                        s8* data = (s8*)ptr1;
+                        f32 sample_value = 0.0f;
                         for (s32 ch = 0; ch < num_channels; ++ch)
-                        {
-                            sample_value += (f32)data[sample * num_channels + ch] / 128.0f;
-                        }
-                        sample_value /= (f32)num_channels;
+                            sample_value += (f32)data[sample * num_channels + ch];
+                        sample_value *= inv_scale * inv_num_channels;
+                        if (sample_value < min_val) min_val = sample_value;
+                        if (sample_value > max_val) max_val = sample_value;
                     }
-                    else if (format == FMOD_SOUND_FORMAT_PCM24)
+                    buckets[bucket * 2] = min_val;
+                    buckets[bucket * 2 + 1] = max_val;
+                    _waveform_data[resource_slot].buckets_loaded = bucket + 1;
+                }
+            }
+            else if (format == FMOD_SOUND_FORMAT_PCM24)
+            {
+                u8* data = (u8*)ptr1;
+                constexpr f32 inv_scale = 1.0f / 8388608.0f;
+                for (u32 bucket = 0; bucket < resolution; ++bucket)
+                {
+                    if ((bucket & 63) == 0 && _waveform_cancel.load()) { cancelled = true; break; }
+                    f32 min_val = 1.0f, max_val = -1.0f;
+                    u32 start_sample = bucket * samples_per_bucket;
+                    u32 end_sample = (bucket + 1) * samples_per_bucket;
+                    if (end_sample > length_pcm) end_sample = length_pcm;
+                    for (u32 sample = start_sample; sample < end_sample; sample += sample_stride)
                     {
-                        u8* data = (u8*)ptr1;
+                        f32 sample_value = 0.0f;
                         for (s32 ch = 0; ch < num_channels; ++ch)
                         {
                             u32 offset = (sample * num_channels + ch) * 3;
                             s32 value = (data[offset] | (data[offset + 1] << 8) | (data[offset + 2] << 16));
-                            if (value & 0x800000) value |= 0xFF000000; // Sign extend
-                            sample_value += (f32)value / 8388608.0f;
+                            if (value & 0x800000) value |= 0xFF000000;
+                            sample_value += (f32)value;
                         }
-                        sample_value /= (f32)num_channels;
+                        sample_value *= inv_scale * inv_num_channels;
+                        if (sample_value < min_val) min_val = sample_value;
+                        if (sample_value > max_val) max_val = sample_value;
                     }
-                    else if (format == FMOD_SOUND_FORMAT_PCM32)
-                    {
-                        s32* data = (s32*)ptr1;
-                        for (s32 ch = 0; ch < num_channels; ++ch)
-                        {
-                            sample_value += (f32)data[sample * num_channels + ch] / 2147483648.0f;
-                        }
-                        sample_value /= (f32)num_channels;
-                    }
-
-                    if (sample_value < min_val) min_val = sample_value;
-                    if (sample_value > max_val) max_val = sample_value;
+                    buckets[bucket * 2] = min_val;
+                    buckets[bucket * 2 + 1] = max_val;
+                    _waveform_data[resource_slot].buckets_loaded = bucket + 1;
                 }
-
-                buckets[bucket * 2] = min_val;
-                buckets[bucket * 2 + 1] = max_val;
+            }
+            else if (format == FMOD_SOUND_FORMAT_PCM32)
+            {
+                s32* data = (s32*)ptr1;
+                constexpr f32 inv_scale = 1.0f / 2147483648.0f;
+                for (u32 bucket = 0; bucket < resolution; ++bucket)
+                {
+                    if ((bucket & 63) == 0 && _waveform_cancel.load()) { cancelled = true; break; }
+                    f32 min_val = 1.0f, max_val = -1.0f;
+                    u32 start_sample = bucket * samples_per_bucket;
+                    u32 end_sample = (bucket + 1) * samples_per_bucket;
+                    if (end_sample > length_pcm) end_sample = length_pcm;
+                    for (u32 sample = start_sample; sample < end_sample; sample += sample_stride)
+                    {
+                        f32 sample_value = 0.0f;
+                        for (s32 ch = 0; ch < num_channels; ++ch)
+                            sample_value += (f32)data[sample * num_channels + ch];
+                        sample_value *= inv_scale * inv_num_channels;
+                        if (sample_value < min_val) min_val = sample_value;
+                        if (sample_value > max_val) max_val = sample_value;
+                    }
+                    buckets[bucket * 2] = min_val;
+                    buckets[bucket * 2 + 1] = max_val;
+                    _waveform_data[resource_slot].buckets_loaded = bucket + 1;
+                }
             }
 
             sound->unlock(ptr1, ptr2, len1, len2);
             sound->release();
 
-            // Store the results
-            _waveform_data[resource_slot].buckets = buckets;
-            _waveform_data[resource_slot].length_ms = length_ms;
+            // If cancelled, free the buckets and clear the early-set pointer
+            if (cancelled)
+            {
+                _waveform_data[resource_slot].buckets = nullptr;
+                _waveform_data[resource_slot].buckets_loaded = 0;
+                pen::memory_free(buckets);
+                continue;
+            }
+
+            // Mark as complete (buckets, length_ms, buckets_loaded already set during processing)
             _waveform_data[resource_slot].state = e_waveform_state::ready;
         }
 
@@ -299,6 +442,8 @@ namespace put
 
         result = FMOD::System_Create(&_sound_system);
         PEN_ASSERT(result == FMOD_OK);
+        
+        audio_system_platform_init(_sound_system);
 
         static const u32 max_channels = 32;
         result = _sound_system->init(max_channels, FMOD_INIT_NORMAL, NULL);
@@ -702,6 +847,7 @@ namespace put
         // Initialize waveform data as loading
         _waveform_data[resource_slot].buckets = nullptr;
         _waveform_data[resource_slot].resolution = resolution;
+        _waveform_data[resource_slot].buckets_loaded = 0;
         _waveform_data[resource_slot].length_ms = 0;
         _waveform_data[resource_slot].state = e_waveform_state::loading;
 
@@ -712,10 +858,15 @@ namespace put
             resolved_name = pen::os_path_for_resource(filename);
         }
 
-        // Queue the request for the worker thread
+        // Cancel any in-progress work and set new request (newest wins)
         {
             std::lock_guard<std::mutex> lock(_waveform_mutex);
-            _waveform_queue.push({resolved_name, resolution, resource_slot});
+            _waveform_cancel = true;  // Signal cancellation to any in-progress work
+            
+            _waveform_pending_request.filename = resolved_name;
+            _waveform_pending_request.resolution = resolution;
+            _waveform_pending_request.resource_slot = resource_slot;
+            _waveform_pending_request.valid = true;
         }
         _waveform_cv.notify_one();
 
@@ -843,6 +994,16 @@ namespace put
                 default:
                     break;
             }
+
+            // Clear all state to prevent stale data leaking to subsequent allocations
+            _audio_resources[index].resource = nullptr;
+            _audio_resources[index].assigned_flag = 0;
+            _audio_resources[index].type = AUDIO_RESOURCE_VIRTUAL;
+            _audio_resources[index].num_dsp = 0;
+
+            // Reset resource state (play_state becomes not_initialised = 0)
+            // Only backbuffer needs clearing - frontbuffer reads are guarded by assigned_flag check
+            memset(&_resource_states.backbuffer()[index], 0, sizeof(resource_state));
         }
 
         return 0;
