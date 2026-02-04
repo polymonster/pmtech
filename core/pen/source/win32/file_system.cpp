@@ -124,7 +124,7 @@ namespace pen
 
     pen_error filesystem_read_file_to_buffer_direct(const c8* filename, void** p_buffer, u32& buffer_size)
     {
-        filesystem_read_file_to_buffer(filename, p_buffer, buffer_size);
+        return filesystem_read_file_to_buffer(filename, p_buffer, buffer_size);
     }
 
     pen_error filesystem_enum_volumes(fs_tree_node& tree)
