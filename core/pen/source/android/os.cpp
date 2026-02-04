@@ -777,6 +777,27 @@ namespace pen
         return 0;
     }
 
+    pen_error filesystem_read_file_to_buffer_direct(const c8* filename, void** p_buffer, u32& buffer_size)
+    {
+        // check for abs files
+        FILE* file = fopen(filename, "rb");
+        if (file)
+        {
+            fseek(file, 0L, SEEK_END);
+            size_t size = (u32)ftell(file);
+            fseek(file, 0L, SEEK_SET);
+            void* buf = pen::memory_alloc(size + 1);
+            ((c8*)buf)[size] = '\0';
+            fread(buf, 1, size, file);
+            fclose(file);
+
+            buffer_size = size;
+            *p_buffer = buf;
+        }
+
+        return PEN_ERR_OK;
+    }
+
     pen_error filesystem_read_file_to_buffer(const c8* filename, void** p_buffer, u32& buffer_size)
     {
         AAsset* asset = AAssetManager_open(s_android_context.m_asset_manager, filename, AASSET_MODE_STREAMING);
