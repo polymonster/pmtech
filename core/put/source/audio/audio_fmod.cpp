@@ -16,6 +16,7 @@
 
 #define DR_MP3_IMPLEMENTATION
 #include "dr_libs/dr_mp3.h"
+#include "stb/stb_vorbis.c"
 
 #include <thread>
 #include <mutex>
@@ -128,13 +129,18 @@ namespace
     enum class audio_file_type
     {
         unknown,
-        mp3
+        mp3,
+        ogg
     };
 
     audio_file_type detect_audio_type(const u8* header, u32 header_size)
     {
         if (header_size < 4)
             return audio_file_type::unknown;
+
+        // Check for Ogg container (OggS magic)
+        if (header[0] == 'O' && header[1] == 'g' && header[2] == 'g' && header[3] == 'S')
+            return audio_file_type::ogg;
 
         // Check for ID3 tag (ID3v2 at start of file)
         if (header[0] == 'I' && header[1] == 'D' && header[2] == '3')
@@ -192,38 +198,60 @@ namespace
             // Detect file type from header
             audio_file_type file_type = detect_audio_type((const u8*)file_buf, file_size);
 
-            if (file_type != audio_file_type::mp3)
+            if (file_type == audio_file_type::unknown)
             {
                 pen::memory_free(file_buf);
                 _waveform_data[resource_slot].state = e_waveform_state::error;
                 continue;
             }
 
-            // Initialize dr_mp3 decoder from memory
-            drmp3 mp3;
-            if (!drmp3_init_memory(&mp3, file_buf, file_size, nullptr))
+            // Initialize decoder and get metadata
+            drmp3 mp3 = {};
+            stb_vorbis* vorbis = nullptr;
+            u64 total_frames = 0;
+            u32 num_channels = 0;
+            u32 sample_rate = 0;
+
+            if (file_type == audio_file_type::mp3)
             {
+                if (!drmp3_init_memory(&mp3, file_buf, file_size, nullptr))
+                {
+                    pen::memory_free(file_buf);
+                    _waveform_data[resource_slot].state = e_waveform_state::error;
+                    continue;
+                }
+                total_frames = drmp3_get_pcm_frame_count(&mp3);
+                num_channels = mp3.channels;
+                sample_rate = mp3.sampleRate;
+            }
+            else if (file_type == audio_file_type::ogg)
+            {
+                int vorbis_error = 0;
+                vorbis = stb_vorbis_open_memory((const unsigned char*)file_buf, file_size, &vorbis_error, nullptr);
+                if (!vorbis)
+                {
+                    pen::memory_free(file_buf);
+                    _waveform_data[resource_slot].state = e_waveform_state::error;
+                    continue;
+                }
+                stb_vorbis_info info = stb_vorbis_get_info(vorbis);
+                total_frames = stb_vorbis_stream_length_in_samples(vorbis);
+                num_channels = info.channels;
+                sample_rate = info.sample_rate;
+            }
+
+            if (total_frames == 0 || num_channels == 0)
+            {
+                if (file_type == audio_file_type::mp3) drmp3_uninit(&mp3);
+                if (vorbis) stb_vorbis_close(vorbis);
                 pen::memory_free(file_buf);
                 _waveform_data[resource_slot].state = e_waveform_state::error;
                 continue;
             }
 
-            // Get total frame count for calculating bucket sizes
-            drmp3_uint64 total_frames = drmp3_get_pcm_frame_count(&mp3);
-            if (total_frames == 0)
-            {
-                drmp3_uninit(&mp3);
-                pen::memory_free(file_buf);
-                _waveform_data[resource_slot].state = e_waveform_state::error;
-                continue;
-            }
-
-            u32 num_channels = mp3.channels;
-            u32 sample_rate = mp3.sampleRate;
             u32 length_ms = (u32)((total_frames * 1000) / sample_rate);
 
             // Allocate local bucket storage (min/max pairs)
-            // Keep local until complete to avoid races with cleanup
             f32* buckets = (f32*)pen::memory_alloc(resolution * 2 * sizeof(f32));
 
             // Initialize buckets
@@ -234,7 +262,7 @@ namespace
             }
 
             // Calculate frames per bucket
-            drmp3_uint64 frames_per_bucket = total_frames / resolution;
+            u64 frames_per_bucket = total_frames / resolution;
             if (frames_per_bucket == 0) frames_per_bucket = 1;
 
             // Decode in chunks
@@ -242,7 +270,7 @@ namespace
             f32* chunk_buffer = (f32*)pen::memory_alloc(chunk_frames * num_channels * sizeof(f32));
 
             u32 current_bucket = 0;
-            drmp3_uint64 frames_in_current_bucket = 0;
+            u64 frames_in_current_bucket = 0;
             f32 bucket_min = 1.0f;
             f32 bucket_max = -1.0f;
             f32 inv_num_channels = 1.0f / (f32)num_channels;
@@ -262,13 +290,21 @@ namespace
                 }
 
                 // Read a chunk of PCM frames
-                drmp3_uint64 frames_read = drmp3_read_pcm_frames_f32(&mp3, chunk_frames, chunk_buffer);
+                u32 frames_read = 0;
+                if (file_type == audio_file_type::mp3)
+                {
+                    frames_read = (u32)drmp3_read_pcm_frames_f32(&mp3, chunk_frames, chunk_buffer);
+                }
+                else if (file_type == audio_file_type::ogg)
+                {
+                    frames_read = stb_vorbis_get_samples_float_interleaved(vorbis, num_channels, chunk_buffer, chunk_frames * num_channels) ;
+                }
 
                 if (frames_read == 0)
                     break; // End of file
 
                 // Process the chunk into buckets
-                for (drmp3_uint64 frame = 0; frame < frames_read; frame += sample_stride)
+                for (u32 frame = 0; frame < frames_read; frame += sample_stride)
                 {
                     // Average channels for this sample
                     f32 sample_value = 0.0f;
@@ -308,7 +344,8 @@ namespace
 
             // Clean up decode resources
             pen::memory_free(chunk_buffer);
-            drmp3_uninit(&mp3);
+            if (file_type == audio_file_type::mp3) drmp3_uninit(&mp3);
+            if (vorbis) stb_vorbis_close(vorbis);
             pen::memory_free(file_buf);
 
             // Final cancel check before exposing buckets
