@@ -9,9 +9,9 @@ Check out the live [WebGL/WebAssembly Samples](https://www.polymonster.co.uk/web
 
 **Supported Platforms**  
 
-- Operating System: Windows (x64), macOS, iOS, Linux (x64), WebAssembly, Android ([wip](https://trello.com/b/ciujzpUT)).
+- Operating System: Windows (x64), macOS, iOS, Linux (x64), WebAssembly, Android.
 - Compilers: vs2017+, Clang 6+, Apple LLVM 9+, Gcc 7+, emcc 2.0.  
-- Rendering Backends: Direct3D11, OpenGL3.1+, OpenGLES3+, WebGL 2.0, Metal, Vulkan ([wip](https://trello.com/b/ciujzpUT)).
+- Rendering Backends: Direct3D11, OpenGL3.1+, OpenGLES3+, WebGL 2.0, Metal, Vulkan.
 - Shader Langauges: HLSL Shader Model 3.0+, GLSL 330+, Metal, SPIR-V.
 
 **Features**  
