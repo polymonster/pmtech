@@ -2,6 +2,9 @@ bullet_lib_dir = "osx"
 if platform_dir == "linux" then
     bullet_lib_dir = "linux"
 end
+if platform_dir == "android" then
+    bullet_lib_dir = "android"
+end
 if _ACTION == "vs2017" or _ACTION == "vs2015" then
     bullet_lib_dir = _ACTION
 end
@@ -67,7 +70,6 @@ project "put"
         "source/ecs/*.cpp",
         "source/ecs/*.h",
 
-        "source/physics/physics_stub.cpp",
         "source/physics/physics.cpp",
         "source/physics/physics.h",
 
@@ -83,6 +85,17 @@ project "put"
         "../../third_party/maths/*.h"
     }
     includedirs { "include" }
+
+    if _OPTIONS["disable_physics"] then
+        files { "source/physics/physics_stub.cpp" }
+        defines { "PEN_PHYSICS_DISABLED" }
+    else
+        files
+        {
+            "source/physics/physics_bullet.cpp",
+            "source/physics/physics_bullet.h",
+        }
+    end
 
     if platform_dir == "web" then
     	excludes

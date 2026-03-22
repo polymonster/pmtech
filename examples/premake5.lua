@@ -54,6 +54,11 @@ dofile "../core/pen/project.lua"
 -- Toolkit Project
 dofile "../core/put/project.lua"
 
+-- Bullet Physics (android builds as part of this solution)
+if platform == "android" and not _OPTIONS["disable_physics"] then
+    dofile "../third_party/bullet/project.lua"
+end
+
 -- Example projects
 -- ( project name, current script dir, )
 create_app_example( "empty_project", script_path() ) -- hide

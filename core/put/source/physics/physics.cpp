@@ -221,7 +221,9 @@ namespace physics
         pen::slot_resources_init(&s_physics_slot_resources, 1024);
         pen::slot_resources_init(&s_p2p_slot_resources, 16);
 
-        // physics_initialise();
+#ifndef PEN_PHYSICS_DISABLED
+        physics_initialise();
+#endif
 
         s_cmd_buffer.create(1024);
 

@@ -270,9 +270,9 @@ local function setup_fmod()
 end
 
 function setup_modules()
-	if platform == "android" then
-		-- stub physics
-	else
+	if _OPTIONS["disable_physics"] then
+		defines { "PEN_PHYSICS_DISABLED" }
+	elseif platform ~= "android" then
 		setup_bullet()
 	end
 	setup_fmod()
@@ -398,6 +398,9 @@ function create_binary(project_name, source_directory, root_directory, binary_ty
 
 		if binary_type ~= "SharedLib" then
 			dependson { "pen", "put" }
+			if platform == "android" and not _OPTIONS["disable_physics"] then
+				dependson { "bullet_monolithic" }
+			end
 		end
 
 		includedirs

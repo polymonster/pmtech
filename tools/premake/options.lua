@@ -62,6 +62,12 @@ newoption
 
 newoption
 {
+   trigger     = "disable_physics",
+   description = "Disable bullet physics (use stub implementations)"
+}
+
+newoption
+{
    trigger     = "plist",
    value       = "filepath",
    description = "specify filepath to plist"
