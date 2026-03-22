@@ -111,70 +111,11 @@ namespace physics
         u32   call_attach;
     };
 
-    struct readable_data
-    {
-        readable_data()
-        {
-            b_paused = 0;
-        }
-
-        a_u32                                   b_paused;
-        pen::multi_buffer<mat4*, 2>             output_matrices;
-        pen::multi_buffer<maths::transform*, 2> output_transforms;
-    };
-
     extern readable_data g_readable_data;
-
-    void physics_update(f32 dt);
-    void physics_initialise();
-    void physics_shutdown();
 
     btRigidBody* create_rb_internal(physics_entity& entity, const rigid_body_params& params, u32 ghost,
                                     btCollisionShape* p_existing_shape = NULL);
 
-    void add_rb_internal(const rigid_body_params& params, u32 resource_slot, bool ghost = false);
-    void add_compound_rb_internal(const compound_rb_cmd& cmd, u32 resource_slot);
-    void add_compound_shape_internal(const compound_rb_params& params, u32 resource_slot);
     void add_dof6_internal(const constraint_params& params, u32 resource_slot, btRigidBody* rb, btRigidBody* fixed_body);
-    void add_hinge_internal(const constraint_params& params, u32 resource_slot);
-    void add_constraint_internal(const constraint_params& params, u32 resource_slot);
-    void add_p2p_constraint_internal(const add_p2p_constraint_params& cmd, u32 resource_slot);
-
-    void set_linear_velocity_internal(const set_v3_params& cmd);
-    void set_angular_velocity_internal(const set_v3_params& cmd);
-    void set_linear_factor_internal(const set_v3_params& cmd);
-    void set_angular_factor_internal(const set_v3_params& cmd);
-    void set_transform_internal(const set_transform_params& cmd);
-    void set_gravity_internal(const set_v3_params& cmd);
-    void set_friction_internal(const set_float_params& cmd);
-    void set_hinge_motor_internal(const set_v3_params& cmd);
-    void set_button_motor_internal(const set_v3_params& cmd);
-    void set_multi_joint_motor_internal(const set_multi_v3_params& cmd);
-    void set_multi_joint_pos_internal(const set_multi_v3_params& cmd);
-    void set_multi_joint_limit_internal(const set_multi_v3_params& cmd);
-    void set_multi_base_velocity_internal(const set_multi_v3_params& cmd);
-    void set_multi_base_pos_internal(const set_multi_v3_params& cmd);
-    void set_group_internal(const set_group_params& cmd);
-    void set_damping_internal(const set_v3_params& cmd);
-    void set_p2p_constraint_pos_internal(const set_v3_params& cmd);
-
-    void sync_rigid_bodies_internal(const sync_rb_params& cmd);
-    void sync_rigid_body_velocity_internal(const sync_rb_params& cmd);
-    void sync_compound_multi_internal(const sync_compound_multi_params& cmd);
-    void attach_rb_to_compound_internal(const attach_to_compound_params& params);
-
-    mat4 get_rb_start_matrix(u32 rb_index);
-
-    void add_to_world_internal(u32 entity_index);
-    void remove_from_world_internal(u32 entity_index);
-    void release_entity_internal(u32 entity_index);
-
-    cast_result cast_ray_internal(const ray_cast_params& rcp);
-    cast_result cast_sphere_internal(const sphere_cast_params& ccp);
-    void        contact_test_internal(const contact_test_params& ctp);
-
-    void add_central_force(const set_v3_params& cmd);
-    void add_central_impulse(const set_v3_params& cmd);
-    void add_force(const set_v3_v3_params& cmd);
 
 } // namespace physics

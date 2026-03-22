@@ -10,8 +10,60 @@
 #include "os.h"
 #include "slot_resource.h"
 #include "timer.h"
+#include "file_system.h"
 
 #include "fmod.hpp"
+
+#define DR_MP3_IMPLEMENTATION
+#include "dr_libs/dr_mp3.h"
+#include "stb/stb_vorbis.c"
+
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <queue>
+#include <chrono>
+#include <cmath>
+
+#if PEN_PLATFORM_ANDROID
+
+#include "fmod_android.h"
+
+static JNIEnv* s_jni_env = nullptr;
+static JavaVM* s_jvm = nullptr;
+
+void audio_init_fmod_android(JNIEnv* env, jobject thiz, jobject activity)
+{
+    s_jni_env = env;
+    env->GetJavaVM(&s_jvm);
+    FMOD_RESULT result = FMOD_Android_JNI_Init(s_jvm, activity);
+}
+
+void audio_attach_current_thread()
+{
+    if (s_jvm->AttachCurrentThread(&s_jni_env, nullptr) != JNI_OK) {
+        // handle error
+    }
+}
+#else
+void audio_attach_current_thread() { }
+#endif
+
+#if PEN_PLATFORM_IOS
+void audio_system_platform_init(FMOD::System* system)
+{
+    // Configure for iOS
+    system->setStreamBufferSize(65536, FMOD_TIMEUNIT_RAWBYTES);
+
+    FMOD_ADVANCEDSETTINGS adv_settings;
+    memset(&adv_settings, 0, sizeof(FMOD_ADVANCEDSETTINGS));
+    adv_settings.cbSize = sizeof(FMOD_ADVANCEDSETTINGS);
+    adv_settings.defaultDecodeBufferSize = 4096; // Increase decode buffer
+    system->setAdvancedSettings(&adv_settings);
+}
+#else
+void audio_system_platform_init(FMOD::System* system) { }
+#endif
 
 using namespace put;
 
@@ -26,7 +78,8 @@ namespace
         AUDIO_RESOURCE_DSP_FFT,
         AUDIO_RESOURCE_DSP_EQ,
         AUDIO_RESOURCE_DSP_GAIN,
-        AUDIO_RESOURCE_DSP
+        AUDIO_RESOURCE_DSP,
+        AUDIO_RESOURCE_WAVEFORM
     };
 
     struct audio_resource_allocation
@@ -45,42 +98,312 @@ namespace
             audio_fft_spectrum* fft_spectrum;
             audio_eq_state      eq_state;
             f32                 gain_value;
+            f32                 buffered_percentage;
         };
     };
 
-    FMOD::System*                              _sound_system;
+    struct waveform_load_request
+    {
+        Str filename;
+        u32 resolution;
+        u32 resource_slot;
+        bool valid = false;
+    };
+
+    FMOD::System*                              _sound_system = nullptr;
     pen::res_pool<audio_resource_allocation>   _audio_resources;
     pen::multi_array_buffer<resource_state, 2> _resource_states;
     pen::res_pool<std::atomic<bool>>           _sound_file_info_ready;
     pen::res_pool<audio_sound_file_info>       _sound_file_info;
+    pen::res_pool<audio_waveform_data>         _waveform_data;
+
+    // Waveform worker thread
+    std::thread                         _waveform_worker;
+    std::mutex                          _waveform_mutex;
+    std::condition_variable             _waveform_cv;
+    waveform_load_request               _waveform_pending_request;  // Single pending request (newest wins)
+    std::atomic<bool>                   _waveform_cancel{false};    // Cancel flag for in-progress work
+    std::atomic<bool>                   _waveform_worker_running{false};
+
+    // Detect audio file type from header bytes
+    enum class audio_file_type
+    {
+        unknown,
+        mp3,
+        ogg
+    };
+
+    audio_file_type detect_audio_type(const u8* header, u32 header_size)
+    {
+        if (header_size < 4)
+            return audio_file_type::unknown;
+
+        // Check for Ogg container (OggS magic)
+        if (header[0] == 'O' && header[1] == 'g' && header[2] == 'g' && header[3] == 'S')
+            return audio_file_type::ogg;
+
+        // Check for ID3 tag (ID3v2 at start of file)
+        if (header[0] == 'I' && header[1] == 'D' && header[2] == '3')
+            return audio_file_type::mp3;
+
+        // Check for MP3 frame sync (0xFF followed by 0xE* or 0xF*)
+        if (header[0] == 0xFF && (header[1] & 0xE0) == 0xE0)
+            return audio_file_type::mp3;
+
+        return audio_file_type::unknown;
+    }
+
+    void waveform_worker_thread_func()
+    {
+        // for android
+        audio_attach_current_thread();
+
+        while (_waveform_worker_running.load())
+        {
+            waveform_load_request request;
+            {
+                std::unique_lock<std::mutex> lock(_waveform_mutex);
+                _waveform_cv.wait(lock, [] {
+                    return _waveform_pending_request.valid || !_waveform_worker_running.load();
+                });
+
+                if (!_waveform_worker_running.load() && !_waveform_pending_request.valid)
+                    break;
+
+                if (!_waveform_pending_request.valid)
+                    continue;
+
+                // Take the pending request and clear it
+                request = _waveform_pending_request;
+                _waveform_pending_request.valid = false;
+                _waveform_cancel = false;  // Reset cancel flag for this new request
+            }
+
+            // Process the request
+            u32 resource_slot = request.resource_slot;
+            u32 resolution = request.resolution;
+
+            // Read file to buffer
+            void* file_buf = nullptr;
+            u32 file_size = 0;
+            pen_error read_result = pen::filesystem_read_file_to_buffer_direct(request.filename.c_str(), &file_buf, file_size);
+
+            if (read_result != PEN_ERR_OK || file_buf == nullptr || file_size < 4)
+            {
+                if (file_buf) pen::memory_free(file_buf);
+                _waveform_data[resource_slot].state = e_waveform_state::error;
+                continue;
+            }
+
+            // Detect file type from header
+            audio_file_type file_type = detect_audio_type((const u8*)file_buf, file_size);
+
+            if (file_type == audio_file_type::unknown)
+            {
+                pen::memory_free(file_buf);
+                _waveform_data[resource_slot].state = e_waveform_state::error;
+                continue;
+            }
+
+            // Initialize decoder and get metadata
+            drmp3 mp3 = {};
+            stb_vorbis* vorbis = nullptr;
+            u64 total_frames = 0;
+            u32 num_channels = 0;
+            u32 sample_rate = 0;
+
+            if (file_type == audio_file_type::mp3)
+            {
+                if (!drmp3_init_memory(&mp3, file_buf, file_size, nullptr))
+                {
+                    pen::memory_free(file_buf);
+                    _waveform_data[resource_slot].state = e_waveform_state::error;
+                    continue;
+                }
+                total_frames = drmp3_get_pcm_frame_count(&mp3);
+                num_channels = mp3.channels;
+                sample_rate = mp3.sampleRate;
+            }
+            else if (file_type == audio_file_type::ogg)
+            {
+                int vorbis_error = 0;
+                vorbis = stb_vorbis_open_memory((const unsigned char*)file_buf, file_size, &vorbis_error, nullptr);
+                if (!vorbis)
+                {
+                    pen::memory_free(file_buf);
+                    _waveform_data[resource_slot].state = e_waveform_state::error;
+                    continue;
+                }
+                stb_vorbis_info info = stb_vorbis_get_info(vorbis);
+                total_frames = stb_vorbis_stream_length_in_samples(vorbis);
+                num_channels = info.channels;
+                sample_rate = info.sample_rate;
+            }
+
+            if (total_frames == 0 || num_channels == 0)
+            {
+                if (file_type == audio_file_type::mp3) drmp3_uninit(&mp3);
+                if (vorbis) stb_vorbis_close(vorbis);
+                pen::memory_free(file_buf);
+                _waveform_data[resource_slot].state = e_waveform_state::error;
+                continue;
+            }
+
+            u32 length_ms = (u32)((total_frames * 1000) / sample_rate);
+
+            // Allocate local bucket storage (min/max pairs)
+            f32* buckets = (f32*)pen::memory_alloc(resolution * 2 * sizeof(f32));
+
+            // Initialize buckets
+            for (u32 i = 0; i < resolution * 2; i += 2)
+            {
+                buckets[i] = 1.0f;      // min
+                buckets[i + 1] = -1.0f; // max
+            }
+
+            // Calculate frames per bucket
+            u64 frames_per_bucket = total_frames / resolution;
+            if (frames_per_bucket == 0) frames_per_bucket = 1;
+
+            // Decode in chunks
+            constexpr u32 chunk_frames = 4096;
+            f32* chunk_buffer = (f32*)pen::memory_alloc(chunk_frames * num_channels * sizeof(f32));
+
+            u32 current_bucket = 0;
+            u64 frames_in_current_bucket = 0;
+            f32 bucket_min = 1.0f;
+            f32 bucket_max = -1.0f;
+            f32 inv_num_channels = 1.0f / (f32)num_channels;
+
+            // Sample stride for faster processing
+            constexpr u32 sample_stride = 8;
+
+            bool cancelled = false;
+
+            while (!cancelled)
+            {
+                // Check for cancellation periodically
+                if (_waveform_cancel.load())
+                {
+                    cancelled = true;
+                    break;
+                }
+
+                // Read a chunk of PCM frames
+                u32 frames_read = 0;
+                if (file_type == audio_file_type::mp3)
+                {
+                    frames_read = (u32)drmp3_read_pcm_frames_f32(&mp3, chunk_frames, chunk_buffer);
+                }
+                else if (file_type == audio_file_type::ogg)
+                {
+                    frames_read = stb_vorbis_get_samples_float_interleaved(vorbis, num_channels, chunk_buffer, chunk_frames * num_channels) ;
+                }
+
+                if (frames_read == 0)
+                    break; // End of file
+
+                // Process the chunk into buckets
+                for (u32 frame = 0; frame < frames_read; frame += sample_stride)
+                {
+                    // Average channels for this sample
+                    f32 sample_value = 0.0f;
+                    for (u32 ch = 0; ch < num_channels; ++ch)
+                    {
+                        sample_value += chunk_buffer[frame * num_channels + ch];
+                    }
+                    sample_value *= inv_num_channels;
+
+                    // Update min/max for current bucket
+                    if (sample_value < bucket_min) bucket_min = sample_value;
+                    if (sample_value > bucket_max) bucket_max = sample_value;
+
+                    frames_in_current_bucket += sample_stride;
+
+                    // Check if we've filled the current bucket
+                    if (frames_in_current_bucket >= frames_per_bucket && current_bucket < resolution)
+                    {
+                        buckets[current_bucket * 2] = bucket_min;
+                        buckets[current_bucket * 2 + 1] = bucket_max;
+
+                        current_bucket++;
+                        frames_in_current_bucket = 0;
+                        bucket_min = 1.0f;
+                        bucket_max = -1.0f;
+                    }
+                }
+            }
+
+            // Finalize any remaining partial bucket
+            if (!cancelled && current_bucket < resolution && frames_in_current_bucket > 0)
+            {
+                buckets[current_bucket * 2] = bucket_min;
+                buckets[current_bucket * 2 + 1] = bucket_max;
+                current_bucket++;
+            }
+
+            // Clean up decode resources
+            pen::memory_free(chunk_buffer);
+            if (file_type == audio_file_type::mp3) drmp3_uninit(&mp3);
+            if (vorbis) stb_vorbis_close(vorbis);
+            pen::memory_free(file_buf);
+
+            // Final cancel check before exposing buckets
+            if (cancelled || _waveform_cancel.load())
+            {
+                pen::memory_free(buckets);
+                continue;
+            }
+
+            // Success - expose buckets to client
+            _waveform_data[resource_slot].buckets = buckets;
+            _waveform_data[resource_slot].length_ms = length_ms;
+            _waveform_data[resource_slot].buckets_loaded = current_bucket;
+            _waveform_data[resource_slot].state = e_waveform_state::ready;
+        }
+    }
 } // namespace
 
 namespace put
 {
     void direct::audio_system_initialise()
     {
+        // for android
+        audio_attach_current_thread();
+
         // init fmod
         FMOD_RESULT result;
+        FMOD::Debug_Initialize(FMOD_DEBUG_LEVEL_LOG, FMOD_DEBUG_MODE_TTY, nullptr);
 
         result = FMOD::System_Create(&_sound_system);
+        PEN_ASSERT(result == FMOD_OK);
+
+        audio_system_platform_init(_sound_system);
 
         static const u32 max_channels = 32;
         result = _sound_system->init(max_channels, FMOD_INIT_NORMAL, NULL);
+        PEN_ASSERT(result == FMOD_OK);
 
         static u32 reserved = 128;
-
         _audio_resources.init(reserved);
         _sound_file_info_ready.init(reserved);
         _sound_file_info.init(reserved);
         _resource_states.init(reserved);
-        
-        FMOD::Debug_Initialize(FMOD_DEBUG_LEVEL_LOG, FMOD_DEBUG_MODE_TTY, nullptr, nullptr);
+        _waveform_data.init(reserved);
 
-        PEN_ASSERT(result == FMOD_OK);
+        // Start waveform worker thread
+        _waveform_worker_running = true;
+        _waveform_worker = std::thread(waveform_worker_thread_func);
     }
 
     void direct::audio_system_shutdown()
     {
+        // Stop waveform worker thread
+        _waveform_worker_running = false;
+        _waveform_cv.notify_all();
+        if (_waveform_worker.joinable())
+            _waveform_worker.join();
+
         for (s32 i = 0; i < _audio_resources._capacity; ++i)
             if (_audio_resources[i].assigned_flag)
                 direct::audio_release_resource(i);
@@ -125,13 +448,13 @@ namespace put
 
         bool playing = false;
         channel->isPlaying(&playing);
-        
+
         bool muted = false;
         channel->getMute(&muted);
-        
+
         float volume = 0.0;
         channel->getVolume(&volume);
-        
+
         bool is_virtual = false;
         channel->isVirtual(&is_virtual);
 
@@ -228,6 +551,28 @@ namespace put
         gain_dsp->getParameterFloat(FMOD_DSP_CHANNELMIX_GAIN_CH0, &rs.gain_value, nullptr, 0);
     }
 
+    void update_buffered_percentage(u32 resource_index)
+    {
+        _resource_states.grow(resource_index);
+        resource_state& rs = _resource_states.backbuffer()[resource_index];
+
+        FMOD::Sound* sound = (FMOD::Sound*)_audio_resources[resource_index].resource;
+
+        FMOD_OPENSTATE open_state;
+        unsigned int percent_buffered = 0;
+        bool starving = false;
+        sound->getOpenState(&open_state, &percent_buffered, &starving, nullptr);
+
+        if(open_state == FMOD_OPENSTATE_READY)
+        {
+            rs.buffered_percentage = 11.0f; //(f32)percent_buffered;
+        }
+        else
+        {
+            rs.buffered_percentage = 0.0f;
+        }
+    }
+
     void direct::audio_system_update()
     {
         FMOD_RESULT result = _sound_system->update();
@@ -241,6 +586,12 @@ namespace put
             {
                 switch (_audio_resources[i].type)
                 {
+                    case AUDIO_RESOURCE_SOUND:
+                    {
+                        update_buffered_percentage(i);
+                    }
+                    break;
+
                     case AUDIO_RESOURCE_CHANNEL:
                     {
                         update_channel_state(i);
@@ -288,7 +639,7 @@ namespace put
 
         _audio_resources[resource_slot].assigned_flag |= 0xff;
         _audio_resources[resource_slot].type = AUDIO_RESOURCE_SOUND;
-        
+
         Str resovled_name = filename;
         if(filename[0] != '/')
         {
@@ -329,7 +680,7 @@ namespace put
 
         FMOD_RESULT result = _sound_system->createSound((const char*)music.pcm_data, FMOD_OPENRAW | FMOD_OPENMEMORY_POINT,
                                                         &exinfo, (FMOD::Sound**)&_audio_resources[resource_slot].resource);
-        
+
         // populate sound info
         _sound_file_info[resource_slot].error = result;
         if(result == FMOD_OK)
@@ -338,6 +689,37 @@ namespace put
             FMOD_RESULT ms_result = new_sound->getLength(&_sound_file_info[resource_slot].length_ms, FMOD_TIMEUNIT_MS);
         }
         _sound_file_info_ready[resource_slot] = true;
+
+        return resource_slot;
+    }
+
+    u32 direct::audio_create_sound_url(const c8* url, u32 resource_slot)
+    {
+        _audio_resources.grow(resource_slot);
+        _sound_file_info.grow(resource_slot);
+        _sound_file_info_ready.grow(resource_slot);
+
+        _audio_resources[resource_slot].assigned_flag |= 0xff;
+        _audio_resources[resource_slot].type = AUDIO_RESOURCE_SOUND;
+
+        // 2. Begin streaming from URL (non-blocking)
+        FMOD_RESULT result = _sound_system->createSound(
+            url,
+            FMOD_CREATESTREAM | FMOD_NONBLOCKING,
+            nullptr,
+            (FMOD::Sound**)&_audio_resources[resource_slot].resource
+        );
+
+        // populate sound info
+        _sound_file_info[resource_slot].error = result;
+        if(result == FMOD_OK)
+        {
+            FMOD::Sound* new_sound = (FMOD::Sound*)_audio_resources[resource_slot].resource;
+            FMOD_RESULT ms_result = new_sound->getLength(&_sound_file_info[resource_slot].length_ms, FMOD_TIMEUNIT_MS);
+        }
+        _sound_file_info_ready[resource_slot] = true;
+
+        _sound_system->update();
 
         return resource_slot;
     }
@@ -352,12 +734,12 @@ namespace put
         _audio_resources[resource_slot].type = AUDIO_RESOURCE_SOUND;
 
         FMOD_RESULT result = _sound_system->createStream(
-            filename, 
-            FMOD_LOOP_OFF | FMOD_2D | FMOD_IGNORETAGS | FMOD_MPEGSEARCH, 
+            filename,
+            FMOD_LOOP_OFF | FMOD_2D | FMOD_IGNORETAGS | FMOD_MPEGSEARCH,
             0,
             (FMOD::Sound**)&_audio_resources[resource_slot].resource
         );
-        
+
         // populate sound info
         _sound_file_info[resource_slot].error = result;
         if(result == FMOD_OK)
@@ -388,6 +770,44 @@ namespace put
         return resource_slot;
     }
 
+    u32 direct::audio_create_waveform(const c8* filename, u32 resolution, u32 resource_slot)
+    {
+        _audio_resources.grow(resource_slot);
+        _waveform_data.grow(resource_slot);
+
+        _audio_resources[resource_slot].assigned_flag |= 0xff;
+        _audio_resources[resource_slot].type = AUDIO_RESOURCE_WAVEFORM;
+        _audio_resources[resource_slot].resource = nullptr;
+
+        // Initialize waveform data as loading
+        _waveform_data[resource_slot].buckets = nullptr;
+        _waveform_data[resource_slot].resolution = resolution;
+        _waveform_data[resource_slot].buckets_loaded = 0;
+        _waveform_data[resource_slot].length_ms = 0;
+        _waveform_data[resource_slot].state = e_waveform_state::loading;
+
+        // Resolve the filename
+        Str resolved_name = filename;
+        if (filename[0] != '/')
+        {
+            resolved_name = pen::os_path_for_resource(filename);
+        }
+
+        // Cancel any in-progress work and set new request (newest wins)
+        {
+            std::lock_guard<std::mutex> lock(_waveform_mutex);
+            _waveform_cancel = true;  // Signal cancellation to any in-progress work
+
+            _waveform_pending_request.filename = resolved_name;
+            _waveform_pending_request.resolution = resolution;
+            _waveform_pending_request.resource_slot = resource_slot;
+            _waveform_pending_request.valid = true;
+        }
+        _waveform_cv.notify_one();
+
+        return resource_slot;
+    }
+
     u32 direct::audio_create_channel_for_sound(u32 sound_index, u32 resource_slot)
     {
         _audio_resources.grow(resource_slot);
@@ -399,9 +819,12 @@ namespace put
 
         FMOD_RESULT result;
 
-        result = _sound_system->playSound((FMOD::Sound*)_audio_resources[sound_index].resource, 0, false,
-                                          (FMOD::Channel**)&_audio_resources[resource_slot].resource);
+        FMOD::Sound* sound = (FMOD::Sound*)_audio_resources[sound_index].resource;
 
+        result = _sound_system->playSound(sound, 0, false,
+            (FMOD::Channel**)&_audio_resources[resource_slot].resource);
+
+        PEN_ASSERT(result == FMOD_OK);
         return resource_slot;
     }
 
@@ -493,9 +916,30 @@ namespace put
                 }
                 break;
 
+                case AUDIO_RESOURCE_WAVEFORM:
+                {
+                    // Just free completed buckets - worker handles its own local cleanup
+                    if (_waveform_data[index].buckets != nullptr)
+                    {
+                        pen::memory_free(_waveform_data[index].buckets);
+                        _waveform_data[index].buckets = nullptr;
+                    }
+                }
+                break;
+
                 default:
                     break;
             }
+
+            // Clear all state to prevent stale data leaking to subsequent allocations
+            _audio_resources[index].resource = nullptr;
+            _audio_resources[index].assigned_flag = 0;
+            _audio_resources[index].type = AUDIO_RESOURCE_VIRTUAL;
+            _audio_resources[index].num_dsp = 0;
+
+            // Reset resource state (play_state becomes not_initialised = 0)
+            // Only backbuffer needs clearing - frontbuffer reads are guarded by assigned_flag check
+            memset(&_resource_states.backbuffer()[index], 0, sizeof(resource_state));
         }
 
         return 0;
@@ -598,6 +1042,22 @@ namespace put
         return PEN_ERR_NOT_READY;
     }
 
+    f32 audio_sound_get_buffered_percentage(u32 resource_index)
+    {
+        if (_audio_resources[resource_index].assigned_flag)
+        {
+            if (_audio_resources[resource_index].type == AUDIO_RESOURCE_SOUND)
+            {
+                const resource_state& rs = _resource_states.frontbuffer()[resource_index];
+                return rs.buffered_percentage;
+            }
+
+            return PEN_ERR_FAILED;
+        }
+
+        return 0.0f;
+    }
+
     pen_error audio_channel_get_sound_file_info(const u32 sound_index, audio_sound_file_info* info)
     {
         if (_audio_resources[sound_index].assigned_flag && _sound_file_info_ready[sound_index])
@@ -685,6 +1145,22 @@ namespace put
 
                 *gain = rs.gain_value;
 
+                return PEN_ERR_OK;
+            }
+
+            return PEN_ERR_FAILED;
+        }
+
+        return PEN_ERR_NOT_READY;
+    }
+
+    pen_error audio_waveform_get_data(const u32 waveform_index, audio_waveform_data* data)
+    {
+        if (_audio_resources[waveform_index].assigned_flag)
+        {
+            if (_audio_resources[waveform_index].type == AUDIO_RESOURCE_WAVEFORM)
+            {
+                *data = _waveform_data[waveform_index];
                 return PEN_ERR_OK;
             }
 

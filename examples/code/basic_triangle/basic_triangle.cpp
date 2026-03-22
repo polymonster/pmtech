@@ -95,7 +95,6 @@ namespace
         pen::input_layout_creation_params ilp;
         ilp.vs_byte_code = vs_slp.byte_code;
         ilp.vs_byte_code_size = vs_slp.byte_code_size;
-
         ilp.num_elements = 1;
 
         ilp.input_layout = (pen::input_layout_desc*)pen::memory_alloc(sizeof(pen::input_layout_desc) * ilp.num_elements);
@@ -161,6 +160,7 @@ namespace
 
         // clear screen
         pen::viewport vp = {0.0f, 0.0f, PEN_BACK_BUFFER_RATIO, 1.0f, 0.0f, 1.0f};
+        //pen::viewport vp = {0.0f, 0.0f, 1024, 1024, 0.0f, 1.0f};
 
         pen::renderer_set_viewport(vp);
         pen::renderer_set_raster_state(s_raster_state);

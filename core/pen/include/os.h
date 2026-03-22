@@ -57,6 +57,10 @@ namespace pen
     bool             os_is_backgrounded();
     void             os_register_background_callback(void (*callback)(bool));
     bool             os_require_audio_reinit(bool reset);
+    Str              os_get_clipboard_string();
+    void             os_clear_clipboard_string();
+    void             os_enable_paste_popup(bool enable);
+    bool             os_tapped();
     
     // music
     struct music_item

@@ -4,7 +4,7 @@ local function setup_win32()
         {
             "$(VK_SDK_PATH)/Include"
         }
-    elseif renderer_dir == "opengl" then         
+    elseif renderer_dir == "opengl" then
         includedirs
         {
             "../../third_party/glew/include",
@@ -16,31 +16,31 @@ local function setup_win32()
 end
 
 local function setup_ios()
-    files 
-    {  
+    files
+    {
         "source/posix/**.cpp",
         "source/mach/**.cpp"
     }
 end
 
 local function setup_osx()
-    files 
-    {  
+    files
+    {
         "source/posix/**.cpp",
         "source/mach/**.cpp"
     }
 end
 
 local function setup_linux()
-    files 
-    {  
+    files
+    {
         "source/posix/**.cpp"
     }
 end
 
 local function setup_web()
-    files 
-    {  
+    files
+    {
         "source/posix/**.cpp",
         "source/linux/timer.cpp",
         "source/single_threaded/**.cpp"
@@ -52,9 +52,12 @@ local function setup_web()
 end
 
 local function setup_android()
-    files 
-    {  
-        "source/posix/**.cpp"
+    files
+    {
+        "source/posix/pen_string.cpp",
+        "source/posix/threads.cpp",
+
+        "source/linux/timer.cpp",
     }
 end
 
@@ -74,58 +77,58 @@ local function setup_platform()
     end
 end
 
--- Project    
+-- Project
 project "pen"
     setup_env()
     setup_platform_defines()
-    setup_platform() 
-    location ("build/" .. platform_dir)
+    setup_platform()
     kind "StaticLib"
+    location ("build/" .. platform_dir)
     language "C++"
-    
-    files 
+
+    files
     {
         "include/*.h",
         "source/*.cpp",
-     
-        "include/" .. platform_dir .. "/**.h", 
+
+        "include/" .. platform_dir .. "/**.h",
 
         "source/" .. platform_dir .. "/**.cpp",
         "source/" .. platform_dir .. "/**.mm",
-    
-        "../../third_party/str/*.cpp", 
+
+        "../../third_party/str/*.cpp",
     }
-    
-    includedirs 
+
+    includedirs
     {
         "include",
-        "include/" .. platform_dir, 
-    
-        "../../third_party", 
+        "include/" .. platform_dir,
+
+        "../../third_party",
         "../../third_party/libstem_gamepad/source"
     }
-    
+
     -- rendere selection, and allow for no renderer
     if string.len(renderer_dir) > 0 then
 		files
-		{   
+		{
 			"include/" .. renderer_dir .. "/**.h",
 			"source/" .. renderer_dir .. "/**.cpp",
 			"source/" .. renderer_dir .. "/**.mm",
 		}
-		includedirs 
+		includedirs
 		{
 			"include/" .. renderer_dir,
 		}
     end
-            
+
     filter "configurations:Release"
         defines { "NDEBUG" }
         entrypoint "WinMainCRTStartup"
         optimize "Speed"
         targetdir ("lib/" .. platform_dir .. "/release")
         targetname "pen"
-        
+
     filter "configurations:Debug"
         defines { "DEBUG" }
         entrypoint "WinMainCRTStartup"

@@ -63,7 +63,12 @@ inline void output_debug(const c8* format, ...)
 #else
 #define PEN_SYSTEM system
 #endif
+#ifdef PEN_PLATFORM_ANDROID
+    #include <android/log.h>
+    #define PEN_LOG(F, ...) __android_log_print(ANDROID_LOG_DEBUG, "PMTECH", F,  ## __VA_ARGS__)
+#else
 #define PEN_LOG output_debug
+#endif
 #define PEN_LOG_VA(fmt, va) output_debug_va(fmt, va)
 #define PEN_ASSERT assert
 #define PEN_ASSERT_MSG(A, M)                                                                                                 \

@@ -172,15 +172,29 @@ local function setup_ios()
 end
 
 local function setup_android()
+	system "linux"
+	defines {
+		"PEN_PLATFORM_ANDROID"
+	}
+	androidabis { "armeabi-v7a", "arm64-v8a" }
+
+	-- allow user specified manifest
+	if _OPTIONS["android_manifest"] then
+		files
+		{
+			_OPTIONS["android_manifest"] 
+		}
+	else
+		files
+		{
+			pmtech_dir .. "/core/template/android/manifest/**.*"
+		}
+	end
+		
+	-- core pmtech engine activity
 	files
 	{
-		pmtech_dir .. "/core/template/android/manifest/**.*",
-		pmtech_dir .. "/core/template/android/activity/**.*"
-	}
-
-	androidabis
-	{
-		"armeabi-v7a", "x86"
+		pmtech_dir .. "/core/template/android/activity/pen_activity.java"
 	}
 end
 
@@ -256,7 +270,11 @@ local function setup_fmod()
 end
 
 function setup_modules()
-	setup_bullet()
+	if _OPTIONS["disable_physics"] then
+		defines { "PEN_PHYSICS_DISABLED" }
+	elseif platform ~= "android" then
+		setup_bullet()
+	end
 	setup_fmod()
 end
 
@@ -311,6 +329,45 @@ function create_dll(project_name, source_directory, root_directory)
 			targetname (project_name .. "_d")
 end
 
+function android_strings(project_name, root_directory)
+	local strings = (
+		"<resources>\n" ..
+		"<string name=\"app_name\">" .. project_name .. "</string>\n" ..
+		"</resources>"
+	)
+	local file = io.open(
+		root_directory ..
+		"build/android/" ..
+		project_name ..
+		"/src/main/res/values/strings.xml",
+		"wb"
+	)
+	file:write(strings)
+	file:close()
+end
+
+function project_build_dir(project_name, root_directory, platform)
+	return (
+		root_directory ..
+		"build/" ..
+		"/" ..
+		platform ..
+		"/" ..
+		project_name
+	)
+end
+
+function copydir(src, dst)
+    os.mkdir(dst)
+    for _, file in ipairs(os.matchfiles(src .. "/**")) do
+        local rel = path.getrelative(src, file)
+        local target = path.join(dst, rel)
+        os.mkdir(path.getdirectory(target))
+        os.copyfile(file, target)
+    end
+end
+
+
 function create_binary(project_name, source_directory, root_directory, binary_type)
 	s_project_name = project_name
 	project ( project_name )
@@ -318,8 +375,32 @@ function create_binary(project_name, source_directory, root_directory, binary_ty
 		kind ( binary_type )
 		language "C++"
 
+		if platform == "android" then
+			-- write project name as string
+			android_strings(project_name, root_directory)
+
+			-- add app activity
+			if _OPTIONS["android_app_activity"] then
+				files
+				{
+					_OPTIONS["android_app_activity"]
+				}
+			else
+				error("You must specify --android_app_activity=<path-to-your-activity.java> for this project to work")
+			end
+
+			-- copy libs
+			copydir(
+				(pmtech_dir .. "/third_party/fmod/lib/android"),
+				project_build_dir(project_name, root_directory, platform) .. "/src/main/jniLibs"
+			)
+		end
+
 		if binary_type ~= "SharedLib" then
 			dependson { "pen", "put" }
+			if platform == "android" and not _OPTIONS["disable_physics"] then
+				dependson { "bullet_monolithic" }
+			end
 		end
 
 		includedirs

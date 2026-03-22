@@ -50,9 +50,17 @@ function setup_curl()
     }
 
     -- lib dirs
-    libdirs {
-        ("../../third_party/libcurl/lib/" .. platform)
-    }
+
+    if platform == "android" then
+        libdirs {
+            ("../../third_party/libcurl/lib/android/${ANDROID_ABI}/")
+        }
+    else
+        libdirs {
+            ("../../third_party/libcurl/lib/" .. platform)
+        }
+
+    end
 
     -- links
     if platform == "ios" then
@@ -74,6 +82,20 @@ function setup_curl()
             "user32"
 
         }
+    elseif platform == "android" then
+        links {
+            "atomic",
+            "android",
+
+            "curl",
+            "ssl",
+            "crypto",
+            "z",
+
+            "GLESv3",
+            "EGL",
+            "log",
+        }
     else
         links {
             "curl",
@@ -83,6 +105,21 @@ function setup_curl()
     end
 end
 
+function setup_fmod_android()
+    links
+    {
+        "fmodL",
+        "fmod.jar"
+    }
+    libdirs
+    {
+        "../../third_party/fmod/lib/android/${ANDROID_ABI}"
+    }
+    archivedirs
+    {
+        "../../third_party/fmod/lib/android"
+    }
+end
 
 function setup_from_action()
     if _ACTION == "gmake" then
@@ -128,6 +165,11 @@ function setup_from_action()
 
     -- link curl for url fetching
     setup_curl()
+
+    -- android fmod links
+    if platform == "android" then
+        setup_fmod_android()
+    end
 
     print("platform: " .. platform)
     print("renderer: " .. renderer_dir)

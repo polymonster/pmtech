@@ -103,6 +103,39 @@ namespace pen
         return PEN_ERR_FILE_NOT_FOUND;
     }
 
+    pen_error filesystem_read_file_to_buffer_direct(const c8* filename, void** p_buffer, u32& buffer_size)
+    {
+        WRITE_FILE_DEPENDENCIES(filename);
+
+        const Str resource_name = filename;
+
+        *p_buffer = NULL;
+
+        FILE* p_file = fopen(resource_name.c_str(), "rb");
+
+        if (p_file)
+        {
+            fseek(p_file, 0L, SEEK_END);
+            long size = ftell(p_file);
+
+            fseek(p_file, 0L, SEEK_SET);
+
+            buffer_size = (u32)size;
+
+            *p_buffer = pen::memory_alloc(buffer_size + 1);
+
+            fread(*p_buffer, 1, buffer_size, p_file);
+
+            ((u8*)*p_buffer)[buffer_size] = '\0';
+
+            fclose(p_file);
+
+            return PEN_ERR_OK;
+        }
+
+        return PEN_ERR_FILE_NOT_FOUND;
+    }
+
     pen_error filesystem_enum_volumes(fs_tree_node& results)
     {
         static const c8* volumes_name = "Volumes";
@@ -145,7 +178,7 @@ namespace pen
     }
 
     static bool s_show_hidden = false;
-    
+
     void filesystem_toggle_hidden_files()
     {
         s_show_hidden = !s_show_hidden;

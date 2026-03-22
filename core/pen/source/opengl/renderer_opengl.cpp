@@ -22,7 +22,16 @@
 #include <vector>
 
 #ifdef __linux__
+#if !PEN_PLATFORM_ANDROID
 #include "GL/glew.h"
+#else
+#define PEN_GLES3 1
+#include <GLES3/gl3.h>
+#include <GLES3/gl31.h>
+#include <GLES3/gl32.h>
+#include <GLES2/gl2ext.h>
+#include <EGL/egl.h>
+#endif
 #elif _WIN32
 #define GLEW_STATIC
 #include "GL/glew.h"
@@ -181,6 +190,7 @@ namespace
 
     u32 to_gl_polygon_mode(u32 pen_polygon_mode)
     {
+#if !PEN_PLATFORM_ANDROID
         switch (pen_polygon_mode)
         {
             case PEN_FILL_SOLID:
@@ -190,6 +200,8 @@ namespace
         }
         PEN_ASSERT(0);
         return GL_FILL;
+#endif
+        return 0;
     }
 
     u32 to_gl_cull_mode(u32 pen_cull_mode)
@@ -1234,7 +1246,7 @@ namespace pen
             char* info_log_buf = (char*)memory_alloc(info_log_length + 1);
 
             CHECK_CALL(glGetShaderInfoLog(res.handle, info_log_length, NULL, &info_log_buf[0]));
-            PEN_LOG(info_log_buf);
+            PEN_LOG("%s", info_log_buf);
         }
     }
 

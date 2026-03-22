@@ -62,7 +62,27 @@ newoption
 
 newoption
 {
+   trigger     = "disable_physics",
+   description = "Disable bullet physics (use stub implementations)"
+}
+
+newoption
+{
    trigger     = "plist",
    value       = "filepath",
    description = "specify filepath to plist"
+}
+
+newoption
+{
+   trigger     = "android_app_activity",
+   value       = "filepath",
+   description = "specify filepath to app activity"
+}
+
+newoption
+{
+   trigger     = "android_manifest",
+   value       = "filepath",
+   description = "specify filepath to manifest"
 }

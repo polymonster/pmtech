@@ -21,6 +21,7 @@ namespace put
     {
         enum audio_play_state_t
         {
+            not_initialised,
             not_playing,
             playing,
             paused
@@ -73,6 +74,26 @@ namespace put
         f32* spectrum[32];
     };
 
+    namespace e_waveform_state
+    {
+        enum waveform_state_t
+        {
+            loading,
+            ready,
+            error
+        };
+    }
+    typedef e_waveform_state::waveform_state_t waveform_state;
+
+    struct audio_waveform_data
+    {
+        f32*           buckets = nullptr;       // min/max pairs for each bucket (size = resolution * 2)
+        u32            resolution = 0;          // number of buckets
+        u32            buckets_loaded = 0;      // number of buckets processed so far (for progressive loading)
+        u32            length_ms = 0;           // total length in milliseconds
+        waveform_state state = e_waveform_state::loading;
+    };
+
     // Threading
     void* audio_thread_function(void* params);
     void  audio_consume_command_buffer();
@@ -86,8 +107,10 @@ namespace put
     u32  audio_create_stream(const c8* filename);
     u32  audio_create_sound(const c8* filename);
     u32  audio_create_sound(const pen::music_file& music);
+    u32  audio_create_sound_url(const c8* url);
     u32  audio_create_channel_for_sound(const u32 sound_index);
     u32  audio_create_channel_group();
+    u32  audio_create_waveform(const c8* filename, u32 resolution);
     void audio_release_resource(u32 index);
 
     // Binding
@@ -114,6 +137,8 @@ namespace put
     pen_error audio_dsp_get_spectrum(const u32 spectrum_dsp, audio_fft_spectrum* spectrum);
     pen_error audio_dsp_get_three_band_eq(const u32 eq_dsp, audio_eq_state* eq_state);
     pen_error audio_dsp_get_gain(const u32 dsp_index, f32* gain);
+    f32       audio_sound_get_buffered_percentage(u32 resource_index);
+    pen_error audio_waveform_get_data(const u32 waveform_index, audio_waveform_data* data);
 
     namespace direct
     {
@@ -132,8 +157,10 @@ namespace put
         u32 audio_create_stream(const c8* filename, u32 resource_slot);
         u32 audio_create_sound(const c8* filename, u32 resource_slot);
         u32 audio_create_sound(const pen::music_file& music, u32 resource_slot);
+        u32 audio_create_sound_url(const c8* url, u32 resource_slot);
         u32 audio_create_channel_for_sound(u32 sound_index, u32 resource_slot);
         u32 audio_create_channel_group(u32 resource_slot);
+        u32 audio_create_waveform(const c8* filename, u32 resolution, u32 resource_slot);
         u32 audio_release_resource(u32 index);
 
         // Binding

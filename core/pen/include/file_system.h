@@ -28,6 +28,7 @@ namespace pen
 
     bool       filesystem_file_exists(const c8* filename);
     pen_error  filesystem_read_file_to_buffer(const c8* filename, void** p_buffer, u32& buffer_size);
+    pen_error  filesystem_read_file_to_buffer_direct(const c8* filename, void** p_buffer, u32& buffer_size);
     pen_error  filesystem_getmtime(const c8* filename, u32& mtime_out);
     size_t     filesystem_getsize(const c8* filename);
     void       filesystem_toggle_hidden_files();

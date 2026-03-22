@@ -18,11 +18,46 @@ solution ("pmtech_examples_" .. platform)
         "."
     }
 
+    if platform == "android" then
+        androidnamespace "com.pmtech.examples"
+        gradleversion "com.android.tools.build:gradle:8.2.2"
+        androidsdkversion "34"
+        androidndkversion "25.1.8937393"
+        androidminsdkversion "21"
+        gradlewrapper {
+            "distributionUrl=https\\://services.gradle.org/distributions/gradle-8.6-all.zip"
+        }
+        androidrepositories {
+            "google()",
+            "mavenCentral()"
+        }
+        androiddependencies {
+            "androidx.appcompat:appcompat:1.7.0",
+            "com.google.android.material:material:1.12.0",
+            "androidx.security:security-crypto:1.1.0-alpha06"
+        }
+        gradleproperties {
+            "org.gradle.jvmargs=-Xmx4608m --add-exports=java.base/sun.nio.ch=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED",
+            "org.gradle.parallel=true",
+            "org.gradle.daemon=true",
+            "android.useAndroidX=true",
+            "android.enableJetifier=true"
+        }
+        assetdirs {
+            "bin/android/assets",
+        }
+    end
+
 -- Engine Project
 dofile "../core/pen/project.lua"
 
 -- Toolkit Project
 dofile "../core/put/project.lua"
+
+-- Bullet Physics (android builds as part of this solution)
+if platform == "android" and not _OPTIONS["disable_physics"] then
+    dofile "../third_party/bullet/project.lua"
+end
 
 -- Example projects
 -- ( project name, current script dir, )

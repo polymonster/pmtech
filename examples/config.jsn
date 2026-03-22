@@ -1,20 +1,20 @@
 import "../tools/pmbuild_ext/pmbuild_init.jsn"
-{    
+{
     //
     // common
     //
-    
+
     jsn_vars: {
         pmbuild_dir: "../third_party/pmbuild"
         pmtech_dir: ".."
     }
-    
+
     post_build_order: [
         notorize
         pmbuild_config
         vscode
     ]
-    
+
     base:
     {
         jsn_vars: {
@@ -22,7 +22,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
             build_dir: ""
             bin_dir: ""
         }
-        
+
         clean: {
             directories: [
                 "${data_dir}"
@@ -31,7 +31,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
                 "temp"
             ]
         }
-        
+
         render_configs: {
             type: jsn
             args: [
@@ -44,7 +44,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
             ]
             dependencies: true
         }
-        
+
         base_copy: {
             type: copy
             files: [
@@ -56,7 +56,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
                 ["../assets/textures/**/*.dds", "${data_dir}/textures"]
             ]
         }
-        
+
         texturec: {
             args: [
                 "-f %{input_file}"
@@ -77,23 +77,23 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
             change_ext: ".dds"
             dependencies: true
         }
-        
+
         models: {
             files: [
                 ["assets/mesh", "${data_dir}/models"]
             ]
         }
-        
+
         pmbuild_config: {
             pmbuild_cmd: "${pmbuild_dir}/pmbuild"
             destination: "${data_dir}"
         }
     }
-    
+
     //
     // mac
     //
-    
+
     mac(base):
     {
         jsn_vars: {
@@ -101,7 +101,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
             build_dir: "build/osx"
             bin_dir: "bin/osx"
         }
-        
+
         premake: {
             args: [
                 "xcode4"
@@ -109,7 +109,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
                 "--platform_dir=osx"
             ]
         }
-        
+
         pmfx: {
             args: [
                 "-v1"
@@ -122,14 +122,14 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
                 "-shader_version 2.2"
             ]
         }
-        
+
         shared_libs: {
             type: copy
             files: [
                 ["../third_party/shared_libs/osx", "bin/osx"]
             ]
         }
-        
+
         make: {
             toolchain: "xcodebuild"
             workspace: "pmtech_examples_osx.xcworkspace"
@@ -138,14 +138,14 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
             ]
             change_ext: ""
         }
-        
+
         launch: {
             cmd: "%{target_path}/Contents/MacOS/%{target_name}"
             files: [
                 "bin/osx/**/*.app"
             ]
         }
-        
+
         vscode: {
             files: [
                 "build/osx/*.xcodeproj"
@@ -168,7 +168,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
             ]
             change_ext: ""
         }
-        
+
         libs: {
             type: shell
             explicit: true
@@ -186,7 +186,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
             ]
         }
     }
-    
+
     mac-gl(mac): {
         premake: {
             args: [
@@ -195,7 +195,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
                 "--platform_dir=osx"
             ]
         }
-        
+
         pmfx: {
             args: [
                 "-v1"
@@ -210,11 +210,11 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
             ]
         }
     }
-    
+
     //
     // win32
     //
-    
+
     win32(base):
     {
         jsn_vars: {
@@ -222,7 +222,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
             build_dir: "build/win32"
             bin_dir: "bin/win32"
         }
-        
+
         libs: {
             type: shell
             explicit: true
@@ -232,14 +232,14 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
                 "cd ..\\third_party && ..\\pmbuild make bullet-win32 all /p:Platform=x64 /p:Configuration=Release"
             ]
         }
-        
+
         shared_libs: {
             type: copy
             files: [
                 ["../third_party/shared_libs/win32", "bin/win32"]
             ]
         }
-        
+
         premake: {
             args: [
                 "%{vs_latest}"
@@ -248,7 +248,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
                 "--sdk_version=%{windows_sdk_version}"
             ]
         },
-        
+
         pmfx: {
             args: [
                 "-v1"
@@ -260,21 +260,21 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
                 "-t build/temp/shaders"
             ]
         }
-        
+
         make: {
             toolchain: "msbuild"
             files: [
                 "build/win32/*.vcxproj"
             ]
         }
-        
+
         launch: {
             cmd: "%{target_path}"
             files: [
                 "bin/win32/*.exe"
             ]
         }
-		
+
 		vscode: {
             files: [
                 "build/win32/*.vcxproj"
@@ -300,8 +300,8 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
             change_ext: ""
         }
     }
-    
-    win32-vulkan(win32): 
+
+    win32-vulkan(win32):
     {
         premake: {
             args: [
@@ -311,7 +311,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
                 "--sdk_version=%{windows_sdk_version}"
             ]
         },
-        
+
         pmfx: {
             args: [
                 "-v1"
@@ -324,8 +324,8 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
             ]
         }
     }
-    
-    win32-gl(win32): 
+
+    win32-gl(win32):
     {
         premake: {
             args: [
@@ -335,7 +335,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
                 "--sdk_version=%{windows_sdk_version}"
             ]
         },
-        
+
         pmfx: {
             args: [
                 "-v1"
@@ -350,12 +350,12 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
             ]
         }
     }
-    
+
     //
     // iOS
     //
-    
-    ios(base): 
+
+    ios(base):
     {
         jsn_vars: {
             data_dir: "bin/ios/data"
@@ -372,7 +372,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
                 "--teamid=%{teamid}"
             ]
         }
-        
+
         pmfx: {
             args: [
                 "-v1"
@@ -385,7 +385,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
                 "-source"
             ]
         }
-        
+
         libs: {
             type: shell
             explicit: true
@@ -395,7 +395,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
                 "cd ../third_party && ../pmbuild make bullet-ios all -destination generic/platform=iOS -configuration Debug -quiet"
             ]
         }
-        
+
         make: {
             toolchain: "xcodebuild"
             workspace: "pmtech_examples_ios.xcworkspace"
@@ -405,7 +405,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
             ]
         }
     }
-    
+
     ios-ci(ios):
     {
         premake: {
@@ -417,19 +417,19 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
             ]
         }
     }
-    
+
     //
     // linux
     //
-    
-    linux(base): 
+
+    linux(base):
     {
         jsn_vars: {
             data_dir: "bin/linux/data"
             build_dir: "build/linux"
             bin_dir: "bin/linux"
         }
-        
+
         libs: {
             type: shell
             explicit: true
@@ -446,7 +446,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
                 ["../third_party/fmod/lib/linux", "bin/linux"]
             ]
         }
-        
+
         premake: {
             args: [
                 "gmake"
@@ -454,7 +454,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
                 "--platform_dir=linux"
             ]
         }
-        
+
         pmfx: {
             args: [
                 "-v1"
@@ -468,7 +468,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
                 "-source"
             ]
         }
-        
+
         make: {
             toolchain: "make",
             files: [
@@ -510,7 +510,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
         }
     }
 
-    linux-vulkan(linux): 
+    linux-vulkan(linux):
     {
         premake: {
             args: [
@@ -533,19 +533,19 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
             ]
         }
     }
-    
+
     //
     // web
     //
-    
-    web(base): 
+
+    web(base):
     {
         jsn_vars: {
             data_dir: "build/web/data"
             build_dir: "build/web"
             bin_dir: "bin/web"
         }
-        
+
         libs: {
             type: shell
             explicit: true
@@ -555,7 +555,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
                 "cd ../third_party && ../pmbuild make bullet-web all config=debug"
             ]
         }
-        
+
         premake: {
             args: [
                 "gmake"
@@ -586,7 +586,7 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
             ]
             change_ext: ""
         }
-        
+
         launch: {
             cmd: "%{target_name}.html",
             files:[
@@ -595,25 +595,26 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
             ext: ".html"
         }
     }
-    
+
     //
     // android
     //
-    
-    android(base): 
+
+    android(base):
     {
         jsn_vars: {
-            data_dir: "bin/android/data"
+            data_dir: "bin/android/assets/data"
             build_dir: "build/android"
             bin_dir: "bin/android"
         }
-        
+
         premake: {
             args: [
                 "android-studio"
                 "--renderer=opengl"
                 "--platform_dir=android"
                 "--pmtech_dir=../"
+                "--android_app_activity=../core/template/android/app_activity/pmtech_app_activity.java"
             ]
         }
         pmfx: {
@@ -622,12 +623,12 @@ import "../tools/pmbuild_ext/pmbuild_init.jsn"
                 "-shader_platform gles"
                 "-shader_version 300"
                 "-i assets/shaders ../assets/shaders"
-                "-o build/web/data/pmfx/glsl"
+                "-o ${data_dir}/pmfx/glsl"
                 "-h shader_structs"
                 "-t build/temp/shaders"
                 "-v_flip"
                 "-source"
             ]
         }
-    }   
+    }
 }

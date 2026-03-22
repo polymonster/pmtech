@@ -66,7 +66,7 @@ namespace
         
         for(auto& font : fonts)
         {
-            const Str font_path = pen::os_path_for_resource(font.name.c_str());
+            const Str font_path = font.name.c_str(); //pen::os_path_for_resource(font.name.c_str());
             config.MergeMode = font.merge;
             
             if(font.range_min != 0 && font.range_max != 0)
@@ -76,12 +76,18 @@ namespace
                 range[1] = font.range_max;
                 range[2] = 0;
 
-                io.Fonts->AddFontFromFileTTF(font_path.c_str(), font.pixel_size, &config, range);
+                void* font_data;
+                u32 font_data_size;
+                filesystem_read_file_to_buffer(font_path.c_str(), &font_data, font_data_size);
+                io.Fonts->AddFontFromMemoryTTF(font_data, font_data_size, font.pixel_size, &config, range);
                 ranges.push_back(range);
             }
             else
             {
-                io.Fonts->AddFontFromFileTTF(font_path.c_str(), font.pixel_size, &config);
+                void* font_data;
+                u32 font_data_size;
+                filesystem_read_file_to_buffer(font_path.c_str(), &font_data, font_data_size);
+                io.Fonts->AddFontFromMemoryTTF(font_data, font_data_size, font.pixel_size, &config);
             }
         }
 
@@ -579,7 +585,7 @@ namespace put
             // set delta time
             f64        cur_time = pen::get_time_ms();
             static f64 prev_time = cur_time;
-            io.DeltaTime = (f32)max((cur_time - prev_time) / 1000.0, 0.0);
+            io.DeltaTime = (f32)max((cur_time - prev_time) / 1000.0, 0.0001);
             prev_time = cur_time;
 
             s32 w, h;

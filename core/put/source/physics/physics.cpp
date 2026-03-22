@@ -4,20 +4,10 @@
 
 #include "pen.h"
 #include "pen_string.h"
-#include "physics_bullet.h"
+#include "physics.h"
+
 #include "slot_resource.h"
 #include "timer.h"
-
-// for multi body bullet
-#include "BulletDynamics/Featherstone/btMultiBody.h"
-#include "BulletDynamics/Featherstone/btMultiBodyConstraintSolver.h"
-#include "BulletDynamics/Featherstone/btMultiBodyDynamicsWorld.h"
-#include "BulletDynamics/Featherstone/btMultiBodyJointLimitConstraint.h"
-#include "BulletDynamics/Featherstone/btMultiBodyJointMotor.h"
-#include "BulletDynamics/Featherstone/btMultiBodyLink.h"
-#include "BulletDynamics/Featherstone/btMultiBodyLinkCollider.h"
-#include "BulletDynamics/Featherstone/btMultiBodyPoint2Point.h"
-#include "btBulletDynamicsCommon.h"
 
 #if PEN_SINGLE_THREADED
 #define add_cmd(cmd) exec_cmd(cmd)
@@ -27,6 +17,8 @@
 
 namespace physics
 {
+    extern readable_data g_readable_data;
+
     static pen::ring_buffer<physics_cmd> s_cmd_buffer;
     static pen::slot_resources           s_physics_slot_resources;
     static pen::slot_resources           s_p2p_slot_resources;
@@ -166,7 +158,7 @@ namespace physics
             case e_cmd::add_central_impulse:
                 add_central_impulse(cmd.set_v3);
                 break;
-    
+
             case e_cmd::add_force:
                 add_force(cmd.set_v3_v3);
                 break;
@@ -209,7 +201,7 @@ namespace physics
 
         if (pen::semaphore_try_wait(p_physics_job_thread_info->p_sem_exit))
         {
-            physics_shutdown();
+            // physics_shutdown();
             pen::semaphore_post(p_physics_job_thread_info->p_sem_continue, 1);
             pen::semaphore_post(p_physics_job_thread_info->p_sem_terminated, 1);
             pen_main_loop_exit();
@@ -229,7 +221,9 @@ namespace physics
         pen::slot_resources_init(&s_physics_slot_resources, 1024);
         pen::slot_resources_init(&s_p2p_slot_resources, 16);
 
+#ifndef PEN_PHYSICS_DISABLED
         physics_initialise();
+#endif
 
         s_cmd_buffer.create(1024);
 
