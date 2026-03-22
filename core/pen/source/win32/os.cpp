@@ -489,6 +489,86 @@ namespace pen
         static hash_id window_id = PEN_HASH(pen_window.window_title);
         return window_id;
     }
+
+    Str os_get_cache_data_directory()
+    {
+        return "";
+    }
+
+    bool os_delete_directory(const Str& filename)
+    {
+        return false;
+    }
+
+    void os_enable_background_audio(bool enabled)
+    {
+    }
+
+    void os_haptic_selection_feedback()
+    {
+    }
+
+    void os_show_on_screen_keyboard(bool show)
+    {
+    }
+
+    bool os_set_keychain_item(const Str& identifier, const Str& key, const Str& value)
+    {
+        return false;
+    }
+
+    Str os_get_keychain_item(const Str& identifier, const Str& key)
+    {
+        return "";
+    }
+
+    bool os_is_backgrounded()
+    {
+        return false;
+    }
+
+    void os_register_background_callback(void (*callback)(bool))
+    {
+    }
+
+    bool os_require_audio_reinit(bool reset)
+    {
+        return false;
+    }
+
+    Str os_get_clipboard_string()
+    {
+        return "";
+    }
+
+    void os_clear_clipboard_string()
+    {
+    }
+
+    void os_enable_paste_popup(bool enable)
+    {
+    }
+
+    bool os_tapped()
+    {
+        return false;
+    }
+
+    void music_enable_remote_control(const music_player_remote& fns)
+    {
+    }
+
+    void music_set_now_playing(const Str& artist, const Str& album, const Str& track)
+    {
+    }
+
+    void music_set_now_playing_artwork(void* data, u32 w, u32 h, u32 bpp, u32 row_pitch)
+    {
+    }
+
+    void music_set_now_playing_time_info(u32 position_ms, u32 duration_ms)
+    {
+    }
 } // namespace pen
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, INT nCmdShow)
