@@ -844,13 +844,15 @@ namespace pen
             NSString* nsalbum = [NSString stringWithUTF8String:album.c_str()];
             NSString* nstrack = [NSString stringWithUTF8String:track.c_str()];
             
-            NSMutableDictionary* info = [[NSMutableDictionary alloc] init];
+            // merge into the existing info (as artwork / time info do) so keys such as artwork
+            // persist across track changes and don't need re-sending every track
+            NSMutableDictionary* info = [NSMutableDictionary dictionaryWithDictionary:
+                [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo];
             [info setObject:nstrack forKey:MPMediaItemPropertyTitle];
             [info setObject:nsalbum forKey:MPMediaItemPropertyAlbumTitle];
             [info setObject:nsartist forKey:MPMediaItemPropertyArtist];
-            
+
             [[MPNowPlayingInfoCenter defaultCenter] setNowPlayingInfo:info];
-            [info release];
         }
     }
 
