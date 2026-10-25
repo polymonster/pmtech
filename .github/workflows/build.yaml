@@ -36,7 +36,7 @@ jobs:
       - run: sudo apt-get install libglew-dev
       - run: .ci/linux-gl.sh
   windows-direct3d11:
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v3
         with: 
@@ -48,7 +48,7 @@ jobs:
           ..\\pmbuild win32
           ..\\pmbuild make win32 all /p:Platform=x64 /p:Configuration=Release
   windows-opengl:
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v3
         with: 
@@ -72,7 +72,7 @@ jobs:
           ../pmbuild mac-editor
           ../pmbuild make mac-editor all
   windows-editor:
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v3
         with: 
