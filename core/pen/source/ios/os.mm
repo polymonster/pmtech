@@ -87,7 +87,8 @@ namespace
         pen::music_player_remote music_remote;
         void                    (*background_callback)(bool) = nullptr;
         bool                     background_audio = true;
-        bool                     require_audio_reinit = false;
+        std::atomic<bool>        require_audio_reinit = {false};
+        std::atomic<bool>        audio_interrupted = {false};
         Str                      clipboard = "";
         bool                     enable_paste_popup = false;
         bool                     tapped = false;
@@ -135,6 +136,34 @@ namespace
 {
     // setup base systems
     pen::timer_system_intialise();
+
+    // another app, siri, a call or an alarm can take the audio session. ios stops our output unit and
+    // we have to reinit to get it back. the ended notification is not always delivered, so the
+    // interrupted flag is also checked when we become active again
+    NSNotificationCenter* nc = [NSNotificationCenter defaultCenter];
+    [nc addObserverForName:AVAudioSessionInterruptionNotification object:nil queue:nil usingBlock:^(NSNotification* note) {
+        NSUInteger type = [note.userInfo[AVAudioSessionInterruptionTypeKey] unsignedIntegerValue];
+        if(type == AVAudioSessionInterruptionTypeBegan)
+        {
+            PEN_LOG("audio session interruption began");
+            s_context.audio_interrupted = true;
+        }
+        else if(type == AVAudioSessionInterruptionTypeEnded)
+        {
+            PEN_LOG("audio session interruption ended");
+            [[AVAudioSession sharedInstance] setActive:YES error:nil];
+            s_context.audio_interrupted = false;
+            s_context.require_audio_reinit = true;
+        }
+    }];
+
+    [nc addObserverForName:AVAudioSessionMediaServicesWereResetNotification object:nil queue:nil usingBlock:^(NSNotification* note) {
+        PEN_LOG("audio session media services were reset");
+        AVAudioSession* session = [AVAudioSession sharedInstance];
+        [session setCategory:AVAudioSessionCategoryPlayback error:nil];
+        [session setActive:YES error:nil];
+        s_context.require_audio_reinit = true;
+    }];
 
     @autoreleasepool
     {
@@ -206,10 +235,11 @@ namespace
 
 - (void)applicationDidBecomeActive:(UIApplication *)app
 {
-    if([[AVAudioSession sharedInstance] isOtherAudioPlaying] == 1)
+    if([[AVAudioSession sharedInstance] isOtherAudioPlaying] == 1 || s_context.audio_interrupted)
     {
         s_context.require_audio_reinit = true;
     }
+    s_context.audio_interrupted = false;
     
     AVAudioSession *session = [AVAudioSession sharedInstance];
     [session setActive:YES error:nil];
@@ -911,14 +941,12 @@ namespace pen
 
     bool os_require_audio_reinit(bool reset)
     {
-        bool res = s_context.require_audio_reinit;
-        
         if(reset)
         {
-            s_context.require_audio_reinit = false;
+            return s_context.require_audio_reinit.exchange(false);
         }
-        
-        return res;
+
+        return s_context.require_audio_reinit;
     }
 
     Str os_get_clipboard_string()
